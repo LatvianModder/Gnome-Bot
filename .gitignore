@@ -21,8 +21,6 @@ logs
 # other
 eclipse
 run
-files
-app.properties
 run.sh
 launch.sh
 *.log
