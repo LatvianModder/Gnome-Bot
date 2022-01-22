@@ -1,0 +1,31 @@
+package dev.gnomebot.app.data.config;
+
+import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.GuildCollections;
+import discord4j.common.util.Snowflake;
+
+import java.util.Optional;
+
+public class ChannelConfig extends SnowflakeConfig {
+	public ChannelConfig(GuildCollections gc, String name) {
+		super(gc, name);
+	}
+
+	@Override
+	public String getType() {
+		return "channel";
+	}
+
+	@Override
+	public String toString() {
+		return "<#" + get().asString() + '>';
+	}
+
+	public Optional<ChannelInfo> messageChannel() {
+		return isSet() ? Optional.ofNullable(gc.getChannelMap().get(get())) : Optional.empty();
+	}
+
+	public boolean is(Snowflake id) {
+		return isSet() && get().equals(id);
+	}
+}

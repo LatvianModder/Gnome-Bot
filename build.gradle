@@ -1,0 +1,75 @@
+plugins {
+	id 'java'
+	id 'application'
+	id 'com.github.johnrengelman.shadow' version "7.0.0"
+}
+
+group 'dev.gnomebot'
+version '1.0.0'
+archivesBaseName = 'gnome-bot'
+mainClassName = 'dev.gnomebot.app.App'
+
+sourceCompatibility = 16
+targetCompatibility = 16
+
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+allprojects {
+	configurations.all {
+		resolutionStrategy.cacheChangingModulesFor 60, 'seconds'
+	}
+}
+
+repositories {
+	mavenCentral()
+	//maven { url 'https://jitpack.io' }
+
+	maven {
+		url "https://www.cursemaven.com"
+		content {
+			includeGroup "curse.maven"
+		}
+	}
+
+	maven {
+		url 'https://oss.sonatype.org/content/repositories/snapshots'
+	}
+}
+
+dependencies {
+	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
+
+	implementation("curse.maven:rhino-416294:3604722") { transitive = false }
+	implementation("io.javalin:javalin:4.2.0")
+	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
+	implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
+	// implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
+	// implementation("com.discord4j:discord-json:1.7.0-SNAPSHOT") { changing = true }
+	// implementation('com.github.Discord4J:Discord4J:feature~buttons-SNAPSHOT')
+	// implementation("org.mongodb:mongo-java-driver:3.12.8")
+	implementation('org.mongodb:mongodb-driver-sync:4.4.1')
+	implementation("com.google.code.gson:gson:2.8.9")
+	implementation("org.slf4j:slf4j-simple:2.0.0-alpha5")
+	// implementation ("com.fasterxml.jackson.core:jackson-databind:2.11.2")
+	implementation("com.google.guava:guava:31.0.1-jre") { exclude group: "com.google.code.findbugs" }
+	// implementation ("org.mindrot:jbcrypt:0.4")
+	implementation("io.github.classgraph:classgraph:4.8.138")
+	// implementation ("com.kcthota:emoji4j:6.0")
+	implementation("com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1")
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Version': archiveVersion, 'Main-Class': mainClassName
+	}
+}
+
+shadowJar {
+	classifier null
+}
+
+tasks.build.dependsOn tasks.shadowJar

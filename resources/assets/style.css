@@ -1,0 +1,387 @@
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+:root {
+    --background-color: #201C21;
+    --box-color: #2F3031;
+    --bar-color: #2F3031;
+    --text-color: #AFA0AB;
+    --text-hover-color: #FFF;
+    --accent-color: #4791B1;
+    --accent-hover-color: #22C7BF;
+    --accent-warning-hover-color: #C13479;
+    --accent-warning-hover-color-end: #3C1A1A;
+    --border-color: #4F5050;
+    --background-hover-color: #FFFFFF0D;
+}
+
+body {
+    background-color: var(--background-color);
+    /*background-image: url(background.png);
+    background-size: 100vw 100vh;
+    background-attachment: fixed;*/
+    color: var(--text-color);
+    /*text-align: justify;*/
+    font-family: Open Sans, Arial;
+    font-weight: 400;
+    /*line-height: 1.5;*/
+    /*font-size: 18px;*/
+    margin: 0;
+}
+
+.right {
+    float: right;
+}
+
+div.content {
+    padding: 1em;
+}
+
+a,
+a:visited {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover-color);
+    transition: color 0.2s, background-color 0.2s;
+}
+
+ul li img {
+    height: 1em
+}
+
+@media screen and (max-width: 500px) {
+    body {
+        text-align: left
+    }
+
+    div.fancyPositioning div.picture-left,
+    div.fancyPositioning div.tleft {
+        float: none;
+        width: inherit
+    }
+}
+
+table {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table td,
+table th {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+}
+
+table tr:nth-child(even) {
+    background-color: var(--background-hover-color);
+}
+
+/*
+table tr:hover {
+  background-color: var(--background-hover-color);
+}
+*/
+
+table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    color: var(--text-hover-color);
+}
+
+pre {
+    background-color: #212121;
+    padding: 0.3em;
+    overflow-x: auto;
+    font-size: 0.8em;
+}
+
+.button,
+input[type=submit],
+input[type=button] {
+    cursor: pointer;
+}
+
+.button,
+input[type=submit],
+input[type=button],
+input[type=text],
+input[type=email],
+input[type=password],
+button,
+textarea {
+    padding: 10px;
+    border: solid 1px var(--border-color);
+    margin: 6px auto;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+    color: var(--text-color);
+}
+
+.button:hover {
+    background: var(--accent-color);
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-hover-color) 100%);
+    color: var(--text-hover-color);
+}
+
+.button.buttonwarning:hover {
+    background: var(--accent-color);
+    background: var(--accent-warning-hover-color);
+}
+
+hr {
+    border: none;
+    border-top: solid 1px var(--border-color);
+}
+
+div.button h3 {
+    margin: 0;
+    padding: 0;
+}
+
+fieldset {
+    width: fit-content;
+    border: solid 1px var(--border-color);
+}
+
+legend {
+    color: var(--accent-color);
+}
+
+input[type=submit],
+input[type=button],
+button {
+    background-color: transparent;
+    color: var(--accent-color);
+}
+
+input[type=submit]:hover,
+input[type=button]:hover,
+button:hover {
+    background-color: var(--accent-color);
+    color: var(--text-hover-color);
+    transition: color 0.2s, background 0.2s;
+}
+
+input[type=submit].buttonwarning,
+input[type=button].buttonwarning,
+button.buttonwarning {
+    color: var(--accent-warning-hover-color);
+}
+
+input[type=submit].buttonwarning:hover,
+input[type=button].buttonwarning:hover,
+button.buttonwarning:hover {
+    background-color: var(--accent-warning-hover-color);
+    color: var(--text-hover-color);
+}
+
+input[type=text],
+input[type=email],
+input[type=password],
+textarea {
+    background-color: transparent;
+    color: var(--text-color);
+    font-family: inherit;
+}
+
+p {
+    margin: 4px auto;
+}
+
+iframe#log {
+    width: 100%;
+    border: solid 1px var(--border-color);
+}
+
+span.crashtype {
+    color: #FFFF5A;
+}
+
+span.crasherror {
+    color: #E85858;
+}
+
+span.crashpackage {
+    color: #47B159;
+}
+
+span.crashclass {
+    color: #42F9F0;
+}
+
+span.crashmethod {
+    color: #F7B63F;
+}
+
+span.crashline {
+    color: #F396F3;
+}
+
+a.profile img {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    position: absolute;
+    right: 6px;
+    top: 6px;
+}
+
+nav.navbar {
+    margin-left: auto;
+    margin-right: auto;
+    width: max-content;
+}
+
+div.api {
+    border: 1px solid var(--border-color);
+    padding: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+div.api span.path {
+    background-color: var(--background-color);
+    padding: 0.2em;
+}
+
+div.api span.method_get {
+    color: lightgreen;
+}
+
+div.api span.method_post {
+    color: #FFC800;
+}
+
+div.api span.method_delete {
+    color: red;
+}
+
+div.api span.method_put {
+    color: #FF6A00;
+}
+
+div.api span.auth_none {
+    color: lightblue;
+}
+
+div.api span.auth_logged_in {
+    color: cyan;
+}
+
+div.api span.auth_mod {
+    color: lightgreen;
+}
+
+div.api span.auth_verified {
+    color: #FFC800;
+}
+
+div.api span.auth_approved {
+    color: #FF6A00;
+}
+
+div.api span.auth {
+    color: lightgreen;
+}
+
+div.api span.cache {
+    color: lightgreen;
+}
+
+div.crash {
+    text-align: left;
+    font-family: monospace, monospace;
+    background-color: #212121;
+    padding: 0.7em;
+    overflow-wrap: break-word;
+    font-size: 0.8em;
+}
+
+div.crash p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+code {
+    font-family: monospace, monospace;
+}
+
+table.crash td, table.crash th {
+    font-size: 0.8em;
+    padding: 0.1em 0.3em;
+    font-family: monospace, monospace;
+}
+
+div.pastetext {
+    font-family: monospace, monospace;
+    white-space: pre;
+    font-size: 0.85em;
+}
+
+div.pastetext :target {
+    background-color: rgba(69, 203, 0, 0.18);
+}
+
+div.pastetext a {
+    user-select: none;
+}
+
+div.pastetext .info {
+    color: var(--text-color);
+}
+
+div.pastetext .debug {
+    color: #6D6772;
+}
+
+div.pastetext .warn {
+    color: #DBBB80;
+}
+
+div.pastetext .error {
+    color: #D15C5C;
+}
+
+div.pastetext .red {
+    color: #D15C5C;
+}
+
+div.pastetext .magenta {
+    color: #F95E92;
+}
+
+div.pastetext .green {
+    color: #7EB581;
+}
+
+div.pastetext .orange {
+    color: #B98B6F;
+}
+
+div.pastetext .yellow {
+    color: #DBBB80;
+}
+
+div.pastetext .blue {
+    color: #7EA3B5;
+}
+
+div.pastetext .purple {
+    color: #B16C99;
+}
+
+p.withicon {
+    font-size: 1.5em;
+    line-height: 1.5em;
+}
+
+p.withicon img {
+    height: 1.5em;
+    vertical-align: middle;
+    margin-right: 0.5em;
+    border-radius: 50%;
+}
