@@ -2,13 +2,17 @@ package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.DiscordMessage;
+import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.Emojis;
+import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.MessageData;
 import org.jetbrains.annotations.Nullable;
@@ -16,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class WrappedMessage implements WithId, Deletable {
 	public final WrappedChannel channel;
@@ -24,7 +29,7 @@ public class WrappedMessage implements WithId, Deletable {
 	public final WrappedId id;
 	private String content;
 	private String contentNoEmojis;
-	private boolean cancelEvent;
+	public transient EventJS messageEvent;
 
 	WrappedMessage(WrappedChannel c, Message w) {
 		channel = c;
@@ -123,10 +128,6 @@ public class WrappedMessage implements WithId, Deletable {
 
 	// getReactions()
 
-	public boolean isPinned() {
-		return message.isPinned();
-	}
-
 	public boolean hasStickers() {
 		return false;
 	}
@@ -144,15 +145,10 @@ public class WrappedMessage implements WithId, Deletable {
 	@Override
 	public void delete(@Nullable String reason) {
 		message.delete(reason).block();
-		cancel();
-	}
 
-	public void cancel() {
-		cancelEvent = true;
-	}
-
-	public boolean cancelEvent() {
-		return cancelEvent;
+		if (messageEvent != null) {
+			messageEvent.cancel();
+		}
 	}
 
 	public void addReaction(ReactionEmoji emoji) {
@@ -175,19 +171,23 @@ public class WrappedMessage implements WithId, Deletable {
 		message.removeAllReactions().block();
 	}
 
-	public void pin() {
-		message.pin().block();
+	public void upvote() {
+		addReaction(Vote.UP.reaction);
 	}
 
-	public void unpin() {
-		message.unpin().block();
+	public void downvote() {
+		addReaction(Vote.DOWN.reaction);
+	}
+
+	public boolean isPinned() {
+		return message.isPinned();
 	}
 
 	public void setPinned(boolean b) {
-		if (b) {
-			pin();
+		if (b != message.isPinned()) {
+			message.pin().block();
 		} else {
-			unpin();
+			message.unpin().block();
 		}
 	}
 
@@ -197,7 +197,7 @@ public class WrappedMessage implements WithId, Deletable {
 
 	public void createThread(String title) {
 		try {
-			Utils.THREAD_ROUTE.newRequest(channel.id.asLong, id.asLong)
+			Utils.THREAD_ROUTE.newRequest(channel.id.asLong(), id.asLong())
 					.body(new ThreadMessageRequest(title))
 					.exchange(App.instance.discordHandler.client.getCoreResources().getRouter())
 					.skipBody()
@@ -212,5 +212,32 @@ public class WrappedMessage implements WithId, Deletable {
 		message.edit(MessageEditSpec.builder().contentOrNull(c).allowedMentionsOrNull(DiscordMessage.noMentions()).build()).block();
 		content = c;
 		contentNoEmojis = null;
+	}
+
+	public String getUrl() {
+		return "https://discord.com/channels/" + channel.guild.id.asString() + "/" + channel.id.asString() + "/" + id.asString();
+	}
+
+	public WrappedId replyMessage(String content) {
+		return new WrappedId(channel.getChannelService().createMessage(channel.id.asLong(), MessageCreateSpec.builder()
+				.content(content)
+				.messageReference(Snowflake.of(id.asLong()))
+				.allowedMentions(DiscordMessage.noMentions())
+				.build()
+				.asRequest()
+		).block().id());
+	}
+
+	public WrappedId replyEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
+		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+		embed.accept(builder);
+
+		return new WrappedId(channel.getChannelService().createMessage(channel.id.asLong(), MessageCreateSpec.builder()
+				.addEmbed(builder.build())
+				.messageReference(Snowflake.of(id.asLong()))
+				.allowedMentions(DiscordMessage.noMentions())
+				.build()
+				.asRequest()
+		).block().id());
 	}
 }

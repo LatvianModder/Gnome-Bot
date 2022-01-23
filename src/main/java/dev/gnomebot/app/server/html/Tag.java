@@ -63,7 +63,7 @@ public abstract class Tag {
 		head.link("rel", "apple-touch-icon", "href", "/logo192.png");
 		head.link("rel", "manifest", "href", "/manifest.json");
 		head.paired("title").string(title);
-		head.link("rel", "stylesheet", "href", "/api/assets/style.css");
+		head.link("rel", "stylesheet", "href", "/assets/style.css");
 		head.meta("property", "og:site_name", "content", "Gnome Bot");
 		head.meta("property", "og:title", "content", title);
 		head.meta("property", "og:type", "content", "website");

@@ -4,8 +4,8 @@ import discord4j.common.util.Snowflake;
 import discord4j.discordjson.Id;
 
 public final class WrappedId implements WithId {
-	public final String asString;
-	public final long asLong;
+	private final String asString;
+	private final long asLong;
 
 	public WrappedId(Snowflake id) {
 		asString = id.asString();
@@ -15,6 +15,22 @@ public final class WrappedId implements WithId {
 	public WrappedId(Id id) {
 		asString = id.asString();
 		asLong = id.asLong();
+	}
+
+	public long asLong() {
+		return asLong;
+	}
+
+	public String asString() {
+		return asString;
+	}
+
+	public Snowflake asSnowflake() {
+		return Snowflake.of(asLong);
+	}
+
+	public Id asId() {
+		return Id.of(asLong);
 	}
 
 	@Override

@@ -10,7 +10,7 @@ public interface WithId extends SpecialEquality {
 	WrappedId id();
 
 	default long getCreatedTimestampMilli() {
-		return Snowflake.DISCORD_EPOCH + (id().asLong >>> 22);
+		return Snowflake.DISCORD_EPOCH + (id().asLong() >>> 22);
 	}
 
 	default Date getCreatedTimestamp() {
@@ -25,14 +25,14 @@ public interface WithId extends SpecialEquality {
 	default boolean specialEquals(Object o, boolean shallow) {
 		if (o == this) {
 			return true;
-		} else if (o instanceof WrappedId) {
-			return id().asLong == ((WrappedId) o).asLong;
-		} else if (o instanceof Snowflake) {
-			return id().asLong == ((Snowflake) o).asLong();
+		} else if (o instanceof WrappedId i) {
+			return id().asLong() == i.asLong();
+		} else if (o instanceof Snowflake s) {
+			return id().asLong() == s.asLong();
 		} else if (o instanceof String) {
-			return id().asString.equals(o);
-		} else if (o instanceof Number) {
-			return id().asLong == ((Number) o).longValue();
+			return id().asString().equals(o);
+		} else if (o instanceof Number n) {
+			return id().asLong() == n.longValue();
 		}
 
 		return false;

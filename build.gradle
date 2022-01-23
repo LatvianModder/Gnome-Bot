@@ -68,8 +68,17 @@ jar {
 	}
 }
 
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("build.json") {
+		expand "version": project.version
+	}
+}
+
 shadowJar {
 	classifier null
 }
 
+tasks.shadowJar.dependsOn tasks.processResources
 tasks.build.dependsOn tasks.shadowJar

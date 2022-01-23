@@ -1,6 +1,7 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.NativeJavaClass;
@@ -60,6 +61,7 @@ public class ScriptManager {
 					ScriptableObject.putProperty(scope, "Snowflake", new NativeJavaClass(scope, Snowflake.class));
 					ScriptableObject.putProperty(scope, "WrappedId", new NativeJavaClass(scope, WrappedId.class));
 					ScriptableObject.putProperty(scope, "Discord", new NativeJavaObject(scope, guildScripts, GuildScripts.class));
+					ScriptableObject.putProperty(scope, "EmbedColors", new NativeJavaClass(scope, EmbedColors.class));
 
 					context.evaluateReader(scope, reader, path.relativize(file).toString(), 1, null);
 					App.info("Loaded script " + path.relativize(file));

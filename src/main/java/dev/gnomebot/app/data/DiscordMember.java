@@ -44,7 +44,7 @@ public class DiscordMember extends WrappedDocument<DiscordMember> {
 		return document.getLong("total_messages");
 	}
 
-	public long getTotalXP() {
+	public long getTotalXp() {
 		return document.getLong("total_xp");
 	}
 

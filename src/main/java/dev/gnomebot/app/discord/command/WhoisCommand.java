@@ -40,7 +40,7 @@ public class WhoisCommand extends ApplicationCommands {
 				Member member = user.asMember(event.context.gc.guildId).block();
 
 				if (member != null) {
-					spec.addField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)), false);
+					spec.addField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)), true);
 
 					if (!member.getRoleIds().isEmpty()) {
 						spec.addField("Roles", member.getRoleIds().stream().map(r -> "<@&" + r.asString() + ">").collect(Collectors.joining(" ")), false);

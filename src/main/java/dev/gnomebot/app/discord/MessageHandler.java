@@ -7,6 +7,7 @@ import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordCustomCommand;
+import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
@@ -17,7 +18,6 @@ import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
 import dev.gnomebot.app.discord.legacycommand.MuteCommand;
-import dev.gnomebot.app.script.WrappedMessage;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
@@ -223,11 +223,6 @@ public class MessageHandler {
 					//App.info("Edited " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString());
 					App.LOGGER.messageEdited();
 				}
-			}
-
-			if (event.getMessageId().asLong() == 888091417103183902L) {
-				// TODO: Hardcoded
-				DiscordCustomCommand.mmRuleCache = null;
 			}
 		}
 	}
@@ -436,7 +431,9 @@ public class MessageHandler {
 			}
 		}
 
-		long totalMessages = importing ? message.getId().asLong() : gc.members.findFirst(user).getTotalMessages();
+		DiscordMember wrappedDiscordMember = importing ? null : gc.members.findFirst(user);
+		long totalMessages = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalMessages();
+		long totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalXp();
 		AuthLevel authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
 		if (user.isBot()) {
@@ -468,11 +465,6 @@ public class MessageHandler {
 
 		if (gc.regularMessages.get() > 0 && totalMessages >= gc.regularMessages.get() && !gc.regularRole.is(member)) {
 			gc.regularRole.add(member.getId(), "Reached Regular");
-		}
-
-		// TODO: Remove hardcoded
-		if (totalMessages > MM_MEMBER && gc.isMM() && !member.getRoleIds().contains(Snowflake.of(748075791790637078L))) {
-			member.addRole(Snowflake.of(748075791790637078L)).subscribe();
 		}
 
 		if (!member.isBot() && !authLevel.is(AuthLevel.ADMIN)) {
@@ -718,19 +710,9 @@ public class MessageHandler {
 			}
 		}
 
-		if (gc.guildScripts != null && gc.guildScripts.onMessageHandlers != null) {
-			WrappedMessage wrappedMessage = gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message);
-
-			for (MessageEventJS event : gc.guildScripts.onMessageHandlers) {
-				try {
-					event.onMessage(wrappedMessage);
-
-					if (wrappedMessage.cancelEvent()) {
-						return;
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+		if (gc.guildScripts != null && gc.guildScripts.onMessage.hasListeners()) {
+			if (gc.guildScripts.onMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), true)) {
+				return;
 			}
 		}
 
@@ -795,16 +777,8 @@ public class MessageHandler {
 			);
 		}
 
-		if (gc.guildScripts != null && gc.guildScripts.onAfterMessageHandlers != null) {
-			WrappedMessage wrappedMessage = gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message);
-
-			for (MessageEventJS event : gc.guildScripts.onAfterMessageHandlers) {
-				try {
-					event.onMessage(wrappedMessage);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
+		if (gc.guildScripts != null && gc.guildScripts.onAfterMessage.hasListeners()) {
+			gc.guildScripts.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
 		}
 	}
 

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.script;
 
+import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;
@@ -8,18 +9,20 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 
 public class WrappedMember extends WrappedUser {
-	public final transient Member member;
+	private String nickname;
 
-	public WrappedMember(WrappedGuild g, WrappedId i, @Nullable Member m) {
+	public WrappedMember(WrappedGuild g, WrappedId i) {
 		super(g, i);
-		member = m;
+	}
 
-		if (member != null) {
-			update(member.getUserData());
-		}
+	@Override
+	public void clearCache() {
+		super.clearCache();
+		nickname = null;
 	}
 
 	@Override
@@ -27,30 +30,43 @@ public class WrappedMember extends WrappedUser {
 		return true;
 	}
 
+	@HideFromJS
+	public Member getDiscordMember() {
+		return Objects.requireNonNull(guild.guild.getMember(id.asSnowflake()));
+	}
+
 	public String getNickname() {
-		return member.getNickname().orElse("");
+		if (nickname == null) {
+			nickname = getDiscordMember().getNickname().orElse("");
+		}
+
+		return nickname;
 	}
 
 	public String getDisplayName() {
-		return member.getDisplayName();
+		if (getNickname().isEmpty()) {
+			return getName();
+		}
+
+		return getNickname();
 	}
 
 	@Nullable
 	public Date getDateJoined() {
-		Instant i = member.getJoinTime().orElse(null);
+		Instant i = getDiscordMember().getJoinTime().orElse(null);
 		return i == null ? null : Date.from(i);
 	}
 
-	public boolean hasRole() {
-		return !member.getMemberData().roles().isEmpty();
+	public boolean hasRoles() {
+		return !getDiscordMember().getMemberData().roles().isEmpty();
 	}
 
 	public boolean hasRole(Snowflake id) {
-		return member.getRoleIds().contains(id);
+		return getDiscordMember().getRoleIds().contains(id);
 	}
 
 	public WrappedRole[] getRoles() {
-		Set<Snowflake> list = member.getRoleIds();
+		Set<Snowflake> list = getDiscordMember().getRoleIds();
 		WrappedRole[] array = new WrappedRole[list.size()];
 
 		int i = 0;
@@ -63,62 +79,63 @@ public class WrappedMember extends WrappedUser {
 	}
 
 	public boolean isPending() {
-		return member.isPending();
+		return getDiscordMember().isPending();
 	}
 
 	public boolean isDeaf() {
-		return member.getMemberData().deaf();
+		return getDiscordMember().getMemberData().deaf();
 	}
 
 	public boolean isMute() {
-		return member.getMemberData().mute();
+		return getDiscordMember().getMemberData().mute();
 	}
 
 	public void kick(@Nullable String reason) {
-		member.kick(reason == null || reason.isBlank() ? null : reason).block();
+		getDiscordMember().kick(reason == null || reason.isBlank() ? null : reason).block();
 	}
 
 	public void ban(@Nullable String reason, boolean deleteMessages) {
-		member.ban(BanQuerySpec.builder().reason(reason == null || reason.isBlank() ? null : reason).deleteMessageDays(deleteMessages ? 1 : null).build()).block();
+		getDiscordMember().ban(BanQuerySpec.builder().reason(reason == null || reason.isBlank() ? null : reason).deleteMessageDays(deleteMessages ? 1 : null).build()).block();
 	}
 
-	public void addRole(Snowflake id) {
-		member.addRole(id).block();
+	public void addRole(Snowflake id, @Nullable String reason) {
+		getDiscordMember().addRole(id, reason).block();
 	}
 
-	public void removeRole(Snowflake id) {
-		member.removeRole(id).block();
+	public void removeRole(Snowflake id, @Nullable String reason) {
+		getDiscordMember().removeRole(id, reason).block();
 	}
 
-	public void toggleRole(Snowflake id) {
-		if (member.getRoleIds().contains(id)) {
-			member.removeRole(id).block();
+	public void toggleRole(Snowflake id, @Nullable String reason) {
+		if (getDiscordMember().getRoleIds().contains(id)) {
+			removeRole(id, reason);
 		} else {
-			member.addRole(id).block();
+			addRole(id, reason);
 		}
 	}
 
-	public void setNickname(String nickname) {
-		member.edit(GuildMemberEditSpec.builder().nicknameOrNull(nickname == null || nickname.isBlank() ? null : nickname).build()).block();
+	public void setNickname(String n) {
+		nickname = n == null ? "" : n;
+		getDiscordMember().edit(GuildMemberEditSpec.builder().nicknameOrNull(nickname.isBlank() ? null : nickname).build()).block();
 	}
 
 	public void setDeaf(boolean b) {
-		member.edit(GuildMemberEditSpec.builder().deafen(b).build()).block();
+		getDiscordMember().edit(GuildMemberEditSpec.builder().deafen(b).build()).block();
 	}
 
 	public void setMute(boolean b) {
-		member.edit(GuildMemberEditSpec.builder().mute(b).build()).block();
+		getDiscordMember().edit(GuildMemberEditSpec.builder().mute(b).build()).block();
 	}
 
 	public void move(Snowflake channel) {
-		member.edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(channel).build()).block();
+		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(channel).build()).block();
 	}
 
 	public void disconnect() {
-		member.edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(null).build()).block();
+		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(null).build()).block();
 	}
 
 	public boolean hasVoiceConnection() {
-		return member.getVoiceState().block().getChannelId().isPresent();
+		return getDiscordMember().getVoiceState().block().getChannelId().isPresent();
 	}
 }

@@ -48,12 +48,12 @@ public class WrappedRole implements WithId, Deletable {
 	}
 
 	public void setName(String s) {
-		guild.getGuildService().modifyGuildRole(guild.id.asLong, id.asLong, RoleModifyRequest.builder().name(s).build(), null).block();
+		guild.getGuildService().modifyGuildRole(guild.id.asLong(), id.asLong(), RoleModifyRequest.builder().name(s).build(), null).block();
 		name = s;
 	}
 
 	@Override
 	public void delete(@Nullable String reason) {
-		guild.getGuildService().deleteGuildRole(guild.id.asLong, id.asLong, reason).block();
+		guild.getGuildService().deleteGuildRole(guild.id.asLong(), id.asLong(), reason).block();
 	}
 }

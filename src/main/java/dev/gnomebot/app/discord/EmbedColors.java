@@ -8,4 +8,12 @@ public interface EmbedColors {
 	Color GREEN = Color.of(0x48F048);
 	Color TEAL = Color.of(0x47EFC8);
 	Color BLUE = Color.of(0x0094FF);
+
+	static Color rgb(String color) {
+		return Color.of(Long.decode(color).intValue());
+	}
+
+	static Color rgb(int r, int g, int b) {
+		return Color.of(r, g, b);
+	}
 }

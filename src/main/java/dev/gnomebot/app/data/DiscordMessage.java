@@ -35,8 +35,10 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	public static final long FLAG_FILES = 1L << 24L;
 	public static final long FLAG_REPLY = 1L << 25L;
 
+	public static final AllowedMentions NO_MENTIONS = AllowedMentions.builder().build();
+
 	public static AllowedMentions noMentions() {
-		return AllowedMentions.builder().build();
+		return NO_MENTIONS;
 	}
 
 	public final long flags;

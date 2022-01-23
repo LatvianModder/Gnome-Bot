@@ -250,11 +250,11 @@ public class ChannelCommands extends ApplicationCommands {
 			long c = MutableLong.valueOf(totalCount.get(member.getUID()));
 			long xp = MutableLong.valueOf(totalXp.get(member.getUID()));
 
-			if (c != member.getTotalMessages() && xp != member.getTotalXP()) {
+			if (c != member.getTotalMessages() && xp != member.getTotalXp()) {
 				member.update(Updates.combine(Updates.set("total_messages", c), Updates.set("total_xp", xp)));
 			} else if (c != member.getTotalMessages()) {
 				member.update("total_messages", c);
-			} else if (xp != member.getTotalXP()) {
+			} else if (xp != member.getTotalXp()) {
 				member.update("total_xp", xp);
 			}
 		}

@@ -17,6 +17,7 @@ import dev.gnomebot.app.discord.command.CommandBuilder;
 import dev.gnomebot.app.discord.command.ModpackCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -101,6 +102,11 @@ public class InteractionHandler {
 			if (member != null) {
 				String customId = event.getCustomId();
 
+				if (gc.guildScripts != null && gc.guildScripts.onButton.hasListeners() && gc.guildScripts.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
+					event.deferEdit().subscribe();
+					return;
+				}
+
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
 				try {
@@ -177,7 +183,6 @@ public class InteractionHandler {
 			}
 		}
 	}
-
 
 	// Actions //
 	private static void feedback(ComponentEventWrapper event, int number, Vote vote) throws DiscordCommandException {

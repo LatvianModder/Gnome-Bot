@@ -307,7 +307,7 @@ public class App implements Runnable {
 
 		webServer = new WebServer(this);
 
-		webServer.add("api/assets/:filename", MiscHandlers::assets).noAuth().cacheHours(1).desc("Assets");
+		webServer.add("assets/:filename", MiscHandlers::assets).noAuth().cacheHours(1).desc("Assets");
 		webServer.add("api/account/sign-in", MiscHandlers::signIn).noAuth().log().desc("Sign in");
 		webServer.add("api/account/sign-out", MiscHandlers::signOut).post().log().desc("Sign out");
 
@@ -342,7 +342,7 @@ public class App implements Runnable {
 		webServer.add("api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5).desc("Member activity");
 		webServer.add("api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5).desc("Channel activity");
 
-		webServer.add("api/publicfile/:file", SpecialHandlers::publicfile).noAuth().cacheMinutes(5);
+		webServer.add("public/:file", SpecialHandlers::publicfile).noAuth().cacheMinutes(5);
 
 		webServer.add("panel/guilds", PanelHandlers::guilds).cacheMinutes(10).desc("Guild list");
 

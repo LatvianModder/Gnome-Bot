@@ -150,9 +150,9 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 				ChannelData data = getChannelData();
 
 				if (data != null) {
-					name = data.name().toOptional().orElse(id.asString());
+					name = data.name().toOptional().orElse("deleted-channel");
 				} else {
-					name = id.asString();
+					name = "deleted-channel";
 				}
 			}
 		}
