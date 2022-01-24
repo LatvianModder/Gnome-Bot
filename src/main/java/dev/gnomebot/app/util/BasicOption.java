@@ -94,7 +94,7 @@ public class BasicOption {
 	}
 
 	public OptionalLong asDays() throws DiscordCommandException {
-		return value.isPresent() ? new SimpleStringReader(rawValue).readSeconds() : OptionalLong.empty();
+		return value.isPresent() ? new SimpleStringReader(rawValue).readDays() : OptionalLong.empty();
 	}
 
 	public Optional<Currency> asCurrency() {

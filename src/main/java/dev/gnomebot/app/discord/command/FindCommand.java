@@ -7,11 +7,9 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
-import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.Pair;
-import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -36,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.MatchResult;
@@ -61,10 +58,6 @@ public class FindCommand extends ApplicationCommands {
 					.add(integer("flags"))
 					.add(bool("recently_deleted"))
 					.run(FindCommand::messages)
-			)
-			.add(sub("member_count")
-					.add(role("role"))
-					.run(FindCommand::memberCount)
 			)
 			.add(sub("quiet_member_count")
 					.run(FindCommand::quietMemberCount)
@@ -154,27 +147,6 @@ public class FindCommand extends ApplicationCommands {
 		}
 
 		event.respond(list);
-	}
-
-	private static void memberCount(ApplicationCommandEventWrapper event) throws DiscordCommandException {
-		event.acknowledgeEphemeral();
-		Optional<CachedRole> role = event.get("role").asRole();
-
-		if (role.isPresent()) {
-			CachedRole wr = role.get();
-			event.context.gc.getGuild()
-					.getMembers()
-					.filter(member -> member.getRoleIds().contains(wr.id))
-					.count()
-					.subscribe(count -> event.respond(Utils.format(count) + " members with role " + wr));
-		} else {
-			int max = event.context.gc.getGuild().getMaxMembers().orElse(0);
-
-			event.context.gc.getGuild()
-					.getMembers()
-					.count()
-					.subscribe(count -> event.respond(Utils.format(count) + " / " + (max == 0 ? "?" : Utils.format(max)) + " members"));
-		}
 	}
 
 	private static void quietMemberCount(ApplicationCommandEventWrapper event) throws DiscordCommandException {
