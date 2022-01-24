@@ -17,6 +17,7 @@ public interface AppPaths {
 	}
 
 	Path RESOURCES = make(Path.of("resources"));
+	Path ASSETS = make(RESOURCES.resolve("assets"));
 	Path RUN = make(Path.of("run"));
 	Path FILES = make(RUN.resolve("files"));
 	Path PUBLIC_FILES = make(FILES.resolve("public"));

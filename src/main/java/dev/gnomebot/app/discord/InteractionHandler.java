@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordCustomCommand;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.DiscordPoll;
@@ -15,7 +14,6 @@ import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.CommandBuilder;
 import dev.gnomebot.app.discord.command.ModpackCommand;
-import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.util.Ansi;
@@ -240,20 +238,6 @@ public class InteractionHandler {
 	}
 
 	private static void macro(ComponentEventWrapper event, String id) throws DiscordCommandException {
-		DiscordCustomCommand customCommand = event.context.gc.customCommands.query().eq("command_name", id.toLowerCase()).first();
-
-		if (customCommand != null) {
-			event.acknowledge();
-
-			try {
-				customCommand.runCommand(event.context, new CommandReader(event.context.gc, ""));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			return;
-		}
-
 		Macro macro = event.context.gc.macros.query().eq("command_name", id.toLowerCase()).first();
 
 		if (macro == null) {

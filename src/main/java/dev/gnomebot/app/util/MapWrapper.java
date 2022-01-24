@@ -132,4 +132,9 @@ public class MapWrapper {
 
 		return json;
 	}
+
+	@Override
+	public String toString() {
+		return map.toString();
+	}
 }

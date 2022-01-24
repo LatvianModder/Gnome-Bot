@@ -1,7 +1,5 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.util.Utils;
-
 import java.util.stream.Collectors;
 
 /**
@@ -13,22 +11,18 @@ public class HelpCommand {
 		String s = reader.readString().orElse("");
 
 		if (s.isEmpty()) {
-			StringBuilder sb = new StringBuilder("Gnome commands: (prefix: `");
+			StringBuilder sb = new StringBuilder("`");
 			sb.append(context.gc.prefix);
-			sb.append("`)\n");
+			sb.append("commands`:\n");
 			sb.append(DiscordCommandImpl.COMMAND_LIST.stream().filter(c -> c.callback.hasPermission(c, context)).map(c -> "`" + c.name + "`").collect(Collectors.joining(", ")));
 
 			long macros = context.gc.macros.count();
 
-			if (macros > 0L || context.gc.customCommands.count() > 0L) {
-				sb.append("\n\nCustom commands: (prefix `");
-				sb.append(context.gc.customCommandPrefix);
-				sb.append("`)\n");
-				sb.append(Utils.toStream(context.gc.customCommands.query()).map(c -> "`" + c.getCommandName() + "`").collect(Collectors.joining(", ")));
-
-				if (macros > 0L) {
-					sb.append("\n+ ").append(macros).append(" macros (`").append(context.gc.prefix).append("macro list`)");
-				}
+			if (macros > 0L) {
+				sb.append("\n\n`");
+				sb.append(context.gc.macroPrefix);
+				sb.append("macros`: ");
+				sb.append(macros);
 			}
 
 			sb.append("\n\nTo configure or add this bot to your server, visit [gnomebot.dev](https://gnomebot.dev/)");

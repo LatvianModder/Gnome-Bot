@@ -30,10 +30,12 @@ public class MiscHandlers {
 			Assets.Asset a = Assets.MAP.get(filename);
 
 			if (a != null) {
-				Path path = AppPaths.RESOURCES.resolve("assets/" + a.filename);
+				Path path = AppPaths.ASSETS.resolve(a.filename);
 
 				if (Files.exists(path)) {
 					return FileResponse.of(a.contentType, Files.readAllBytes(path));
+				} else {
+					App.warn("Asset " + path.toAbsolutePath() + " doesn't exist!");
 				}
 			}
 		} catch (Exception ex) {

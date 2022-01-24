@@ -6,7 +6,6 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordCustomCommand;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
@@ -742,7 +741,7 @@ public class MessageHandler {
 
 		if (handleRealCommand(context, content)) {
 			//App.info("Gnome command: " + content);
-		} else if (handleCustomCommand(context, content)) {
+		} else if (handleMacro(context, content)) {
 			//App.info("Custom command: " + content);
 		} else if (thankGnome || (flags & DiscordMessage.FLAG_MENTIONS_BOT) != 0L) {
 			if (thankGnome) {
@@ -838,31 +837,15 @@ public class MessageHandler {
 		return false;
 	}
 
-	private static boolean handleCustomCommand(CommandContext context, String content) {
-		String prefix = context.gc.customCommandPrefix.get();
+	private static boolean handleMacro(CommandContext context, String content) {
+		String prefix = context.gc.macroPrefix.get();
 
 		if (content.startsWith(prefix) && content.length() > prefix.length()) {
 			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));
 
 			try {
-				String commandName = reader.readString().orElse("").trim();
-				DiscordCustomCommand customCommand = context.gc.customCommands.query().eq("command_name", commandName.toLowerCase()).first();
-
-				if (customCommand != null) {
-					context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.COMMAND)
-							.channel(context.channelInfo.id)
-							.message(context.message)
-							.user(context.sender)
-							.oldContent(customCommand.getCommandName())
-							.content(content)
-					);
-
-					customCommand.runCommand(context, reader);
-					App.LOGGER.commandSuccess();
-					return true;
-				}
-
-				Macro macro = context.gc.macros.query().eq("command_name", commandName.toLowerCase()).first();
+				String macroName = reader.readString().orElse("").trim();
+				Macro macro = context.gc.macros.query().eq("command_name", macroName.toLowerCase()).first();
 
 				if (macro != null) {
 					macro.update(Updates.inc("uses", 1));

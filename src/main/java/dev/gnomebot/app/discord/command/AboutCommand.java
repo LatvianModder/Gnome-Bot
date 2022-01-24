@@ -28,7 +28,7 @@ public class AboutCommand extends ApplicationCommands {
 
 		if (event.context.gc != null) {
 			content.add("Chat command prefix: **" + event.context.gc.prefix + "**");
-			content.add("Macro and custom command prefix: **" + event.context.gc.customCommandPrefix + "**");
+			content.add("Macro prefix: **" + event.context.gc.macroPrefix + "**");
 		}
 
 		event.respond(content);

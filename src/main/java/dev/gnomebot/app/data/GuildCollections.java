@@ -75,7 +75,6 @@ public class GuildCollections {
 	public final WrappedCollection<DiscordMessageCount> messageCount;
 	public final WrappedCollection<DiscordMessageXP> messageXp;
 	public final WrappedCollection<ChannelInfo> channelInfo;
-	public final WrappedCollection<DiscordCustomCommand> customCommands;
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
 	public final WrappedCollection<Macro> macros;
 	public final WrappedCollection<ScheduledTask> scheduledTasks;
@@ -101,7 +100,7 @@ public class GuildCollections {
 	public final ChannelConfig logLeavingChannel;
 	public final ChannelConfig reportChannel;
 	public final StringConfig prefix;
-	public final StringConfig customCommandPrefix;
+	public final StringConfig macroPrefix;
 	public final StringConfig inviteCode;
 	public List<MessageFilter> messageFilters = new ArrayList<>(); // TODO: Implement
 	public final BooleanConfig lockdownMode;
@@ -148,7 +147,6 @@ public class GuildCollections {
 		messageCount = create("message_count_" + dbid, DiscordMessageCount::new);
 		messageXp = create("message_xp_" + dbid, DiscordMessageXP::new);
 		channelInfo = create("channel_settings_" + dbid, (c, doc) -> new ChannelInfo(this, c, doc, null));
-		customCommands = create("custom_commands_" + dbid, DiscordCustomCommand::new);
 		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires"); // GDPR
 		macros = create("macros_" + dbid, (c, doc) -> new Macro(this, c, doc));
 		scheduledTasks = create("scheduled_tasks_" + dbid, (c, doc) -> new ScheduledTask(this, c, doc));
@@ -175,7 +173,7 @@ public class GuildCollections {
 		logLeavingChannel = config.add(new ChannelConfig(this, "log_leaving")).title("Log Leaving Channel");
 		reportChannel = config.add(new ChannelConfig(this, "report_channel")).title("Report Channel");
 		prefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
-		customCommandPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Custom Command Prefix");
+		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
 		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
 		//settings.add("message_filters", () -> messageFilters, v -> messageFilters = v, messageFilters, (ListTransformer<Document, MessageFilter>) MessageFilter::new, (ListTransformer<MessageFilter, Document>) value -> value == null ? new Document() : value.toDocument());
 		lockdownMode = config.add(new BooleanConfig(this, "lockdown_mode", false)).title("Lockdown Mode");

@@ -1,9 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.DiscordCustomCommand;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
-import dev.gnomebot.app.util.Utils;
 import discord4j.rest.util.Permission;
 
 import java.util.ArrayList;
@@ -51,15 +49,11 @@ public class HelpCommand extends ApplicationCommands {
 
 		long macros = event.context.gc.macros.count();
 
-		if (macros > 0L || event.context.gc.customCommands.count() > 0L) {
-			sb.append("\n\nCustom commands: (prefix `");
-			sb.append(event.context.gc.customCommandPrefix);
-			sb.append("`)\n");
-			sb.append(Utils.toStream(event.context.gc.customCommands.query()).map(DiscordCustomCommand::getCommandName).sorted().collect(Collectors.joining("\n")));
-
-			if (macros > 0L) {
-				sb.append("\n+ ").append(macros).append(" macros (`").append(event.context.gc.prefix).append("macro list`)");
-			}
+		if (macros > 0L) {
+			sb.append("\n\n`");
+			sb.append(event.context.gc.macroPrefix);
+			sb.append("macros`: ");
+			sb.append(macros);
 		}
 
 		sb.append("\n\nTo configure or add this bot to your server, visit [gnomebot.dev](https://gnomebot.dev/)");
