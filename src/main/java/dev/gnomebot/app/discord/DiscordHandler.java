@@ -24,6 +24,9 @@ import discord4j.core.event.domain.channel.NewsChannelUpdateEvent;
 import discord4j.core.event.domain.channel.TextChannelCreateEvent;
 import discord4j.core.event.domain.channel.TextChannelDeleteEvent;
 import discord4j.core.event.domain.channel.TextChannelUpdateEvent;
+import discord4j.core.event.domain.channel.VoiceChannelCreateEvent;
+import discord4j.core.event.domain.channel.VoiceChannelDeleteEvent;
+import discord4j.core.event.domain.channel.VoiceChannelUpdateEvent;
 import discord4j.core.event.domain.guild.BanEvent;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.guild.GuildUpdateEvent;
@@ -46,6 +49,12 @@ import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
+import discord4j.core.event.domain.thread.ThreadChannelDeleteEvent;
+import discord4j.core.event.domain.thread.ThreadChannelUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadListSyncEvent;
+import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
 import discord4j.core.object.entity.Entity;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
@@ -153,12 +162,9 @@ public class DiscordHandler {
 		handle(NewsChannelCreateEvent.class, this::channelCreated);
 		handle(NewsChannelDeleteEvent.class, this::channelDeleted);
 		handle(NewsChannelUpdateEvent.class, this::channelUpdated);
-		// handle(StoreChannelCreateEvent.class, this::channelCreated);
-		// handle(StoreChannelDeleteEvent.class, this::channelDeleted);
-		// handle(StoreChannelUpdateEvent.class, this::channelUpdated);
-		// handle(VoiceChannelCreateEvent.class, this::channelCreated);
-		// handle(VoiceChannelDeleteEvent.class, this::channelDeleted);
-		// handle(VoiceChannelUpdateEvent.class, this::channelUpdated);
+		handle(VoiceChannelCreateEvent.class, this::channelCreated);
+		handle(VoiceChannelDeleteEvent.class, this::channelDeleted);
+		handle(VoiceChannelUpdateEvent.class, this::channelUpdated);
 		handle(RoleCreateEvent.class, this::roleCreated);
 		handle(RoleDeleteEvent.class, this::roleDeleted);
 		handle(RoleUpdateEvent.class, this::roleUpdated);
@@ -180,12 +186,12 @@ public class DiscordHandler {
 		handle(ButtonInteractionEvent.class, this::button);
 		handle(SelectMenuInteractionEvent.class, this::selectMenu);
 		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
-		//handle(ThreadChannelCreateEvent.class, event -> ThreadHandler.channelCreate(this, event));
-		//handle(ThreadChannelDeleteEvent.class, event -> ThreadHandler.channelDelete(this, event));
-		//handle(ThreadChannelUpdateEvent.class, event -> ThreadHandler.channelUpdate(this, event));
-		//handle(ThreadMemberUpdateEvent.class, event -> ThreadHandler.memberUpdate(this, event));
-		//handle(ThreadMembersUpdateEvent.class, event -> ThreadHandler.membersUpdate(this, event));
-		//handle(ThreadListSyncEvent.class, event -> ThreadHandler.listSync(this, event));
+		handle(ThreadChannelCreateEvent.class, this::threadChannelCreate);
+		handle(ThreadChannelDeleteEvent.class, this::threadChannelDelete);
+		handle(ThreadChannelUpdateEvent.class, this::threadChannelUpdate);
+		handle(ThreadMemberUpdateEvent.class, this::threadMemberUpdate);
+		handle(ThreadMembersUpdateEvent.class, this::threadMembersUpdate);
+		handle(ThreadListSyncEvent.class, this::threadListSync);
 
 		client.onDisconnect().subscribe(this::disconnected);
 	}
@@ -258,31 +264,17 @@ public class DiscordHandler {
 		}
 	}
 
-	/*
-	private void channelCreated(StoreChannelCreateEvent event) {
+	private void channelCreated(VoiceChannelCreateEvent event) {
 		app.db.guild(event.getChannel().getGuildId()).channelUpdated(null, event.getChannel(), false);
 	}
 
-	private void channelDeleted(StoreChannelDeleteEvent event) {
+	private void channelDeleted(VoiceChannelDeleteEvent event) {
 		app.db.guild(event.getChannel().getGuildId()).channelUpdated(null, event.getChannel(), true);
 	}
 
-	private void channelUpdated(StoreChannelUpdateEvent event) {
+	private void channelUpdated(VoiceChannelUpdateEvent event) {
 		app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), event.getCurrent(), false);
 	}
-
-	private void channelCreated(VoiceChannelCreateEvent event) {
-		app.db.guild(event.getChannel().getGuildId()).channelUpdated(event.getChannel(), false);
-	}
-
-	private void channelDeleted(VoiceChannelDeleteEvent event) {
-		app.db.guild(event.getChannel().getGuildId()).channelUpdated(event.getChannel(), true);
-	}
-
-	private void channelUpdated(VoiceChannelUpdateEvent event) {
-		app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getCurrent(), false);
-	}
-	*/
 
 	private void roleCreated(RoleCreateEvent event) {
 		app.db.guild(event.getGuildId()).roleUpdated(event.getRole().getId(), false);
@@ -392,7 +384,11 @@ public class DiscordHandler {
 	}
 
 	private void messageCreated(MessageCreateEvent event) {
-		MessageHandler.created0(this, event);
+		try {
+			MessageHandler.created(this, event);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private void messageDeleted(MessageDeleteEvent event) {
@@ -433,6 +429,30 @@ public class DiscordHandler {
 
 	private void chatInputAutoComplete(ChatInputAutoCompleteEvent event) {
 		InteractionHandler.chatInputAutoComplete(this, event);
+	}
+
+	private void threadChannelCreate(ThreadChannelCreateEvent event) {
+		ThreadHandler.channelCreate(this, event);
+	}
+
+	private void threadChannelDelete(ThreadChannelDeleteEvent event) {
+		ThreadHandler.channelDelete(this, event);
+	}
+
+	private void threadChannelUpdate(ThreadChannelUpdateEvent event) {
+		ThreadHandler.channelUpdate(this, event);
+	}
+
+	private void threadMemberUpdate(ThreadMemberUpdateEvent event) {
+		ThreadHandler.memberUpdate(this, event);
+	}
+
+	private void threadMembersUpdate(ThreadMembersUpdateEvent event) {
+		ThreadHandler.membersUpdate(this, event);
+	}
+
+	private void threadListSync(ThreadListSyncEvent event) {
+		ThreadHandler.listSync(this, event);
 	}
 
 	public void suspiciousMessageModLog(GuildCollections gc, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {

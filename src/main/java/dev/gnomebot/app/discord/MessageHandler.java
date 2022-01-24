@@ -20,6 +20,7 @@ import dev.gnomebot.app.discord.legacycommand.MuteCommand;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
+import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
@@ -35,6 +36,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
+import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.rest.RestClient;
 import discord4j.rest.entity.RestChannel;
@@ -77,7 +79,8 @@ public class MessageHandler {
 		VALID_MESSAGE_TYPES.add(Message.Type.DEFAULT.getValue());
 		VALID_MESSAGE_TYPES.add(Message.Type.REPLY.getValue());
 		VALID_MESSAGE_TYPES.add(Message.Type.APPLICATION_COMMAND.getValue());
-		// VALID_MESSAGE_TYPES.add(24);
+		VALID_MESSAGE_TYPES.add(Message.Type.THREAD_STARTER_MESSAGE.getValue());
+		VALID_MESSAGE_TYPES.add(Message.Type.CONTEXT_MENU_COMMAND.getValue());
 	}
 
 	public static final HashMap<Snowflake, List<MessageId>> AUTO_DELETE = new HashMap<>();
@@ -123,14 +126,6 @@ public class MessageHandler {
 	// FIXME: Remove this hardcoded shit and move it to automatic role system
 	public static final int MM_MEMBER = 300;
 
-	public static void created0(DiscordHandler handler, MessageCreateEvent event) {
-		try {
-			created(handler, event);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-	}
-
 	public static void created(DiscordHandler handler, MessageCreateEvent event) {
 		WatchdogThread.update();
 		Message m = event.getMessage();
@@ -163,6 +158,18 @@ public class MessageHandler {
 			} else if (member != null && event.getGuildId().isPresent()) {
 				var gc = handler.app.db.guildOrNull(event.getGuildId().orElse(null));
 				ChannelInfo channelInfo = gc == null ? null : gc.getChannelMap().get(event.getMessage().getChannelId());
+
+				if (channelInfo == null && gc != null && channel instanceof ThreadChannel) {
+					channelInfo = new ChannelInfo(gc, gc.channelInfo, MapWrapper.EMPTY, event.getMessage().getChannelId());
+
+					channelInfo.thread = true;
+					channelInfo.name = ((ThreadChannel) channel).getName();
+					channelInfo.xp = 0L;
+					channelInfo.totalMessages = 0L;
+					channelInfo.totalXp = 0L;
+					channelInfo.autoThread = false;
+					channelInfo.autoUpvote = false;
+				}
 
 				if (channelInfo != null) {
 					messageCreated(handler, channelInfo, m, member, member, false);

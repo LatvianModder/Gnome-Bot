@@ -1,10 +1,19 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.GuildCollections;
+import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
+import discord4j.core.event.domain.thread.ThreadChannelDeleteEvent;
+import discord4j.core.event.domain.thread.ThreadChannelUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadListSyncEvent;
+import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
+import discord4j.core.object.entity.channel.ThreadChannel;
+
 /**
  * @author LatvianModder
  */
 public class ThreadHandler {
-	/*
 	public static void channelCreate(DiscordHandler handler, ThreadChannelCreateEvent event) {
 		GuildCollections gc = handler.app.db.guild(event.getChannel().getGuildId());
 
@@ -28,10 +37,9 @@ public class ThreadHandler {
 			App.info("Thread channel update: " + gc + "/" + event.getChannel().getName());
 		}
 	}
-	 */
 
-	// public static void memberUpdate(DiscordHandler handler, ThreadMemberUpdateEvent event) {
-	// no guild ID?
+	public static void memberUpdate(DiscordHandler handler, ThreadMemberUpdateEvent event) {
+		// no guild ID?
 		/*
 		GuildCollections gc = handler.app.db.guild(event.getMember().getGuildId());
 
@@ -39,14 +47,15 @@ public class ThreadHandler {
 			App.info("Thread member update: " + event.getMember().getUserId());
 		}
 		 */
-	// }
 
-	/*
+		App.info("Thread member update: " + event.getMember().getUserId());
+	}
+
 	public static void membersUpdate(DiscordHandler handler, ThreadMembersUpdateEvent event) {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 
 		if (gc != null) {
-			App.info("Thread members update: " + gc + "/" + event.getMembers().stream().map(m -> m.getUserId().asString()).collect(Collectors.toList()));
+			App.info("Thread members update: " + gc + "/" + event.getMembers().stream().map(m -> m.getUserId().asString()).toList());
 		}
 	}
 
@@ -54,8 +63,7 @@ public class ThreadHandler {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 
 		if (gc != null) {
-			App.info("Thread list sync: " + gc + "/" + event.getSyncedThreads().stream().map(ThreadChannel::getName).collect(Collectors.toList()));
+			App.info("Thread list sync: " + gc + "/" + event.getSyncedThreads().stream().map(ThreadChannel::getName).toList());
 		}
 	}
-	 */
 }

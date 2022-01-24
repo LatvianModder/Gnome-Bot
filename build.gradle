@@ -46,8 +46,8 @@ dependencies {
 	implementation("curse.maven:rhino-416294:3604722") { transitive = false }
 	implementation("io.javalin:javalin:4.2.0")
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
-	implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
-	// implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
+	// implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
+	implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
 	// implementation("com.discord4j:discord-json:1.7.0-SNAPSHOT") { changing = true }
 	// implementation('com.github.Discord4J:Discord4J:feature~buttons-SNAPSHOT')
 	// implementation("org.mongodb:mongo-java-driver:3.12.8")

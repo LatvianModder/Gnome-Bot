@@ -37,6 +37,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	public final GuildCollections gc;
 	public final Snowflake id;
 	public String name;
+	public boolean thread;
 
 	public long xp;
 	public long totalMessages;
@@ -54,6 +55,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		gc = g;
 		id = _id == null ? Snowflake.of(document.getLong("_id")) : _id;
 		name = "";
+		thread = false;
 		xp = document.getLong("xp");
 		totalMessages = document.getLong("total_messages");
 		totalXp = document.getLong("total_xp");
