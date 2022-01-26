@@ -128,12 +128,7 @@ public class QuoteHandler {
 				}
 			}
 
-			channel1.createMessage(quoteEmbed.build()).subscribe(qm -> {
-				// hardcoded
-				if (channel1.id.asLong() == 255122566438453249L) {
-					//Snowflake id = MessageHandler.MM_SHOWCASE_REPOST.
-				}
-			});
+			channel1.createMessage(quoteEmbed.build()).subscribe();
 
 			quotes++;
 

@@ -12,7 +12,7 @@ public interface Assets {
 		private Asset(String f, String c) {
 			filename = f;
 			contentType = c;
-			path = "api/assets/" + filename;
+			path = "assets/" + filename;
 		}
 
 		public String getPath() {

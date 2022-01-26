@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public interface AppPaths {
-	static Path make(Path p) {
+	static Path makeDir(Path p) {
 		if (Files.notExists(p)) {
 			try {
 				Files.createDirectories(p);
@@ -16,11 +16,16 @@ public interface AppPaths {
 		return p;
 	}
 
-	Path RESOURCES = make(Path.of("resources"));
-	Path ASSETS = make(RESOURCES.resolve("assets"));
-	Path RUN = make(Path.of("run"));
-	Path FILES = make(RUN.resolve("files"));
-	Path PUBLIC_FILES = make(FILES.resolve("public"));
-	Path SCRIPTS = make(RUN.resolve("scripts"));
-	Path CONFIG_FILE = make(RUN.resolve("app.properties"));
+	Path RESOURCES = makeDir(Path.of("resources"));
+	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
+	Path RUN = makeDir(Path.of("run"));
+
+	Path FILES = makeDir(RUN.resolve("files"));
+	Path FILES_PUBLIC = makeDir(FILES.resolve("public"));
+	Path FILES_BAD_DOMAINS = FILES.resolve("bad_domains.txt");
+	Path FILES_BAD_DOMAIN_OVERRIDES = FILES.resolve("bad_domain_overrides.txt");
+
+	Path SCRIPTS = makeDir(RUN.resolve("scripts"));
+
+	Path CONFIG_FILE = makeDir(RUN.resolve("app.properties"));
 }
