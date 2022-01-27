@@ -45,7 +45,7 @@ public class URLRequest<T> {
 	}
 
 	public static URLRequest<InputStream> of(String url) {
-		return new URLRequest<>(url, new Mapper<InputStream>() {
+		return new URLRequest<>(url, new Mapper<>() {
 			@Override
 			public InputStream map(InputStream stream) {
 				return stream;
@@ -374,10 +374,21 @@ public class URLRequest<T> {
 		}
 	}
 
-	public void subscribe(Consumer<Either<T, Exception>> callback) {
-		Thread thread = new Thread(() -> callback.accept(blockEither()));
+	public void subscribe(Consumer<T> contentCallback, Consumer<Exception> errorCallback) {
+		Thread thread = new Thread(() -> {
+			try {
+				contentCallback.accept(block());
+			} catch (Exception ex) {
+				errorCallback.accept(ex);
+			}
+		});
+
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	public void subscribeContent(Consumer<T> callback) {
+		subscribe(callback, Exception::printStackTrace);
 	}
 
 	public String getHeader(String header) {

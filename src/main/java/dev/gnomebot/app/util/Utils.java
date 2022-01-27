@@ -84,7 +84,7 @@ public class Utils {
 			"Dec",
 	};
 
-	public static final Route THREAD_ROUTE = Route.post("/channels/{channel.id}/messages/{message.id}/threads");
+	public static final Route THREAD_ROUTE = Routes.START_THREAD_WITH_MESSAGE;
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
 
 	public static WebToken selfToken;
@@ -105,7 +105,7 @@ public class Utils {
 		}
 	}
 
-	public static final Pattern REMOVE_WEIRD_CHARACTERS = Pattern.compile("[^\\w-\\.]");
+	public static final Pattern REMOVE_WEIRD_CHARACTERS = Pattern.compile("[^\\w-.]");
 	public static final Pattern REMOVE_DASHES = Pattern.compile("-{2,}");
 
 	private static final int[] CHART_COLORS = new int[24];

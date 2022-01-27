@@ -13,8 +13,7 @@ public enum AuthLevel {
 	LOGGED_IN("logged_in"),
 	MEMBER("member"),
 	ADMIN("admin"),
-	OWNER("owner"),
-	BOT("bot");
+	OWNER("owner");
 
 	public static final Map<String, AuthLevel> MAP = Arrays.stream(values()).collect(Collectors.toMap(a -> a.name, a -> a));
 

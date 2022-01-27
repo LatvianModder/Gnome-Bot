@@ -64,7 +64,7 @@ public class MessageHandler {
 	public static final Pattern EVERYONE_MENTION_PATTERN = Pattern.compile("(`?)\\\\?@(?:everyone|here)\\1");
 	public static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```\\w*\\n.*```", Pattern.MULTILINE | Pattern.DOTALL);
 	public static final Pattern REMOVE_FORMATTING_PATTERN = Pattern.compile("(\\*\\*|\\*|__|_|`)(.+?)\\1");
-	public static final Pattern URL_PATTERN = Pattern.compile("https?://((?:www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6})\\b[-a-zA-Z0-9()@:%_+.~#?&//=]*");
+	public static final Pattern URL_PATTERN = Pattern.compile("(?:https?://)?((?:www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{2,64})\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 	public static final Pattern EXTRA_SPACE_PATTERN = Pattern.compile("\\s{2,}", Pattern.MULTILINE);
 	public static final Pattern STRIP_URL_PATTERN = Pattern.compile("\\[(?:youtube.com|youtu.be|imgur.com|streamable.com|cdn.discordapp.com|media.discordapp.net) link]");
 	public static final Pattern NO_U_PATTERN = Pattern.compile("\\b(?:no|fuck|suc|gay|bad|worse|shit|die|dumb|stupid|idiot|trash|garbage|loser|looser|garbo|good|nice|neat|best|shut)\\b", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
@@ -485,22 +485,18 @@ public class MessageHandler {
 				);
 			}
 
-			Matcher steamScamMatcher = ScamHandler.STEAM_PATTERN.matcher(contentNoEmojis);
+			ScamHandler.Scam scam = ScamHandler.checkScam(contentNoEmojis);
 
-			while (steamScamMatcher.find()) {
-				String domain = steamScamMatcher.group(1);
+			if (scam != null) {
+				App.info("Potential scam URL detected in " + gc + ": " + scam);
 
-				if (domain.equals("store.steampowered.com") || domain.equals("steamcommunity.com") || domain.equals("steamcharts.com")) {
-					continue;
-				}
-
-				if (gc.autoMuteSteamLink.get() > 0 && context.gc.mutedRole.isSet()) {
-					long seconds = gc.autoMuteSteamLink.get() * 60L;
+				if (gc.autoMuteScamUrl.get() > 0 && context.gc.mutedRole.isSet()) {
+					long seconds = gc.autoMuteScamUrl.get() * 60L;
 
 					context.referenceMessage = false;
 
 					try {
-						MuteCommand.mute(context, member, seconds, "Potential Steam Scam", "Muted " + member.getMention());
+						MuteCommand.mute(context, member, seconds, "Potential Scam URL", "Muted " + member.getMention());
 					} catch (DiscordCommandException e) {
 						e.printStackTrace();
 					}
@@ -509,36 +505,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, discordMessage, member, "Potential Steam Scam", s -> s);
-				}
-
-				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
-						.channel(channelInfo.id)
-						.message(message)
-						.user(member)
-						.content(content)
-				);
-			}
-
-			Matcher nitroScamMatcher = ScamHandler.NITRO_PATTERN.matcher(contentNoEmojis);
-
-			while (nitroScamMatcher.find()) {
-				if (gc.autoMuteNitroLink.get() > 0 && context.gc.mutedRole.isSet()) {
-					long seconds = gc.autoMuteNitroLink.get() * 60L;
-
-					context.referenceMessage = false;
-
-					try {
-						MuteCommand.mute(context, member, seconds, "Potential Nitro Scam", "Muted " + member.getMention());
-					} catch (DiscordCommandException e) {
-						e.printStackTrace();
-					}
-
-					context.referenceMessage = true;
-					message.delete().subscribe();
-					return;
-				} else {
-					handler.suspiciousMessageModLog(gc, discordMessage, member, "Potential Nitro Scam", s -> s);
+					handler.suspiciousMessageModLog(gc, discordMessage, member, "Potential Scam URL: " + scam, s -> s);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)

@@ -112,8 +112,7 @@ public class GuildCollections {
 	public final BooleanConfig forcePingableName;
 	public final IntConfig autoMuteEveryone;
 	public final IntConfig autoMuteUrlShortener;
-	public final IntConfig autoMuteSteamLink;
-	public final IntConfig autoMuteNitroLink;
+	public final IntConfig autoMuteScamUrl;
 	public final IntConfig feedbackNumber;
 	public final IntConfig pollNumber;
 	public final BooleanConfig autoPaste;
@@ -185,8 +184,7 @@ public class GuildCollections {
 		forcePingableName = config.add(new BooleanConfig(this, "force_pingable_name", false)).title("Force Pingable Name");
 		autoMuteEveryone = config.add(new IntConfig(this, "automute_everyone", 0, 0, 43800)).title("Auto-mute on @everyone mention (minutes)");
 		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
-		autoMuteSteamLink = config.add(new IntConfig(this, "automute_steam_link", 30, 0, 43800)).title("Auto-mute steam scam link (minutes)");
-		autoMuteNitroLink = config.add(new IntConfig(this, "automute_nitro_link", 30, 0, 43800)).title("Auto-mute nitro scam link (minutes)");
+		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
 		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0)).internal();
 		pollNumber = config.add(new IntConfig(this, "poll_number", 0)).internal();
 		autoPaste = config.add(new BooleanConfig(this, "auto_paste", false)).title("Auto-paste text files");
@@ -410,7 +408,7 @@ public class GuildCollections {
 		if (member == null) {
 			return AuthLevel.NO_AUTH;
 		} else if (member.getId().equals(db.app.discordHandler.selfId)) {
-			return AuthLevel.BOT;
+			return AuthLevel.OWNER;
 		} else if (member.getId().equals(getGuild().getOwnerId())) {
 			return AuthLevel.OWNER;
 		}
@@ -440,7 +438,7 @@ public class GuildCollections {
 		if (memberId == null) {
 			return AuthLevel.NO_AUTH;
 		} else if (memberId.equals(db.app.discordHandler.selfId)) {
-			return AuthLevel.BOT;
+			return AuthLevel.OWNER;
 		} else if (memberId.equals(getGuild().getOwnerId())) {
 			return AuthLevel.OWNER;
 		}

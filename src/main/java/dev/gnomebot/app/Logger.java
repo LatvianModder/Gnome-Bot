@@ -5,8 +5,8 @@ import discord4j.core.object.presence.ClientPresence;
 
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Logger {
 	public static final SimpleDateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
@@ -22,9 +22,15 @@ public class Logger {
 		// TODO: Wrap output methods with color codes
 	}
 
+	public static final String[] BRAIN = new String[750];
+
+	static {
+		Arrays.fill(BRAIN, "");
+	}
+
 	private final PrintStream out = System.out;
 	private final Object eventLock = new Object();
-	private final AtomicInteger event = new AtomicInteger(0);
+	private int event = 0;
 	private boolean firstEvent = true;
 
 	public Logger() {
@@ -34,9 +40,9 @@ public class Logger {
 
 	public void log(Object message, String color) {
 		synchronized (eventLock) {
-			if (event.get() > 0) {
+			if (event > 0) {
 				out.println(Ansi.RESET);
-				event.set(0);
+				event = 0;
 			}
 
 			out.println(Ansi.CYAN + FORMATTER.format(new Date()) + color + " " + message + Ansi.RESET);
@@ -59,18 +65,21 @@ public class Logger {
 		log(message, Ansi.DARK_RED);
 	}
 
-	public void event(String string) {
+	public void event(String color, String character) {
 		synchronized (eventLock) {
-			if (event.get() == 0) {
+			System.arraycopy(BRAIN, 0, BRAIN, 1, BRAIN.length - 1);
+			BRAIN[0] = color + character;
+
+			if (event == 0) {
 				out.print(Ansi.CYAN + FORMATTER.format(new Date()) + Ansi.RESET + " ");
 			}
 
-			int e = event.incrementAndGet();
-			out.print(string);
+			event++;
+			out.print(color + character + " " + Ansi.RESET);
 
-			if (e >= 40) {
+			if (event >= 40) {
 				out.println(Ansi.RESET);
-				event.set(0);
+				event = 0;
 			}
 
 			if (firstEvent) {
@@ -81,102 +90,102 @@ public class Logger {
 	}
 
 	public void messageCreatedNoRole() {
-		event(Ansi.LIGHT_GRAY + "■ " + Ansi.RESET);
+		event(Ansi.LIGHT_GRAY, "■");
 	}
 
 	public void messageCreatedAnyRole() {
-		event(Ansi.YELLOW + "■ " + Ansi.RESET);
+		event(Ansi.YELLOW, "■");
 	}
 
 	public void unknownMessage() {
-		event(Ansi.TEAL + "■ " + Ansi.RESET);
+		event(Ansi.TEAL, "■");
 	}
 
 	public void messageCreatedAdmin() {
-		event(Ansi.PURPLE + "■ " + Ansi.RESET);
+		event(Ansi.PURPLE, "■");
 	}
 
 	public void messageCreatedBot() {
-		event(Ansi.GREEN + "■ " + Ansi.RESET);
+		event(Ansi.GREEN, "■");
 	}
 
 	public void messageEdited() {
-		event(Ansi.ORANGE + "■ " + Ansi.RESET);
+		event(Ansi.ORANGE, "■");
 	}
 
 	public void messageDeleted() {
-		event(Ansi.RED + "■ " + Ansi.RESET);
+		event(Ansi.RED, "■");
 	}
 
 	public void suspiciousMessage() {
-		event(Ansi.DARK_RED + "■ " + Ansi.RESET);
+		event(Ansi.DARK_RED, "■");
 	}
 
 	public void commandSuccess() {
-		event(Ansi.BLUE + "◆ " + Ansi.RESET);
+		event(Ansi.BLUE, "◆");
 	}
 
 	public void commandFail() {
-		event(Ansi.RED + "◆ " + Ansi.RESET);
+		event(Ansi.RED, "◆");
 	}
 
 	public void reactionAdded() {
-		event(Ansi.GREEN + "\uD83D\uDDF8 " + Ansi.RESET); // 🗸
+		event(Ansi.GREEN, "\uD83D\uDDF8"); // 🗸
 	}
 
 	public void reactionRemoved() {
-		event(Ansi.RED + "\uD83D\uDDF8 " + Ansi.RESET); // 🗸
+		event(Ansi.RED, "\uD83D\uDDF8"); // 🗸
 	}
 
 	public void voiceJoined() {
-		event(Ansi.GREEN + "♪ " + Ansi.RESET);
+		event(Ansi.GREEN, "♪");
 	}
 
 	public void voiceLeft() {
-		event(Ansi.RED + "♪ " + Ansi.RESET);
+		event(Ansi.RED, "♪");
 	}
 
 	public void voiceChanged() {
-		event(Ansi.YELLOW + "♪ " + Ansi.RESET);
+		event(Ansi.YELLOW, "♪");
 	}
 
 	public void refreshedGuildCache() {
-		event(Ansi.LIGHT_GRAY + "\uD83D\uDE7E " + Ansi.RESET); // 🙾
+		event(Ansi.LIGHT_GRAY, "\uD83D\uDE7E"); // 🙾
 	}
 
 	public void refreshedChannelCache() {
-		event(Ansi.MAGENTA + "\uD83D\uDE7E " + Ansi.RESET); // 🙾
+		event(Ansi.MAGENTA, "\uD83D\uDE7E"); // 🙾
 	}
 
 	public void refreshedMemberCache() {
-		event(Ansi.GREEN + "\uD83D\uDE7E " + Ansi.RESET); // 🙾
+		event(Ansi.GREEN, "\uD83D\uDE7E"); // 🙾
 	}
 
 	public void refreshedRoleCache() {
-		event(Ansi.YELLOW + "\uD83D\uDE7E " + Ansi.RESET); // 🙾
+		event(Ansi.YELLOW, "\uD83D\uDE7E"); // 🙾
 	}
 
 	public void memberJoined() {
-		event(Ansi.BLUE + "⬤ " + Ansi.RESET);
+		event(Ansi.BLUE, "⬤");
 	}
 
 	public void memberLeft() {
-		event(Ansi.RED + "⬤ " + Ansi.RESET);
+		event(Ansi.RED, "⬤");
 	}
 
 	public void memberMuted() {
-		event(Ansi.RED + "☠ " + Ansi.RESET);
+		event(Ansi.RED, "☠");
 	}
 
 	public void memberBanned() {
-		event(Ansi.DARK_RED + "☠ " + Ansi.RESET);
+		event(Ansi.DARK_RED, "☠");
 	}
 
 	public void webRequest() {
-		event(Ansi.CYAN + "◆ " + Ansi.RESET);
+		event(Ansi.CYAN, "◆");
 	}
 
 	public void presenceUpdated() {
-		event(Ansi.LIGHT_GRAY + "◆ " + Ansi.RESET);
+		event(Ansi.LIGHT_GRAY, "◆");
 	}
 }

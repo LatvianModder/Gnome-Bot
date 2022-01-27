@@ -25,13 +25,11 @@ import java.util.Map;
  */
 public final class DiscordCommandImpl {
 	public static final Map<String, DiscordCommandImpl> COMMAND_MAP = new LinkedHashMap<>();
-	public static final Map<String, DiscordCommandImpl> BOT_COMMAND_MAP = new LinkedHashMap<>();
 	public static final List<DiscordCommandImpl> COMMAND_LIST = new ArrayList<>();
 
 	public static void find() {
 		COMMAND_MAP.clear();
 		COMMAND_LIST.clear();
-		BOT_COMMAND_MAP.clear();
 
 		String pkg = LegacyDiscordCommand.class.getPackage().getName();
 		String commandAnnotation = LegacyDiscordCommand.class.getName();
@@ -50,12 +48,7 @@ public final class DiscordCommandImpl {
 							impl.arguments = (String) params.getValue("arguments");
 							impl.aliases = (String[]) params.getValue("aliases");
 							impl.permissionLevel = (AuthLevel) ((AnnotationEnumValue) params.getValue("permissionLevel")).loadClassAndReturnEnumValue();
-
-							if (impl.permissionLevel == AuthLevel.BOT) {
-								BOT_COMMAND_MAP.put(impl.name, impl);
-							} else {
-								COMMAND_LIST.add(impl);
-							}
+							COMMAND_LIST.add(impl);
 						}
 					}
 				}
@@ -77,7 +70,6 @@ public final class DiscordCommandImpl {
 		}
 
 		App.info("Found " + COMMAND_MAP.size() + " prefix commands");
-		App.info("Found " + BOT_COMMAND_MAP.size() + " bot commands");
 	}
 
 	public static void run(CommandContext context, CommandReader reader, String content, boolean ignorePermissions) throws Exception {
@@ -137,8 +129,6 @@ public final class DiscordCommandImpl {
 			return true;
 		} else if (permissionLevel == AuthLevel.MEMBER) {
 			return true;
-		} else if (permissionLevel == AuthLevel.BOT) {
-			return context.sender.getId().equals(context.handler.selfId);
 		} else if (permissionLevel == AuthLevel.OWNER) {
 			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.getPermissions(context.sender.getId()).contains(Permission.ADMINISTRATOR));
 		}

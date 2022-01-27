@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
 import discord4j.core.event.domain.thread.ThreadChannelDeleteEvent;
@@ -8,7 +7,6 @@ import discord4j.core.event.domain.thread.ThreadChannelUpdateEvent;
 import discord4j.core.event.domain.thread.ThreadListSyncEvent;
 import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
 import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
-import discord4j.core.object.entity.channel.ThreadChannel;
 
 /**
  * @author LatvianModder
@@ -18,7 +16,7 @@ public class ThreadHandler {
 		GuildCollections gc = handler.app.db.guild(event.getChannel().getGuildId());
 
 		if (gc != null) {
-			App.info("Thread channel create: " + gc + "/" + event.getChannel().getName());
+			// App.info("Thread channel create: " + gc + "/" + event.getChannel().getName());
 		}
 	}
 
@@ -26,7 +24,7 @@ public class ThreadHandler {
 		GuildCollections gc = handler.app.db.guild(event.getChannel().getGuildId());
 
 		if (gc != null) {
-			App.info("Thread channel delete: " + gc + "/" + event.getChannel().getId().asString());
+			// App.info("Thread channel delete: " + gc + "/" + event.getChannel().getId().asString());
 		}
 	}
 
@@ -34,7 +32,7 @@ public class ThreadHandler {
 		GuildCollections gc = handler.app.db.guild(event.getChannel().getGuildId());
 
 		if (gc != null) {
-			App.info("Thread channel update: " + gc + "/" + event.getChannel().getName());
+			// App.info("Thread channel update: " + gc + "/" + event.getChannel().getName());
 		}
 	}
 
@@ -48,14 +46,14 @@ public class ThreadHandler {
 		}
 		 */
 
-		App.info("Thread member update: " + event.getMember().getUserId());
+		// App.info("Thread member update: " + event.getMember().getUserId());
 	}
 
 	public static void membersUpdate(DiscordHandler handler, ThreadMembersUpdateEvent event) {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 
 		if (gc != null) {
-			App.info("Thread members update: " + gc + "/" + event.getMembers().stream().map(m -> m.getUserId().asString()).toList());
+			// App.info("Thread members update: " + gc + "/" + event.getMembers().stream().map(m -> m.getUserId().asString()).toList());
 		}
 	}
 
@@ -63,7 +61,7 @@ public class ThreadHandler {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 
 		if (gc != null) {
-			App.info("Thread list sync: " + gc + "/" + event.getSyncedThreads().stream().map(ThreadChannel::getName).toList());
+			// App.info("Thread list sync: " + gc + "/" + event.getSyncedThreads().stream().map(ThreadChannel::getName).toList());
 		}
 	}
 }

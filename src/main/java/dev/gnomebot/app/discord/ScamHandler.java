@@ -4,35 +4,68 @@ import com.google.gson.JsonElement;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.util.Pair;
 import dev.gnomebot.app.util.URLRequest;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ScamHandler {
+	public enum Type {
+		DEFAULT("default", "No Override"),
+		BLOCK("block", "Blocked"),
+		ALLOW("allow", "Allowed");
+
+		public final String id;
+		public final String commandName;
+
+		Type(String id, String commandName) {
+			this.id = id;
+			this.commandName = commandName;
+		}
+
+		@Override
+		public String toString() {
+			return id;
+		}
+
+		public static final Map<String, Type> MAP = Arrays.stream(values()).collect(Collectors.toMap(Type::toString, Function.identity()));
+	}
+
+	public record Scam(String url, String domain, String type) {
+		@Override
+		public String toString() {
+			return type + "/" + domain + " (" + url + ")";
+		}
+	}
+
 	private static final Object LOCK = new Object();
 
+	public static Instant lastRemoteUpdate = null;
 	public static Set<String> REMOTE_BAD_DOMAINS = Collections.emptySet();
-	public static Map<String, Boolean> OVERRIDES = new HashMap<>();
+	public static Map<String, Type> OVERRIDES = new HashMap<>();
 
 	static {
-		OVERRIDES.put("store.steampowered.com", false);
-		OVERRIDES.put("steamcommunity.com", false);
-		OVERRIDES.put("steamcharts.com", false);
-		OVERRIDES.put("discord.com", false);
-		OVERRIDES.put("discordapp.com", false);
-		OVERRIDES.put("cdn.discordapp.com", false);
-		OVERRIDES.put("media.discordapp.net", false);
-		OVERRIDES.put("canary.discord.com", false);
+		OVERRIDES.put("store.steampowered.com", Type.ALLOW);
+		OVERRIDES.put("steamcommunity.com", Type.ALLOW);
+		OVERRIDES.put("steamcharts.com", Type.ALLOW);
+		OVERRIDES.put("discord.com", Type.ALLOW);
+		OVERRIDES.put("discordapp.com", Type.ALLOW);
+		OVERRIDES.put("cdn.discordapp.com", Type.ALLOW);
+		OVERRIDES.put("media.discordapp.net", Type.ALLOW);
+		OVERRIDES.put("canary.discord.com", Type.ALLOW);
 	}
 
 	public static final Pattern URL_SHORTENER_PATTERN = Pattern.compile("(?:adf\\.ly|bit\\.ly)/\\w+", Pattern.MULTILINE);
@@ -41,39 +74,40 @@ public class ScamHandler {
 	public static final Pattern NITRO_PATTERN = Pattern.compile("giveawaynitro|nitro-discord\\.\\w+|discord-nitro\\.\\w+|/(?:free|airdrop-)?nitro|turbodlscord|discord(?:nitro)?gift", Pattern.MULTILINE);
 	public static final Pattern EXACT_DOMAIN = Pattern.compile("[\\w.-]+");
 
-	public static void fetchBadDomains() {
-		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot.dev+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribe(callback -> {
-			if (callback.isLeft()) {
-				Set<String> s = new HashSet<>();
+	public static void fetchDomains(Runnable done) {
+		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot.dev+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribeContent(content -> {
+			Set<String> set = new HashSet<>();
 
-				for (JsonElement e : callback.getLeft()) {
-					s.add(e.getAsString());
+			for (JsonElement e : content) {
+				String domain = e.getAsString().trim().toLowerCase();
+
+				if (domain.startsWith("www.")) {
+					domain = domain.substring(4);
 				}
 
-				synchronized (LOCK) {
-					REMOTE_BAD_DOMAINS = s;
+				set.add(domain);
+			}
+
+			synchronized (LOCK) {
+				lastRemoteUpdate = Instant.now();
+				REMOTE_BAD_DOMAINS = set;
+
+				try {
+					List<String> list = new ArrayList<>(set);
+					list.sort(null);
+					list.add(0, lastRemoteUpdate.toString());
+					Files.write(AppPaths.FILES_BAD_DOMAINS, list);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 
-				saveBadDomains();
+				done.run();
 			}
 		});
 	}
 
-	public static void loadBadDomains() {
+	public static void loadDomains() {
 		synchronized (LOCK) {
-			boolean save = false;
-
-			if (Files.exists(AppPaths.FILES_BAD_DOMAINS)) {
-				try {
-					List<String> lines = Files.readAllLines(AppPaths.FILES_BAD_DOMAINS);
-					REMOTE_BAD_DOMAINS = new HashSet<>(lines);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			} else {
-				save = true;
-			}
-
 			if (Files.exists(AppPaths.FILES_BAD_DOMAIN_OVERRIDES)) {
 				try {
 					List<String> lines = Files.readAllLines(AppPaths.FILES_BAD_DOMAIN_OVERRIDES);
@@ -83,75 +117,89 @@ public class ScamHandler {
 						String[] split = s.trim().split(": ", 2);
 
 						if (split.length == 2 && !split[0].trim().isEmpty() && !split[1].trim().isEmpty()) {
-							OVERRIDES.put(split[0].trim().toLowerCase(), Boolean.parseBoolean(split[1].trim()));
+							Type t = Type.MAP.getOrDefault(split[1].trim().toLowerCase(), Type.DEFAULT);
+
+							if (t != Type.DEFAULT) {
+								OVERRIDES.put(split[0].trim().toLowerCase(), t);
+							}
 						}
 					}
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			} else {
-				save = true;
+				saveDomainsSynced();
 			}
 
-			if (save) {
-				saveBadDomainsSynced();
+			if (Files.exists(AppPaths.FILES_BAD_DOMAINS)) {
+				try {
+					List<String> lines = Files.readAllLines(AppPaths.FILES_BAD_DOMAINS);
+					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.get(0));
+
+					if (lastRemoteUpdate != null) {
+						lines.remove(0);
+					}
+
+					REMOTE_BAD_DOMAINS = new HashSet<>(lines);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			} else {
+				fetchDomains(() -> {
+				});
 			}
 		}
 	}
 
-	public static void saveBadDomains() {
-		synchronized (LOCK) {
-			saveBadDomainsSynced();
-		}
-	}
-
-	private static void saveBadDomainsSynced() {
+	private static void saveDomainsSynced() {
 		try {
-			Files.write(AppPaths.FILES_BAD_DOMAINS, REMOTE_BAD_DOMAINS);
+			Files.write(AppPaths.FILES_BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> e.getKey() + ": " + e.getValue()).toList());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-
-		try {
-			Files.write(AppPaths.FILES_BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()).toList());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
 	}
 
-	public static void setOverride(GuildCollections gc, String user, String domain, @Nullable Boolean override) {
+	public static void setOverride(GuildCollections gc, String user, String domain, Type override) {
 		synchronized (LOCK) {
 			App.error("Domain " + domain + " set to " + override + " by " + user + " in " + gc);
+			domain = domain.trim().toLowerCase();
 
-			if (override == null) {
-				OVERRIDES.remove(domain.trim().toLowerCase());
+			if (domain.startsWith("www.")) {
+				domain = domain.substring(4);
+			}
+
+			if (override == null || override == Type.DEFAULT) {
+				OVERRIDES.remove(domain);
 			} else {
-				OVERRIDES.put(domain.trim().toLowerCase(), override);
+				OVERRIDES.put(domain, override);
 			}
 
-			saveBadDomainsSynced();
+			saveDomainsSynced();
 		}
 	}
 
-	public static Boolean checkScamDomain(String domain) {
+	public static Type checkScamDomain(String domain) {
+		if (domain.startsWith("www.")) {
+			domain = domain.substring(4);
+		}
+
 		synchronized (LOCK) {
-			Boolean b = OVERRIDES.get(domain);
+			Type o = OVERRIDES.getOrDefault(domain, Type.DEFAULT);
 
-			if (b != null) {
-				return b;
+			if (o != Type.DEFAULT) {
+				return o;
 			} else if (REMOTE_BAD_DOMAINS.contains(domain)) {
-				return true;
+				return Type.BLOCK;
 			} else if (ONLY_SYMBOLS.matcher(domain).matches()) {
-				return false;
+				return Type.ALLOW;
 			}
 
-			return null;
+			return Type.DEFAULT;
 		}
 	}
 
-	// URL, Domain
 	@Nullable
-	public static Pair<String, String> checkScam(String content) {
+	public static Scam checkScam(String content) {
 		Matcher urlMatcher = MessageHandler.URL_PATTERN.matcher(content);
 
 		while (urlMatcher.find()) {
@@ -166,26 +214,24 @@ public class ScamHandler {
 				continue;
 			}
 
-			Boolean override = checkScamDomain(domain);
+			Type override = checkScamDomain(domain);
 
-			if (override != null) {
-				if (override) {
-					return Pair.of(url, domain);
-				} else {
-					continue;
-				}
+			if (override == Type.BLOCK) {
+				return new Scam(url, domain, "misc");
+			} else if (override == Type.ALLOW) {
+				continue;
 			}
 
 			Matcher nitroScamMatcher = ScamHandler.NITRO_PATTERN.matcher(url);
 
 			if (nitroScamMatcher.find()) {
-				return Pair.of(nitroScamMatcher.group(), domain);
+				return new Scam(nitroScamMatcher.group(), domain, "nitro");
 			}
 
 			Matcher steamScamMatcher = ScamHandler.STEAM_PATTERN.matcher(url);
 
 			if (steamScamMatcher.find()) {
-				return Pair.of(steamScamMatcher.group(), domain);
+				return new Scam(steamScamMatcher.group(), domain, "steam");
 			}
 		}
 

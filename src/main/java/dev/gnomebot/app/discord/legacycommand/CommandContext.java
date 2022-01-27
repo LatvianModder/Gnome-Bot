@@ -88,6 +88,12 @@ public class CommandContext {
 		}
 	}
 
+	public void checkSenderTrusted() throws DiscordCommandException {
+		if (!isTrusted()) {
+			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Only bot owners can do this!");
+		}
+	}
+
 	public void adminLog(Color col, String text) {
 		gc.adminLogChannelEmbed(spec -> {
 			spec.color(col);

@@ -67,6 +67,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -123,6 +124,7 @@ public class App implements Runnable {
 
 	@Override
 	public void run() {
+		Locale.setDefault(Locale.US);
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
 
@@ -396,11 +398,7 @@ public class App implements Runnable {
 
 		info("");
 
-		ScamHandler.loadBadDomains();
-
-		//for (Guild guild : discordHandler.getSelfGuilds()) {
-		//	db.guild(guild.getId()).guildUpdated(guild);
-		//}
+		ScamHandler.loadDomains();
 
 		success("Server restarted!");
 		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));

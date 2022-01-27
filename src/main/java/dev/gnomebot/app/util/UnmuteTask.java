@@ -19,7 +19,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 		seconds = s;
 		cancelled = false;
 
-		App.info("Muting " + gc + "/" + user);
+		App.warn("Muting " + gc + "/" + user.asString() + "/" + seconds);
 		App.LOGGER.memberMuted();
 	}
 
@@ -31,7 +31,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 	}
 
 	public void unmute() {
-		App.info("Unmuting " + gc + "/" + user);
+		App.warn("Unmuting " + gc + "/" + user.asString());
 
 		if (gc.mutedRole.isSet()) {
 			gc.mutedRole.remove(user, "Unmuted");
