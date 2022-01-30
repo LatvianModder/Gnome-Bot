@@ -82,15 +82,21 @@ public class CommandContext {
 		checkSenderPerms(channelInfo, perms);
 	}
 
-	public void checkSenderAdmin() throws DiscordCommandException {
-		if (!isAdmin()) {
-			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Wait a minute, you're not an admin! Only admins can do this");
-		}
-	}
-
 	public void checkSenderTrusted() throws DiscordCommandException {
 		if (!isTrusted()) {
 			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Only bot owners can do this!");
+		}
+	}
+
+	public void checkSenderOwner() throws DiscordCommandException {
+		if (!isOwner()) {
+			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Wait a minute, you're not an owner! Only owners can do this");
+		}
+	}
+
+	public void checkSenderAdmin() throws DiscordCommandException {
+		if (!isAdmin()) {
+			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Wait a minute, you're not an admin! Only admins can do this");
 		}
 	}
 
@@ -175,7 +181,7 @@ public class CommandContext {
 
 		try {
 			if (createLocalFile) {
-				Path directory = AppPaths.FILES.resolve(filename);
+				Path directory = AppPaths.DATA_GUILDS.resolve(filename);
 
 				if (Files.notExists(directory)) {
 					Files.createDirectories(directory);

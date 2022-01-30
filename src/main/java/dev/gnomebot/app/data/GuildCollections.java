@@ -3,6 +3,8 @@ package dev.gnomebot.app.data;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.AppPaths;
+import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.config.BaseConfig;
 import dev.gnomebot.app.data.config.BooleanConfig;
 import dev.gnomebot.app.data.config.ChannelConfig;
@@ -17,11 +19,12 @@ import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.MessageFilter;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
-import dev.gnomebot.app.script.GuildScripts;
+import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.script.WrappedGuild;
 import dev.gnomebot.app.script.WrappedId;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.Ansi;
+import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.UnmuteTask;
 import discord4j.common.util.Snowflake;
@@ -65,7 +68,8 @@ public class GuildCollections {
 	public final Databases db;
 	public final Snowflake guildId;
 	public final WrappedId wrappedId;
-	public GuildScripts guildScripts;
+	public final GuildPaths paths;
+	public DiscordJS discordJS;
 
 	public final WrappedCollection<DiscordMember> members;
 	public final WrappedCollection<DiscordMessage> messages;
@@ -118,7 +122,6 @@ public class GuildCollections {
 	public final BooleanConfig autoPaste;
 	public final StringConfig reportOptions;
 
-
 	public Pattern badWordRegex;
 	private WrappedGuild wrappedGuild;
 	private Map<Snowflake, ChannelInfo> channelMap;
@@ -134,11 +137,12 @@ public class GuildCollections {
 		db = d;
 		guildId = g;
 		wrappedId = new WrappedId(guildId);
-		guildScripts = db.app.scriptManager.scriptsMap.get(wrappedId);
+		paths = AppPaths.getGuildPaths(guildId);
 
 		String dbid = guildId.asString();
 
 		members = create("members_" + dbid, DiscordMember::new);
+		// TODO: Move messages to edited when channel is deleted
 		messages = create("messages_" + dbid, DiscordMessage::new);
 		editedMessages = create("edited_messages_" + dbid, DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp"); // GDPR
 		feedback = create("feedback_" + dbid, DiscordFeedback::new);
@@ -212,6 +216,18 @@ public class GuildCollections {
 		}
 
 		readSettings();
+
+		ConfigFile file = new ConfigFile(paths.config);
+
+		for (BaseConfig<?> setting : config.map.values()) {
+			file.get(setting.id, setting.toJson());
+		}
+
+		// TODO: Implement this?
+		file.needsSaving();
+		file.save();
+
+		discordJS = new DiscordJS(this);
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {

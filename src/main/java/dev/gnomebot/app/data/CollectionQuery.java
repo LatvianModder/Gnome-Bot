@@ -254,4 +254,8 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 
 		return ZERO_UPDATES;
 	}
+
+	public void drop() {
+		collection.getCollection().drop();
+	}
 }

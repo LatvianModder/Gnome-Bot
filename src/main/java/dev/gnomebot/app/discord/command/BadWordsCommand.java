@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.MessageFilter;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
@@ -112,6 +113,6 @@ public class BadWordsCommand extends ApplicationCommands {
 			throw new DiscordCommandException("Bad words aren't configured for this server!");
 		}
 
-		event.respond(builder -> builder.content("Bad Word Regex").addComponent(ActionRow.of(Button.link("https://gnomebot.dev/api/guild/bad-word-regex/" + event.context.gc.guildId.asString(), "View")).getData()));
+		event.respond(builder -> builder.content("Bad Word Regex").addComponent(ActionRow.of(Button.link(App.url("api/guild/bad-word-regex/" + event.context.gc.guildId.asString()), "View")).getData()));
 	}
 }

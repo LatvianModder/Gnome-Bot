@@ -100,7 +100,7 @@ public class InteractionHandler {
 			if (member != null) {
 				String customId = event.getCustomId();
 
-				if (gc.guildScripts != null && gc.guildScripts.onButton.hasListeners() && gc.guildScripts.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
+				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
 					event.deferEdit().subscribe();
 					return;
 				}

@@ -64,7 +64,7 @@ public class Utils {
 	public static final DecimalFormat LONG_FORMAT = new DecimalFormat("#,###");
 
 	public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setLenient().serializeNulls().create();
-	public static final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setLenient().serializeNulls().create();
+	public static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().setLenient().serializeNulls().create();
 	public static final MessageDigest MD5 = getMD5();
 	public static final MessageDigest SHA1 = getSHA1();
 	private static final Calendar formatCalendar = Calendar.getInstance();
@@ -565,7 +565,7 @@ public class Utils {
 	}
 
 	public static URLRequest<InputStream> internalRequest(String path) {
-		return URLRequest.of("https://gnomebot.dev/" + path).cookie("gnometoken", selfToken.document.getString("_id"));
+		return URLRequest.of(App.url(path)).cookie("gnometoken", selfToken.document.getString("_id"));
 	}
 
 	public static JsonElement readInternalJson(String path) {

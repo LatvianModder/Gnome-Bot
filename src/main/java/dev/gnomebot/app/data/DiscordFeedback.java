@@ -3,6 +3,7 @@ package dev.gnomebot.app.data;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
@@ -141,7 +142,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 			builder.title("Suggestion #" + getNumber() + " - " + status.titleSuffix);
 		}
 
-		builder.url("https://gnomebot.dev/guild/feedback/" + gc.guildId.asString() + "/" + getNumber());
+		builder.url(App.url("guild/feedback/" + gc.guildId.asString() + "/" + getNumber()));
 		builder.description(getContent());
 		builder.addField(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.addField(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);

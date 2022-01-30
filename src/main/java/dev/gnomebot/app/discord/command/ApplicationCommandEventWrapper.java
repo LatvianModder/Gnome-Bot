@@ -137,7 +137,7 @@ public class ApplicationCommandEventWrapper extends InteractionEventWrapper<Inte
 
 		try {
 			if (createLocalFile) {
-				Path directory = AppPaths.FILES.resolve(filename);
+				Path directory = AppPaths.DATA_GUILDS.resolve(filename);
 
 				if (Files.notExists(directory)) {
 					Files.createDirectories(directory);

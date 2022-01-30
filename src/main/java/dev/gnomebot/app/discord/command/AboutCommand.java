@@ -21,8 +21,7 @@ public class AboutCommand extends ApplicationCommands {
 		long s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
 
 		List<String> content = new ArrayList<>();
-		//content.add("[Gnome Panel](<https://gnomebot.dev/>) | [Invite to your own guild](<https://discord.com/api/oauth2/authorize?client_id=" + event.context.handler.selfId.asString() + "&permissions=2016799958&redirect_uri=https%3A%2F%2Fgnomebot.dev%2Fapi%2Faccount%2Fsign-in&scope=bot%20applications.commands>)");
-		content.add("[Gnome Panel](<https://gnomebot.dev/>)");
+		content.add("[Gnome Panel](<" + App.url("") + ">)");
 		content.add("Last restart: " + Utils.formatRelativeDate(App.START_INSTANT));
 		content.add("Gnome Response time: **" + s + " ms**");
 

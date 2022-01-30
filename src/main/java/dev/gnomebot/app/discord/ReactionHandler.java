@@ -22,6 +22,7 @@ import org.bson.Document;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -162,6 +163,8 @@ public class ReactionHandler {
 								RestChannel.create(m.getClient().getRestClient(), m.getId()).createMessage(Emojis.STAR.getRaw()).subscribe();
 
 								gc.db.app.queueBlockingTask(task -> {
+									WebHook webHook = (WebHook) Objects.requireNonNull(gc.discordJS.customData.get("showcaseFavoritesWebhook"));
+
 									// message.addReaction(Vote.UP.reaction).subscribe();
 									// App.info("Showcase upvoted! " + users);
 
@@ -183,7 +186,7 @@ public class ReactionHandler {
 									}
 
 									for (String s : content) {
-										gc.db.app.config.mm_showcase_webhook.execute(WebhookExecuteRequest.builder()
+										webHook.execute(WebhookExecuteRequest.builder()
 												.avatarUrl(a.getAvatarUrl())
 												.username(a.getDisplayName())
 												.content(s)

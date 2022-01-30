@@ -56,7 +56,7 @@ public class HelpCommand extends ApplicationCommands {
 			sb.append(macros);
 		}
 
-		sb.append("\n\nTo configure or add this bot to your server, visit [gnomebot.dev](https://gnomebot.dev/)");
+		sb.append("\n\nTo configure this bot run `/panel login`");
 		event.respond(sb.toString());
 	}
 }

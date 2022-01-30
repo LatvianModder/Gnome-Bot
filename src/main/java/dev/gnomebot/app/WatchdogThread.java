@@ -61,7 +61,7 @@ public class WatchdogThread extends Thread {
 			if (majorErrors >= MAX_ERRORS) {
 				majorErrors = MAX_ERRORS - 1;
 				majorError("Timed out");
-				app.config.death_webhook.execute(WebhookExecuteRequest.builder().content(String.join("\n", errorList)).build());
+				Config.get().death_webhook.execute(WebhookExecuteRequest.builder().content(String.join("\n", errorList)).build());
 				app.restart();
 				break;
 			}

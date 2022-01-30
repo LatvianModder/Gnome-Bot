@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.gnomebot.app.server.handler.Response;
@@ -228,7 +229,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 		private Response handle1(Context ctx, RequestHandler handler, String p, ServerRequest req) throws Exception {
 			if (handler.authLevel != AuthLevel.NO_AUTH && req.token == null) {
-				throw HTTPResponseCode.UNAUTHORIZED.error("Unauthorized: Missing token. Log in https://gnomebot.dev/ first");
+				throw HTTPResponseCode.UNAUTHORIZED.error("Unauthorized: Missing token. Run '/panel login' first");
 			}
 
 			if (!req.variable("guild").isEmpty()) {
@@ -282,7 +283,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			String c = ctx.cookie("gnometoken");
 
 			if (c != null && !c.isEmpty()) {
-				if (c.equals(webServer.app.config.self_token)) {
+				if (c.equals(Config.get().self_token)) {
 					return Utils.selfToken;
 				}
 

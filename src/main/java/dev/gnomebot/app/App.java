@@ -12,7 +12,7 @@ import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.UserCache;
-import dev.gnomebot.app.script.ScriptManager;
+import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.CLISession;
 import dev.gnomebot.app.server.RequestHandler;
@@ -107,17 +107,19 @@ public class App implements Runnable {
 	}
 
 	public static String url(String path) {
-		return "https://gnomebot.dev/" + path;
+		if (path.isEmpty()) {
+			return Config.get().panel_url;
+		}
+
+		return Config.get().panel_url + path;
 	}
 
-	public Config config;
 	public boolean running = true;
 	public ArrayList<BlockingTask> blockingTasks = new ArrayList<>();
 	public final Object blockingTaskLock = new Object();
 	public ArrayList<ScheduledTask> scheduledTasks = new ArrayList<>();
 	public final Object scheduledTaskLock = new Object();
 
-	public ScriptManager scriptManager;
 	public Databases db;
 	public WebServer webServer;
 	public DiscordHandler discordHandler;
@@ -128,26 +130,10 @@ public class App implements Runnable {
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
 
-		config = new Config();
 		running = true;
 		blockingTasks = new ArrayList<>();
 
-		try {
-			config.load(AppPaths.CONFIG_FILE);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			return;
-		}
-
 		CharMap.load();
-
-		scriptManager = new ScriptManager(this);
-
-		try {
-			scriptManager.loadScripts(this, AppPaths.SCRIPTS);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
 
 		ConsoleCommandManager commands = new ConsoleCommandManager(this);
 
@@ -219,7 +205,7 @@ public class App implements Runnable {
 				}
 
 				table.print();
-				Files.write(AppPaths.FILES.resolve("dms-" + matcher.group(1) + ".txt"), table.getCSVBytes(false));
+				Files.write(AppPaths.DATA_GUILDS.resolve("dms-" + matcher.group(1) + ".txt"), table.getCSVBytes(false));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -259,7 +245,7 @@ public class App implements Runnable {
 			info("Done sorting! Saving to file...");
 
 			CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
-			try (OutputStream out = Files.newOutputStream(AppPaths.FILES.resolve(id + ".csv"));
+			try (OutputStream out = Files.newOutputStream(AppPaths.DATA_GUILDS.resolve(id + ".csv"));
 				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, encoder))) {
 				for (ExportedMessage line : list) {
 					writer.append(line.toString());
@@ -300,7 +286,7 @@ public class App implements Runnable {
 		App.info("Discord handler loaded");
 
 		Document tokenDoc = new Document();
-		tokenDoc.put("_id", config.self_token);
+		tokenDoc.put("_id", Config.get().self_token);
 		tokenDoc.put("created", new Date());
 		tokenDoc.put("user", discordHandler.selfId.asLong());
 		tokenDoc.put("name", "GnomeBot");
@@ -350,7 +336,7 @@ public class App implements Runnable {
 
 		webServer.addWS("api/cli", CLISession.Handler.INSTANCE);
 
-		webServer.start(config.port);
+		webServer.start(Config.get().port);
 
 		info("");
 		info("API Endpoints:");
@@ -399,6 +385,7 @@ public class App implements Runnable {
 		info("");
 
 		ScamHandler.loadDomains();
+		DM.loadDmChannels();
 
 		success("Server restarted!");
 		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));
@@ -453,7 +440,7 @@ public class App implements Runnable {
 		String c = ctx.cookie("gnometoken");
 
 		if (c != null && !c.isEmpty()) {
-			if (c.equals(config.self_token)) {
+			if (c.equals(Config.get().self_token)) {
 				return Utils.selfToken;
 			}
 
@@ -528,14 +515,8 @@ public class App implements Runnable {
 	public void reload() {
 		CharMap.load();
 
-		try {
-			scriptManager.loadScripts(this, AppPaths.SCRIPTS);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-
 		for (GuildCollections gc : db.guildCollections.values()) {
-			gc.guildScripts = scriptManager.scriptsMap.get(gc.wrappedId);
+			gc.discordJS = new DiscordJS(gc);
 		}
 	}
 
@@ -578,7 +559,7 @@ public class App implements Runnable {
 			mxBean.getDiagnosticOptions().forEach(App::info);
 			String filename = "run/files/heapdump-" + Instant.now().toString().replace(':', '-') + ".hprof";
 			mxBean.dumpHeap(filename, false);
-			warn("Heap dump saved: " + ((Files.size(AppPaths.FILES.resolve(filename)) / 1024L) / 1024D) + " MB");
+			warn("Heap dump saved: " + ((Files.size(AppPaths.DATA_GUILDS.resolve(filename)) / 1024L) / 1024D) + " MB");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

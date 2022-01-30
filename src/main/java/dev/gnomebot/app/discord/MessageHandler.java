@@ -4,6 +4,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
@@ -50,6 +51,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -235,6 +237,13 @@ public class MessageHandler {
 
 	@SuppressWarnings("deprecation")
 	public static void messageCreated(DiscordHandler handler, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
+		Snowflake dmId = DM.getUserFromDmChannel(channelInfo.id);
+
+		if (dmId != null && !message.getContent().isEmpty()) {
+			DM.send(handler, handler.getUser(dmId), message.getContent(), true);
+			return;
+		}
+
 		GuildCollections gc = channelInfo.gc;
 		String content = message.getContent();
 		String contentNoEmojis = Emojis.stripEmojis(content);
@@ -644,6 +653,27 @@ public class MessageHandler {
 			);
 		}
 
+		String macroPrefix = context.gc.macroPrefix.get();
+
+		if (gc.discordJS.onMessage.hasListeners() || !gc.discordJS.customMacros.isEmpty()) {
+			MessageEventJS messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp);
+
+			if (content.length() > macroPrefix.length() && content.startsWith(macroPrefix)) {
+				CommandReader reader = new CommandReader(context.gc, content.substring(macroPrefix.length()));
+				Consumer<MessageEventJS> consumer = gc.discordJS.customMacros.get(reader.readString().orElse(""));
+
+				if (consumer != null) {
+					messageEventJS.reader = reader;
+					consumer.accept(messageEventJS);
+					return;
+				}
+			}
+
+			if (gc.discordJS.onMessage.post(messageEventJS, true)) {
+				return;
+			}
+		}
+
 		if (channelInfo.autoUpvote) {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
@@ -683,12 +713,6 @@ public class MessageHandler {
 			}
 		}
 
-		if (gc.guildScripts != null && gc.guildScripts.onMessage.hasListeners()) {
-			if (gc.guildScripts.onMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), true)) {
-				return;
-			}
-		}
-
 		if (gc.autoPaste.get()) {
 			List<Attachment> attachments = new ArrayList<>();
 
@@ -715,7 +739,7 @@ public class MessageHandler {
 
 		if (handleRealCommand(context, content)) {
 			//App.info("Gnome command: " + content);
-		} else if (handleMacro(context, content)) {
+		} else if (handleMacro(context, content, macroPrefix)) {
 			//App.info("Custom command: " + content);
 		} else if (thankGnome || (flags & DiscordMessage.FLAG_MENTIONS_BOT) != 0L) {
 			if (thankGnome) {
@@ -731,17 +755,14 @@ public class MessageHandler {
 			} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
 				channelInfo.createMessage("ok").subscribe();
 			} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().equals(gc.db.app.discordHandler.selfId)) {
-				// hardcoded
-				if (channelInfo.id.asLong() != 802238108242018304L) {
-					channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
-				}
+				channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
 			} else {
 				channelInfo.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
 			}
 		}
 
 		if (GNOME_MENTION_PATTERN.matcher(contentNoEmojis).find()) {
-			handler.app.config.gnome_mention_webhook.execute(WebhookExecuteRequest.builder()
+			Config.get().gnome_mention_webhook.execute(WebhookExecuteRequest.builder()
 					.content(discordMessage.getURLAsArrow(context.gc) + " " + content)
 					.avatarUrl(user.getAvatarUrl())
 					.username(user.getUsername() + " [" + gc + "]")
@@ -750,8 +771,8 @@ public class MessageHandler {
 			);
 		}
 
-		if (gc.guildScripts != null && gc.guildScripts.onAfterMessage.hasListeners()) {
-			gc.guildScripts.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
+		if (gc.discordJS.onAfterMessage.hasListeners()) {
+			gc.discordJS.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
 		}
 	}
 
@@ -811,10 +832,8 @@ public class MessageHandler {
 		return false;
 	}
 
-	private static boolean handleMacro(CommandContext context, String content) {
-		String prefix = context.gc.macroPrefix.get();
-
-		if (content.startsWith(prefix) && content.length() > prefix.length()) {
+	private static boolean handleMacro(CommandContext context, String content, String prefix) {
+		if (content.length() > prefix.length() && content.startsWith(prefix)) {
 			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));
 
 			try {

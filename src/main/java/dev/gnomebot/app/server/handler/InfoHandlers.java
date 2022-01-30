@@ -3,6 +3,7 @@ package dev.gnomebot.app.server.handler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.json.JsonResponse;
@@ -42,12 +43,12 @@ public class InfoHandlers {
 			if (userData != null) {
 				json.addProperty("name", userData.username());
 				json.addProperty("discriminator", userData.discriminator());
-				json.addProperty("avatar_url", "https://gnomebot.dev/api/info/avatar/" + id.asString() + "/" + size);
+				json.addProperty("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
 				json.addProperty("bot", userData.bot().toOptional().orElse(false));
 			} else {
 				json.addProperty("name", "Deleted User");
 				json.addProperty("discriminator", "0000");
-				json.addProperty("avatar_url", "https://gnomebot.dev/api/info/avatar/" + id.asString() + "/" + size);
+				json.addProperty("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
 				json.addProperty("bot", false);
 			}
 		});

@@ -29,7 +29,7 @@ public class PanelHandlers {
 		guilds.sort((o1, o2) -> o1.name().compareToIgnoreCase(o2.name()));
 
 		RootTag root = RootTag.create();
-		root.head("Gnome Panel", "https://gnomebot.dev/panel/guilds");
+		root.head("Gnome Panel", "panel/guilds");
 		Tag body = root.paired("body");
 		Tag content = body.div().addClass("content");
 

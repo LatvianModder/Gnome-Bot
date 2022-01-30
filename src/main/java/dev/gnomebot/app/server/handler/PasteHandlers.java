@@ -1,5 +1,6 @@
 package dev.gnomebot.app.server.handler;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
@@ -94,7 +95,7 @@ public class PasteHandlers {
 		Snowflake id = request.getSnowflake("id");
 		String filename = request.variable("filename");
 		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename);
-		return Redirect.permanently("https://gnomebot.dev/paste/" + id.asString());
+		return Redirect.permanently(App.url("paste/" + id.asString()));
 	}
 
 	public static Response pasteRaw(ServerRequest request) throws Exception {

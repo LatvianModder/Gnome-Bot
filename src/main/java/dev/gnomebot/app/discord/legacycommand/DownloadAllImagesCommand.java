@@ -43,7 +43,7 @@ public class DownloadAllImagesCommand {
 		HashMap<String, ImageFile> linkMap = new HashMap<>();
 		UserCache userCache = context.handler.createUserCache();
 
-		Path tempDir = AppPaths.FILES
+		Path tempDir = AppPaths.DATA_GUILDS
 				.resolve("images-" + context.channelInfo.id.asString())
 				.resolve("images-" + context.channelInfo.id.asString() + "-" + Instant.now().toString().replace(':', '-'));
 

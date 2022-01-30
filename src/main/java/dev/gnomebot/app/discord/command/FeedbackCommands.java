@@ -91,7 +91,7 @@ public class FeedbackCommands extends ApplicationCommands {
 		Message m = feedbackChannel.createMessage(MessageCreateSpec.builder()
 				.addEmbed(EmbedCreateSpec.builder()
 						.color(EmbedColors.GRAY)
-						.url("https://gnomebot.dev/feedback/" + event.context.gc.guildId.asString() + "/" + number)
+						.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
 						.title("Loading suggestion #" + number + "...")
 						.build()
 				)

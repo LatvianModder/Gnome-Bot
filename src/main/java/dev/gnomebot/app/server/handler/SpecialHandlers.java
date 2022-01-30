@@ -18,7 +18,7 @@ public class SpecialHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid file name!");
 		}
 
-		Path path = AppPaths.FILES_PUBLIC.resolve(filename);
+		Path path = AppPaths.DATA_PUBLIC.resolve(filename);
 
 		if (Files.exists(path)) {
 			String type = request.header("Content-Type", "text/plain");

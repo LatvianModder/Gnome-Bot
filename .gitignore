@@ -20,7 +20,8 @@ logs
 
 # other
 eclipse
-run
+data
 run.sh
 launch.sh
 *.log
+data

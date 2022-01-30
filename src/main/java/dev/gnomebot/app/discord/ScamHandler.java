@@ -68,14 +68,23 @@ public class ScamHandler {
 		OVERRIDES.put("canary.discord.com", Type.ALLOW);
 	}
 
-	public static final Pattern URL_SHORTENER_PATTERN = Pattern.compile("(?:adf\\.ly|bit\\.ly)/\\w+", Pattern.MULTILINE);
+	public static Set<String> URL_SHORTENERS = new HashSet<>();
+
+	static {
+		URL_SHORTENERS.add("tinyurl.com");
+		URL_SHORTENERS.add("bit.ly");
+		URL_SHORTENERS.add("shrinke.me");
+		URL_SHORTENERS.add("ad.fly");
+	}
+
+	public static final Pattern URL_SHORTENER_PATTERN = Pattern.compile("(?:" + URL_SHORTENERS.stream().map(s -> s.replace(".", "\\.")).collect(Collectors.joining("|")) + ")/\\w+", Pattern.MULTILINE);
 	public static final Pattern ONLY_SYMBOLS = Pattern.compile("[-0-9()@:%_+.~#?&/=]+");
 	public static final Pattern STEAM_PATTERN = Pattern.compile("(st[\\w.]+\\.\\w{2,6}(?:\\.\\w{2,6})?)/_?(?:tr|\\?p|new|app|profile)", Pattern.MULTILINE);
 	public static final Pattern NITRO_PATTERN = Pattern.compile("giveawaynitro|nitro-discord\\.\\w+|discord-nitro\\.\\w+|/(?:free|airdrop-)?nitro|turbodlscord|discord(?:nitro)?gift", Pattern.MULTILINE);
 	public static final Pattern EXACT_DOMAIN = Pattern.compile("[\\w.-]+");
 
 	public static void fetchDomains(Runnable done) {
-		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot.dev+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribeContent(content -> {
+		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribeContent(content -> {
 			Set<String> set = new HashSet<>();
 
 			for (JsonElement e : content) {
@@ -96,7 +105,7 @@ public class ScamHandler {
 					List<String> list = new ArrayList<>(set);
 					list.sort(null);
 					list.add(0, lastRemoteUpdate.toString());
-					Files.write(AppPaths.FILES_BAD_DOMAINS, list);
+					Files.write(AppPaths.DATA_BAD_DOMAINS, list);
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -108,9 +117,9 @@ public class ScamHandler {
 
 	public static void loadDomains() {
 		synchronized (LOCK) {
-			if (Files.exists(AppPaths.FILES_BAD_DOMAIN_OVERRIDES)) {
+			if (Files.exists(AppPaths.DATA_BAD_DOMAIN_OVERRIDES)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.FILES_BAD_DOMAIN_OVERRIDES);
+					List<String> lines = Files.readAllLines(AppPaths.DATA_BAD_DOMAIN_OVERRIDES);
 					OVERRIDES.clear();
 
 					for (String s : lines) {
@@ -131,9 +140,9 @@ public class ScamHandler {
 				saveDomainsSynced();
 			}
 
-			if (Files.exists(AppPaths.FILES_BAD_DOMAINS)) {
+			if (Files.exists(AppPaths.DATA_BAD_DOMAINS)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.FILES_BAD_DOMAINS);
+					List<String> lines = Files.readAllLines(AppPaths.DATA_BAD_DOMAINS);
 					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.get(0));
 
 					if (lastRemoteUpdate != null) {
@@ -153,7 +162,7 @@ public class ScamHandler {
 
 	private static void saveDomainsSynced() {
 		try {
-			Files.write(AppPaths.FILES_BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> e.getKey() + ": " + e.getValue()).toList());
+			Files.write(AppPaths.DATA_BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> e.getKey() + ": " + e.getValue()).toList());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

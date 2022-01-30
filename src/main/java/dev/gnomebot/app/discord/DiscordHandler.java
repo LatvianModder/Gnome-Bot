@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord;
 
 import com.mongodb.Function;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
@@ -119,7 +120,7 @@ public class DiscordHandler {
 		// PayloadDeserializer.dispatchTypes.put(EventNames.THREAD_MEMBERS_UPDATE, ThreadMembersUpdate.class);
 		// DispatchHandlers.addHandler(ThreadMembersUpdate.class, ThreadDispatchHandlers::threadMemberUpdate);
 
-		client = Objects.requireNonNull(DiscordClientBuilder.create(app.config.discord_bot_token)
+		client = Objects.requireNonNull(DiscordClientBuilder.create(Config.get().discord_bot_token)
 				.build()
 				.gateway()
 				.setInitialPresence(shardInfo -> ClientPresence.invisible())

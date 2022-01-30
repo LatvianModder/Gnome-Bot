@@ -1,5 +1,6 @@
 package dev.gnomebot.app.server.html;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.handler.FileResponse;
 
 import java.nio.charset.StandardCharsets;
@@ -67,7 +68,7 @@ public abstract class Tag {
 		head.meta("property", "og:site_name", "content", "Gnome Bot");
 		head.meta("property", "og:title", "content", title);
 		head.meta("property", "og:type", "content", "website");
-		head.meta("property", "og:url", "content", url);
+		head.meta("property", "og:url", "content", App.url(url));
 		head.meta("property", "og:image", "content", "/logo24.png");
 		head.meta("property", "og:image:width", "content", "24");
 		head.meta("property", "og:image:height", "content", "24");

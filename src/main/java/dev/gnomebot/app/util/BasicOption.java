@@ -37,6 +37,22 @@ public class BasicOption {
 				'}';
 	}
 
+	@Override
+	public int hashCode() {
+		return name.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		} else if (o == null || getClass() != o.getClass()) {
+			return false;
+		} else {
+			return name.equals(((BasicOption) o).name);
+		}
+	}
+
 	public Optional<String> asStringOptional() {
 		return value;
 	}

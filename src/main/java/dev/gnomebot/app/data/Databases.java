@@ -5,6 +5,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.util.MapWrapper;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
@@ -37,7 +38,7 @@ public class Databases {
 	public Databases(App m) {
 		app = m;
 
-		MongoClient mongoClient = MongoClients.create(app.config.db_uri);
+		MongoClient mongoClient = MongoClients.create(Config.get().db_uri);
 		database = mongoClient.getDatabase("gnomebot");
 
 		collections = new LinkedHashMap<>();

@@ -1,6 +1,7 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
@@ -38,7 +39,7 @@ public class Paste extends WrappedDocument<Paste> {
 	}
 
 	public static String getUrl(String attachmentId) {
-		return "https://gnomebot.dev/paste/" + attachmentId;
+		return App.url("paste/" + attachmentId);
 	}
 
 	public static void pasteMessage(Databases db, RestChannel channel, Message m, List<Attachment> attachments) {

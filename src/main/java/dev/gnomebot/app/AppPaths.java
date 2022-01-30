@@ -1,7 +1,11 @@
 package dev.gnomebot.app;
 
+import discord4j.common.util.Snowflake;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public interface AppPaths {
 	static Path makeDir(Path p) {
@@ -18,14 +22,18 @@ public interface AppPaths {
 
 	Path RESOURCES = makeDir(Path.of("resources"));
 	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
-	Path RUN = makeDir(Path.of("run"));
+	Path DATA = makeDir(Path.of("data"));
 
-	Path FILES = makeDir(RUN.resolve("files"));
-	Path FILES_PUBLIC = makeDir(FILES.resolve("public"));
-	Path FILES_BAD_DOMAINS = FILES.resolve("bad_domains.txt");
-	Path FILES_BAD_DOMAIN_OVERRIDES = FILES.resolve("bad_domain_overrides.txt");
+	Path CONFIG_FILE = DATA.resolve("config.json");
+	Path DATA_GUILDS = makeDir(DATA.resolve("guilds"));
+	Path DATA_PUBLIC = makeDir(DATA.resolve("public"));
+	Path DATA_BAD_DOMAINS = DATA.resolve("bad_domains.txt");
+	Path DATA_BAD_DOMAIN_OVERRIDES = DATA.resolve("bad_domain_overrides.txt");
+	Path DATA_DM_CHANNELS = DATA.resolve("dm_channels.txt");
 
-	Path SCRIPTS = makeDir(RUN.resolve("scripts"));
+	Map<Snowflake, GuildPaths> GUILD_PATHS = new HashMap<>();
 
-	Path CONFIG_FILE = makeDir(RUN.resolve("app.properties"));
+	static GuildPaths getGuildPaths(Snowflake id) {
+		return GUILD_PATHS.computeIfAbsent(id, GuildPaths::new);
+	}
 }

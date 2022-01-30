@@ -1,25 +1,22 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.util.ConfigFile;
+import dev.gnomebot.app.util.URLRequest;
+import discord4j.common.util.Snowflake;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 /**
  * @author LatvianModder
  */
 public class Config {
-	public static Config inst;
+	private static Config inst;
 
 	public static Config get() {
 		if (inst == null) {
-			inst = new Config();
-
 			try {
-				inst.load(AppPaths.CONFIG_FILE);
+				inst = new Config(AppPaths.CONFIG_FILE);
 			} catch (Exception ex) {
 				throw new RuntimeException(ex);
 			}
@@ -28,57 +25,46 @@ public class Config {
 		return inst;
 	}
 
-	public int port;
-	public int max_errors;
-	public String db_uri;
-	public String discord_client_id;
-	public String discord_client_secret;
-	public String discord_bot_token;
-	public String discord_public_key;
-	public String self_token;
-	public WebHook plex_webhook;
-	public String plex_webhook_secret;
-	public WebHook mm_showcase_webhook;
-	public WebHook death_webhook;
-	public WebHook gnome_mention_webhook;
-	public WebHook gnome_dm_webhook;
+	public final int port;
+	public final String panel_url;
+	public final String db_uri;
+	public final String discord_bot_token;
+	public final String self_token;
+	public final WebHook death_webhook;
+	public final WebHook gnome_mention_webhook;
+	public final WebHook gnome_dm_webhook;
+	public final Snowflake gnome_dm_channel_id;
 
-	public void load(Path file) {
-		Properties properties = new Properties();
+	private Config(Path file) {
+		ConfigFile c = new ConfigFile(file);
 
-		if (!Files.exists(file)) {
-			try (BufferedWriter writer = Files.newBufferedWriter(file)) {
-				properties.store(writer, "Config file for Gnome Bot");
+		port = c.getInt("port", 26609);
+
+		String defUrl = "";
+
+		if (!c.has("panel_url")) {
+			try {
+				defUrl = "http://" + URLRequest.of("https://api.ipify.org").toJoinedString().block().trim() + ":" + port;
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				defUrl = "http://localhost:" + port;
 			}
-
-			return;
 		}
 
-		try (BufferedReader reader = Files.newBufferedReader(file)) {
-			properties.load(reader);
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		panel_url = c.getString("panel_url", defUrl) + "/";
+		db_uri = c.getString("db_uri", "mongodb://localhost:27017");
+		discord_bot_token = c.getString("discord_bot_token", "");
+		self_token = c.getString("self_token", "");
+		death_webhook = new WebHook(c.getString("death_webhook", ""));
+		gnome_mention_webhook = new WebHook(c.getString("gnome_mention_webhook", ""));
+		gnome_dm_webhook = new WebHook(c.getString("gnome_dm_webhook", ""));
+		gnome_dm_channel_id = c.getSnowflake("gnome_dm_channel_id");
+
+		if (port < 1024 || port > 65535) {
+			throw new IllegalArgumentException("Port has to be between [1024, 65535]!");
 		}
 
-		port = Integer.parseInt(properties.getProperty("port", "0"));
-		max_errors = Integer.parseInt(properties.getProperty("max_errors", "3"));
-		db_uri = properties.getProperty("db_uri", "mongodb://localhost:27017");
-		discord_client_id = properties.getProperty("discord_client_id", "");
-		discord_client_secret = properties.getProperty("discord_client_secret", "");
-		discord_bot_token = properties.getProperty("discord_bot_token", "");
-		discord_public_key = properties.getProperty("discord_public_key", "");
-		self_token = properties.getProperty("self_token", "");
-		plex_webhook = new WebHook(properties.getProperty("plex_webhook", ""));
-		plex_webhook_secret = properties.getProperty("plex_webhook_secret", "");
-		mm_showcase_webhook = new WebHook(properties.getProperty("mm_showcase_webhook", ""));
-		death_webhook = new WebHook(properties.getProperty("death_webhook", ""));
-		gnome_mention_webhook = new WebHook(properties.getProperty("gnome_mention_webhook", ""));
-		gnome_dm_webhook = new WebHook(properties.getProperty("gnome_dm_webhook", ""));
-
-		if (port == 0) {
-			throw new IllegalArgumentException("Port can't be 0!");
-		}
+		c.save();
+		App.success("Loaded Gnome config with panel URL: " + panel_url);
 	}
 }
