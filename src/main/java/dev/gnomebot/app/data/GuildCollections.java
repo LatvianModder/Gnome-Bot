@@ -121,6 +121,7 @@ public class GuildCollections {
 	public final IntConfig pollNumber;
 	public final BooleanConfig autoPaste;
 	public final StringConfig reportOptions;
+	public final BooleanConfig autoMuteEmbed;
 
 	public Pattern badWordRegex;
 	private WrappedGuild wrappedGuild;
@@ -191,8 +192,9 @@ public class GuildCollections {
 		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
 		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0)).internal();
 		pollNumber = config.add(new IntConfig(this, "poll_number", 0)).internal();
-		autoPaste = config.add(new BooleanConfig(this, "auto_paste", false)).title("Auto-paste text files");
+		autoPaste = config.add(new BooleanConfig(this, "auto_paste", true)).title("Auto-paste text files");
 		reportOptions = config.add(new StringConfig(this, "report_options", "Scam | Spam | NSFW | Hacks")).title("Report Options (separated by ' | ')");
+		autoMuteEmbed = config.add(new BooleanConfig(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
 
 		unmuteMap = new HashMap<>();
 		recentUsers = new LinkedHashMap<>();

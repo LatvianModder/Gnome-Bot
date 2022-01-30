@@ -1,5 +1,6 @@
 package dev.gnomebot.app.server.handler;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.ServerRequest;
@@ -7,13 +8,20 @@ import dev.gnomebot.app.server.html.RootTag;
 import dev.gnomebot.app.server.html.Tag;
 import discord4j.common.util.Snowflake;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 /**
  * @author LatvianModder
  */
 public class PanelHandlers {
+	public static Response login(ServerRequest request) {
+		String s = new String(Base64.getUrlDecoder().decode(request.query("token").asString()), StandardCharsets.UTF_8);
+		return Redirect.temporarily(App.url("")).withCookie("gnometoken", s, 31536000);
+	}
+
 	public static Response guilds(ServerRequest request) {
 		List<PanelGuildData> guilds = new ArrayList<>();
 

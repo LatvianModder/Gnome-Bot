@@ -20,9 +20,11 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
+import discord4j.discordjson.possible.Possible;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.OptionalLong;
@@ -73,7 +75,7 @@ public class MuteCommand {
 
 		context.gc.unmute(m.getId(), seconds);
 
-		Message contextMessage = context.reply(spec -> {
+		Message contextMessage = context.gc.autoMuteEmbed.get() ? context.reply(spec -> {
 			spec.color(EmbedColors.RED);
 
 			if (!auto.isEmpty()) {
@@ -86,7 +88,7 @@ public class MuteCommand {
 
 			spec.addField("Expires", Utils.formatRelativeDate(expiresInstant), true);
 			spec.addField("Reason", reason, true);
-		});
+		}) : null;
 
 		if (context.gc.mutedRole.is(m)) {
 			return;
@@ -94,23 +96,25 @@ public class MuteCommand {
 			context.gc.mutedRole.add(m.getId(), "Muted");
 		}
 
-		List<LayoutComponent> adminButtons;
+		List<LayoutComponent> adminButtons = new ArrayList<>();
 
 		if (auto.isEmpty()) {
-			adminButtons = List.of(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
+			if (contextMessage != null) {
+				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
+			}
 		} else {
 			String id = m.getId().asString() + "/" + ComponentEventWrapper.encode(reason);
+			adminButtons.add(ActionRow.of(SelectMenu.of("button",
+					SelectMenu.Option.of("None", "none"),
+					SelectMenu.Option.of("Ban", "ban/" + id).withEmoji(Emojis.NO_ENTRY),
+					SelectMenu.Option.of("Kick", "kick/" + id).withEmoji(Emojis.BOOT),
+					// SelectMenu.Option.of("Warn", "warn/" + id).withEmoji(Emojis.WARNING),
+					SelectMenu.Option.of("Unmute", "unmute/" + id).withEmoji(Emojis.CHECKMARK)
+			).withPlaceholder("Select Action").withMinValues(0).withMaxValues(1)));
 
-			adminButtons = List.of(
-					ActionRow.of(SelectMenu.of("button",
-							SelectMenu.Option.of("None", "none"),
-							SelectMenu.Option.of("Ban", "ban/" + id).withEmoji(Emojis.NO_ENTRY),
-							SelectMenu.Option.of("Kick", "kick/" + id).withEmoji(Emojis.BOOT),
-							// SelectMenu.Option.of("Warn", "warn/" + id).withEmoji(Emojis.WARNING),
-							SelectMenu.Option.of("Unmute", "unmute/" + id).withEmoji(Emojis.CHECKMARK)
-					).withPlaceholder("Select Action").withMinValues(0).withMaxValues(1)),
-					ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context"))
-			);
+			if (contextMessage != null) {
+				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
+			}
 		}
 
 		EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
@@ -126,7 +130,7 @@ public class MuteCommand {
 
 		context.gc.adminLogChannel.messageChannel().map(c -> c.createMessage(MessageCreateSpec.builder()
 				.addEmbed(embed.build())
-				.addAllComponents(adminButtons)
+				.components(adminButtons.isEmpty() ? Possible.absent() : Possible.of(adminButtons))
 				.build()
 		).subscribe(m1 -> {
 			List<ActionComponent> replyButtons = new ArrayList<>();
@@ -137,11 +141,16 @@ public class MuteCommand {
 
 			replyButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.gc.adminLogChannel.get(), m1.getId()), "Take Action"));
 
-			contextMessage.edit(MessageEditSpec.builder().componentsOrNull(List.of(ActionRow.of(replyButtons))).build()).subscribe();
+			if (contextMessage != null) {
+				contextMessage.edit(MessageEditSpec.builder().componentsOrNull(List.of(ActionRow.of(replyButtons))).build()).subscribe();
+			}
 		}));
 
 		List<ActionComponent> dmButtons = new ArrayList<>();
-		dmButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context"));
+
+		if (contextMessage != null) {
+			dmButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context"));
+		}
 
 		if (context.gc.muteAppealChannel.isSet()) {
 			dmButtons.add(Button.link(QuoteHandler.getChannelURL(context.gc.guildId, context.gc.muteAppealChannel.get()), "Appeal"));
@@ -149,7 +158,7 @@ public class MuteCommand {
 
 		boolean dm = DM.send(context.handler, m, MessageCreateSpec.builder()
 				.addEmbed(embed.build())
-				.addComponent(ActionRow.of(dmButtons))
+				.components(dmButtons.isEmpty() ? Possible.absent() : Possible.of(Collections.singletonList(ActionRow.of(dmButtons))))
 				.build(), true).isPresent();
 
 		context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MUTE)
