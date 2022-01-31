@@ -25,7 +25,8 @@ public class PanelHandlers {
 	public static Response guilds(ServerRequest request) {
 		List<PanelGuildData> guilds = new ArrayList<>();
 
-		for (Snowflake guildId : request.app.discordHandler.getSelfGuildIds()) {
+		for (long guildId0 : request.token.getGuildIds(request.app.discordHandler)) {
+			Snowflake guildId = Snowflake.of(guildId0);
 			GuildCollections gc = request.app.db.guild(guildId);
 			AuthLevel authLevel = gc.getAuthLevel(request.token.userId);
 

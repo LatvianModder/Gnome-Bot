@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.util.Utils;
@@ -44,6 +45,7 @@ public class PanelCommands extends ApplicationCommands {
 			event.context.gc.db.webTokens.insert(document);
 		} else {
 			tokenString = token.getUIDString();
+			token.update(Updates.unset("guilds"));
 		}
 
 		event.respond("[Click here to open the panel!](<" + App.url("panel/login?token=" + Base64.getUrlEncoder().encodeToString(tokenString.getBytes(StandardCharsets.UTF_8))) + ">)");
