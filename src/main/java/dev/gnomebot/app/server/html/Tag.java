@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server.html;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.handler.FileResponse;
 
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,10 @@ public abstract class Tag {
 
 	public Tag end() {
 		return parent;
+	}
+
+	public RootTag getRoot() {
+		return parent.getRoot();
 	}
 
 	public void add(Tag tag) {
@@ -33,8 +38,12 @@ public abstract class Tag {
 		return builder.toString();
 	}
 
+	public FileResponse asResponse(HTTPResponseCode code) {
+		return FileResponse.of(code, "text/html; charset=utf-8", getRoot().toString().getBytes(StandardCharsets.UTF_8));
+	}
+
 	public FileResponse asResponse() {
-		return FileResponse.of("text/html; charset=utf-8", toString().getBytes(StandardCharsets.UTF_8));
+		return asResponse(HTTPResponseCode.OK);
 	}
 
 	public Tag string(Object string) {
@@ -54,7 +63,7 @@ public abstract class Tag {
 		return tag;
 	}
 
-	public PairedTag head(String title, String url) {
+	public PairedTag head(String path, String title, String description) {
 		PairedTag head = paired("head");
 		head.meta("charset", "utf-8");
 		head.link("rel", "icon", "href", "/favicon.ico");
@@ -67,12 +76,22 @@ public abstract class Tag {
 		head.link("rel", "stylesheet", "href", "/assets/style.css");
 		head.meta("property", "og:site_name", "content", "Gnome Bot");
 		head.meta("property", "og:title", "content", title);
+
+		if (!description.isEmpty()) {
+			head.meta("property", "og:description", "content", description);
+			head.meta("name", "description", "content", description);
+		}
+
 		head.meta("property", "og:type", "content", "website");
-		head.meta("property", "og:url", "content", App.url(url));
+		head.meta("property", "og:url", "content", App.url(path));
 		head.meta("property", "og:image", "content", "/logo24.png");
 		head.meta("property", "og:image:width", "content", "24");
 		head.meta("property", "og:image:height", "content", "24");
 		return head;
+	}
+
+	public PairedTag head(String path, String title) {
+		return head(path, title, "");
 	}
 
 	public Tag meta(String key1, Object value1, String key2, Object value2) {
@@ -105,6 +124,10 @@ public abstract class Tag {
 
 	public Tag span() {
 		return paired("span");
+	}
+
+	public Tag span(String className) {
+		return span().addClass(className);
 	}
 
 	public Tag p() {

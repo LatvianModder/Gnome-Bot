@@ -23,7 +23,7 @@ public class MiscHandlers {
 				Path path = AppPaths.ASSETS.resolve(a.filename);
 
 				if (Files.exists(path)) {
-					return FileResponse.of(a.contentType, Files.readAllBytes(path));
+					return FileResponse.of(HTTPResponseCode.OK, a.contentType, Files.readAllBytes(path));
 				} else {
 					App.warn("Asset " + path.toAbsolutePath() + " doesn't exist!");
 				}

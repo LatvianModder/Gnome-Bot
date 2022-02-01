@@ -159,7 +159,7 @@ public class PasteHandlers {
 		}
 
 		RootTag root = RootTag.create();
-		root.head(filename, Paste.getUrl(id.asString()));
+		root.head(request.getPath(), filename);
 		Tag body = root.paired("body");
 		Tag content = body.div().addClass("content");
 
@@ -219,17 +219,17 @@ public class PasteHandlers {
 					String bracketClose = matcher.group(7);
 
 					if (string != null) {
-						line.span().string(string).addClass("green");
+						line.span("green").string(string);
 					} else if (number != null) {
-						line.span().string(number).addClass("orange");
+						line.span("orange").string(number);
 					} else if (keyword != null) {
-						line.span().string(keyword).addClass("magenta");
+						line.span("magenta").string(keyword);
 					} else if (symbol != null) {
-						line.span().string(symbol).addClass("blue");
+						line.span("blue").string(symbol);
 					} else if (bracketOpen != null) {
-						line.span().string(bracketOpen).addClass("blue");
+						line.span("blue").string(bracketOpen);
 					} else if (bracketClose != null) {
-						line.span().string(bracketClose).addClass("blue");
+						line.span("blue").string(bracketClose);
 					}
 				}
 
@@ -251,11 +251,11 @@ public class PasteHandlers {
 					String source = matcher.group(5);
 
 					line.string(at);
-					line.span().string(packagePath).addClass("orange");
+					line.span("orange").string(packagePath);
 					line.string(".");
-					line.span().string(className).addClass("yellow");
+					line.span("yellow").string(className);
 					line.string(".");
-					line.span().string(methodName).addClass("blue");
+					line.span("blue").string(methodName);
 					line.string(":");
 
 					Set<String> sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
@@ -263,13 +263,13 @@ public class PasteHandlers {
 					String[] sourceS = source.split(":", 2);
 
 					if (sourceS[0].equals("Native Method")) {
-						line.span().string("native").addClass("purple");
+						line.span("purple").string("native");
 					} else if (sourceS[0].equals("SourceFile")) {
-						line.span().string("SourceFile").addClass("purple");
+						line.span("purple").string("SourceFile");
 					} else if (sourceS.length == 2 && sourceSet.contains(sourceS[0].replace(".java", ""))) {
-						line.span().string("L" + sourceS[1]).addClass("purple");
+						line.span("purple").string("L" + sourceS[1]);
 					} else {
-						line.span().string(source.replace(".java", "")).addClass("purple");
+						line.span("purple").string(source.replace(".java", ""));
 					}
 				}
 

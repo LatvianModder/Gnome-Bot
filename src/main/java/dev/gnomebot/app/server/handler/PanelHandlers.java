@@ -17,12 +17,7 @@ import java.util.List;
  * @author LatvianModder
  */
 public class PanelHandlers {
-	public static Response login(ServerRequest request) {
-		String s = new String(Base64.getUrlDecoder().decode(request.query("token").asString()), StandardCharsets.UTF_8);
-		return Redirect.temporarily(App.url("")).withCookie("gnometoken", s, 31536000);
-	}
-
-	public static Response guilds(ServerRequest request) {
+	public static Response root(ServerRequest request) {
 		List<PanelGuildData> guilds = new ArrayList<>();
 
 		for (long guildId0 : request.token.getGuildIds(request.app.discordHandler)) {
@@ -37,20 +32,42 @@ public class PanelHandlers {
 
 		guilds.sort((o1, o2) -> o1.name().compareToIgnoreCase(o2.name()));
 
-		RootTag root = RootTag.create();
-		root.head("Gnome Panel", "panel/guilds");
-		Tag body = root.paired("body");
-		Tag content = body.div().addClass("content");
-
-		content.h3().string("Gnome Panel");
-		content.br();
+		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel");
 
 		for (PanelGuildData data : guilds) {
 			Tag line = content.p().addClass("withicon");
 			line.unpaired("img").attr("src", "/api/guild/icon/" + data.id().asString() + "/128");
-			line.a("/panel/guilds/" + data.id().asString()).string(data.name());
+			line.a("/panel/" + data.id().asString()).string(data.name());
 		}
 
-		return root.asResponse();
+		return content.asResponse();
+	}
+
+	public static Response login(ServerRequest request) {
+		String token = request.query("token").asString();
+
+		if (token.isEmpty()) {
+			Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel");
+
+			if (request.token == null) {
+				content.p().string("What the heck? You shouldn't be here, shoo!");
+			} else {
+				content.p().string("You've successfully logged in, " + request.token.getName() + "!");
+				content.p().string("You can now close this page.");
+				content.p().a("/panel").string("You can click here to browse guild list.");
+			}
+
+			return content.asResponse();
+		}
+
+		String s = new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
+		return Redirect.temporarily(App.url("panel/login")).withCookie("gnometoken", s, 31536000);
+	}
+
+	public static Response guild(ServerRequest request) {
+		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc);
+		content.p().string("Uh... nothing for now...");
+		content.p().a("/guild/" + request.gc.guildId.asString()).string("For now you can go to old page.");
+		return content.asResponse();
 	}
 }

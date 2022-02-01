@@ -332,8 +332,9 @@ public class App implements Runnable {
 
 		webServer.add("public/:file", SpecialHandlers::publicfile).noAuth().cacheMinutes(5);
 
+		webServer.add("panel", PanelHandlers::root).desc("Guild list");
 		webServer.add("panel/login", PanelHandlers::login).noAuth().log().desc("Panel Login");
-		webServer.add("panel/guilds", PanelHandlers::guilds).cacheMinutes(10).desc("Guild list");
+		webServer.add("panel/:guild", PanelHandlers::guild).member().desc("Guild settings");
 
 		webServer.addWS("api/cli", CLISession.Handler.INSTANCE);
 

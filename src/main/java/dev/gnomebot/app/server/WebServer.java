@@ -5,6 +5,8 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.gnomebot.app.server.handler.Response;
+import dev.gnomebot.app.server.html.RootTag;
+import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.Pair;
@@ -114,6 +116,11 @@ public class WebServer implements Consumer<JavalinConfig> {
 		javalinConfig.showJavalinBanner = false;
 	}
 
+	public static String getPath(Context context) {
+		String s = context.queryString();
+		return context.path() + (s == null ? "" : ("?" + s));
+	}
+
 	public static class MethodHandler implements Handler {
 		public final WebServer webServer;
 		public final HandlerType method;
@@ -160,15 +167,15 @@ public class WebServer implements Consumer<JavalinConfig> {
 				handle0(ctx, p, ip, country, tokenCallback);
 			} catch (HTTPCodeException ex) {
 				log(p, ip, country, ex.responseCode.code, tokenCallback[0]);
-				ctx.status(ex.responseCode.code);
-				ctx.contentType("text/plain; charset=utf-8");
-				ctx.result(ex.msg);
+				Tag content = RootTag.createSimple(getPath(ctx), "Gnome Panel");
+				content.p().span("red").string(ex.msg);
+				content.asResponse(ex.responseCode).result(ctx);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				log(p, ip, country, 500, tokenCallback[0]);
-				ctx.status(500);
-				ctx.contentType("text/plain; charset=utf-8");
-				ctx.result("Internal Error: " + ex);
+				Tag content = RootTag.createSimple(getPath(ctx), "Gnome Panel");
+				content.p().span("red").string("Internal Error: " + ex);
+				content.asResponse(HTTPResponseCode.INTERNAL_ERROR).result(ctx);
 			}
 		}
 
@@ -224,12 +231,16 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 			}
 
-			throw HTTPResponseCode.NOT_FOUND.error("Unknown API Endpoint");
+			RootTag.createSimple(getPath(ctx), "Gnome Panel").p().span("red").string("Page not found!").asResponse(HTTPResponseCode.NOT_FOUND).result(ctx);
 		}
 
 		private Response handle1(Context ctx, RequestHandler handler, String p, ServerRequest req) throws Exception {
 			if (handler.authLevel != AuthLevel.NO_AUTH && req.token == null) {
-				throw HTTPResponseCode.UNAUTHORIZED.error("Unauthorized: Missing token. Run '/panel login' first");
+				Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+				content.p().span("red").string("You must be logged in to view this page!");
+				content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
+				content.p().string("You can refresh this page once you've logged in.");
+				return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
 			}
 
 			if (!req.variable("guild").isEmpty()) {
@@ -244,7 +255,11 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 
 				if (!req.getAuthLevel().is(handler.authLevel)) {
-					throw HTTPResponseCode.UNAUTHORIZED.error("Unauthorized: Required access level is " + handler.authLevel.name().toLowerCase() + ", you are " + req.getAuthLevel().name().toLowerCase());
+					Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+					content.p().span("red").string("You're not cool enough to view this page!");
+					content.p().string("Required auth level is ").span("red").string(handler.authLevel.name.toLowerCase());
+					content.p().string("Your auth level is ").span("red").string(req.getAuthLevel().name.toLowerCase());
+					return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
 				}
 			}
 

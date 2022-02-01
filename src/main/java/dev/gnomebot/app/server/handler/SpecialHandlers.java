@@ -23,7 +23,7 @@ public class SpecialHandlers {
 		if (Files.exists(path)) {
 			String type = request.header("Content-Type", "text/plain");
 			byte[] data = Files.readAllBytes(path);
-			return FileResponse.of(type, data);
+			return FileResponse.of(HTTPResponseCode.OK, type, data);
 		}
 
 		throw HTTPResponseCode.NOT_FOUND.error("File not found!");

@@ -330,47 +330,47 @@ div.pastetext a {
     user-select: none;
 }
 
-div.pastetext .info {
+.info {
     color: var(--text-color);
 }
 
-div.pastetext .debug {
+.debug {
     color: #6D6772;
 }
 
-div.pastetext .warn {
+.warn {
     color: #DBBB80;
 }
 
-div.pastetext .error {
+.error {
     color: #D15C5C;
 }
 
-div.pastetext .red {
+.red {
     color: #D15C5C;
 }
 
-div.pastetext .magenta {
+.magenta {
     color: #F95E92;
 }
 
-div.pastetext .green {
+.green {
     color: #7EB581;
 }
 
-div.pastetext .orange {
+.orange {
     color: #B98B6F;
 }
 
-div.pastetext .yellow {
+.yellow {
     color: #DBBB80;
 }
 
-div.pastetext .blue {
+.blue {
     color: #7EA3B5;
 }
 
-div.pastetext .purple {
+.purple {
     color: #B16C99;
 }
 

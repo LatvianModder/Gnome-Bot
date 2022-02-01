@@ -48,6 +48,10 @@ public class ServerRequest {
 		variables = v;
 	}
 
+	public String getPath() {
+		return WebServer.getPath(context);
+	}
+
 	private void initQuery() {
 		if (query != null) {
 			return;

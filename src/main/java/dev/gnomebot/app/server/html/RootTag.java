@@ -5,9 +5,24 @@ public class RootTag extends PairedTag {
 		return new RootTag();
 	}
 
+	public static Tag createSimple(String path, String title) {
+		RootTag root = create();
+		root.head(path, title);
+		Tag body = root.paired("body");
+		Tag content = body.div().addClass("content");
+		content.h2().string(title);
+		content.br();
+		return content;
+	}
+
 	private RootTag() {
 		super("html");
 		attr("lang", "en");
+	}
+
+	@Override
+	public RootTag getRoot() {
+		return this;
 	}
 
 	@Override
