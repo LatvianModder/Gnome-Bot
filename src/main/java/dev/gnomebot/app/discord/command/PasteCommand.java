@@ -35,7 +35,7 @@ public class PasteCommand extends ApplicationCommands {
 			Snowflake attachmentId = Snowflake.of(urlm.group(2));
 			String filename = urlm.group(3);
 
-			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename);
+			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename, "");
 
 			event.editInitial(WebhookMessageEditRequest.builder()
 					.allowedMentionsOrNull(DiscordMessage.noMentions().toData())

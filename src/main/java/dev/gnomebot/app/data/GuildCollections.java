@@ -18,6 +18,7 @@ import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.MessageFilter;
+import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.script.WrappedGuild;
@@ -26,6 +27,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.UnmuteTask;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -49,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -130,7 +132,8 @@ public class GuildCollections {
 	private Map<Snowflake, CachedRole> roleMap;
 	private List<CachedRole> roleList;
 	public final Map<Snowflake, UnmuteTask> unmuteMap;
-	public final Map<Snowflake, String> recentUsers;
+	public final List<RecentUser> recentUsers;
+	private List<ChatCommandSuggestion> recentUserSuggestions;
 
 	public boolean advancedLogging = false;
 
@@ -197,7 +200,7 @@ public class GuildCollections {
 		autoMuteEmbed = config.add(new BooleanConfig(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
 
 		unmuteMap = new HashMap<>();
-		recentUsers = new LinkedHashMap<>();
+		recentUsers = new ArrayList<>();
 
 		Document settingsDoc = db.guildData.query(guildId.asLong()).firstDocument();
 
@@ -675,22 +678,38 @@ public class GuildCollections {
 	}
 
 	public void usernameSuggestions(ChatCommandSuggestionEvent event) {
-		for (Map.Entry<Snowflake, String> entry : recentUsers.entrySet()) {
-			event.suggest(entry.getValue(), entry.getKey().asString(), 1);
-		}
+		if (recentUserSuggestions == null) {
+			recentUserSuggestions = new ArrayList<>();
 
-		for (Member member : getMembers()) {
-			if (!recentUsers.containsKey(member.getId())) {
-				event.suggest(member.getTag(), member.getId().asString(), 0);
+			for (int i = 0; i < recentUsers.size(); i++) {
+				RecentUser user = recentUsers.get(i);
+				recentUserSuggestions.add(new ChatCommandSuggestion(user.tag(), user.id().asString(), recentUsers.size() - i));
+			}
+
+			Set<Snowflake> set = recentUsers.stream().map(RecentUser::id).collect(Collectors.toSet());
+
+			for (Member member : getMembers()) {
+				if (!set.contains(member.getId())) {
+					recentUserSuggestions.add(new ChatCommandSuggestion(member.getTag(), member.getId().asString(), 0));
+				}
 			}
 		}
+
+		event.suggestions.addAll(recentUserSuggestions);
 	}
 
 	public void pushRecentUser(Snowflake userId, String tag) {
-		if (!tag.equals(recentUsers.put(userId, tag)) && recentUsers.size() > 300) {
-			Iterator<Snowflake> itr = recentUsers.keySet().iterator();
-			itr.next();
-			itr.remove();
+		if (!recentUsers.isEmpty() && recentUsers.get(0).id().equals(userId)) {
+			return;
+		}
+
+		recentUserSuggestions = null;
+		RecentUser user = new RecentUser(userId, tag);
+		recentUsers.remove(user);
+		recentUsers.add(0, user);
+
+		if (recentUsers.size() > 1000) {
+			recentUsers.remove(recentUsers.size() - 1);
 		}
 	}
 }

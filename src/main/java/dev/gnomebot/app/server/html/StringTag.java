@@ -1,5 +1,7 @@
 package dev.gnomebot.app.server.html;
 
+import java.io.Writer;
+
 public class StringTag extends Tag {
 	public static String fixHtml(String string) {
 		return string.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
@@ -12,7 +14,7 @@ public class StringTag extends Tag {
 	}
 
 	@Override
-	public void build(StringBuilder builder) {
-		builder.append(fixHtml(string));
+	public void write(Writer writer) throws Throwable {
+		writer.write(fixHtml(string));
 	}
 }

@@ -28,6 +28,11 @@ public class WrappedUser implements WithId {
 		return id;
 	}
 
+	@Override
+	public String toString() {
+		return getTag();
+	}
+
 	public void clearCache() {
 		name = null;
 		discriminator = null;
@@ -37,7 +42,7 @@ public class WrappedUser implements WithId {
 
 	@HideFromJS
 	public User getDiscordUser() {
-		return Objects.requireNonNull(guild.guild.db.app.discordHandler.getUser(id.asSnowflake()));
+		return Objects.requireNonNull(guild.gc.db.app.discordHandler.getUser(id.asSnowflake()));
 	}
 
 	public boolean isMember() {
@@ -45,7 +50,7 @@ public class WrappedUser implements WithId {
 	}
 
 	public boolean isSelf() {
-		return id.asLong() == guild.guild.db.app.discordHandler.selfId.asLong();
+		return id.asLong() == guild.gc.db.app.discordHandler.selfId.asLong();
 	}
 
 	public String getMention() {
@@ -76,8 +81,9 @@ public class WrappedUser implements WithId {
 		return discriminator;
 	}
 
-	public String getNameWithS() {
-		return getName().endsWith("s") ? (getName() + "'") : (getName() + "'s");
+	public String getBelongingName() {
+		String n = getName();
+		return n + (n.endsWith("s") ? "'" : "'s");
 	}
 
 	public String getTag() {

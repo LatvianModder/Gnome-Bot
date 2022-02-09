@@ -1,6 +1,8 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.server.html.PairedTag;
+import dev.gnomebot.app.server.html.Tag;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
@@ -196,5 +198,25 @@ public class Table {
 
 	public void print() {
 		getLines(true).forEach(App::info);
+	}
+
+	public Tag toTag() {
+		Tag table = new PairedTag("table");
+
+		Tag headTag = table.paired("tr");
+
+		for (Cell cell : head) {
+			headTag.paired("th").string(cell.unformattedValue);
+		}
+
+		for (Cell[] cells : rows) {
+			Tag rowTag = table.paired("tr");
+
+			for (Cell cell : cells) {
+				rowTag.paired("td").string(cell.unformattedValue);
+			}
+		}
+
+		return table;
 	}
 }

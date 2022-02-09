@@ -1,5 +1,7 @@
 package dev.gnomebot.app.script;
 
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.discord.CachedRole;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
@@ -32,7 +34,7 @@ public class WrappedMember extends WrappedUser {
 
 	@HideFromJS
 	public Member getDiscordMember() {
-		return Objects.requireNonNull(guild.guild.getMember(id.asSnowflake()));
+		return Objects.requireNonNull(guild.gc.getMember(id.asSnowflake()));
 	}
 
 	public String getNickname() {
@@ -71,7 +73,7 @@ public class WrappedMember extends WrappedUser {
 
 		int i = 0;
 		for (Snowflake s : list) {
-			array[i] = guild.roles.get(s);
+			array[i] = guild.roles.get(s.asString());
 			i++;
 		}
 
@@ -82,11 +84,11 @@ public class WrappedMember extends WrappedUser {
 		return getDiscordMember().isPending();
 	}
 
-	public boolean isDeaf() {
+	public boolean isDeafened() {
 		return getDiscordMember().getMemberData().deaf();
 	}
 
-	public boolean isMute() {
+	public boolean isMuted() {
 		return getDiscordMember().getMemberData().mute();
 	}
 
@@ -98,19 +100,33 @@ public class WrappedMember extends WrappedUser {
 		getDiscordMember().ban(BanQuerySpec.builder().reason(reason == null || reason.isBlank() ? null : reason).deleteMessageDays(deleteMessages ? 1 : null).build()).block();
 	}
 
-	public void addRole(Snowflake id, @Nullable String reason) {
-		getDiscordMember().addRole(id, reason).block();
-	}
+	public boolean addRole(Snowflake roleId, @Nullable String reason) {
+		CachedRole role = guild.gc.getRoleMap().get(roleId);
 
-	public void removeRole(Snowflake id, @Nullable String reason) {
-		getDiscordMember().removeRole(id, reason).block();
-	}
-
-	public void toggleRole(Snowflake id, @Nullable String reason) {
-		if (getDiscordMember().getRoleIds().contains(id)) {
-			removeRole(id, reason);
+		if (role != null) {
+			return role.add(id.asSnowflake(), reason);
 		} else {
-			addRole(id, reason);
+			App.warn("Unknown role " + roleId.asString());
+			return false;
+		}
+	}
+
+	public boolean removeRole(Snowflake roleId, @Nullable String reason) {
+		CachedRole role = guild.gc.getRoleMap().get(roleId);
+
+		if (role != null) {
+			return role.remove(id.asSnowflake(), reason);
+		} else {
+			App.warn("Unknown role " + roleId.asString());
+			return false;
+		}
+	}
+
+	public boolean toggleRole(Snowflake id, @Nullable String reason) {
+		if (getDiscordMember().getRoleIds().contains(id)) {
+			return removeRole(id, reason);
+		} else {
+			return addRole(id, reason);
 		}
 	}
 
@@ -119,11 +135,11 @@ public class WrappedMember extends WrappedUser {
 		getDiscordMember().edit(GuildMemberEditSpec.builder().nicknameOrNull(nickname.isBlank() ? null : nickname).build()).block();
 	}
 
-	public void setDeaf(boolean b) {
+	public void setDeafened(boolean b) {
 		getDiscordMember().edit(GuildMemberEditSpec.builder().deafen(b).build()).block();
 	}
 
-	public void setMute(boolean b) {
+	public void setMuted(boolean b) {
 		getDiscordMember().edit(GuildMemberEditSpec.builder().mute(b).build()).block();
 	}
 

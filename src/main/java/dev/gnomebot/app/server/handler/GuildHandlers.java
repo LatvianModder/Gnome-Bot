@@ -25,13 +25,12 @@ import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Table;
 import dev.gnomebot.app.util.URLRequest;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.rest.util.Permission;
 import org.bson.conversions.Bson;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -192,16 +191,7 @@ public class GuildHandlers {
 			}
 
 			try {
-				img = URLRequest.of(url).toImage().block();
-
-				if (img.getWidth() != img.getHeight() || img.getWidth() != size || img.getType() != BufferedImage.TYPE_INT_ARGB) {
-					BufferedImage resized = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-					Graphics2D g = resized.createGraphics();
-					g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-					g.drawImage(img, 0, 0, size, size, 0, 0, img.getWidth(), img.getHeight(), null);
-					g.dispose();
-					img = resized;
-				}
+				img = Utils.resize(URLRequest.of(url).toImage().block(), size, size);
 			} catch (Exception ex) {
 			}
 		}

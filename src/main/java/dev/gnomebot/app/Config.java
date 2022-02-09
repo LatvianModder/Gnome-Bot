@@ -29,7 +29,6 @@ public class Config {
 	public final String panel_url;
 	public final String db_uri;
 	public final String discord_bot_token;
-	public final String self_token;
 	public final WebHook death_webhook;
 	public final WebHook gnome_mention_webhook;
 	public final WebHook gnome_dm_webhook;
@@ -54,7 +53,6 @@ public class Config {
 		panel_url = c.getString("panel_url", defUrl) + "/";
 		db_uri = c.getString("db_uri", "mongodb://localhost:27017");
 		discord_bot_token = c.getString("discord_bot_token", "");
-		self_token = c.getString("self_token", "");
 		death_webhook = new WebHook(c.getString("death_webhook", ""));
 		gnome_mention_webhook = new WebHook(c.getString("gnome_mention_webhook", ""));
 		gnome_dm_webhook = new WebHook(c.getString("gnome_dm_webhook", ""));

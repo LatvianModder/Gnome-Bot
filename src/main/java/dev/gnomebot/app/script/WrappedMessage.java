@@ -44,6 +44,11 @@ public class WrappedMessage implements WithId, Deletable {
 		return id;
 	}
 
+	@Override
+	public String toString() {
+		return getContent();
+	}
+
 	public WrappedGuild getGuild() {
 		return channel.guild;
 	}

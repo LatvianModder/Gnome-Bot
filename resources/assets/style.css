@@ -385,3 +385,7 @@ p.withicon img {
     margin-right: 0.5em;
     border-radius: 50%;
 }
+
+table.auditlogtable td {
+    max-width: 15%;
+}

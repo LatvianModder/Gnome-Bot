@@ -23,6 +23,11 @@ public class WrappedRole implements WithId, Deletable {
 		return id;
 	}
 
+	@Override
+	public String toString() {
+		return "@" + getName();
+	}
+
 	public String getName() {
 		return name;
 	}

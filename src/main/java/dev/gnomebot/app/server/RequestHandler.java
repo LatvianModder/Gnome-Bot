@@ -17,7 +17,6 @@ public class RequestHandler {
 	public HandlerType method;
 	public int cacheSeconds;
 	public AuthLevel authLevel;
-	public String description;
 	public boolean log;
 
 	public RequestHandler(App m, String p, ServerPathHandler h) {
@@ -38,7 +37,6 @@ public class RequestHandler {
 		method = HandlerType.GET;
 		cacheSeconds = 0;
 		authLevel = AuthLevel.LOGGED_IN;
-		description = "";
 		log = false;
 	}
 
@@ -99,11 +97,6 @@ public class RequestHandler {
 
 	public RequestHandler owner() {
 		return auth(AuthLevel.OWNER);
-	}
-
-	public RequestHandler desc(String desc) {
-		description = desc;
-		return this;
 	}
 
 	public RequestHandler log() {

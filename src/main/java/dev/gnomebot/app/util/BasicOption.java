@@ -2,6 +2,7 @@ package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.data.Currency;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import discord4j.common.util.Snowflake;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -83,6 +84,10 @@ public class BasicOption {
 
 	public long asLong() {
 		return asLong(0L);
+	}
+
+	public Snowflake asSnowflake() {
+		return asLongOptional().map(Snowflake::of).orElse(Utils.NO_SNOWFLAKE);
 	}
 
 	public Optional<Integer> asIntOptional() {

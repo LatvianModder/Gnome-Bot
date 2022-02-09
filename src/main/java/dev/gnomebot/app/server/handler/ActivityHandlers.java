@@ -12,6 +12,7 @@ import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.json.JsonResponse;
 import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.canvas.ImageCanvas;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
@@ -19,12 +20,8 @@ import discord4j.rest.util.Permission;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Date;
@@ -174,7 +171,7 @@ public class ActivityHandlers {
 				}
 
 				var e = new LeaderboardCommand.LeaderboardCommandEntry();
-				e.id = member.getId().asString();
+				e.id = member.getId();
 				e.name = member.getDisplayName();
 				e.xp = Utils.format(entry.xp);
 				e.rank = list.size() + 1;
@@ -189,6 +186,10 @@ public class ActivityHandlers {
 			}
 		}
 
+		if (list.isEmpty()) {
+			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
+		}
+
 		BufferedImage[] avatars = new BufferedImage[list.size()];
 		AtomicInteger avatarsRemaining = new AtomicInteger(list.size());
 
@@ -196,7 +197,7 @@ public class ActivityHandlers {
 			final int index = i;
 			Thread thread = new Thread(() -> {
 				try {
-					avatars[index] = Utils.internalRequest("api/info/avatar/" + list.get(index).id + "/42").toImage().block();
+					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
 					App.error(ex.toString());
@@ -210,18 +211,21 @@ public class ActivityHandlers {
 		}
 
 		while (avatarsRemaining.get() > 0) {
+			Thread.sleep(10L);
 		}
 
-		Font font = new Font(request.gc.font.get(), Font.BOLD, 36);
-		FontMetrics metrics = new Canvas().getFontMetrics(font);
+		ImageCanvas canvas = new ImageCanvas();
+		canvas.setFont(new Font(request.gc.font.get(), Font.BOLD, 36));
 
 		int w = 0;
 
 		for (LeaderboardCommand.LeaderboardCommandEntry entry : list) {
-			w = Math.max(w, metrics.stringWidth(entry.name + entry.xp) + 240);
+			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
 		}
 
 		w = Math.max(w, 50);
+
+		/*
 		int h = Math.max(list.size() * 45, 45);
 
 		BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -247,6 +251,19 @@ public class ActivityHandlers {
 
 		g.dispose();
 		return FileResponse.image(image);
+		 */
+
+		String indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
+
+		for (int i = 0; i < list.size(); i++) {
+			LeaderboardCommand.LeaderboardCommandEntry entry = list.get(i);
+			canvas.addString(6, 36 + i * 45, String.format(indexFormat, entry.rank), Color.GRAY);
+			canvas.addString(151, 36 + i * 45, entry.name, new Color(entry.color));
+			canvas.addString(w - 6 - canvas.metrics.stringWidth(entry.xp), 36 + i * 45, entry.xp, Color.WHITE);
+			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
+		}
+
+		return FileResponse.image(canvas.createImage());
 	}
 
 	private static class MessageInfo {

@@ -2,8 +2,10 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.CachedRole;
+import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import discord4j.common.util.Snowflake;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -15,7 +17,7 @@ import java.io.ByteArrayOutputStream;
 public class LeaderboardCommand extends ApplicationCommands {
 	public static class LeaderboardCommandEntry {
 		public String name;
-		public String id;
+		public Snowflake id;
 		public int rank;
 		public String xp;
 		public int color;
@@ -60,6 +62,10 @@ public class LeaderboardCommand extends ApplicationCommands {
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respondFile(builder -> {
 			}, "leaderboard-" + event.context.gc.guildId.asString() + "-" + days, "png", imageData.toByteArray(), false);
+		} catch (URLRequest.UnsuccesfulRequestException ex) {
+			if (ex.code == HTTPResponseCode.BAD_REQUEST.code) {
+				event.respond("This leaderboard has no data!");
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			event.respond(req.getFullUrl());

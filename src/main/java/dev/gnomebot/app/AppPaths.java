@@ -24,6 +24,10 @@ public interface AppPaths {
 	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
 	Path DATA = makeDir(Path.of("data"));
 
+	Path CACHE = makeDir(DATA.resolve("cache"));
+	Path AVATAR_CACHE = makeDir(CACHE.resolve("avatars"));
+	Path EMOJI_CACHE = makeDir(CACHE.resolve("emoji"));
+
 	Path CONFIG_FILE = DATA.resolve("config.json");
 	Path DATA_GUILDS = makeDir(DATA.resolve("guilds"));
 	Path DATA_PUBLIC = makeDir(DATA.resolve("public"));

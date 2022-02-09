@@ -1,5 +1,6 @@
 package dev.gnomebot.app.server.html;
 
+import java.io.Writer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,15 +37,20 @@ public class UnpairedTag extends Tag {
 	}
 
 	@Override
-	public void build(StringBuilder builder) {
-		builder.append("<").append(this.name);
+	public void write(Writer writer) throws Throwable {
+		writer.write('<');
+		writer.write(this.name);
 
 		if (this.attributes != null) {
 			for (Map.Entry<String, String> entry : this.attributes.entrySet()) {
-				builder.append(" ").append(entry.getKey()).append("=\"").append(StringTag.fixHtml(entry.getValue())).append("\"");
+				writer.write(' ');
+				writer.write(entry.getKey());
+				writer.write("=\"");
+				writer.write(StringTag.fixHtml(entry.getValue()));
+				writer.write('"');
 			}
 		}
 
-		builder.append(" />");
+		writer.write(" />");
 	}
 }

@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import discord4j.common.util.Snowflake;
@@ -36,31 +35,13 @@ public class RoleConfig extends SnowflakeConfig {
 		return isSet() ? gc.getRoleMap().get(get()) : null;
 	}
 
-	public boolean add(Snowflake member, @Nullable String reason) {
-		if (member != null && isSet()) {
-			try {
-				gc.getClient().getRestClient().getGuildService().addGuildMemberRole(gc.guildId.asLong(), member.asLong(), get().asLong(), reason).block();
-				return true;
-			} catch (Exception ex) {
-				App.warn("Can't assign role " + get().asString() + " to " + member.asString() + " in " + gc);
-				App.warn(ex);
-			}
-		}
-
-		return false;
+	public boolean add(@Nullable Snowflake member, @Nullable String reason) {
+		CachedRole role = getRole();
+		return role != null && role.add(member, reason);
 	}
 
-	public boolean remove(Snowflake member, @Nullable String reason) {
-		if (member != null && isSet()) {
-			try {
-				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId.asLong(), member.asLong(), get().asLong(), reason).block();
-				return true;
-			} catch (Exception ex) {
-				App.warn("Can't remove role " + get().asString() + " from " + member.asString() + " in " + gc);
-				App.warn(ex);
-			}
-		}
-
-		return false;
+	public boolean remove(@Nullable Snowflake member, @Nullable String reason) {
+		CachedRole role = getRole();
+		return role != null && role.remove(member, reason);
 	}
 }

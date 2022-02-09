@@ -12,11 +12,14 @@ import java.util.List;
  * @author LatvianModder
  */
 public class WebToken extends WrappedDocument<WebToken> {
+	public final String token;
 	public final Snowflake userId;
 	public AuthLevel authLevel = AuthLevel.LOGGED_IN;
+	public boolean justLoggedIn = false;
 
 	public WebToken(WrappedCollection<WebToken> c, MapWrapper d) {
 		super(c, d);
+		token = document.getString("_id");
 		userId = Snowflake.of(document.getLong("user"));
 	}
 

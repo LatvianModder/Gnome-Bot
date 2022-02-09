@@ -27,16 +27,17 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		int OLD_CONTENT = 64;
 		int EXTRA = 128;
 		int REVOCABLE = 256;
+		int BOT_USER_IGNORED = 512;
 
 		int CHANNEL_MESSAGE_USER = CHANNEL | MESSAGE | USER;
 		int CHANNEL_MESSAGE_USER_CONTENT = CHANNEL_MESSAGE_USER | CONTENT;
 	}
 
 	public enum Type {
-		MESSAGE_DELETED("message_deleted", 0, Flags.CHANNEL_MESSAGE_USER | Flags.OLD_CONTENT | Flags.EXTRA),
-		MESSAGE_EDITED("message_edited", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT | Flags.EXTRA),
-		REACTION_ADDED("reaction_added", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		REACTION_REMOVED("reaction_removed", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT),
+		MESSAGE_DELETED("message_deleted", 0, Flags.CHANNEL_MESSAGE_USER | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
+		MESSAGE_EDITED("message_edited", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
+		REACTION_ADDED("reaction_added", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.BOT_USER_IGNORED),
+		REACTION_REMOVED("reaction_removed", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.BOT_USER_IGNORED),
 		JOIN_VOICE("join_voice", 0, Flags.CHANNEL | Flags.USER),
 		LEAVE_VOICE("leave_voice", 0, Flags.CHANNEL | Flags.USER),
 

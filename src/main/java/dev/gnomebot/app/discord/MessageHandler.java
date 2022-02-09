@@ -21,6 +21,7 @@ import dev.gnomebot.app.discord.legacycommand.MuteCommand;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
+import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
@@ -51,6 +52,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -185,13 +187,13 @@ public class MessageHandler {
 
 	public static void deleted(DiscordHandler handler, MessageDeleteEvent event) {
 		if (event.getGuildId().isPresent()) {
-			GuildCollections gc = handler.app.db.guild(event.getGuildId().get());
-
 			App.instance.queueBlockingTask(cancelled -> {
+				GuildCollections gc = handler.app.db.guild(event.getGuildId().get());
+
 				DiscordMessage message = gc.messages.findFirst(event.getMessageId());
 
 				if (message != null) {
-					message.delete(gc);
+					message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 					//App.info("Deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString() + " / by " + Snowflake.of(message.getUserID()).asString());
 					App.LOGGER.messageDeleted();
 				}
@@ -202,20 +204,22 @@ public class MessageHandler {
 	}
 
 	public static void bulkDeleted(DiscordHandler handler, MessageBulkDeleteEvent event) {
-		if (!event.getMessageIds().isEmpty()) {
-			GuildCollections gc = handler.app.db.guild(event.getGuildId());
+		Set<Snowflake> messageIds = event.getMessageIds();
 
-			for (Snowflake m : event.getMessageIds()) {
-				App.instance.queueBlockingTask(cancelled -> {
+		if (!messageIds.isEmpty()) {
+			App.instance.queueBlockingTask(cancelled -> {
+				GuildCollections gc = handler.app.db.guild(event.getGuildId());
+
+				for (Snowflake m : messageIds) {
 					DiscordMessage message = gc.messages.findFirst(m);
 
 					if (message != null) {
-						message.delete(gc);
+						message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 						//App.info("Bulk deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + m.asString() + " - " + message.getContent());
 						App.LOGGER.messageDeleted();
 					}
-				});
-			}
+				}
+			});
 		}
 	}
 
@@ -225,7 +229,7 @@ public class MessageHandler {
 			DiscordMessage message = gc.messages.findFirst(event.getMessageId());
 
 			if (message != null) {
-				message.edit(gc, event.getCurrentContent().get());
+				message.edit(gc, event.getCurrentContent().get(), !message.is(DiscordMessage.FLAG_BOT));
 
 				if (!message.is(DiscordMessage.FLAG_BOT)) {
 					//App.info("Edited " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString());
@@ -363,7 +367,7 @@ public class MessageHandler {
 					int c = Integer.parseInt(ipMatcher.group(3));
 					int d = Integer.parseInt(ipMatcher.group(4));
 
-					if (Utils.isIP(a, b, c, d)) {
+					if (IPUtils.isIP(a, b, c, d)) {
 						flags |= DiscordMessage.FLAG_SUSPICIOUS;
 						break;
 					}
@@ -465,10 +469,12 @@ public class MessageHandler {
 			return;
 		}
 
-		gc.pushRecentUser(member.getId(), member.getTag());
+		if (!user.isBot()) {
+			gc.pushRecentUser(member.getId(), member.getTag());
 
-		for (Snowflake mention : message.getUserMentionIds()) {
-			handler.getUserTag(mention).ifPresent(tag -> gc.pushRecentUser(mention, tag));
+			for (Snowflake mention : message.getUserMentionIds()) {
+				handler.getUserTag(mention).ifPresent(tag -> gc.pushRecentUser(mention, tag));
+			}
 		}
 
 		CommandContext context = new CommandContext();

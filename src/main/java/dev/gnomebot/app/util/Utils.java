@@ -8,8 +8,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.WebToken;
+import dev.gnomebot.app.AppPaths;
 import discord4j.common.util.Snowflake;
 import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.Embed;
@@ -34,11 +37,18 @@ import reactor.core.Exceptions;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.imageio.ImageIO;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.time.Instant;
@@ -63,8 +73,25 @@ public class Utils {
 	public static final Random RANDOM = new Random();
 	public static final DecimalFormat LONG_FORMAT = new DecimalFormat("#,###");
 
-	public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setLenient().serializeNulls().create();
-	public static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().setLenient().serializeNulls().create();
+	private static final GsonBuilder GSON_BUILDER = new GsonBuilder()
+			.disableHtmlEscaping()
+			.setLenient()
+			.registerTypeAdapter(Snowflake.class, new TypeAdapter<Snowflake>() {
+				@Override
+				public void write(JsonWriter out, Snowflake value) throws IOException {
+					out.value(value.asString());
+				}
+
+				@Override
+				public Snowflake read(JsonReader in) throws IOException {
+					String s = in.nextString();
+					return s.isEmpty() || s.equals("0") ? NO_SNOWFLAKE : Snowflake.of(s);
+				}
+			})
+			.serializeNulls();
+
+	public static final Gson GSON = GSON_BUILDER.create();
+	public static final Gson GSON_PRETTY = GSON_BUILDER.setPrettyPrinting().create();
 	public static final MessageDigest MD5 = getMD5();
 	public static final MessageDigest SHA1 = getSHA1();
 	private static final Calendar formatCalendar = Calendar.getInstance();
@@ -86,8 +113,6 @@ public class Utils {
 
 	public static final Route THREAD_ROUTE = Routes.START_THREAD_WITH_MESSAGE;
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
-
-	public static WebToken selfToken;
 
 	private static MessageDigest getMD5() {
 		try {
@@ -565,7 +590,7 @@ public class Utils {
 	}
 
 	public static URLRequest<InputStream> internalRequest(String path) {
-		return URLRequest.of(App.url(path)).cookie("gnometoken", selfToken.document.getString("_id"));
+		return URLRequest.of(App.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
 	}
 
 	public static JsonElement readInternalJson(String path) {
@@ -576,37 +601,65 @@ public class Utils {
 		}
 	}
 
+	public static BufferedImage getAvatar(Snowflake id, int size) throws Exception {
+		Path path = AppPaths.AVATAR_CACHE.resolve(id.asString() + "-" + size + ".png");
+
+		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
+			BufferedImage img = internalRequest("api/info/avatar/" + id.asString() + "/" + size).toImage().block();
+			ImageIO.write(img, "PNG", path.toFile());
+			return img;
+		}
+
+		return ImageIO.read(path.toFile());
+	}
+
+	public static BufferedImage getEmoji(Snowflake id, int size) throws Exception {
+		Path path = AppPaths.EMOJI_CACHE.resolve(id.asString() + "-" + size + ".png");
+
+		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
+			BufferedImage img = internalRequest("api/info/emoji/" + id.asString() + "/" + size).toImage().block();
+			ImageIO.write(img, "PNG", path.toFile());
+			return img;
+		}
+
+		return ImageIO.read(path.toFile());
+	}
+
+	public static BufferedImage resize(BufferedImage image, int width, int height) {
+		int w0 = image.getWidth();
+		int h0 = image.getHeight();
+
+		if (w0 == width && h0 == height) {
+			return image;
+		}
+
+		double ratio;
+
+		if (w0 > h0) {
+			ratio = width / (float) w0;
+		} else {
+			ratio = height / (float) h0;
+		}
+
+		int w1 = Math.max(1, Math.min(Utils.ceil(w0 * ratio), width));
+		int h1 = Math.max(1, Math.min(Utils.ceil(h0 * ratio), height));
+
+		// App.info("Resizing image from " + w0 + "x" + h0 + " to " + w1 + "x" + h1 + " with ratio " + ratio + " and target size " + width + "x" + height);
+
+		BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = resized.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.drawImage(image, (width - w1) / 2, (height - h1) / 2, w1, h1, null);
+		g.dispose();
+		return resized;
+	}
+
 	public static String format(long number) {
 		return LONG_FORMAT.format(number);//.replace(',', '\'');
 	}
 
 	public static int getChartColor(int id) {
 		return CHART_COLORS[id % CHART_COLORS.length];
-	}
-
-	// 10.0.0.0 — 10.255.255.255;
-	// 172.16.0.0 — 172.31.255.255;
-	// 192.168.0.0 — 192.168.255.255
-	// https://en.wikipedia.org/wiki/Reserved_IP_addresses
-
-	public static boolean in(int x, int min, int max) {
-		return x >= min && x <= max;
-	}
-
-	public static boolean isIP(int a, int b, int c, int d) {
-		if (a == 12 || !in(a, 10, 255) || !in(b, 0, 255) || !in(c, 0, 255) || !in(d, 0, 255)) {
-			return false;
-		}
-
-		if (a == 127 && b == 0 && c == 0 && d == 1) {
-			return false;
-		}
-
-		if (a == 192 && b == 168) {
-			return false;
-		}
-
-		return a + b + c + d > 20;
 	}
 
 	public static String reactionToString(ReactionEmoji emoji) {
@@ -750,7 +803,7 @@ public class Utils {
 	}
 
 	public static String createLocalFile(String name, byte[] data) {
-		// TODO: Implement me
+		// TODO: Implement me, or not, im not a cop, im just a comment
 		return "";
 	}
 

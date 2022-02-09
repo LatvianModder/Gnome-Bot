@@ -44,6 +44,17 @@ public class URLRequest<T> {
 
 	}
 
+	public static class UnsuccesfulRequestException extends IllegalStateException {
+		public final int code;
+		public final String response;
+
+		public UnsuccesfulRequestException(int code, String response) {
+			super("Error " + code + ": " + response);
+			this.code = code;
+			this.response = response;
+		}
+	}
+
 	public static URLRequest<InputStream> of(String url) {
 		return new URLRequest<>(url, new Mapper<>() {
 			@Override
@@ -362,7 +373,7 @@ public class URLRequest<T> {
 				}
 			}
 
-			throw new IllegalStateException("Error " + code + ": " + sb.toString().trim());
+			throw new UnsuccesfulRequestException(code, sb.toString().trim());
 		}
 	}
 
@@ -391,8 +402,13 @@ public class URLRequest<T> {
 		subscribe(callback, Exception::printStackTrace);
 	}
 
+	public String getHeader(String header, String def) {
+		String s = connection.getHeaderField(header);
+		return s == null || s.isEmpty() ? def : s;
+	}
+
 	public String getHeader(String header) {
-		return connection.getHeaderField(header);
+		return getHeader(header, "");
 	}
 
 	public Map<String, List<String>> getHeaderFields() {

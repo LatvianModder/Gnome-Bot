@@ -32,6 +32,11 @@ public class WrappedChannel implements WithId, Deletable {
 		return id;
 	}
 
+	@Override
+	public String toString() {
+		return "#" + getName();
+	}
+
 	public String getMention() {
 		return "<#" + id.asString() + ">";
 	}
@@ -39,7 +44,7 @@ public class WrappedChannel implements WithId, Deletable {
 	public String getName() {
 		if (name == null) {
 			try {
-				name = guild.guild.getChannelMap().get(id.asSnowflake()).getName();
+				name = guild.gc.getChannelMap().get(id.asSnowflake()).getName();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				name = "deleted-channel";
@@ -52,7 +57,7 @@ public class WrappedChannel implements WithId, Deletable {
 	public String getTopic() {
 		if (topic == null) {
 			try {
-				topic = guild.guild.getChannelMap().get(id.asSnowflake()).getTopic().orElse("");
+				topic = guild.gc.getChannelMap().get(id.asSnowflake()).getTopic().orElse("");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				topic = "";
@@ -65,7 +70,7 @@ public class WrappedChannel implements WithId, Deletable {
 	public boolean getNsfw() {
 		if (nsfw == null) {
 			try {
-				nsfw = guild.guild.getChannelMap().get(id.asSnowflake()).isNsfw();
+				nsfw = guild.gc.getChannelMap().get(id.asSnowflake()).isNsfw();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				nsfw = false;
@@ -82,7 +87,7 @@ public class WrappedChannel implements WithId, Deletable {
 
 	@HideFromJS
 	public ChannelService getChannelService() {
-		return guild.guild.db.app.discordHandler.client.getRestClient().getChannelService();
+		return guild.gc.db.app.discordHandler.client.getRestClient().getChannelService();
 	}
 
 	public void setName(String s) {
@@ -111,7 +116,7 @@ public class WrappedChannel implements WithId, Deletable {
 	@Nullable
 	public WrappedMessage findMessage(Snowflake messageId) {
 		try {
-			return getMessage(new Message(guild.guild.db.app.discordHandler.client, getChannelService().getMessage(id.asLong(), messageId.asLong()).block()));
+			return getMessage(new Message(guild.gc.db.app.discordHandler.client, getChannelService().getMessage(id.asLong(), messageId.asLong()).block()));
 		} catch (Exception ex) {
 			return null;
 		}

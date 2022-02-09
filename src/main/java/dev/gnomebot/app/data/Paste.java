@@ -34,6 +34,10 @@ public class Paste extends WrappedDocument<Paste> {
 		return document.getString("filename");
 	}
 
+	public String getUser() {
+		return document.getString("user", "Unknown");
+	}
+
 	public static String getOriginalUrl(String channelId, String attachmentId, String filename) {
 		return "https://cdn.discordapp.com/attachments/" + channelId + "/" + attachmentId + "/" + filename;
 	}
@@ -47,10 +51,11 @@ public class Paste extends WrappedDocument<Paste> {
 			return;
 		}
 
+		String user = m.getUserData().username();
 		List<Button> buttons = new ArrayList<>();
 
 		for (Attachment attachment : attachments) {
-			Paste.createPaste(db, m.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename());
+			Paste.createPaste(db, m.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), user);
 			buttons.add(Button.link(getUrl(attachment.getId().asString()), "View " + attachment.getFilename()));
 		}
 
@@ -62,10 +67,15 @@ public class Paste extends WrappedDocument<Paste> {
 		).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
 	}
 
-	public static void createPaste(Databases db, long channelId, long attachmentId, String filename) {
+	public static void createPaste(Databases db, long channelId, long attachmentId, String filename, String user) {
 		List<Bson> updates = new ArrayList<>();
 		updates.add(Updates.set("channel", channelId));
 		updates.add(Updates.set("filename", filename));
+
+		if (!user.isEmpty()) {
+			updates.add(Updates.set("user", user));
+		}
+
 		db.pastes.query(attachmentId).upsert(updates);
 	}
 }

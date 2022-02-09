@@ -69,12 +69,12 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		return document.getDate("timestamp");
 	}
 
-	public void delete(GuildCollections gc) {
-		deleteOrEdit(gc, true, "");
+	public void delete(GuildCollections gc, boolean auditLog) {
+		deleteOrEdit(gc, true, "", auditLog);
 	}
 
-	public void edit(GuildCollections gc, String newContent) {
-		deleteOrEdit(gc, false, newContent);
+	public void edit(GuildCollections gc, String newContent, boolean auditLog) {
+		deleteOrEdit(gc, false, newContent, auditLog);
 	}
 
 	public long getReply() {
@@ -93,7 +93,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		return "[➤](" + getURL(gc) + ")";
 	}
 
-	private void deleteOrEdit(GuildCollections gc, boolean deleted, String newContent) {
+	private void deleteOrEdit(GuildCollections gc, boolean deleted, String newContent, boolean auditLog) {
 		long flags1 = deleted ? flags : (flags & ~DiscordMessage.FLAG_EDITED);
 
 		List<Bson> updates = new ArrayList<>();
@@ -107,15 +107,17 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 		long reply = getReply();
 
-		gc.auditLog(GnomeAuditLogEntry.builder(deleted ? GnomeAuditLogEntry.Type.MESSAGE_DELETED : GnomeAuditLogEntry.Type.MESSAGE_EDITED)
-				.channel(Snowflake.of(getChannelID()))
-				.message(Snowflake.of(getUID()))
-				.user(Snowflake.of(getUserID()))
-				.oldContent(getContent())
-				.content(newContent)
-				.extra("flags", flags1 == 0L ? null : flags1)
-				.extra("reply", reply == 0L ? null : reply)
-		);
+		if (auditLog) {
+			gc.auditLog(GnomeAuditLogEntry.builder(deleted ? GnomeAuditLogEntry.Type.MESSAGE_DELETED : GnomeAuditLogEntry.Type.MESSAGE_EDITED)
+					.channel(Snowflake.of(getChannelID()))
+					.message(Snowflake.of(getUID()))
+					.user(Snowflake.of(getUserID()))
+					.oldContent(getContent())
+					.content(newContent)
+					.extra("flags", flags1 == 0L ? null : flags1)
+					.extra("reply", reply == 0L ? null : reply)
+			);
+		}
 
 		if (reply != 0L) {
 			updates.add(Updates.set("reply", reply));

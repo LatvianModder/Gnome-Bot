@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Role;
@@ -59,5 +60,33 @@ public class CachedRole {
 		} catch (Exception ex) {
 			return null;
 		}
+	}
+
+	public boolean add(@Nullable Snowflake member, @Nullable String reason) {
+		if (member != null) {
+			try {
+				gc.getClient().getRestClient().getGuildService().addGuildMemberRole(gc.guildId.asLong(), member.asLong(), id.asLong(), reason).block();
+				return true;
+			} catch (Exception ex) {
+				App.warn("Can't assign role " + id.asString() + " to " + member.asString() + " in " + gc);
+				App.warn(ex);
+			}
+		}
+
+		return false;
+	}
+
+	public boolean remove(@Nullable Snowflake member, @Nullable String reason) {
+		if (member != null) {
+			try {
+				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId.asLong(), member.asLong(), id.asLong(), reason).block();
+				return true;
+			} catch (Exception ex) {
+				App.warn("Can't remove role " + id.asString() + " from " + member.asString() + " in " + gc);
+				App.warn(ex);
+			}
+		}
+
+		return false;
 	}
 }

@@ -1,7 +1,6 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.gnomebot.app.server.handler.Response;
@@ -10,14 +9,13 @@ import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.Pair;
-import dev.gnomebot.app.util.Utils;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
-import io.javalin.websocket.WsConfig;
 import org.bson.Document;
+import org.eclipse.jetty.websocket.api.StatusCode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -37,7 +35,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 	private final App app;
 	public List<RequestHandler> handlerList;
-	public List<Pair<String, Consumer<WsConfig>>> webSocketHandlerList;
+	public List<Pair<String, WSHandler>> webSocketHandlerList;
 	private Javalin javalin;
 
 	public WebServer(App m) {
@@ -84,7 +82,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			javalin.addHandler(method, "*", w);
 		}
 
-		for (Pair<String, Consumer<WsConfig>> h : webSocketHandlerList) {
+		for (var h : webSocketHandlerList) {
 			javalin.ws(h.a, h.b);
 		}
 
@@ -92,6 +90,10 @@ public class WebServer implements Consumer<JavalinConfig> {
 	}
 
 	public void stop() {
+		for (var h : webSocketHandlerList) {
+			h.b.closeAll(StatusCode.SHUTDOWN, "GnomeBot Restarting");
+		}
+
 		javalin.stop();
 		javalin = null;
 		handlerList.clear();
@@ -107,7 +109,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 		return add(path, (ServerPathHandler) handler);
 	}
 
-	public void addWS(String path, Consumer<WsConfig> consumer) {
+	public void addWS(String path, WSHandler consumer) {
 		webSocketHandlerList.add(Pair.of(path, consumer));
 	}
 
@@ -184,7 +186,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 				throw HTTPResponseCode.BAD_REQUEST.error("Missing required headers");
 			}
 
-			WebToken token = getToken(ctx);
+			WebToken token = webServer.app.db.getToken(ctx);
 			tokenCallback[0] = token;
 
 			RequestHandler sh = staticHandlers.get(p);
@@ -276,36 +278,6 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			return r;
-		}
-
-		@Nullable
-		private WebToken getToken(Context ctx) {
-			/*
-			String a = ctx.header("Authorization");
-
-			if (a != null && a.startsWith("Bearer "))
-			{
-				String token = a.substring(7);
-
-				if (token.equals(webServer.app.config.self_token))
-				{
-					return Utils.selfToken;
-				}
-
-				return webServer.app.db.webTokens.get(Filters.eq("_id", token));
-			}*/
-
-			String c = ctx.cookie("gnometoken");
-
-			if (c != null && !c.isEmpty()) {
-				if (c.equals(Config.get().self_token)) {
-					return Utils.selfToken;
-				}
-
-				return webServer.app.db.webTokens.findFirst(c);
-			}
-
-			return null;
 		}
 
 		private void log(String p, String ip, String country, int status, @Nullable WebToken token) {

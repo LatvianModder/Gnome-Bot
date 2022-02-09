@@ -9,13 +9,12 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.json.JsonResponse;
 import dev.gnomebot.app.util.Either;
 import dev.gnomebot.app.util.URLRequest;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.util.ImageUtil;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.Image;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
 
@@ -83,25 +82,11 @@ public class InfoHandlers {
 			url = ImageUtil.getUrl("embed/avatars/" + (userData == null ? 0 : (Integer.parseInt(userData.discriminator()) % 5)), PNG) + "?size=" + sizeToRetrieve;
 		}
 
-		BufferedImage img = null;
+		BufferedImage img;
 
 		try {
-			img = URLRequest.of(url).toImage().block();
-
-			if (img.getWidth() != img.getHeight() || img.getWidth() != size || img.getType() != BufferedImage.TYPE_INT_ARGB) {
-				// App.log("Scaling " + id.asString() + " avatar from " + img.getWidth() + "x" + img.getHeight() + " to " + size + "x" + size);
-
-				BufferedImage resized = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g = resized.createGraphics();
-				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				g.drawImage(img, 0, 0, size, size, 0, 0, img.getWidth(), img.getHeight(), null);
-				g.dispose();
-				img = resized;
-			}
+			img = Utils.resize(URLRequest.of(url).toImage().block(), size, size);
 		} catch (Exception ex) {
-		}
-
-		if (img == null) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
 			for (int x = 0; x < size; x++) {
@@ -132,23 +117,11 @@ public class InfoHandlers {
 			}
 		}
 
-		BufferedImage img = null;
+		BufferedImage img;
 
 		try {
-			img = URLRequest.of(url).toImage().block();
-
-			if (img.getWidth() != img.getHeight() || img.getWidth() != size || img.getType() != BufferedImage.TYPE_INT_ARGB) {
-				BufferedImage resized = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g = resized.createGraphics();
-				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				g.drawImage(img, 0, 0, size, size, 0, 0, img.getWidth(), img.getHeight(), null);
-				g.dispose();
-				img = resized;
-			}
+			img = Utils.resize(URLRequest.of(url).toImage().block(), size, size);
 		} catch (Exception ex) {
-		}
-
-		if (img == null) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
 			for (int x = 0; x < size; x++) {

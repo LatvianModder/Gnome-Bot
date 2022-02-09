@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PasteHandlers {
-	public static final Pattern AT_PATTERN = Pattern.compile("([ \\t]+at )([\\w./$]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
+	public static final Pattern AT_PATTERN = Pattern.compile("([ \\t]+at )([\\w./$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 
 	public static final String[] JAVA_AND_JS_KEYWORDS = new String[]{
 			// Common //
@@ -94,7 +94,7 @@ public class PasteHandlers {
 		Snowflake channel = request.getSnowflake("channel");
 		Snowflake id = request.getSnowflake("id");
 		String filename = request.variable("filename");
-		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename);
+		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename, "");
 		return Redirect.permanently(App.url("paste/" + id.asString()));
 	}
 
@@ -138,18 +138,24 @@ public class PasteHandlers {
 			sb.append('\n');
 		}
 
-		return FileResponse.plainText(sb.toString()).withHeader("Gnome-Paste-Filename", filename).withHeader("Gnome-Paste-Channel", channel.asString());
+		return FileResponse.plainText(sb.toString())
+				.withHeader("Gnome-Paste-Filename", filename)
+				.withHeader("Gnome-Paste-Channel", channel.asString())
+				.withHeader("Gnome-Paste-User", paste.getUser())
+				;
 	}
 
 	public static Response paste(ServerRequest request) throws Exception {
 		Snowflake id = request.getSnowflake("id");
 		String contents;
 		String filename;
+		String user;
 
 		try {
 			URLRequest<String> req = Utils.internalRequest("paste/" + id.asString() + "/raw").toJoinedString();
 			contents = req.block().trim();
 			filename = req.getHeader("Gnome-Paste-Filename");
+			user = req.getHeader("Gnome-Paste-User");
 		} catch (Exception ex) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
@@ -159,11 +165,11 @@ public class PasteHandlers {
 		}
 
 		RootTag root = RootTag.create();
-		root.head(request.getPath(), filename);
+		root.setupHead(request.getPath(), filename);
 		Tag body = root.paired("body");
 		Tag content = body.div().addClass("content");
 
-		content.h3().string(filename).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
+		content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
 		content.br();
 
 		Tag pasteText = content.div().addClass("pastetext");
@@ -182,6 +188,12 @@ public class PasteHandlers {
 		}
 
 		for (int i = 0; i < lines.length; i++) {
+			if (i == 50000) {
+				pasteText.br();
+				pasteText.p().addClass("error").string("This paste is too large! Rest of it will not have formatting!").end();
+				pasteText.br();
+			}
+
 			String lineId = "L" + (i + 1);
 			Tag line = pasteText.p();
 			line.attr("id", lineId);
@@ -202,6 +214,11 @@ public class PasteHandlers {
 
 			line.a("#" + lineId).string(String.format(lineFormat, i + 1));
 			line.a("").string("    ");
+
+			if (i >= 50000) {
+				line.string(lines[i]);
+				continue;
+			}
 
 			if (fileType == TYPE_JAVA_AND_JS) {
 				Matcher matcher = JAVA_AND_JS_PATTERN.matcher(lines[i]);
@@ -264,6 +281,10 @@ public class PasteHandlers {
 
 					if (sourceS[0].equals("Native Method")) {
 						line.span("purple").string("native");
+					} else if (sourceS[0].equals("Unknown Source")) {
+						line.span("purple").string("unknown");
+					} else if (sourceS[0].equals(".dynamic")) {
+						line.span("purple").string("dynamic");
 					} else if (sourceS[0].equals("SourceFile")) {
 						line.span("purple").string("SourceFile");
 					} else if (sourceS.length == 2 && sourceSet.contains(sourceS[0].replace(".java", ""))) {

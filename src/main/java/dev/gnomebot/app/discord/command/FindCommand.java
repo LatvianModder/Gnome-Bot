@@ -247,7 +247,7 @@ public class FindCommand extends ApplicationCommands {
 
 		c.createMessage(MessageCreateSpec.builder().addFile(event.context.gc.guildId.asString() + "-" + memberId.asString() + "-" + Instant.now() + ".csv", new ByteArrayInputStream(out.toByteArray())).build()).flatMap(dm -> {
 			Attachment attachment = dm.getAttachments().get(0);
-			Paste.createPaste(event.context.gc.db, dm.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename());
+			Paste.createPaste(event.context.gc.db, dm.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getUsername());
 			return dm.edit(MessageEditSpec.builder().addComponent(ActionRow.of(Button.link(Paste.getUrl(attachment.getId().asString()), "View " + attachment.getFilename()))).build());
 		}).block();
 

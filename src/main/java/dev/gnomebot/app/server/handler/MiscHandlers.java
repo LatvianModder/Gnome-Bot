@@ -39,7 +39,7 @@ public class MiscHandlers {
 	}
 
 	public static Response signOut(ServerRequest request) {
-		App.instance.db.webTokens.query(request.token.document.getString("_id")).delete();
+		App.instance.db.invalidateToken(request.token.userId.asLong());
 		return Response.SUCCESS_JSON;
 	}
 }

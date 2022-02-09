@@ -3,17 +3,13 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
-import discord4j.core.object.entity.Member;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
 import discord4j.discordjson.json.MessageData;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -107,17 +103,5 @@ public class ComponentEventWrapper extends InteractionEventWrapper<ComponentInte
 
 	public Optional<MessageData> respond(List<String> content) {
 		return respond(String.join("\n", content));
-	}
-
-	public Member getMember(String id) throws DiscordCommandException {
-		try {
-			return Objects.requireNonNull(context.gc.getMember(Snowflake.of(id)));
-		} catch (Exception ex) {
-			throw new DiscordCommandException("Member not found!");
-		}
-	}
-
-	public Member getMember(int index) throws DiscordCommandException {
-		return getMember(path[index]);
 	}
 }

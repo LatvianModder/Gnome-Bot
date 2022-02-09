@@ -10,7 +10,6 @@ import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.BasicOption;
 import dev.gnomebot.app.util.Pair;
-import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
@@ -44,18 +43,6 @@ public class CommandOption extends BasicOption {
 
 	public Optional<User> asUser() throws DiscordCommandException {
 		return value.isPresent() ? new CommandReader(context.gc, rawValue).readUser() : Optional.empty();
-	}
-
-	public Snowflake asSnowflake() throws DiscordCommandException {
-		if (value.isPresent()) {
-			try {
-				return Snowflake.of(rawValue);
-			} catch (Exception ex) {
-				throw new DiscordCommandException("Invalid snowflake!");
-			}
-		}
-
-		return Utils.NO_SNOWFLAKE;
 	}
 
 	public Optional<ChannelInfo> asChannelInfo() throws DiscordCommandException {

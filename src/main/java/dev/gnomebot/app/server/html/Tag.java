@@ -4,6 +4,8 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.handler.FileResponse;
 
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
 public abstract class Tag {
@@ -29,13 +31,22 @@ public abstract class Tag {
 		throw new IllegalStateException("This tag type does not support attributes");
 	}
 
-	public abstract void build(StringBuilder builder);
+	public abstract void write(Writer writer) throws Throwable;
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		build(builder);
-		return builder.toString();
+		StringWriter writer = new StringWriter();
+
+		try {
+			write(writer);
+		} catch (OutOfMemoryError error) {
+			App.error("Out of memory while generating HTML:");
+			error.printStackTrace();
+		} catch (Throwable error) {
+			error.printStackTrace();
+		}
+
+		return writer.toString();
 	}
 
 	public FileResponse asResponse(HTTPResponseCode code) {
@@ -61,37 +72,6 @@ public abstract class Tag {
 		PairedTag tag = new PairedTag(name);
 		add(tag);
 		return tag;
-	}
-
-	public PairedTag head(String path, String title, String description) {
-		PairedTag head = paired("head");
-		head.meta("charset", "utf-8");
-		head.link("rel", "icon", "href", "/favicon.ico");
-		// head.meta("name", "viewport", "content", "width=device-width, initial-scale=1");
-		head.meta("name", "theme-color", "content", "#262728");
-		head.meta("name", "description", "content", "Gnome Bot Panel");
-		head.link("rel", "apple-touch-icon", "href", "/logo192.png");
-		head.link("rel", "manifest", "href", "/manifest.json");
-		head.paired("title").string(title);
-		head.link("rel", "stylesheet", "href", "/assets/style.css");
-		head.meta("property", "og:site_name", "content", "Gnome Bot");
-		head.meta("property", "og:title", "content", title);
-
-		if (!description.isEmpty()) {
-			head.meta("property", "og:description", "content", description);
-			head.meta("name", "description", "content", description);
-		}
-
-		head.meta("property", "og:type", "content", "website");
-		head.meta("property", "og:url", "content", App.url(path));
-		head.meta("property", "og:image", "content", "/logo24.png");
-		head.meta("property", "og:image:width", "content", "24");
-		head.meta("property", "og:image:height", "content", "24");
-		return head;
-	}
-
-	public PairedTag head(String path, String title) {
-		return head(path, title, "");
 	}
 
 	public Tag meta(String key1, Object value1, String key2, Object value2) {
@@ -152,5 +132,9 @@ public abstract class Tag {
 		}
 
 		return paired("a").attr("href", url);
+	}
+
+	public Tag script(String script) {
+		return paired("script").string(script);
 	}
 }

@@ -118,7 +118,6 @@ public class InteractionHandler {
 						eventWrapper.respond("Error: " + ex);
 					}
 				} catch (Exception ex) {
-					ex.printStackTrace();
 				}
 			}
 		}
@@ -136,11 +135,14 @@ public class InteractionHandler {
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
 				try {
-					selectMenu(eventWrapper, event.getValues());
-				} catch (DiscordCommandException ex) {
-					eventWrapper.respond(ex.getMessage());
+					try {
+						selectMenu(eventWrapper, event.getValues());
+					} catch (DiscordCommandException ex) {
+						eventWrapper.respond(ex.getMessage());
+					} catch (Exception ex) {
+						eventWrapper.respond("Error: " + ex);
+					}
 				} catch (Exception ex) {
-					eventWrapper.respond("Error: " + ex);
 				}
 			}
 		}
@@ -149,12 +151,12 @@ public class InteractionHandler {
 	private static void button(ComponentEventWrapper event) throws DiscordCommandException {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "unmute" -> unmute(event, event.getMember(1));
+			case "unmute" -> unmute(event, Snowflake.of(event.path[1]));
 			case "macro" -> macro(event, event.path[1]);
 			case "feedback" -> feedback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
-			case "warn" -> warn(event, event.getMember(1), event.path[2], Confirm.of(event.path, 3));
-			case "kick" -> kick(event, event.getMember(1), event.path[2], Confirm.of(event.path, 3));
-			case "ban" -> ban(event, event.getMember(1), event.path[2], Confirm.of(event.path, 3));
+			case "warn" -> warn(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "kick" -> kick(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "ban" -> ban(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "refresh_modpack" -> refreshModpack(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
@@ -209,32 +211,32 @@ public class InteractionHandler {
 		}
 	}
 
-	private static void warn(ComponentEventWrapper event, Member other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void warn(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
 		event.context.checkSenderAdmin();
 		//other.kick(reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Warned by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Warned " + other.getMention());
+		event.respond("Warned <@" + other.asString() + ">");
 	}
 
-	private static void kick(ComponentEventWrapper event, Member other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void kick(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
 		event.context.checkSenderAdmin();
-		other.kick(reason).subscribe();
+		event.context.gc.getGuild().kick(other, reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Kicked by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Kicked " + other.getMention());
+		event.respond("Kicked <@" + other.asString() + ">");
 	}
 
-	private static void ban(ComponentEventWrapper event, Member other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void ban(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
 		event.context.checkSenderAdmin();
-		other.ban(BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
+		event.context.gc.getGuild().ban(other, BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Banned by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Banned " + other.getMention());
+		event.respond("Banned <@" + other.asString() + ">");
 	}
 
-	private static void unmute(ComponentEventWrapper event, Member other) throws DiscordCommandException {
+	private static void unmute(ComponentEventWrapper event, Snowflake other) throws DiscordCommandException {
 		event.context.checkSenderAdmin();
-		event.context.gc.unmute(other.getId(), 0L);
+		event.context.gc.unmute(other, 0L);
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.secondary("none", Emojis.CHECKMARK, "Unmuted by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Unmuted " + other.getMention());
+		event.respond("Unmuted <@" + other.asString() + ">");
 	}
 
 	private static void macro(ComponentEventWrapper event, String id) throws DiscordCommandException {

@@ -110,7 +110,7 @@ public class CLIEmojiLeaderboardCommand {
 			g.drawString(cs, w - 6 - metrics.stringWidth(cs), 36 + i * 45);
 
 			try {
-				BufferedImage a = Utils.internalRequest("api/info/emoji/" + entry.id.asString() + "/42").toImage().block();
+				BufferedImage a = Utils.getEmoji(entry.id, 42);
 				g.drawImage(a, 100, 3 + i * 45, 42, 42, null);
 			} catch (Exception ex) {
 				g.fillRect(100, 3 + i * 45, 42, 42);
