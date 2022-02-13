@@ -325,14 +325,14 @@ public class InteractionHandler {
 							event.respondWithSuggestions(Collections.emptyList()).subscribe();
 						} else {
 							eventWrapper.suggestions.sort(ChatCommandSuggestion::compareTo);
-							String search = eventWrapper.focused.asString().toLowerCase();
+							String search = eventWrapper.focused.asString().toLowerCase().trim();
 
 							List<ApplicationCommandOptionChoiceData> list = new ArrayList<>();
 
 							for (ChatCommandSuggestion data : eventWrapper.suggestions) {
 								if (list.size() == 25) {
 									break;
-								} else if (data.name().toLowerCase().startsWith(search)) {
+								} else if (search.isEmpty() || data.name().toLowerCase().startsWith(search)) {
 									list.add(data.build());
 								}
 							}
@@ -340,7 +340,7 @@ public class InteractionHandler {
 							for (ChatCommandSuggestion data : eventWrapper.suggestions) {
 								if (list.size() == 25) {
 									break;
-								} else if (!data.name().toLowerCase().startsWith(search) && data.name().toLowerCase().contains(search)) {
+								} else if (!search.isEmpty() && !data.name().toLowerCase().startsWith(search) && data.name().toLowerCase().contains(search)) {
 									list.add(data.build());
 								}
 							}
@@ -355,7 +355,7 @@ public class InteractionHandler {
 		}
 	}
 
-	public static void optionsToString(StringBuilder sb, List<ApplicationCommandInteractionOption> options) {
+	public static StringBuilder optionsToString(StringBuilder sb, List<ApplicationCommandInteractionOption> options) {
 		sb.append('{');
 
 		for (int i = 0; i < options.size(); i++) {
@@ -393,5 +393,6 @@ public class InteractionHandler {
 		}
 
 		sb.append('}');
+		return sb;
 	}
 }

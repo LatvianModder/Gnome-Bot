@@ -11,6 +11,10 @@ import java.util.Map;
 public class Currency {
 	public static final Currency USD = new Currency("USD", "U.S. Dollar", 1D);
 
+	public static Currency get(String id) {
+		return ALL.get().getOrDefault(id.toUpperCase(), USD);
+	}
+
 	public final String id;
 	public final String name;
 	public final double rate;
@@ -25,7 +29,7 @@ public class Currency {
 		Map<String, Currency> map = new LinkedHashMap<>();
 
 		try {
-			JsonObject json = URLRequest.of("http://www.floatrates.com/daily/usd.json").toJsonObject().block();
+			JsonObject json = URLRequest.of("https://www.floatrates.com/daily/usd.json").toJsonObject().block();
 
 			for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
 				JsonObject o = entry.getValue().getAsJsonObject();

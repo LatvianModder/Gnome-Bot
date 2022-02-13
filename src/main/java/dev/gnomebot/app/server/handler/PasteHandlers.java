@@ -72,11 +72,20 @@ public class PasteHandlers {
 			"double",
 			"char",
 			"String",
+			"Number",
 			// JS //
 			"let",
 			"const",
 			"console",
-			"function"
+			"function",
+			"number",
+			// TS //
+			"module",
+			"export",
+			"readonly",
+			"constructor",
+			"type",
+			"any",
 	};
 
 	// 1 - strings
@@ -181,7 +190,7 @@ public class PasteHandlers {
 
 		int fileType;
 
-		if (filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".json")) {
+		if (filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".ts") || filename.endsWith(".zs") || filename.endsWith(".json")) {
 			fileType = TYPE_JAVA_AND_JS;
 		} else {
 			fileType = TYPE_NONE;

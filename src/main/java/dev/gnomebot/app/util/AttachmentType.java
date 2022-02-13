@@ -11,7 +11,7 @@ public enum AttachmentType {
 	IMAGE,
 	VIDEO;
 
-	public static final Pattern TEXT_REGEX = Pattern.compile("\\.(?:log|txt|toml|json|java|js|php|lua|zs|obj|csv|snbt|bat|cfg|md|html|diff|patch|css|pom|xml|gradle|properties|mcmeta)$");
+	public static final Pattern TEXT_REGEX = Pattern.compile("\\.(?:log|txt|toml|json|java|js|php|lua|ts|zs|obj|csv|snbt|bat|cfg|md|html|diff|patch|css|pom|xml|gradle|properties|mcmeta)$");
 	public static final Pattern IMAGE_REGEX = Pattern.compile("\\.(?:gif|jpe?g|tiff?|png|webp|bmp)$");
 	public static final Pattern VIDEO_REGEX = Pattern.compile("\\.(?:mov|avi|wmv|flv|3gp|mp4|mpg|mkv)$");
 	public static final Pattern ATTACHMENT_PATTERN = Pattern.compile("https?://(?:cdn|media)\\.(?:discord|discordapp)\\.(?:com|net)/attachments/\\d+/\\d+/.*", Pattern.MULTILINE);

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,7 +65,7 @@ public class ServerRequest {
 
 		for (Map.Entry<String, List<String>> entry : context.queryParamMap().entrySet()) {
 			if (!entry.getValue().isEmpty()) {
-				query.put(entry.getKey(), new CommandOption(c, entry.getKey(), Optional.of(entry.getValue().get(0)), false));
+				query.put(entry.getKey(), new CommandOption(c, entry.getKey(), entry.getValue().get(0), false));
 			}
 		}
 	}
@@ -94,7 +93,7 @@ public class ServerRequest {
 			c.handler = app.discordHandler;
 			c.gc = gc;
 			c.sender = member;
-			return new CommandOption(c, id, Optional.empty(), false);
+			return new CommandOption(c, id, "", false);
 		}
 
 		return o;

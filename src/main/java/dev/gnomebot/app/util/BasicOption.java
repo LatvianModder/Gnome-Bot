@@ -11,30 +11,22 @@ import java.util.OptionalLong;
 
 public class BasicOption {
 	public final String name;
-	protected final String rawValue;
-	protected final Optional<String> value;
-
-	public BasicOption(String n, Optional<String> v) {
-		name = n;
-		value = v;
-		rawValue = value.orElse("");
-	}
+	protected final String value;
 
 	public BasicOption(String n, String v) {
 		name = n;
-		value = Optional.of(v);
-		rawValue = v;
+		value = v;
 	}
 
 	public boolean isPresent() {
-		return value.isPresent();
+		return !value.isEmpty();
 	}
 
 	@Override
 	public String toString() {
 		return "BasicOption{" +
 				"name='" + name + '\'' +
-				", value='" + rawValue + '\'' +
+				", value='" + value + '\'' +
 				'}';
 	}
 
@@ -55,19 +47,19 @@ public class BasicOption {
 	}
 
 	public Optional<String> asStringOptional() {
-		return value;
+		return value.isEmpty() ? Optional.empty() : Optional.of(value);
 	}
 
 	public String asString() {
-		return rawValue;
+		return value;
 	}
 
 	public String asString(String def) {
-		return rawValue.isEmpty() ? def : rawValue;
+		return value.isEmpty() ? def : value;
 	}
 
 	public Optional<Boolean> asBoolean() {
-		return value.map("true"::equalsIgnoreCase);
+		return asStringOptional().map("true"::equals);
 	}
 
 	public boolean asBoolean(boolean def) {
@@ -75,7 +67,7 @@ public class BasicOption {
 	}
 
 	public Optional<Long> asLongOptional() {
-		return value.map(Long::parseLong);
+		return asStringOptional().map(Long::parseLong);
 	}
 
 	public long asLong(long def) {
@@ -91,7 +83,7 @@ public class BasicOption {
 	}
 
 	public Optional<Integer> asIntOptional() {
-		return value.map(Integer::parseInt);
+		return asStringOptional().map(Integer::parseInt);
 	}
 
 	public int asInt(int def) {
@@ -103,7 +95,7 @@ public class BasicOption {
 	}
 
 	public Optional<Double> asDouble() {
-		return value.map(Double::parseDouble);
+		return asStringOptional().map(Double::parseDouble);
 	}
 
 	public double asDouble(double def) {
@@ -111,15 +103,15 @@ public class BasicOption {
 	}
 
 	public OptionalLong asSeconds() throws DiscordCommandException {
-		return value.isPresent() ? new SimpleStringReader(rawValue).readSeconds() : OptionalLong.empty();
+		return value.isEmpty() ? OptionalLong.empty() : new SimpleStringReader(value).readSeconds();
 	}
 
 	public OptionalLong asDays() throws DiscordCommandException {
-		return value.isPresent() ? new SimpleStringReader(rawValue).readDays() : OptionalLong.empty();
+		return value.isEmpty() ? OptionalLong.empty() : new SimpleStringReader(value).readDays();
 	}
 
 	public Optional<Currency> asCurrency() {
-		return value.map(s -> Currency.ALL.get().getOrDefault(s.toUpperCase(), Currency.USD));
+		return asStringOptional().map(Currency::get);
 	}
 
 	public ZoneId asZone() throws DiscordCommandException {
@@ -127,7 +119,7 @@ public class BasicOption {
 			return ZoneOffset.UTC;
 		}
 
-		String string = value.orElse("UTC");
+		String string = asString("UTC");
 
 		if (string.startsWith("GMT")) {
 			string = "Etc/" + string;
@@ -162,7 +154,7 @@ public class BasicOption {
 	}
 
 	public String asContentOrFetch() throws Exception {
-		String s = value.orElse("").trim();
+		String s = value.trim();
 
 		if (s.startsWith("^http")) {
 			s = URLRequest.of(s.substring(1)).toJoinedString().block();

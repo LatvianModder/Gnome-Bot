@@ -23,6 +23,9 @@ public class CLIApplicationCommand extends ApplicationCommands {
 					.suggest(CLIApplicationCommand::suggestCommands)
 					.required()
 			)
+			.add(string("arguments")
+					.suggest(CLIApplicationCommand::suggestArguments)
+			)
 			.run(CLIApplicationCommand::run);
 
 	private static class CLIEventFromCommand extends CLIEvent {
@@ -48,9 +51,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 	private static void run(ApplicationCommandEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 
-		CommandReader reader = new CommandReader(event.context.gc, event.get("command").asString());
-
-		CLICommand command = CLI.COMMANDS.get(reader.readString().orElse(""));
+		CLICommand command = CLI.COMMANDS.get(event.get("command").asString());
 
 		if (command == null) {
 			throw error("Command not found!");
@@ -62,6 +63,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			event.context.checkSenderAdmin();
 		}
 
+		CommandReader reader = new CommandReader(event.context.gc, event.get("arguments").asString());
 		CLIEventFromCommand event1 = new CLIEventFromCommand(event.context.gc, event.context.sender, reader);
 
 		try {
@@ -93,5 +95,8 @@ public class CLIApplicationCommand extends ApplicationCommands {
 
 			event.suggest(command.name);
 		}
+	}
+
+	private static void suggestArguments(ChatCommandSuggestionEvent event) {
 	}
 }

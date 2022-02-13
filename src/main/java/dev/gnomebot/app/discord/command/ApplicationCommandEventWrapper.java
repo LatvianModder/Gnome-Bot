@@ -60,12 +60,12 @@ public class ApplicationCommandEventWrapper extends InteractionEventWrapper<Inte
 			}
 		}
 
-		if (event instanceof UserInteractionEvent) {
-			options.put("user", new CommandOption(context, "user", Optional.of(((UserInteractionEvent) event).getTargetId().asString()), false));
+		if (event instanceof UserInteractionEvent e1) {
+			options.put("user", new CommandOption(context, "user", e1.getTargetId().asString(), false));
 		}
 
-		if (event instanceof MessageInteractionEvent) {
-			options.put("message", new CommandOption(context, "message", Optional.of(((MessageInteractionEvent) event).getTargetId().asString()), false));
+		if (event instanceof MessageInteractionEvent e1) {
+			options.put("message", new CommandOption(context, "message", e1.getTargetId().asString(), false));
 		}
 
 		focused = f;
@@ -210,7 +210,7 @@ public class ApplicationCommandEventWrapper extends InteractionEventWrapper<Inte
 		CommandOption o = options.get(id);
 
 		if (o == null) {
-			return new CommandOption(context, id, Optional.empty(), false);
+			return new CommandOption(context, id, "", false);
 		}
 
 		return o;
