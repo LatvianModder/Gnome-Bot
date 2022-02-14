@@ -40,7 +40,7 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return id;
 	}
 
@@ -131,10 +131,8 @@ public class WrappedMessage implements WithId, Deletable {
 		return messageData.reactions().toOptional().isPresent();
 	}
 
-	// getReactions()
-
 	public boolean hasStickers() {
-		return false;
+		return messageData.stickers().toOptional().isPresent();
 	}
 
 	@Nullable
@@ -149,6 +147,7 @@ public class WrappedMessage implements WithId, Deletable {
 
 	@Override
 	public void delete(@Nullable String reason) {
+		channel.guild.discordJS.checkReadOnly();
 		message.delete(reason).block();
 
 		if (messageEvent != null) {
@@ -157,22 +156,27 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public void addReaction(ReactionEmoji emoji) {
+		channel.guild.discordJS.checkReadOnly();
 		message.addReaction(emoji).block();
 	}
 
 	public void removeReaction(ReactionEmoji emoji) {
+		channel.guild.discordJS.checkReadOnly();
 		message.removeSelfReaction(emoji).block();
 	}
 
 	public void removeReaction(ReactionEmoji emoji, Snowflake userId) {
+		channel.guild.discordJS.checkReadOnly();
 		message.removeReaction(emoji, userId).block();
 	}
 
 	public void removeAllReactions(ReactionEmoji emoji) {
+		channel.guild.discordJS.checkReadOnly();
 		message.removeReactions(emoji).block();
 	}
 
 	public void removeAllReactions() {
+		channel.guild.discordJS.checkReadOnly();
 		message.removeAllReactions().block();
 	}
 
@@ -189,6 +193,8 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public void setPinned(boolean b) {
+		channel.guild.discordJS.checkReadOnly();
+
 		if (b != message.isPinned()) {
 			message.pin().block();
 		} else {
@@ -197,10 +203,13 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public WrappedMessage publish() {
+		channel.guild.discordJS.checkReadOnly();
 		return channel.getMessage(message.publish().block());
 	}
 
 	public void createThread(String title) {
+		channel.guild.discordJS.checkReadOnly();
+
 		try {
 			Utils.THREAD_ROUTE.newRequest(channel.id.asLong(), id.asLong())
 					.body(new ThreadMessageRequest(title))
@@ -214,6 +223,7 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public void setContent(String c) {
+		channel.guild.discordJS.checkReadOnly();
 		message.edit(MessageEditSpec.builder().contentOrNull(c).allowedMentionsOrNull(DiscordMessage.noMentions()).build()).block();
 		content = c;
 		contentNoEmojis = null;
@@ -224,6 +234,8 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public WrappedId replyMessage(String content) {
+		channel.guild.discordJS.checkReadOnly();
+
 		return new WrappedId(channel.getChannelService().createMessage(channel.id.asLong(), MessageCreateSpec.builder()
 				.content(content)
 				.messageReference(Snowflake.of(id.asLong()))
@@ -234,6 +246,8 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public WrappedId replyEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
+		channel.guild.discordJS.checkReadOnly();
+
 		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
 		embed.accept(builder);
 

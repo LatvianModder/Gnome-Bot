@@ -19,7 +19,7 @@ public class WrappedRole implements WithId, Deletable {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return id;
 	}
 
@@ -53,12 +53,14 @@ public class WrappedRole implements WithId, Deletable {
 	}
 
 	public void setName(String s) {
+		guild.discordJS.checkReadOnly();
 		guild.getGuildService().modifyGuildRole(guild.id.asLong(), id.asLong(), RoleModifyRequest.builder().name(s).build(), null).block();
 		name = s;
 	}
 
 	@Override
 	public void delete(@Nullable String reason) {
+		guild.discordJS.checkReadOnly();
 		guild.getGuildService().deleteGuildRole(guild.id.asLong(), id.asLong(), reason).block();
 	}
 }

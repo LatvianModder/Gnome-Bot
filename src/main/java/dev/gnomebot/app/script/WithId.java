@@ -7,10 +7,10 @@ import java.time.Instant;
 import java.util.Date;
 
 public interface WithId extends SpecialEquality {
-	WrappedId id();
+	WrappedId getWrappedId();
 
 	default long getCreatedTimestampMilli() {
-		return Snowflake.DISCORD_EPOCH + (id().asLong() >>> 22);
+		return Snowflake.DISCORD_EPOCH + (getWrappedId().asLong() >>> 22);
 	}
 
 	default Date getCreatedTimestamp() {
@@ -26,13 +26,13 @@ public interface WithId extends SpecialEquality {
 		if (o == this) {
 			return true;
 		} else if (o instanceof WrappedId i) {
-			return id().asLong() == i.asLong();
+			return getWrappedId().asLong() == i.asLong();
 		} else if (o instanceof Snowflake s) {
-			return id().asLong() == s.asLong();
+			return getWrappedId().asLong() == s.asLong();
 		} else if (o instanceof String) {
-			return id().asString().equals(o);
+			return getWrappedId().asString().equals(o);
 		} else if (o instanceof Number n) {
-			return id().asLong() == n.longValue();
+			return getWrappedId().asLong() == n.longValue();
 		}
 
 		return false;

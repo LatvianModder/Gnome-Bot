@@ -28,7 +28,7 @@ public class WrappedChannel implements WithId, Deletable {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return id;
 	}
 
@@ -80,27 +80,31 @@ public class WrappedChannel implements WithId, Deletable {
 		return nsfw;
 	}
 
-	@Override
-	public void delete(@Nullable String reason) {
-		getChannelService().deleteChannel(id.asLong(), null).block();
-	}
-
 	@HideFromJS
 	public ChannelService getChannelService() {
 		return guild.gc.db.app.discordHandler.client.getRestClient().getChannelService();
 	}
 
+	@Override
+	public void delete(@Nullable String reason) {
+		guild.discordJS.checkReadOnly();
+		getChannelService().deleteChannel(id.asLong(), null).block();
+	}
+
 	public void setName(String s) {
+		guild.discordJS.checkReadOnly();
 		getChannelService().modifyChannel(id.asLong(), ChannelModifyRequest.builder().name(s).build(), null).block();
 		name = s;
 	}
 
 	public void setTopic(String s) {
+		guild.discordJS.checkReadOnly();
 		getChannelService().modifyChannel(id.asLong(), ChannelModifyRequest.builder().topic(s).build(), null).block();
 		topic = s;
 	}
 
 	public void setNsfw(boolean b) {
+		guild.discordJS.checkReadOnly();
 		getChannelService().modifyChannel(id.asLong(), ChannelModifyRequest.builder().nsfw(b).build(), null).block();
 		nsfw = b;
 	}
@@ -123,6 +127,8 @@ public class WrappedChannel implements WithId, Deletable {
 	}
 
 	public WrappedId sendMessage(String content) {
+		guild.discordJS.checkReadOnly();
+
 		return new WrappedId(getChannelService().createMessage(id.asLong(), MessageCreateSpec.builder()
 				.content(content)
 				.allowedMentions(DiscordMessage.noMentions())
@@ -132,6 +138,8 @@ public class WrappedChannel implements WithId, Deletable {
 	}
 
 	public WrappedId sendEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
+		guild.discordJS.checkReadOnly();
+
 		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
 		embed.accept(builder);
 

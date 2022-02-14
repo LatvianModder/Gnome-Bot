@@ -316,6 +316,7 @@ public class InteractionHandler {
 				ChatCommandSuggestionEvent eventWrapper = new ChatCommandSuggestionEvent(gc, event, options);
 
 				if (eventWrapper.focused != null) {
+					// App.info(eventWrapper.focused.name + " " + command + " " + optionsToString(new StringBuilder(), options));
 					CommandBuilder sub = command.getSub(eventWrapper.focused.name);
 
 					if (sub != null && sub.suggestions != null) {

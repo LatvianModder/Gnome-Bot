@@ -493,7 +493,7 @@ public class App implements Runnable {
 		CharMap.load();
 
 		for (GuildCollections gc : db.guildCollections.values()) {
-			gc.discordJS = new DiscordJS(gc);
+			gc.discordJS = new DiscordJS(gc, false);
 		}
 	}
 

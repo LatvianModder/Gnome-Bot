@@ -93,14 +93,17 @@ public class WrappedMember extends WrappedUser {
 	}
 
 	public void kick(@Nullable String reason) {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().kick(reason == null || reason.isBlank() ? null : reason).block();
 	}
 
 	public void ban(@Nullable String reason, boolean deleteMessages) {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().ban(BanQuerySpec.builder().reason(reason == null || reason.isBlank() ? null : reason).deleteMessageDays(deleteMessages ? 1 : null).build()).block();
 	}
 
 	public boolean addRole(Snowflake roleId, @Nullable String reason) {
+		guild.discordJS.checkReadOnly();
 		CachedRole role = guild.gc.getRoleMap().get(roleId);
 
 		if (role != null) {
@@ -111,7 +114,12 @@ public class WrappedMember extends WrappedUser {
 		}
 	}
 
+	public boolean addRole(Snowflake id) {
+		return addRole(id, null);
+	}
+
 	public boolean removeRole(Snowflake roleId, @Nullable String reason) {
+		guild.discordJS.checkReadOnly();
 		CachedRole role = guild.gc.getRoleMap().get(roleId);
 
 		if (role != null) {
@@ -122,6 +130,10 @@ public class WrappedMember extends WrappedUser {
 		}
 	}
 
+	public boolean removeRole(Snowflake id) {
+		return removeRole(id, null);
+	}
+
 	public boolean toggleRole(Snowflake id, @Nullable String reason) {
 		if (getDiscordMember().getRoleIds().contains(id)) {
 			return removeRole(id, reason);
@@ -130,24 +142,33 @@ public class WrappedMember extends WrappedUser {
 		}
 	}
 
+	public boolean toggleRole(Snowflake id) {
+		return toggleRole(id, null);
+	}
+
 	public void setNickname(String n) {
+		guild.discordJS.checkReadOnly();
 		nickname = n == null ? "" : n;
 		getDiscordMember().edit(GuildMemberEditSpec.builder().nicknameOrNull(nickname.isBlank() ? null : nickname).build()).block();
 	}
 
 	public void setDeafened(boolean b) {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().edit(GuildMemberEditSpec.builder().deafen(b).build()).block();
 	}
 
 	public void setMuted(boolean b) {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().edit(GuildMemberEditSpec.builder().mute(b).build()).block();
 	}
 
 	public void move(Snowflake channel) {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(channel).build()).block();
 	}
 
 	public void disconnect() {
+		guild.discordJS.checkReadOnly();
 		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(null).build()).block();
 	}
 

@@ -12,13 +12,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class WrappedGuild implements WithId {
+	public final transient DiscordJS discordJS;
 	public final transient GuildCollections gc;
 	public final WrappedId id;
 	public final Map<String, WrappedChannel> channels;
 	public final Map<String, WrappedRole> roles;
 	public final Map<String, WrappedMember> members;
 
-	public WrappedGuild(GuildCollections w) {
+	public WrappedGuild(DiscordJS d, GuildCollections w) {
+		discordJS = d;
 		gc = w;
 		id = new WrappedId(gc.guildId);
 
@@ -28,7 +30,7 @@ public class WrappedGuild implements WithId {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return id;
 	}
 

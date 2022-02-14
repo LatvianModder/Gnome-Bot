@@ -232,7 +232,7 @@ public class GuildCollections {
 		file.needsSaving();
 		file.save();
 
-		discordJS = new DiscordJS(this);
+		discordJS = new DiscordJS(this, false);
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
@@ -658,7 +658,7 @@ public class GuildCollections {
 
 	public WrappedGuild getWrappedGuild() {
 		if (wrappedGuild == null) {
-			wrappedGuild = new WrappedGuild(this);
+			wrappedGuild = new WrappedGuild(discordJS, this);
 		}
 
 		return wrappedGuild;

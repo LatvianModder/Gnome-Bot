@@ -34,7 +34,7 @@ public final class WrappedId implements WithId {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return this;
 	}
 

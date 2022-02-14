@@ -24,7 +24,7 @@ public class WrappedUser implements WithId {
 	}
 
 	@Override
-	public WrappedId id() {
+	public WrappedId getWrappedId() {
 		return id;
 	}
 

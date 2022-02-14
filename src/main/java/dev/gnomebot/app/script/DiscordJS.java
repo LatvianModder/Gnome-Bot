@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 public class DiscordJS {
 	public final transient GuildCollections gc;
 	public final WrappedId id;
+	public final boolean readOnly;
 
 	public final Map<String, Object> customData = new HashMap<>();
 	public final EventHandler<MessageEventJS> onMessage = new EventHandler<>();
@@ -35,9 +36,10 @@ public class DiscordJS {
 	public final EventHandler<ButtonEventJS> onButton = new EventHandler<>();
 	public final Map<String, Consumer<MessageEventJS>> customMacros = new HashMap<>();
 
-	public DiscordJS(GuildCollections g) {
+	public DiscordJS(GuildCollections g, boolean ro) {
 		gc = g;
 		id = gc.wrappedId;
+		readOnly = ro;
 
 		if (Files.exists(gc.paths.scripts) && hasFiles(gc.paths.scripts)) {
 			Context context = Context.enterWithNewFactory();
@@ -76,6 +78,12 @@ public class DiscordJS {
 			}
 
 			Context.exit();
+		}
+	}
+
+	public void checkReadOnly() {
+		if (readOnly) {
+			throw new IllegalStateException("Script is in read-only mode!");
 		}
 	}
 
