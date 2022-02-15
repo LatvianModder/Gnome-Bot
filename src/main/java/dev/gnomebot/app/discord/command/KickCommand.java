@@ -54,8 +54,8 @@ public class KickCommand extends ApplicationCommands {
 		event.context.gc.adminLogChannelEmbed(spec -> {
 			spec.description("Bye " + user.getMention());
 			spec.author(user.getTag() + " was kicked", null, user.getAvatarUrl());
-			spec.addField("Reason", reason, true);
-			spec.addField("DM successful", dm ? "Yes" : "No", true);
+			spec.inlineField("Reason", reason);
+			spec.inlineField("DM successful", dm ? "Yes" : "No");
 			spec.footer(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 		});
 

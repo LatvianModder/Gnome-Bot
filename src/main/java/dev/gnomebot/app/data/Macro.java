@@ -4,21 +4,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
-import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -59,7 +56,8 @@ public class Macro extends WrappedDocument<Macro> {
 		return document.getInt("uses");
 	}
 
-	public void createMessage(Consumer<String> content, Consumer<ActionRow> row) {
+	public MessageBuilder createMessage(boolean removeLinks) {
+		MessageBuilder builder = MessageBuilder.create();
 		List<String> lines = new ArrayList<>();
 
 		for (String s : getContent()
@@ -71,7 +69,7 @@ public class Macro extends WrappedDocument<Macro> {
 			if (s.startsWith("$ ")) {
 				try {
 					JsonElement element = Utils.GSON.fromJson(s.substring(2), JsonElement.class);
-					row.accept(Utils.parseRow(element.getAsJsonArray()));
+					builder.addComponent(Utils.parseRow(element.getAsJsonArray()));
 				} catch (Exception ex) {
 					lines.add("Invalid component format: " + ex);
 				}
@@ -84,15 +82,13 @@ public class Macro extends WrappedDocument<Macro> {
 			lines.add("No content");
 		}
 
-		content.accept(String.join("\n", lines));
-	}
+		if (removeLinks) {
+			builder.content(REMOVE_MD_LINKS.matcher(String.join("\n", lines)).replaceAll("$1"));
+		} else {
+			builder.content(lines);
+		}
 
-	public void createMessage(MessageCreateSpec.Builder builder) {
-		createMessage(s -> builder.content(REMOVE_MD_LINKS.matcher(s).replaceAll("$1")), builder::addComponent);
-	}
-
-	public void createMessage(InteractionApplicationCommandCallbackSpec.Builder builder) {
-		createMessage(builder::content, builder::addComponent);
+		return builder;
 	}
 
 	public static void addComponent(List<ActionComponent> components, JsonElement element) {

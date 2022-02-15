@@ -3,13 +3,13 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.AllowedMentions;
 
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class ReportHandler {
 		);
 
 		String quoteURL = QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, m.getId());
-		EmbedCreateSpec.Builder reportEmbed = EmbedCreateSpec.builder();
+		EmbedBuilder reportEmbed = EmbedBuilder.create();
 		reportEmbed.color(EmbedColors.RED);
 		reportEmbed.author(author.getTag(), quoteURL, author.getAvatarUrl());
 		reportEmbed.description("[Quote ➤](" + quoteURL + ") " + m.getContent());
@@ -78,7 +78,7 @@ public class ReportHandler {
 		}
 
 		if (report == null) {
-			MessageCreateSpec.Builder reportMessage = MessageCreateSpec.builder();
+			MessageBuilder reportMessage = MessageBuilder.create();
 
 			if (role != null) {
 				reportMessage.content(role + " " + author.getTag() + " (" + author.getMention() + ") has been reported!\nReason: **" + reason + "**");
@@ -88,10 +88,10 @@ public class ReportHandler {
 				reportMessage.allowedMentions(DiscordMessage.noMentions());
 			}
 
-			reportMessage.addEmbed(reportEmbed.build());
+			reportMessage.addEmbed(reportEmbed);
 
 			report = new Report();
-			report.messageId = c.get().createMessage(reportMessage.build()).block().getId();
+			report.messageId = c.get().createMessage(reportMessage).block().getId();
 			report.ttl = now + 3600000L;
 
 			Utils.THREAD_ROUTE.newRequest(c.get().id.asLong(), report.messageId.asLong())
@@ -108,12 +108,7 @@ public class ReportHandler {
 		ChannelInfo thread = event.context.gc.getOrMakeChannelInfo(report.messageId);
 
 		if (report.reports >= 2) {
-			MessageCreateSpec.Builder reportMessage = MessageCreateSpec.builder();
-			reportMessage.allowedMentions(DiscordMessage.noMentions());
-			reportMessage.addEmbed(reportEmbed.build());
-			// c.get().createMessage(reportMessage.build()).block();
-
-			thread.createMessage(reportMessage.build()).block();
+			thread.createMessage(reportEmbed).block();
 		} else {
 			thread.createMessage("User ID:").block();
 			thread.createMessage(author.getId().asString()).block();

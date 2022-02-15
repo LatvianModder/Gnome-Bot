@@ -22,7 +22,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.AuditLogQuerySpec;
 import discord4j.core.spec.GuildMemberEditSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
@@ -131,11 +130,7 @@ public class MemberHandler {
 			sb.append(member.getTag());
 			sb.append(") is a new account: ");
 			sb.append(Utils.formatRelativeDate(member.getId().getTimestamp()));
-			gc.logNewAccountsChannel.messageChannel().ifPresent(c -> c.createMessage(MessageCreateSpec.builder()
-					.content(sb.toString())
-					.allowedMentions(DiscordMessage.noMentions())
-					.build()
-			).subscribe());
+			gc.logNewAccountsChannel.messageChannel().ifPresent(c -> c.createMessage(sb.toString()).subscribe());
 		}
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.JOIN)
@@ -231,11 +226,7 @@ public class MemberHandler {
 			sb.append(Utils.prettyTimeString(mems));
 			sb.append(" of membership");
 
-			gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(MessageCreateSpec.builder()
-					.content(sb.toString())
-					.allowedMentions(DiscordMessage.noMentions())
-					.build()
-			).subscribe());
+			gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(sb.toString()).subscribe());
 		}
 
 		updateMember(gc, event.getUser(), member, ACTION_LEFT, gc.members.findFirst(event.getUser()), null);
@@ -272,17 +263,13 @@ public class MemberHandler {
 			);
 
 			if (responsible != null && responsible.isBot()) {
-				gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(MessageCreateSpec.builder()
-						.content(event.getUser().getMention() + " (" + event.getUser().getTag() + ") was banned by " + responsible.getMention() + ": " + reason)
-						.allowedMentions(DiscordMessage.noMentions())
-						.build()
-				).subscribe());
+				gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(event.getUser().getMention() + " (" + event.getUser().getTag() + ") was banned by " + responsible.getMention() + ": " + reason).subscribe());
 			} else {
 				gc.adminLogChannelEmbed(spec -> {
 					spec.description("Bye " + event.getUser().getMention());
 					spec.timestamp(Instant.now());
 					spec.author(event.getUser().getTag() + " was banned", null, event.getUser().getAvatarUrl());
-					spec.addField("Reason", reason, false);
+					spec.field("Reason", reason);
 
 					if (responsible == null) {
 						spec.footer("Unknown", null);

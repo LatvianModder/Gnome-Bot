@@ -67,9 +67,9 @@ public class BanCommand extends ApplicationCommands {
 		event.context.gc.adminLogChannelEmbed(spec -> {
 			spec.description("Bye " + user.getMention());
 			spec.author(user.getTag() + " was banned", null, user.getAvatarUrl());
-			spec.addField("Reason", reason, true);
-			spec.addField("DM successful", dm ? "Yes" : "No", true);
-			spec.addField("Messages deleted", deleteMessages ? "Yes" : "No", true);
+			spec.inlineField("Reason", reason);
+			spec.inlineField("DM successful", dm ? "Yes" : "No");
+			spec.inlineField("Messages deleted", deleteMessages ? "Yes" : "No");
 			spec.footer(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 		});
 

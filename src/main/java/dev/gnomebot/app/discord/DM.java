@@ -5,7 +5,7 @@ import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
@@ -93,13 +93,13 @@ public class DM {
 		}
 	}
 
-	public static Optional<Message> send(DiscordHandler handler, User user, MessageCreateSpec spec, boolean log) {
+	public static Optional<Message> send(DiscordHandler handler, User user, MessageBuilder spec, boolean log) {
 		try {
-			Optional<Message> m = Optional.of(open(user).createMessage(spec).block());
+			Optional<Message> m = Optional.of(open(user).createMessage(spec.toMessageCreateSpec().build()).block());
 
-			if (log && !spec.content().isAbsent()) {
+			if (log && spec.getContent() != null) {
 				sendInDmChannel(handler, user, WebhookExecuteRequest.builder()
-						.content(spec.content())
+						.content(spec.getContent())
 						.avatarUrl(Assets.AVATAR.getPath())
 						.username("Gnome")
 						.allowedMentions(DiscordMessage.noMentions().toData())
@@ -114,10 +114,7 @@ public class DM {
 	}
 
 	public static Optional<Message> send(DiscordHandler handler, User user, String content, boolean log) {
-		return send(handler, user, MessageCreateSpec.builder()
-				.content(Utils.trimContent(content))
-				.allowedMentions(DiscordMessage.noMentions())
-				.build(), log);
+		return send(handler, user, MessageBuilder.create().content(content), log);
 	}
 
 	public static void log(DiscordHandler handler, User author, Message message) {

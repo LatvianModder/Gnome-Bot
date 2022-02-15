@@ -3,12 +3,12 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.AttachmentType;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.AttachmentData;
 import discord4j.discordjson.json.EmbedData;
 import discord4j.discordjson.json.MessageData;
@@ -106,7 +106,7 @@ public class QuoteHandler {
 				continue;
 			}
 
-			EmbedCreateSpec.Builder quoteEmbed = EmbedCreateSpec.builder();
+			EmbedBuilder quoteEmbed = EmbedBuilder.create();
 			String quoteURL = getMessageURL(qguildId, qchannelId, qmessageId);
 
 			if (!imageUrl.isEmpty()) {
@@ -128,7 +128,7 @@ public class QuoteHandler {
 				}
 			}
 
-			channel1.createMessage(quoteEmbed.build()).subscribe();
+			channel1.createMessage(quoteEmbed).subscribe();
 
 			quotes++;
 

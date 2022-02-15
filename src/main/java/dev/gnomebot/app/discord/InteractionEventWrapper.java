@@ -2,7 +2,8 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import discord4j.core.event.domain.interaction.DeferrableInteractionEvent;
+import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
+import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
 import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
@@ -33,6 +34,17 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 		context.interaction = this;
 	}
 
+	@Override
+	public String toString() {
+		if (event instanceof ApplicationCommandInteractionEvent e) {
+			return e.getCommandName();
+		} else if (event instanceof ChatInputAutoCompleteEvent e) {
+			return e.getCommandName();
+		}
+
+		return event.getClass().getName();
+	}
+
 	protected CommandContext createContext() {
 		return new CommandContext();
 	}
@@ -42,10 +54,6 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 	}
 
 	public InteractionResponse getResponse() {
-		if (event instanceof DeferrableInteractionEvent e) {
-			return e.getInteractionResponse();
-		}
-
 		throw new IllegalStateException("Response not supported in this type of interaction!");
 	}
 

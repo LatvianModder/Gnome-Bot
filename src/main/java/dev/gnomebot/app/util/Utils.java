@@ -767,10 +767,6 @@ public class Utils {
 		return trim(content, 2000);
 	}
 
-	public static String trimEmbedDescription(String content) {
-		return trim(content, 2048);
-	}
-
 	public static void titleCase(StringBuilder sb, String string) {
 		if (!string.isEmpty()) {
 			sb.append(Character.toUpperCase(string.charAt(0)));

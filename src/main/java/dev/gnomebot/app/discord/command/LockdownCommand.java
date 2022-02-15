@@ -7,6 +7,7 @@ import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberHandler;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.util.EmbedBuilder;
 import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
@@ -76,12 +77,7 @@ public class LockdownCommand extends ApplicationCommands {
 				});
 			}
 
-			event.embedResponse(spec -> {
-				spec.color(EmbedColors.RED);
-				spec.title("Lockdown mode enabled!");
-				spec.description(Emojis.ALERT.asFormat());
-				spec.thumbnail(Assets.EMERGENCY.getPath());
-			});
+			event.respond(EmbedBuilder.create("Lockdown mode enabled!", Emojis.ALERT.asFormat()).redColor().thumbnail(Assets.EMERGENCY.getPath()));
 		} else {
 			event.respond("Lockdown mode is already enabled!");
 		}
@@ -116,12 +112,7 @@ public class LockdownCommand extends ApplicationCommands {
 				});
 			}
 
-			event.embedResponse(spec -> {
-				spec.color(EmbedColors.GREEN);
-				spec.title("Lockdown mode disabled!");
-				spec.description(Emojis.ALERT.asFormat());
-				spec.thumbnail(Assets.EMERGENCY.getPath());
-			});
+			event.respond(EmbedBuilder.create("Lockdown mode disabled!", Emojis.ALERT.asFormat()).greenColor().thumbnail(Assets.EMERGENCY.getPath()));
 		} else {
 			event.respond("Lockdown mode is already disabled!");
 		}

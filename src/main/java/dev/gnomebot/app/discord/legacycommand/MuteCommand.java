@@ -9,6 +9,8 @@ import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -17,10 +19,7 @@ import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
-import discord4j.discordjson.possible.Possible;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -75,20 +74,28 @@ public class MuteCommand {
 
 		context.gc.unmute(m.getId(), seconds);
 
-		Message contextMessage = context.gc.autoMuteEmbed.get() ? context.reply(spec -> {
-			spec.color(EmbedColors.RED);
+		Message contextMessage;
+
+		if (context.gc.autoMuteEmbed.get()) {
+			EmbedBuilder embedBuilder = EmbedBuilder.create();
+
+			embedBuilder.color(EmbedColors.RED);
 
 			if (!auto.isEmpty()) {
-				spec.description(auto);
+				embedBuilder.description(auto);
 			} else if (context.sender.getId().equals(m.getId())) {
-				spec.description(context.sender.getMention() + " was auto-muted!");
+				embedBuilder.description(context.sender.getMention() + " was auto-muted!");
 			} else {
-				spec.description(context.sender.getMention() + " muted " + m.getMention() + "!");
+				embedBuilder.description(context.sender.getMention() + " muted " + m.getMention() + "!");
 			}
 
-			spec.addField("Expires", Utils.formatRelativeDate(expiresInstant), true);
-			spec.addField("Reason", reason, true);
-		}) : null;
+			embedBuilder.inlineField("Expires", Utils.formatRelativeDate(expiresInstant));
+			embedBuilder.inlineField("Reason", reason);
+
+			contextMessage = context.reply(embedBuilder);
+		} else {
+			contextMessage = null;
+		}
 
 		if (context.gc.mutedRole.is(m)) {
 			return;
@@ -117,22 +124,18 @@ public class MuteCommand {
 			}
 		}
 
-		EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+		EmbedBuilder embed = EmbedBuilder.create();
 		embed.color(EmbedColors.RED);
 		embed.author(m.getTag() + " has been muted!", null, m.getAvatarUrl());
 		embed.description(context.sender.getMention() + " muted " + m.getMention());
-		embed.addField("Reason", reason, true);
-		embed.addField("Expires", Utils.formatRelativeDate(expiresInstant), true);
+		embed.inlineField("Reason", reason);
+		embed.inlineField("Expires", Utils.formatRelativeDate(expiresInstant));
 
 		if (!auto.isEmpty()) {
-			embed.addField("Message", context.message.getContent(), false);
+			embed.field("Message", context.message.getContent());
 		}
 
-		context.gc.adminLogChannel.messageChannel().map(c -> c.createMessage(MessageCreateSpec.builder()
-				.addEmbed(embed.build())
-				.components(adminButtons.isEmpty() ? Possible.absent() : Possible.of(adminButtons))
-				.build()
-		).subscribe(m1 -> {
+		context.gc.adminLogChannel.messageChannel().map(c -> c.createMessage(MessageBuilder.create(embed).components(adminButtons)).subscribe(m1 -> {
 			List<ActionComponent> replyButtons = new ArrayList<>();
 
 			if (context.gc.muteAppealChannel.isSet()) {
@@ -156,10 +159,10 @@ public class MuteCommand {
 			dmButtons.add(Button.link(QuoteHandler.getChannelURL(context.gc.guildId, context.gc.muteAppealChannel.get()), "Appeal"));
 		}
 
-		boolean dm = DM.send(context.handler, m, MessageCreateSpec.builder()
-				.addEmbed(embed.build())
-				.components(dmButtons.isEmpty() ? Possible.absent() : Possible.of(Collections.singletonList(ActionRow.of(dmButtons))))
-				.build(), true).isPresent();
+		boolean dm = DM.send(context.handler, m, MessageBuilder.create()
+						.addEmbed(embed)
+						.components(dmButtons.isEmpty() ? null : Collections.singletonList(ActionRow.of(dmButtons)))
+				, true).isPresent();
 
 		context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MUTE)
 				.user(m)

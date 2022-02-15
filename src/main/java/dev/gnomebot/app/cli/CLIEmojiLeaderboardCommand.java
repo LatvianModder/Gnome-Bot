@@ -121,6 +121,7 @@ public class CLIEmojiLeaderboardCommand {
 
 		ByteArrayOutputStream imageData = new ByteArrayOutputStream();
 		ImageIO.write(image, "png", imageData);
-		event.respondFile("Emoji Leaderboard:", "emoji-leaderboard-" + event.gc.guildId.asString() + ".png", imageData.toByteArray());
+		event.respond("Emoji Leaderboard:");
+		event.response.addFile("emoji-leaderboard-" + event.gc.guildId.asString() + ".png", imageData.toByteArray());
 	}
 }

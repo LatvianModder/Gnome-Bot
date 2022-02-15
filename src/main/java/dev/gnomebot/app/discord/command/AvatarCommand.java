@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
@@ -44,7 +45,7 @@ public class AvatarCommand extends ApplicationCommands {
 				}
 
 				byte[] data = URLRequest.of(s + "?size=4096").toBytes().block();
-				event.respondFile(builder -> builder.content(gc.toString()), gc.guildId.asString() + ".png", data);
+				event.respond(MessageBuilder.create(gc.toString()).addFile(gc.guildId.asString() + ".png", data));
 				return;
 			}
 		} catch (Exception ex) {
@@ -59,6 +60,6 @@ public class AvatarCommand extends ApplicationCommands {
 		}
 
 		byte[] data = URLRequest.of(s + "?size=4096").toBytes().block();
-		event.respondFile(builder -> builder.content(user.getMention()), user.getId().asString() + (user.hasAnimatedAvatar() ? ".gif" : ".png"), data);
+		event.respond(MessageBuilder.create(user.getMention()).addFile(user.getId().asString() + (user.hasAnimatedAvatar() ? ".gif" : ".png"), data));
 	}
 }

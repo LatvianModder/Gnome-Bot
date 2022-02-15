@@ -24,6 +24,7 @@ public class CLIMemberCountPrintout {
 			}
 		}
 
-		event.respondFile("Done!", "role-export-" + event.gc.guildId.asString() + "-" + (role == null ? "all" : role.id.asString()) + "-" + Instant.now().toString().replace(':', '-') + ".csv", table.getCSVBytes(false));
+		event.respond("Done!");
+		event.response.addFile("role-export-" + event.gc.guildId.asString() + "-" + (role == null ? "all" : role.id.asString()) + "-" + Instant.now().toString().replace(':', '-') + ".csv", table.getCSVBytes(false));
 	}
 }

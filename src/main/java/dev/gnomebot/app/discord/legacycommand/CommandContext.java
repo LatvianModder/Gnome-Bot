@@ -1,38 +1,30 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.DiscordHandler;
-import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.InteractionEventWrapper;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -103,24 +95,21 @@ public class CommandContext {
 	public void adminLog(Color col, String text) {
 		gc.adminLogChannelEmbed(spec -> {
 			spec.color(col);
-			spec.description(Utils.trimEmbedDescription(text));
+			spec.description(Utils.trim(text, 4096));
 			spec.timestamp(Instant.now());
 			spec.footer(sender.getUsername(), sender.getAvatarUrl());
 		});
 	}
 
-	public Message replyRaw(Consumer<MessageCreateSpec.Builder> msg) throws DiscordCommandException {
+	public Message reply(MessageBuilder msg) throws DiscordCommandException {
 		try {
-			MessageCreateSpec.Builder builder = MessageCreateSpec.builder();
-
 			if (referenceMessage && message != null) {
-				builder.messageReference(message.getId());
+				msg.messageReference(message.getId());
 			}
 
-			builder.allowedMentions(allowedMentions);
-			msg.accept(builder);
+			msg.allowedMentions(allowedMentions);
 
-			Message m = Objects.requireNonNull(channelInfo.createMessage(builder.build()).block());
+			Message m = Objects.requireNonNull(channelInfo.createMessage(msg).block());
 
 			if (referenceMessage && message != null) {
 				MessageHandler.addAutoDelete(message.getId(), new MessageId(m));
@@ -132,83 +121,16 @@ public class CommandContext {
 		}
 	}
 
-	public Message reply(Consumer<EmbedCreateSpec.Builder> espec) throws DiscordCommandException {
-		return replyRaw(spec -> {
-			EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-			builder.color(EmbedColors.GRAY);
-			espec.accept(builder);
-			spec.addEmbed(builder.build());
-		});
+	public Message reply(EmbedBuilder embed) throws DiscordCommandException {
+		return reply(MessageBuilder.create(embed));
 	}
 
 	public Message reply(String title, String message) throws DiscordCommandException {
-		return reply(spec -> {
-			if (!title.isEmpty()) {
-				spec.title(title);
-			}
-
-			spec.description(Utils.trimEmbedDescription(message));
-		});
+		return reply(EmbedBuilder.create(title, message));
 	}
 
 	public Message reply(String content) throws DiscordCommandException {
-		return replyRaw(spec -> spec.content(content));
-	}
-
-	public Message replyAsUser(Consumer<EmbedCreateSpec.Builder> spec) throws DiscordCommandException {
-		return reply(espec -> {
-			espec.footer(sender.getUsername(), sender.getAvatarUrl());
-			spec.accept(espec);
-		});
-	}
-
-	public Message replyAsUser(String title, String message) throws DiscordCommandException {
-		return replyAsUser(spec -> {
-			if (!title.isEmpty()) {
-				spec.title(title);
-			}
-
-			spec.description(Utils.trimEmbedDescription(message));
-		});
-	}
-
-	public Message replyAsUser(String message) throws DiscordCommandException {
-		return replyAsUser("", message);
-	}
-
-	public Message replyFile(Consumer<MessageCreateSpec.Builder> msg, String filename, String ext, byte[] data, boolean createLocalFile) throws DiscordCommandException {
-		String actualFileName = filename + "-" + Instant.now().toString().replace(':', '-') + "." + ext;
-
-		try {
-			if (createLocalFile) {
-				Path directory = AppPaths.DATA_GUILDS.resolve(filename);
-
-				if (Files.notExists(directory)) {
-					Files.createDirectories(directory);
-				}
-
-				Path path = directory.resolve(actualFileName);
-				App.info("Writing to " + path.toAbsolutePath());
-				Files.createFile(path);
-				Files.write(path, data);
-			}
-
-			return replyRaw(spec -> {
-				spec.addFile(actualFileName, new BufferedInputStream(new ByteArrayInputStream(data)));
-				msg.accept(spec);
-			});
-		} catch (Exception ex) {
-			if (createLocalFile) {
-				throw new DiscordCommandException("Could not upload file, it's too large (" + (data.length / 1048576L) + " MB)! DM Gnome and request \n" + filename);
-			} else {
-				throw new DiscordCommandException("Could not upload file, it's too large (" + (data.length / 1048576L) + " MB)!");
-			}
-		}
-	}
-
-	public Message replyFile(String filename, String ext, byte[] data, boolean createLocalFile) throws DiscordCommandException {
-		return replyFile(spec -> {
-		}, filename, ext, data, createLocalFile);
+		return reply(MessageBuilder.create(content));
 	}
 
 	public Optional<Message> findMessage(Snowflake id) {

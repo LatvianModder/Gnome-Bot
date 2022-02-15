@@ -1,12 +1,10 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.discordjson.json.WebhookMessageEditRequest;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,14 +34,7 @@ public class PasteCommand extends ApplicationCommands {
 			String filename = urlm.group(3);
 
 			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename, "");
-
-			event.editInitial(WebhookMessageEditRequest.builder()
-					.allowedMentionsOrNull(DiscordMessage.noMentions().toData())
-					.contentOrNull("Paste version of `" + filename + "`")
-					.addComponent(ActionRow.of(Button.link(Paste.getUrl(attachmentId.asString()), "View " + filename)).getData())
-					.build()
-			);
-
+			event.editInitial(MessageBuilder.create("Paste version of `" + filename + "`").addComponentRow(Button.link(Paste.getUrl(attachmentId.asString()), "View " + filename)));
 			return;
 		}
 

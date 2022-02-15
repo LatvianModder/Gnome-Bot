@@ -36,6 +36,7 @@ public class CLIBans {
 			}
 		}
 
-		event.respondFile("Ban list", "banlist-" + event.gc.guildId.asString() + ".csv", table.getCSVBytes(false));
+		event.respond("Ban list");
+		event.response.addFile("banlist-" + event.gc.guildId.asString() + ".csv", table.getCSVBytes(false));
 	}
 }

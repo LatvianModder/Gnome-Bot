@@ -26,6 +26,7 @@ import dev.gnomebot.app.script.WrappedId;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.ConfigFile;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.UnmuteTask;
@@ -38,7 +39,6 @@ import discord4j.core.object.entity.Role;
 import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
-import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.MemberData;
 import discord4j.rest.util.Image;
@@ -270,10 +270,6 @@ public class GuildCollections {
 		return guildId.asLong() == 166630061217153024L;
 	}
 
-	public boolean isGnomeland() {
-		return guildId.asLong() == 720671115336220693L;
-	}
-
 	public GatewayDiscordClient getClient() {
 		return db.app.discordHandler.client;
 	}
@@ -360,13 +356,13 @@ public class GuildCollections {
 		return Optional.empty();
 	}
 
-	public void adminLogChannelEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
+	public void adminLogChannelEmbed(Consumer<EmbedBuilder> embed) {
 		adminLogChannel.messageChannel().ifPresent(c -> {
-					EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+					EmbedBuilder builder = EmbedBuilder.create();
 					builder.color(EmbedColors.RED);
 					builder.timestamp(Instant.now());
 					embed.accept(builder);
-					c.createMessage(builder.build()).subscribe();
+					c.createMessage(builder).subscribe();
 				}
 		);
 	}
@@ -695,6 +691,7 @@ public class GuildCollections {
 			}
 		}
 
+		event.transformSearch = s -> s.toLowerCase().replace('@', ' ').trim();
 		event.suggestions.addAll(recentUserSuggestions);
 	}
 

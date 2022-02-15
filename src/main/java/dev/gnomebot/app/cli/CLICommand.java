@@ -16,6 +16,7 @@ public class CLICommand {
 	public boolean admin = true;
 	public boolean trusted = false;
 	public CLICallback callback;
+	public boolean ephemeral = true;
 
 	public CLICommand description(String s) {
 		description = s;
@@ -43,6 +44,11 @@ public class CLICommand {
 
 	public CLICommand run(CLICallback event) {
 		callback = event;
+		return this;
+	}
+
+	public CLICommand visible() {
+		ephemeral = false;
 		return this;
 	}
 }

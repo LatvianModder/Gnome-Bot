@@ -21,6 +21,7 @@ import dev.gnomebot.app.discord.legacycommand.MuteCommand;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
@@ -807,20 +808,14 @@ public class MessageHandler {
 				if (ex.ephemeral) {
 					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
 						try {
-							context.reply(spec -> {
-								spec.color(EmbedColors.RED);
-								spec.title(ex.getMessage());
-							});
+							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
 						} catch (DiscordCommandException e) {
 							e.printStackTrace();
 						}
 					}
 				} else {
 					try {
-						context.reply(spec -> {
-							spec.color(EmbedColors.RED);
-							spec.title(ex.getMessage());
-						});
+						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
 					} catch (DiscordCommandException e) {
 						e.printStackTrace();
 					}
@@ -848,7 +843,7 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.update(Updates.inc("uses", 1));
-					context.replyRaw(macro::createMessage);
+					context.reply(macro.createMessage(true));
 					App.LOGGER.commandSuccess();
 					return true;
 				}
@@ -863,20 +858,14 @@ public class MessageHandler {
 				if (ex.ephemeral) {
 					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
 						try {
-							context.reply(spec -> {
-								spec.color(EmbedColors.RED);
-								spec.title(ex.getMessage());
-							});
+							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
 						} catch (DiscordCommandException e) {
 							e.printStackTrace();
 						}
 					}
 				} else {
 					try {
-						context.reply(spec -> {
-							spec.color(EmbedColors.RED);
-							spec.title(ex.getMessage());
-						});
+						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
 					} catch (DiscordCommandException e) {
 						e.printStackTrace();
 					}

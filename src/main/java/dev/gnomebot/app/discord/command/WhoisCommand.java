@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
@@ -31,23 +32,24 @@ public class WhoisCommand extends ApplicationCommands {
 
 		User user = event.get("user").asUser().get();
 
-		event.embedResponse(spec -> {
-			spec.title(user.getTag());
-			spec.addField("Created", Utils.formatRelativeDate(user.getId().getTimestamp()), true);
-			spec.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
+		EmbedBuilder embed = EmbedBuilder.create()
+				.title(user.getTag())
+				.inlineField("Created", Utils.formatRelativeDate(user.getId().getTimestamp()))
+				.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
 
-			try {
-				Member member = user.asMember(event.context.gc.guildId).block();
+		try {
+			Member member = user.asMember(event.context.gc.guildId).block();
 
-				if (member != null) {
-					spec.addField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)), true);
+			if (member != null) {
+				embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
 
-					if (!member.getRoleIds().isEmpty()) {
-						spec.addField("Roles", member.getRoleIds().stream().map(r -> "<@&" + r.asString() + ">").collect(Collectors.joining(" ")), false);
-					}
+				if (!member.getRoleIds().isEmpty()) {
+					embed.field("Roles", member.getRoleIds().stream().map(r -> "<@&" + r.asString() + ">").collect(Collectors.joining(" ")));
 				}
-			} catch (Exception ex) {
 			}
-		});
+		} catch (Exception ex) {
+		}
+
+		event.respond(embed);
 	}
 }

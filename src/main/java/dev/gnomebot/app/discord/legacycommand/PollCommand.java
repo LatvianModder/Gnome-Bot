@@ -4,11 +4,11 @@ import com.mongodb.BasicDBObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
-import discord4j.core.object.component.ActionRow;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
@@ -50,28 +50,26 @@ public class PollCommand {
 
 		context.referenceMessage = false;
 
-		Message m = context.replyRaw(builder -> {
-			builder.addEmbed(EmbedCreateSpec.builder()
-					.color(EmbedColors.GRAY)
-					.url(App.url("poll/" + context.gc.guildId.asString() + "/" + number))
-					.title("Loading poll #" + number + "...")
-					.build()
-			);
+		List<SelectMenu.Option> selectMenuOptions = new ArrayList<>();
 
-			List<SelectMenu.Option> selectMenuOptions = new ArrayList<>();
+		selectMenuOptions.add(SelectMenu.Option.of("Remove my vote", "vote/none").withEmoji(Emojis.VOTENONE));
 
-			selectMenuOptions.add(SelectMenu.Option.of("Remove my vote", "vote/none").withEmoji(Emojis.VOTENONE));
+		for (int i = 0; i < s.size(); i++) {
+			selectMenuOptions.add(SelectMenu.Option.of(s.get(i), "vote/" + i).withEmoji(Emojis.NUMBERS[i]));
+		}
 
-			for (int i = 0; i < s.size(); i++) {
-				selectMenuOptions.add(SelectMenu.Option.of(s.get(i), "vote/" + i).withEmoji(Emojis.NUMBERS[i]));
-			}
-
-			builder.addComponent(ActionRow.of(SelectMenu.of("poll/" + number, selectMenuOptions)
-					.withPlaceholder("Click here to vote!")
-					.withMinValues(1)
-					.withMaxValues(1)
-			));
-		});
+		Message m = context.reply(MessageBuilder.create()
+				.addEmbed(EmbedBuilder.create()
+						.color(EmbedColors.GRAY)
+						.url(App.url("poll/" + context.gc.guildId.asString() + "/" + number))
+						.title("Loading poll #" + number + "...")
+				)
+				.addComponentRow(SelectMenu.of("poll/" + number, selectMenuOptions)
+						.withPlaceholder("Click here to vote!")
+						.withMinValues(1)
+						.withMaxValues(1)
+				)
+		);
 
 		Document document = new Document();
 		document.put("_id", m.getId().asLong());

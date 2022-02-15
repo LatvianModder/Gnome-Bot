@@ -4,16 +4,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.discordjson.json.EmbedData;
-import discord4j.discordjson.json.EmbedFieldData;
-import discord4j.discordjson.json.ImmutableEmbedData;
-import discord4j.discordjson.json.ImmutableWebhookMessageEditRequest;
-import discord4j.discordjson.json.WebhookMessageEditRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +32,11 @@ public class DefineCommand extends ApplicationCommands {
 			JsonObject o = Utils.readInternalJson("api/info/define/" + Utils.encode(event.get("word").asString())).getAsJsonObject();
 
 			if (o.get("found").getAsBoolean()) {
-				ImmutableWebhookMessageEditRequest.Builder builder = WebhookMessageEditRequest.builder();
+				MessageBuilder builder = MessageBuilder.create();
 				String word = o.get("word").getAsString();
 
-				ImmutableEmbedData.Builder embedBuilder = EmbedData.builder();
-				embedBuilder.color(EmbedColors.GRAY.getRGB());
+				EmbedBuilder embedBuilder = EmbedBuilder.create();
+				embedBuilder.color(EmbedColors.GRAY);
 				embedBuilder.title(word);
 
 				JsonArray meanings = o.get("meanings").getAsJsonArray();
@@ -57,10 +54,10 @@ public class DefineCommand extends ApplicationCommands {
 						b.append('"');
 					}
 
-					embedBuilder.addField(EmbedFieldData.builder().name((i + 1) + ". " + o1.get("type").getAsString()).value(Utils.trim(b.toString(), 1024)).inline(false).build());
+					embedBuilder.field((i + 1) + ". " + o1.get("type").getAsString(), Utils.trim(b.toString(), 1024));
 				}
 
-				builder.addEmbed(embedBuilder.build());
+				builder.addEmbed(embedBuilder);
 
 				List<ActionComponent> list = new ArrayList<>();
 
@@ -73,10 +70,10 @@ public class DefineCommand extends ApplicationCommands {
 				}
 
 				if (!list.isEmpty()) {
-					builder.addComponent(ActionRow.of(list).getData());
+					builder.addComponent(ActionRow.of(list));
 				}
 
-				event.editInitial(builder.build());
+				event.editInitial(builder);
 				return;
 			}
 		} catch (Exception ex) {

@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.EmbedBuilder;
 import discord4j.core.object.entity.User;
 
 /**
@@ -16,9 +17,6 @@ public class UnmuteCommand {
 
 		User m = reader.readUser().orElseThrow(() -> new DiscordCommandException("User not found!"));
 		context.gc.unmute(m.getId(), 0L);
-		context.reply(spec -> {
-			spec.color(EmbedColors.GREEN);
-			spec.author(m.getTag() + " has been unmuted!", null, m.getAvatarUrl());
-		});
+		context.reply(EmbedBuilder.create().color(EmbedColors.GREEN).author(m.getTag() + " has been unmuted!", m.getAvatarUrl()));
 	};
 }

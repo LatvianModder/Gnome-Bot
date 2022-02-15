@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.server.HTTPResponseCode;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -60,8 +61,7 @@ public class LeaderboardCommand extends ApplicationCommands {
 		try {
 			ByteArrayOutputStream imageData = new ByteArrayOutputStream();
 			ImageIO.write(req.block(), "PNG", imageData);
-			event.respondFile(builder -> {
-			}, "leaderboard-" + event.context.gc.guildId.asString() + "-" + days, "png", imageData.toByteArray(), false);
+			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
 			if (ex.code == HTTPResponseCode.BAD_REQUEST.code) {
 				event.respond("This leaderboard has no data!");

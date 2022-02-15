@@ -1,10 +1,10 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.MessageFilter;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import discord4j.core.object.component.ActionRow;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.Button;
 
 import java.util.ArrayList;
@@ -75,17 +75,11 @@ public class BadWordsCommand extends ApplicationCommands {
 
 		String r1 = sb.toString();
 
-		event.embedResponse(spec -> {
-			if (text.equals(r1)) {
-				spec.title("Doesn't contain bad words");
-				spec.color(EmbedColors.GREEN);
-			} else {
-				spec.title("Contains bad words!");
-				spec.color(EmbedColors.RED);
-			}
-
-			spec.description(r1);
-		});
+		if (text.equals(r1)) {
+			event.respond(EmbedBuilder.create("Doesn't contain bad words", r1).greenColor());
+		} else {
+			event.respond(EmbedBuilder.create("Contains bad words!", r1).redColor());
+		}
 	}
 
 	private static void list(ApplicationCommandEventWrapper event) throws DiscordCommandException {
@@ -113,6 +107,6 @@ public class BadWordsCommand extends ApplicationCommands {
 			throw new DiscordCommandException("Bad words aren't configured for this server!");
 		}
 
-		event.respond(builder -> builder.content("Bad Word Regex").addComponent(ActionRow.of(Button.link(App.url("api/guild/bad-word-regex/" + event.context.gc.guildId.asString()), "View")).getData()));
+		event.respond(MessageBuilder.create("Bad Word Regex").addComponentRow(Button.link(App.url("api/guild/bad-word-regex/" + event.context.gc.guildId.asString()), "View")));
 	}
 }

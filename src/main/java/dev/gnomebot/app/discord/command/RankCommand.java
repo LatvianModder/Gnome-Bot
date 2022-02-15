@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
 
@@ -37,40 +38,41 @@ public class RankCommand extends ApplicationCommands {
 					if (o.get("id").getAsString().equals(id)) {
 						// event.response().createFollowupMessage("**Rank:**  #0   |   **XP:**  0").subscribe();
 
-						event.embedResponse(spec -> {
-							spec.author(m.getDisplayName(), null, m.getAvatarUrl());
+						EmbedBuilder embed = EmbedBuilder.create();
+						embed.author(m.getDisplayName(), m.getAvatarUrl());
 
-							if (o.get("rank").getAsInt() == 69) {
-								spec.addField("Rank", "#69, nice", true);
-							} else {
-								spec.addField("Rank", "#" + o.get("rank").getAsInt(), true);
-							}
+						embed.author(m.getDisplayName(), null, m.getAvatarUrl());
 
-							spec.addField("XP", Utils.format(o.get("xp").getAsLong()), true);
+						if (o.get("rank").getAsInt() == 69) {
+							embed.inlineField("Rank", "#69, nice");
+						} else {
+							embed.inlineField("Rank", "#" + o.get("rank").getAsInt());
+						}
 
-							if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
-								long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();
+						embed.inlineField("XP", Utils.format(o.get("xp").getAsLong()));
 
-								if (totalMessages < event.context.gc.regularMessages.get()) {
-									if (totalMessages < MessageHandler.MM_MEMBER) {
-										spec.addField("Member Rank", ((long) (totalMessages * 10000D / (double) MessageHandler.MM_MEMBER) / 100D) + "%", true);
-									} else {
-										spec.addField("Regular Rank", ((long) (totalMessages * 10000D / (double) event.context.gc.regularMessages.get()) / 100D) + "%", true);
-									}
+						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
+							long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();
+
+							if (totalMessages < event.context.gc.regularMessages.get()) {
+								if (totalMessages < MessageHandler.MM_MEMBER) {
+									embed.inlineField("Member Rank", ((long) (totalMessages * 10000D / (double) MessageHandler.MM_MEMBER) / 100D) + "%");
+								} else {
+									embed.inlineField("Regular Rank", ((long) (totalMessages * 10000D / (double) event.context.gc.regularMessages.get()) / 100D) + "%");
 								}
 							}
-						});
+						}
 
+						event.respond(embed);
 						return;
 					}
 				}
 
-				event.embedResponse(spec -> {
-					spec.author(m.getDisplayName(), null, m.getAvatarUrl());
-					spec.addField("Rank", "Unranked", true);
-					spec.addField("XP", "0", true);
-				});
-
+				event.respond(EmbedBuilder.create()
+						.author(m.getDisplayName(), m.getAvatarUrl())
+						.inlineField("Rank", "Unranked")
+						.inlineField("XP", "0")
+				);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				event.respond("Failed to connect to API!");

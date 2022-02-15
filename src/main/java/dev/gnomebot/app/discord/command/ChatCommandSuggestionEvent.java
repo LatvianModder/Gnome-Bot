@@ -1,18 +1,56 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
-import discord4j.core.event.domain.interaction.InteractionCreateEvent;
+import dev.gnomebot.app.discord.InteractionEventWrapper;
+import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-public class ChatCommandSuggestionEvent extends ApplicationCommandEventWrapper {
+public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInputAutoCompleteEvent> {
+	public final Map<String, CommandOption> options;
+	public final CommandOption focused;
 	public final List<ChatCommandSuggestion> suggestions;
+	public Function<String, String> transformSearch;
 
-	public ChatCommandSuggestionEvent(GuildCollections gc, InteractionCreateEvent e, List<ApplicationCommandInteractionOption> o) {
-		super(gc, e, o);
+	public ChatCommandSuggestionEvent(GuildCollections gc, ChatInputAutoCompleteEvent e, List<ApplicationCommandInteractionOption> o) {
+		super(gc, e);
+
+		options = new HashMap<>();
+		CommandOption f = null;
+
+		for (ApplicationCommandInteractionOption option : o) {
+			CommandOption o1 = new CommandOption(context, option);
+			options.put(o1.name, o1);
+
+			if (o1.focused) {
+				f = o1;
+			}
+		}
+
+		focused = f;
+
 		suggestions = new ArrayList<>();
+		transformSearch = s -> s.toLowerCase().trim();
+	}
+
+	public boolean has(String id) {
+		return options.containsKey(id);
+	}
+
+	public CommandOption get(String id) throws DiscordCommandException {
+		CommandOption o = options.get(id);
+
+		if (o == null) {
+			return new CommandOption(context, id, "", false);
+		}
+
+		return o;
 	}
 
 	public void suggest(String name, Object value, int priority) {

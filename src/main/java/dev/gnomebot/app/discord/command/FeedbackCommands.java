@@ -5,10 +5,11 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordFeedback;
-import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -16,8 +17,6 @@ import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
@@ -35,8 +34,7 @@ public class FeedbackCommands extends ApplicationCommands {
 	public static final CommandBuilder COMMAND = root("feedback")
 			.description("Feedback")
 			.add(sub("submit")
-					.description("Create a suggestion that will be posted in feedback channel for community to vote")
-					.add(string("text").required())
+					.description("Open a suggestion form that will be post message in feedback channel for community to vote")
 					.run(FeedbackCommands::submit)
 			)
 			.add(sub("approve")
@@ -88,14 +86,9 @@ public class FeedbackCommands extends ApplicationCommands {
 
 		event.context.checkBotPerms(feedbackChannel, Permission.ADD_REACTIONS, Permission.SEND_MESSAGES);
 
-		Message m = feedbackChannel.createMessage(MessageCreateSpec.builder()
-				.addEmbed(EmbedCreateSpec.builder()
-						.color(EmbedColors.GRAY)
-						.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
-						.title("Loading suggestion #" + number + "...")
-						.build()
-				)
-				.build()
+		Message m = feedbackChannel.createMessage(EmbedBuilder.create()
+				.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
+				.title("Loading suggestion #" + number + "...")
 		).block();
 
 		Document document = new Document();
@@ -128,7 +121,7 @@ public class FeedbackCommands extends ApplicationCommands {
 				Button.link(QuoteHandler.getChannelURL(event.context.gc.guildId, m.getId()), "Discussion")
 		)).build()).block();
 
-		event.respond("Your feedback has been submitted!", ActionRow.of(Button.link(QuoteHandler.getMessageURL(event.context.gc.guildId, m.getChannelId(), m.getId()), "Open")));
+		event.respond(MessageBuilder.create("Your feedback has been submitted!").addComponentRow(Button.link(QuoteHandler.getMessageURL(event.context.gc.guildId, m.getChannelId(), m.getId()), "Open")));
 	}
 
 	private static void changeStatus(ApplicationCommandEventWrapper event, DiscordFeedback.Status status) throws DiscordCommandException {

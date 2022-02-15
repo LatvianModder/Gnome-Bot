@@ -1,7 +1,9 @@
 package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
@@ -10,8 +12,6 @@ import discord4j.core.object.entity.Webhook;
 import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.WebhookCreateSpec;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MessageData;
@@ -123,24 +123,16 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		return Possible.flatOpt(getChannelData().lastMessageId()).map(Snowflake::of).orElse(null);
 	}
 
-	public Mono<Message> createMessage(MessageCreateSpec spec) {
-		return Mono.defer(() -> {
-					MessageCreateSpec actualSpec = gc.getClient().getRestClient()
-							.getRestResources()
-							.getAllowedMentions()
-							.map(spec::withAllowedMentions)
-							.orElse(spec);
-					return getRest().createMessage(actualSpec.asRequest());
-				})
-				.map(data -> new Message(gc.getClient(), data));
+	public Mono<Message> createMessage(MessageBuilder builder) {
+		return Mono.defer(() -> getRest().createMessage(builder.toMultipartMessageCreateRequest())).map(data -> new Message(gc.getClient(), data));
 	}
 
 	public Mono<Message> createMessage(String content) {
-		return createMessage(MessageCreateSpec.builder().content(content).allowedMentions(DiscordMessage.noMentions()).build());
+		return createMessage(MessageBuilder.create(content));
 	}
 
-	public Mono<Message> createMessage(EmbedCreateSpec spec) {
-		return createMessage(MessageCreateSpec.builder().addEmbed(spec).allowedMentions(DiscordMessage.noMentions()).build());
+	public Mono<Message> createMessage(EmbedBuilder embed) {
+		return createMessage(MessageBuilder.create(embed));
 	}
 
 	@Override

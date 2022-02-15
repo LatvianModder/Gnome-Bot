@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord.legacycommand;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.core.object.entity.Member;
@@ -53,13 +54,12 @@ public class EmojifulCommand {
 				ex.printStackTrace();
 			}
 
-			context.reply("Done!\nCategory: " + cat1 + "\nEmojis: Everything lol");
-
 			try {
-				context.replyFile("emojiful-" + cat1, "zip", out.toByteArray(), false);
+				context.reply(MessageBuilder.create("Done!\nCategory: " + cat1 + "\nEmojis: Everything lol").addFile("emojiful-" + cat1 + ".zip", out.toByteArray()));
 			} catch (DiscordCommandException e) {
 				e.printStackTrace();
 			}
+
 			return;
 		}
 
@@ -115,10 +115,8 @@ public class EmojifulCommand {
 					ex.printStackTrace();
 				}
 
-				context.reply("Done!\nCategory: " + cat + "\nEmojis: " + reactions.stream().map(Utils::reactionToString).collect(Collectors.joining(" ")));
-
 				try {
-					context.replyFile("emojiful-" + cat, "zip", out.toByteArray(), false);
+					context.reply(MessageBuilder.create("Done!\nCategory: " + cat + "\nEmojis: " + reactions.stream().map(Utils::reactionToString).collect(Collectors.joining(" "))).addFile("emojiful-" + cat + ".zip", out.toByteArray()));
 				} catch (DiscordCommandException e) {
 					e.printStackTrace();
 				}

@@ -1,23 +1,17 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
-import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
 import discord4j.discordjson.json.MessageData;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
-public class ComponentEventWrapper extends InteractionEventWrapper<ComponentInteractionEvent> {
+public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<ComponentInteractionEvent> {
 	public final String[] path;
 	public ComponentEventWrapper parent;
 	private int edit = 0;
-	private boolean acknowledged = false;
 
 	public ComponentEventWrapper(GuildCollections gc, ComponentInteractionEvent event, String id) {
 		super(gc, event);
@@ -66,42 +60,33 @@ public class ComponentEventWrapper extends InteractionEventWrapper<ComponentInte
 		return String.join("/", path);
 	}
 
-	public void acknowledge() {
-		if (!acknowledged) {
-			acknowledged = true;
-			//event.acknowledge().block();
-			event.deferEdit().block();
-		}
-	}
-
 	public ComponentEventWrapper edit(int b) {
 		edit = b;
 		return this;
 	}
 
-	public void respond(Consumer<InteractionApplicationCommandCallbackSpec.Builder> msg) {
-		InteractionApplicationCommandCallbackSpec.Builder builder = InteractionApplicationCommandCallbackSpec.builder();
-		builder.allowedMentions(DiscordMessage.noMentions());
-
+	@Override
+	public Optional<MessageData> respond(MessageBuilder messageBuilder) {
 		if (edit >= 2) {
-			builder.components(Collections.emptyList());
+			messageBuilder.noComponents();
 		}
 
-		builder.ephemeral(true);
-		msg.accept(builder);
-		(edit > 0 ? event.edit(builder.build()) : event.reply(builder.build())).block();
+		if (edit > 0) {
+			event.edit(messageBuilder.toInteractionApplicationCommandCallbackSpec()).block();
+		} else {
+			event.reply(messageBuilder.toInteractionApplicationCommandCallbackSpec()).block();
+		}
+
+		return Optional.empty();
 	}
 
+	/*
 	public Optional<MessageData> respond(String content) {
 		if (acknowledged) {
 			return Optional.of(getResponse().createFollowupMessageEphemeral(Utils.trimContent(content)).block());
 		} else {
-			respond(builder -> builder.content(Utils.trimContent(content)));
-			return Optional.empty();
+			return super.respond(content);
 		}
 	}
-
-	public Optional<MessageData> respond(List<String> content) {
-		return respond(String.join("\n", content));
-	}
+	 */
 }

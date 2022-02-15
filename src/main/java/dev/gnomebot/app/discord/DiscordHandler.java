@@ -38,6 +38,7 @@ import discord4j.core.event.domain.guild.UnbanEvent;
 import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
+import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.lifecycle.ReconnectFailEvent;
@@ -187,6 +188,7 @@ public class DiscordHandler {
 		handle(ButtonInteractionEvent.class, this::button);
 		handle(SelectMenuInteractionEvent.class, this::selectMenu);
 		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
+		handle(ModalSubmitInteractionEvent.class, this::modalSubmitInteraction);
 		handle(ThreadChannelCreateEvent.class, this::threadChannelCreate);
 		handle(ThreadChannelDeleteEvent.class, this::threadChannelDelete);
 		handle(ThreadChannelUpdateEvent.class, this::threadChannelUpdate);
@@ -430,6 +432,10 @@ public class DiscordHandler {
 
 	private void chatInputAutoComplete(ChatInputAutoCompleteEvent event) {
 		InteractionHandler.chatInputAutoComplete(this, event);
+	}
+
+	private void modalSubmitInteraction(ModalSubmitInteractionEvent event) {
+		InteractionHandler.modalSubmitInteraction(this, event);
 	}
 
 	private void threadChannelCreate(ThreadChannelCreateEvent event) {

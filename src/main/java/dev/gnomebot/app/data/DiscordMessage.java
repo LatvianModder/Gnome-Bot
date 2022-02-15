@@ -3,6 +3,7 @@ package dev.gnomebot.app.data;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
 import discord4j.rest.util.AllowedMentions;
 import org.bson.conversions.Bson;
@@ -35,10 +36,8 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	public static final long FLAG_FILES = 1L << 24L;
 	public static final long FLAG_REPLY = 1L << 25L;
 
-	public static final AllowedMentions NO_MENTIONS = AllowedMentions.builder().build();
-
 	public static AllowedMentions noMentions() {
-		return NO_MENTIONS;
+		return MessageBuilder.NO_MENTIONS;
 	}
 
 	public final long flags;

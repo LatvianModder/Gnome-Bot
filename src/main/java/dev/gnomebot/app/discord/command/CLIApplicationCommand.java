@@ -6,7 +6,6 @@ import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import dev.gnomebot.app.util.Pair;
 import discord4j.core.object.entity.Member;
 
 import java.util.ArrayList;
@@ -29,8 +28,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			.run(CLIApplicationCommand::run);
 
 	private static class CLIEventFromCommand extends CLIEvent {
-		private final List<String> response = new ArrayList<>();
-		private Pair<String, byte[]> file = null;
+		private final List<String> responseText = new ArrayList<>();
 
 		public CLIEventFromCommand(GuildCollections g, Member m, CommandReader r) {
 			super(g, m, r);
@@ -38,24 +36,24 @@ public class CLIApplicationCommand extends ApplicationCommands {
 
 		@Override
 		public void respond(String text) {
-			response.add(text);
-		}
-
-		@Override
-		public void respondFile(String text, String filename, byte[] data) {
-			response.add(text);
-			file = Pair.of(filename, data);
+			responseText.add(text);
 		}
 	}
 
 	private static void run(ApplicationCommandEventWrapper event) throws Exception {
-		event.acknowledgeEphemeral();
-
 		CLICommand command = CLI.COMMANDS.get(event.get("command").asString());
 
 		if (command == null) {
 			throw error("Command not found!");
-		} else if (command.trusted) {
+		}
+
+		if (command.ephemeral) {
+			event.acknowledgeEphemeral();
+		} else {
+			event.acknowledge();
+		}
+
+		if (command.trusted) {
 			if (!event.context.isTrusted()) {
 				throw new DiscordCommandException("Only trusted users can use this command!");
 			}
@@ -74,13 +72,11 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			event1.respond(ex.toString());
 		}
 
-		if (event1.response.isEmpty()) {
-			event.respond("No response");
-		} else if (event1.file != null) {
-			event.respondFile(builder -> builder.content(String.join("\n", event1.response)), event1.file.a, event1.file.b);
-		} else {
-			event.respond(String.join("\n", event1.response));
+		if (!event1.responseText.isEmpty()) {
+			event1.response.content(String.join("\n", event1.responseText));
 		}
+
+		event.respond(event1.response);
 	}
 
 	private static void suggestCommands(ChatCommandSuggestionEvent event) {

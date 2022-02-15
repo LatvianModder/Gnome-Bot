@@ -23,16 +23,19 @@ import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEven
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
+import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 
@@ -76,10 +79,7 @@ public class InteractionHandler {
 				Macro macro = gc.macros.query().eq("slash_command", event.getCommandId().asLong()).first();
 
 				if (macro != null) {
-					InteractionApplicationCommandCallbackSpec.Builder spec = InteractionApplicationCommandCallbackSpec.builder();
-					spec.allowedMentions(DiscordMessage.noMentions());
-					macro.createMessage(spec);
-					event.reply(spec.build()).subscribe();
+					event.reply(macro.createMessage(false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 					macro.update(Updates.inc("uses", 1));
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
@@ -158,6 +158,7 @@ public class InteractionHandler {
 			case "kick" -> kick(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "ban" -> ban(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "refresh_modpack" -> refreshModpack(event);
+			case "modal_test" -> modalTest(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new DiscordCommandException("Unknown button ID: " + Arrays.asList(event.path));
@@ -246,7 +247,7 @@ public class InteractionHandler {
 			throw new DiscordCommandException("Macro '" + id + "' not found!");
 		}
 
-		event.respond(macro::createMessage);
+		event.respond(macro.createMessage(false).ephemeral(true));
 	}
 
 	private static void poll(ComponentEventWrapper event, int number, String value) {
@@ -296,6 +297,16 @@ public class InteractionHandler {
 		}
 	}
 
+	private static void modalTest(ComponentEventWrapper event) {
+		event.event.presentModal(InteractionPresentModalSpec.builder()
+				.title("Modal Test")
+				.customId("modal_test")
+				.addComponent(ActionRow.of(TextInput.small("modal_test_1", "Test 1", "Placeholder text")))
+				.addComponent(ActionRow.of(TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text")))
+				.build()
+		).subscribe();
+	}
+
 	public static void chatInputAutoComplete(DiscordHandler handler, ChatInputAutoCompleteEvent event) {
 		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 
@@ -326,7 +337,7 @@ public class InteractionHandler {
 							event.respondWithSuggestions(Collections.emptyList()).subscribe();
 						} else {
 							eventWrapper.suggestions.sort(ChatCommandSuggestion::compareTo);
-							String search = eventWrapper.focused.asString().toLowerCase().trim();
+							String search = eventWrapper.transformSearch.apply(eventWrapper.focused.asString());
 
 							List<ApplicationCommandOptionChoiceData> list = new ArrayList<>();
 
@@ -354,6 +365,85 @@ public class InteractionHandler {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	public static void modalSubmitInteraction(DiscordHandler handler, ModalSubmitInteractionEvent event) {
+		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+
+		if (gc != null) {
+			Member member = event.getInteraction().getMember().orElse(null);
+
+			if (member != null) {
+				String customId = event.getCustomId();
+
+				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
+					event.deferEdit().subscribe();
+					return;
+				}
+
+				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
+
+				try {
+					try {
+						modalSubmit(eventWrapper);
+					} catch (DiscordCommandException ex) {
+						App.error("Error in " + eventWrapper + ": " + ex.getMessage());
+						eventWrapper.respond(ex.getMessage());
+					} catch (Exception ex) {
+						App.error("Error in " + eventWrapper + ": " + ex);
+						eventWrapper.respond("Error: " + ex);
+					}
+				} catch (Exception ex) {
+				}
+			}
+		}
+	}
+
+	private static void modalSubmit(ModalEventWrapper event) throws DiscordCommandException {
+		// String s = event.getComponents().stream().map(MessageComponent::getData).toList().toString().replaceAll(", \\w+=(?:Possible\\.absent|null)", "");
+		// App.info("Modal submit " + event.getCustomId() + ": " + s);
+		// event.reply(Utils.trimContent("Test response to modal:\n" + s)).withEphemeral(true).subscribe();
+		event.respond("Modal: " + event);
+	}
+
+	private static void modmail(ModalEventWrapper event) {
+		/*
+		String message = event.get("message").asString();
+
+		event.context.gc.adminMessagesChannel.messageChannel().ifPresent(c -> {
+			c.createMessage(EmbedCreateSpec.builder()
+					.author("Mod Mail", null, event.context.sender.getAvatarUrl())
+					.description(event.context.sender.getMention() + ":\n" + message)
+					.build()
+			).subscribe();
+		});
+
+		event.respond("Message sent!");
+		 */
+	}
+
+	private static void report(ModalEventWrapper event) {
+		/*
+		CachedRole role = event.context.gc.reportMentionRole.getRole();
+
+		event.respond(msg -> {
+			if (role == null) {
+				msg.content("Select reason for reporting this message:");
+			} else {
+				msg.content("Select reason for reporting this message: (<@&" + role.id.asString() + "> will be pinged)");
+			}
+
+			List<SelectMenu.Option> options = new ArrayList<>();
+			options.add(SelectMenu.Option.of("Cancel", "-"));
+
+			for (String s : event.context.gc.reportOptions.get().split(" \\| ")) {
+				options.add(SelectMenu.Option.of(s, s));
+			}
+
+			options.add(SelectMenu.Option.of("Other", "Other"));
+			msg.addComponent(ActionRow.of(SelectMenu.of("report/" + m.getChannelId().asString() + "/" + m.getId().asString(), options).withPlaceholder("Select Reason...")).getData());
+		});
+		 */
 	}
 
 	public static StringBuilder optionsToString(StringBuilder sb, List<ApplicationCommandInteractionOption> options) {
