@@ -41,8 +41,6 @@ public class RankCommand extends ApplicationCommands {
 						EmbedBuilder embed = EmbedBuilder.create();
 						embed.author(m.getDisplayName(), m.getAvatarUrl());
 
-						embed.author(m.getDisplayName(), null, m.getAvatarUrl());
-
 						if (o.get("rank").getAsInt() == 69) {
 							embed.inlineField("Rank", "#69, nice");
 						} else {

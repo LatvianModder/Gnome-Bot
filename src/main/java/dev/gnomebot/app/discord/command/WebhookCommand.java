@@ -1,24 +1,14 @@
 package dev.gnomebot.app.discord.command;
 
-import com.google.gson.JsonArray;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.UserWebhook;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import dev.gnomebot.app.util.Utils;
-import discord4j.core.object.component.MessageComponent;
-import discord4j.discordjson.json.ComponentData;
-import discord4j.discordjson.json.WebhookExecuteRequest;
-import discord4j.discordjson.json.WebhookMessageEditRequest;
-import discord4j.discordjson.possible.Possible;
 import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author LatvianModder
@@ -43,10 +33,10 @@ public class WebhookCommand extends ApplicationCommands {
 			)
 			.add(sub("execute")
 					.add(string("name").required())
-					.add(string("content").description("Use ^https://rawlink.txt to fetch content from URL"))
-					.add(string("buttons").description("Use ^https://rawlink.json to fetch json from URL"))
-					.add(string("edit_id").description("Message ID to edit, dont set to post new message"))
-					.add(string("thread_id").description("Thread ID to post in"))
+					//.add(string("content").description("Use ^https://rawlink.txt to fetch content from URL"))
+					//.add(string("buttons").description("Use ^https://rawlink.json to fetch json from URL"))
+					//.add(string("edit_id").description("Message ID to edit, dont set to post new message"))
+					//.add(string("thread_id").description("Thread ID to post in"))
 					.run(WebhookCommand::execute)
 			);
 
@@ -101,6 +91,7 @@ public class WebhookCommand extends ApplicationCommands {
 
 	private static void execute(ApplicationCommandEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
+		event.context.checkSenderAdmin();
 
 		WebHook w = event.get("name").asWebhook().orElse(null);
 
@@ -108,17 +99,20 @@ public class WebhookCommand extends ApplicationCommands {
 			throw new DiscordCommandException("Webhook not found! Try `/webhook list`");
 		}
 
+		throw new DiscordCommandException("WIP!");
+
+		/*
 		String content = event.get("content").asContentOrFetch();
 		String buttons = event.get("buttons").asContentOrFetch();
 
-		Possible<List<ComponentData>> components = Possible.absent();
+		List<LayoutComponent> components = null;
 
 		if (!buttons.isEmpty()) {
 			JsonArray a = Utils.GSON.fromJson(buttons, JsonArray.class);
-			components = Possible.of(Utils.parseRows(a).stream().map(MessageComponent::getData).collect(Collectors.toList()));
+			components = Utils.parseRows(a);
 		}
 
-		if (content.isEmpty() && components.isAbsent()) {
+		if (content.isEmpty() && components == null) {
 			throw new DiscordCommandException("No content or components!");
 		}
 
@@ -129,22 +123,21 @@ public class WebhookCommand extends ApplicationCommands {
 			w = w.withThread(threadId);
 		}
 
+		MessageBuilder builder = MessageBuilder.create();
+
+		if (!content.isEmpty()) {
+			builder.content(content);
+		}
+
+		builder.components(components);
+
 		if (editId.isEmpty()) {
-			w.execute(WebhookExecuteRequest.builder()
-					.allowedMentions(DiscordMessage.noMentions().toData())
-					.content(content)
-					.components(components)
-					.build()
-			);
+			w.execute(builder);
 		} else {
-			w.edit(editId, WebhookMessageEditRequest.builder()
-					.allowedMentionsOrNull(DiscordMessage.noMentions().toData())
-					.content(content.isEmpty() ? Possible.absent() : Possible.of(Optional.of(content)))
-					.components(components)
-					.build()
-			).block();
+			w.edit(editId, builder).block();
 		}
 
 		event.respond("Done!");
+		 */
 	}
 }

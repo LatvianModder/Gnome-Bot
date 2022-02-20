@@ -69,7 +69,7 @@ public final class DiscordCommandImpl {
 			COMMAND_MAP.put(cmd.name, cmd);
 		}
 
-		App.info("Found " + COMMAND_MAP.size() + " prefix commands");
+		App.info("Found " + COMMAND_MAP.size() + " legacy commands");
 	}
 
 	public static void run(CommandContext context, CommandReader reader, String content, boolean ignorePermissions) throws Exception {

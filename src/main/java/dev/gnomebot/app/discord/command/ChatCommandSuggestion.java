@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.command;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import org.jetbrains.annotations.NotNull;
 
-public record ChatCommandSuggestion(String name, Object value, int priority) implements Comparable<ChatCommandSuggestion> {
+public record ChatCommandSuggestion(String name, Object value, String match, int priority) implements Comparable<ChatCommandSuggestion> {
 	public ApplicationCommandOptionChoiceData build() {
 		return ApplicationCommandOptionChoiceData.builder().name(name).value(value).build();
 	}

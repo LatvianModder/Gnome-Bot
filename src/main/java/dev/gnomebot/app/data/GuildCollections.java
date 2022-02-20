@@ -134,6 +134,7 @@ public class GuildCollections {
 	public final Map<Snowflake, UnmuteTask> unmuteMap;
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
+	private Map<String, Macro> macroMap;
 
 	public boolean advancedLogging = false;
 
@@ -492,6 +493,7 @@ public class GuildCollections {
 		wrappedGuild = null;
 		roleMap = null;
 		roleList = null;
+		macroMap = null;
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
@@ -679,14 +681,14 @@ public class GuildCollections {
 
 			for (int i = 0; i < recentUsers.size(); i++) {
 				RecentUser user = recentUsers.get(i);
-				recentUserSuggestions.add(new ChatCommandSuggestion(user.tag(), user.id().asString(), recentUsers.size() - i));
+				recentUserSuggestions.add(new ChatCommandSuggestion(user.tag(), user.id().asString(), user.tag().toLowerCase(), recentUsers.size() - i));
 			}
 
 			Set<Snowflake> set = recentUsers.stream().map(RecentUser::id).collect(Collectors.toSet());
 
 			for (Member member : getMembers()) {
 				if (!set.contains(member.getId())) {
-					recentUserSuggestions.add(new ChatCommandSuggestion(member.getTag(), member.getId().asString(), 0));
+					recentUserSuggestions.add(new ChatCommandSuggestion(member.getTag(), member.getId().asString(), member.getTag().toLowerCase(), 0));
 				}
 			}
 		}
@@ -708,5 +710,26 @@ public class GuildCollections {
 		if (recentUsers.size() > 1000) {
 			recentUsers.remove(recentUsers.size() - 1);
 		}
+	}
+
+	public Map<String, Macro> getMacroMap() {
+		if (macroMap == null) {
+			macroMap = new HashMap<>();
+
+			for (Macro macro : macros.query()) {
+				macroMap.put(macro.getName().toLowerCase(), macro);
+			}
+		}
+
+		return macroMap;
+	}
+
+	@Nullable
+	public Macro getMacro(String name) {
+		return getMacroMap().get(name.toLowerCase());
+	}
+
+	public void updateMacroMap() {
+		macroMap = null;
 	}
 }

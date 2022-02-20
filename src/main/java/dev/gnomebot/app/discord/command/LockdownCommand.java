@@ -56,7 +56,7 @@ public class LockdownCommand extends ApplicationCommands {
 					spec.title("Lockdown mode enabled!");
 					spec.description(Emojis.ALERT.asFormat());
 					spec.thumbnail(Assets.EMERGENCY.getPath());
-					spec.author(event.context.sender.getUsername(), null, event.context.sender.getAvatarUrl());
+					spec.author(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 				});
 			}
 
@@ -108,7 +108,7 @@ public class LockdownCommand extends ApplicationCommands {
 					spec.color(EmbedColors.GREEN);
 					spec.description(Emojis.ALERT.asFormat());
 					spec.thumbnail(Assets.EMERGENCY.getPath());
-					spec.author(event.context.sender.getUsername(), null, event.context.sender.getAvatarUrl());
+					spec.author(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 				});
 			}
 

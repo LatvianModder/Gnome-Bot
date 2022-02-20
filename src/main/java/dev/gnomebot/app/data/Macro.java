@@ -3,6 +3,7 @@ package dev.gnomebot.app.data;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
@@ -25,14 +26,11 @@ public class Macro extends WrappedDocument<Macro> {
 	public static final Pattern REMOVE_MD_LINKS = Pattern.compile("\\[.+?]\\((.+?)\\)");
 
 	public final GuildCollections gc;
+	private ChatCommandSuggestion chatCommandSuggestion;
 
 	public Macro(GuildCollections g, WrappedCollection<Macro> c, MapWrapper d) {
 		super(c, d);
 		gc = g;
-	}
-
-	public String getCommandName() {
-		return document.getString("command_name");
 	}
 
 	public long getAuthor() {
@@ -48,12 +46,16 @@ public class Macro extends WrappedDocument<Macro> {
 		return document.getString("content");
 	}
 
-	public boolean isScript() {
-		return document.getBoolean("script");
+	public List<String> getExtra() {
+		return document.getList("extra");
 	}
 
 	public int getUses() {
 		return document.getInt("uses");
+	}
+
+	public long getSlashCommand() {
+		return document.getLong("slash_command");
 	}
 
 	public MessageBuilder createMessage(boolean removeLinks) {
@@ -128,7 +130,7 @@ public class Macro extends WrappedDocument<Macro> {
 			String author = gc.db.app.discordHandler.getUserName(Snowflake.of(getAuthor())).orElse("Deleted User");
 
 			ApplicationCommandData data = gc.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), ApplicationCommandRequest.builder()
-					.name(getCommandName())
+					.name(getName().toLowerCase())
 					.description("Macro created by " + author)
 					.build()
 			).block();
@@ -141,7 +143,7 @@ public class Macro extends WrappedDocument<Macro> {
 
 			return id;
 		} else {
-			long id = document.getLong("slash_command");
+			long id = getSlashCommand();
 
 			if (id != 0L) {
 				gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), id).block();
@@ -150,5 +152,13 @@ public class Macro extends WrappedDocument<Macro> {
 
 			return id;
 		}
+	}
+
+	public ChatCommandSuggestion getChatCommandSuggestion() {
+		if (chatCommandSuggestion == null) {
+			chatCommandSuggestion = new ChatCommandSuggestion(getName(), getName(), getName().toLowerCase(), 0);
+		}
+
+		return chatCommandSuggestion;
 	}
 }

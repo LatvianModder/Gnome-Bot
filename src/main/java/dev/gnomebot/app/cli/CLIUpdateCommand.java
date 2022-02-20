@@ -3,6 +3,8 @@ package dev.gnomebot.app.cli;
 import dev.gnomebot.app.discord.command.RootCommand;
 
 public class CLIUpdateCommand {
+	// TODO: Automate this with local cache of command signature
+
 	@RootCommand
 	public static final CLICommand COMMAND = CLICommand.make("update_command")
 			.description("Update command")

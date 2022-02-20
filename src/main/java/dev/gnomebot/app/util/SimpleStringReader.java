@@ -94,7 +94,7 @@ public class SimpleStringReader {
 		return s;
 	}
 
-	public Optional<Boolean> readBoolean() throws DiscordCommandException {
+	public Optional<Boolean> readBoolean() {
 		int p = position;
 		Optional<String> s = readString();
 
@@ -126,7 +126,7 @@ public class SimpleStringReader {
 		}
 	}
 
-	public OptionalLong readSeconds() throws DiscordCommandException {
+	public OptionalLong readSeconds() {
 		int p = position;
 		Optional<String> s = readString();
 
@@ -209,7 +209,7 @@ public class SimpleStringReader {
 		return OptionalLong.of(t1);
 	}
 
-	public OptionalLong readDays() throws DiscordCommandException {
+	public OptionalLong readDays() {
 		int p = position;
 		OptionalLong s = readSeconds();
 

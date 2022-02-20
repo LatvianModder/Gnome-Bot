@@ -102,11 +102,11 @@ public class BasicOption {
 		return asDouble().orElse(def);
 	}
 
-	public OptionalLong asSeconds() throws DiscordCommandException {
+	public OptionalLong asSeconds() {
 		return value.isEmpty() ? OptionalLong.empty() : new SimpleStringReader(value).readSeconds();
 	}
 
-	public OptionalLong asDays() throws DiscordCommandException {
+	public OptionalLong asDays() {
 		return value.isEmpty() ? OptionalLong.empty() : new SimpleStringReader(value).readDays();
 	}
 
@@ -114,7 +114,7 @@ public class BasicOption {
 		return asStringOptional().map(Currency::get);
 	}
 
-	public ZoneId asZone() throws DiscordCommandException {
+	public ZoneId asZone() {
 		if (value.isEmpty()) {
 			return ZoneOffset.UTC;
 		}

@@ -49,6 +49,8 @@ public class MessageBuilder {
 	private List<LayoutComponent> components;
 	private List<MessageCreateFields.File> files;
 	private Snowflake messageReference;
+	private String webhookName;
+	private String webhookAvatarUrl;
 
 	private MessageBuilder() {
 		content = null;
@@ -58,6 +60,8 @@ public class MessageBuilder {
 		components = null;
 		files = null;
 		messageReference = null;
+		webhookName = null;
+		webhookAvatarUrl = null;
 	}
 
 	@Nullable
@@ -102,6 +106,14 @@ public class MessageBuilder {
 		return this;
 	}
 
+	public MessageBuilder allowUserMentions(Snowflake... ids) {
+		return allowedMentions(AllowedMentions.builder().allowUser(ids).build());
+	}
+
+	public MessageBuilder allowRoleMentions(Snowflake... ids) {
+		return allowedMentions(AllowedMentions.builder().allowRole(ids).build());
+	}
+
 	public MessageBuilder components(List<LayoutComponent> components) {
 		this.components = components;
 		return this;
@@ -137,14 +149,29 @@ public class MessageBuilder {
 		return addFile(name, new ByteArrayInputStream(fileBytes));
 	}
 
+	public MessageBuilder noFiles() {
+		this.files = new ArrayList<>();
+		return this;
+	}
+
 	public MessageBuilder messageReference(Snowflake messageReference) {
 		this.messageReference = messageReference;
 		return this;
 	}
 
+	public MessageBuilder webhookName(String webhookName) {
+		this.webhookName = webhookName;
+		return this;
+	}
+
+	public MessageBuilder webhookAvatarUrl(String webhookAvatarUrl) {
+		this.webhookAvatarUrl = webhookAvatarUrl;
+		return this;
+	}
+
 	// Specs //
 
-	public MessageCreateSpec.Builder toMessageCreateSpec() {
+	public MessageCreateSpec toMessageCreateSpec() {
 		MessageCreateSpec.Builder builder = MessageCreateSpec.builder();
 
 		if (this.content != null && !this.content.isEmpty()) {
@@ -161,15 +188,19 @@ public class MessageBuilder {
 			builder.components(this.components);
 		}
 
-		if (this.files != null && !this.files.isEmpty()) {
+		if (this.files != null) {
 			builder.files(this.files);
 		}
 
-		return builder;
+		if (this.messageReference != null) {
+			builder.messageReference(this.messageReference);
+		}
+
+		return builder.build();
 	}
 
 	public MultipartRequest<MessageCreateRequest> toMultipartMessageCreateRequest() {
-		return toMessageCreateSpec().build().asRequest();
+		return toMessageCreateSpec().asRequest();
 	}
 
 	public MessageEditSpec.Builder toMessageEditSpec() {
@@ -213,7 +244,20 @@ public class MessageBuilder {
 			builder.components(this.components.stream().map(MessageComponent::getData).collect(Collectors.toList()));
 		}
 
+		if (this.webhookName != null) {
+			builder.username(this.webhookName);
+		}
+
+		if (this.webhookAvatarUrl != null) {
+			builder.avatarUrl(this.webhookAvatarUrl);
+		}
+
 		return builder.build();
+	}
+
+	public MultipartRequest<? extends WebhookExecuteRequest> toMultipartWebhookExecuteRequest() {
+		var req = toFollowupMessageRequest();
+		return files == null || files.isEmpty() ? MultipartRequest.ofRequest(req) : MultipartRequest.ofRequestAndFiles(req, files.stream().map(MessageCreateFields.File::asRequest).toList());
 	}
 
 	public WebhookMessageEditRequest toWebhookMessageEditRequest() {
@@ -236,8 +280,8 @@ public class MessageBuilder {
 		return builder.build();
 	}
 
-	public MultipartRequest<? extends WebhookExecuteRequest> toMultipartWebhookExecuteRequest() {
-		FollowupMessageRequest req = toFollowupMessageRequest();
+	public MultipartRequest<WebhookMessageEditRequest> toMultipartWebhookMessageEditRequest() {
+		var req = toWebhookMessageEditRequest();
 		return files == null || files.isEmpty() ? MultipartRequest.ofRequest(req) : MultipartRequest.ofRequestAndFiles(req, files.stream().map(MessageCreateFields.File::asRequest).toList());
 	}
 

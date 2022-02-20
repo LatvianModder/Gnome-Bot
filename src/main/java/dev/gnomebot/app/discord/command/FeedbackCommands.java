@@ -1,29 +1,18 @@
 package dev.gnomebot.app.discord.command;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordFeedback;
-import dev.gnomebot.app.discord.Emojis;
-import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import dev.gnomebot.app.util.EmbedBuilder;
-import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.component.ActionRow;
-import discord4j.core.object.component.Button;
-import discord4j.core.object.entity.Message;
+import discord4j.core.object.component.TextInput;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.MessageEditSpec;
-import discord4j.rest.util.Permission;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -60,71 +49,19 @@ public class FeedbackCommands extends ApplicationCommands {
 					.run(FeedbackCommands::cleanup)
 			);
 
-	private static void submit(ApplicationCommandEventWrapper event) throws DiscordCommandException {
-		event.acknowledgeEphemeral();
+	private static void submit(ApplicationCommandEventWrapper event) {
 		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
-			throw error("Feedback channel is not set up on this server!");
+			throw new DiscordCommandException("Feedback channel is not set up on this server!");
+		} else if (!event.context.gc.feedbackSuggestRole.is(event.context.sender)) {
+			throw new DiscordCommandException("To submit feedback you need " + event.context.gc.feedbackSuggestRole + " role!");
 		}
 
-		String suggestion = event.get("text").asString();
-
-		if (suggestion.length() < 15) {
-			throw error("Your suggestion title is too short, requires at least 15 characters!");
-		}
-
-		if (!event.context.gc.feedbackSuggestRole.is(event.context.sender)) {
-			throw error("To submit feedback you need " + event.context.gc.feedbackSuggestRole + " role!");
-		}
-
-		int number = event.context.gc.feedbackNumber.get() + 1;
-		event.context.gc.feedbackNumber.set(number);
-		event.context.gc.feedbackNumber.save();
-
-		event.context.referenceMessage = false;
-
-		event.context.checkBotPerms(feedbackChannel, Permission.ADD_REACTIONS, Permission.SEND_MESSAGES);
-
-		Message m = feedbackChannel.createMessage(EmbedBuilder.create()
-				.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
-				.title("Loading suggestion #" + number + "...")
-		).block();
-
-		Document document = new Document();
-		document.put("_id", m.getId().asLong());
-		document.put("author", event.context.sender.getId().asLong());
-		document.put("timestamp", Date.from(m.getTimestamp()));
-		document.put("number", number);
-		document.put("content", suggestion);
-		document.put("status", 0);
-		BasicDBObject votes = new BasicDBObject();
-		votes.put(event.context.sender.getId().asString(), true);
-		document.put("votes", votes);
-		event.context.gc.feedback.insert(document);
-		m.edit(MessageEditSpec.builder().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).build()).block();
-
-		try {
-			Utils.THREAD_ROUTE.newRequest(m.getChannelId().asLong(), m.getId().asLong())
-					.body(new ThreadMessageRequest("Discussion of " + number))
-					.exchange(event.context.handler.client.getCoreResources().getRouter())
-					.skipBody()
-					.block();
-		} catch (Exception ex) {
-			App.error("Failed to create a thread for suggestion " + event.context.gc + "/#" + number);
-		}
-
-		m.edit(MessageEditSpec.builder().addComponent(ActionRow.of(
-				Button.secondary("feedback/" + number + "/upvote", Emojis.VOTEUP),
-				Button.secondary("feedback/" + number + "/mehvote", Emojis.VOTENONE),
-				Button.secondary("feedback/" + number + "/downvote", Emojis.VOTEDOWN),
-				Button.link(QuoteHandler.getChannelURL(event.context.gc.guildId, m.getId()), "Discussion")
-		)).build()).block();
-
-		event.respond(MessageBuilder.create("Your feedback has been submitted!").addComponentRow(Button.link(QuoteHandler.getMessageURL(event.context.gc.guildId, m.getChannelId(), m.getId()), "Open")));
+		event.presentModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
 	}
 
-	private static void changeStatus(ApplicationCommandEventWrapper event, DiscordFeedback.Status status) throws DiscordCommandException {
+	private static void changeStatus(ApplicationCommandEventWrapper event, DiscordFeedback.Status status) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 

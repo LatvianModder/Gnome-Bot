@@ -14,7 +14,7 @@ public class BigEmojiCommand extends ApplicationCommands {
 			.run(BigEmojiCommand::run);
 
 	private static void run(ApplicationCommandEventWrapper event) throws Exception {
-		event.acknowledgeEphemeral();
+		event.acknowledge();
 		ReactionEmoji emoji = Utils.stringToReaction(event.get("emoji").asString());
 
 		if (emoji instanceof ReactionEmoji.Custom custom) {

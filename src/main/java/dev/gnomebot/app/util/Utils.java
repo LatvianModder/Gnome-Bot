@@ -19,7 +19,7 @@ import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.component.MessageComponent;
+import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Channel;
@@ -767,6 +767,14 @@ public class Utils {
 		return trim(content, 2000);
 	}
 
+	public static String verifyMaxLength(String string, int max) {
+		if (string.length() > max) {
+			throw new IllegalArgumentException("String is too long!");
+		}
+
+		return string;
+	}
+
 	public static void titleCase(StringBuilder sb, String string) {
 		if (!string.isEmpty()) {
 			sb.append(Character.toUpperCase(string.charAt(0)));
@@ -821,8 +829,8 @@ public class Utils {
 		return a.getTimestamp().toEpochMilli() > b.getTimestamp().toEpochMilli() ? a : b;
 	}
 
-	public static List<MessageComponent> parseRows(JsonArray a) {
-		List<MessageComponent> rows = new ArrayList<>();
+	public static List<LayoutComponent> parseRows(JsonArray a) {
+		List<LayoutComponent> rows = new ArrayList<>();
 
 		for (JsonElement e : a) {
 			if (e.isJsonArray()) {

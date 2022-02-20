@@ -41,7 +41,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 			if (data != null) {
 				gc.adminLogChannelEmbed(spec -> {
 					spec.color(EmbedColors.GREEN);
-					spec.author(data.username() + "#" + data.discriminator() + " has been unmuted!", null, Utils.getAvatarUrl(data));
+					spec.author(data.username() + "#" + data.discriminator() + " has been unmuted!", Utils.getAvatarUrl(data));
 				});
 			}
 		}

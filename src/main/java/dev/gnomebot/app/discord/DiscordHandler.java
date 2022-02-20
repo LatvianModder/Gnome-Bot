@@ -71,6 +71,7 @@ import discord4j.discordjson.json.gateway.Dispatch;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import discord4j.gateway.json.jackson.PayloadDeserializer;
+import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.PaginationUtil;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
@@ -122,6 +123,7 @@ public class DiscordHandler {
 		// DispatchHandlers.addHandler(ThreadMembersUpdate.class, ThreadDispatchHandlers::threadMemberUpdate);
 
 		client = Objects.requireNonNull(DiscordClientBuilder.create(Config.get().discord_bot_token)
+				.setDefaultAllowedMentions(AllowedMentions.builder().build())
 				.build()
 				.gateway()
 				.setInitialPresence(shardInfo -> ClientPresence.invisible())
@@ -187,8 +189,8 @@ public class DiscordHandler {
 		handle(ApplicationCommandInteractionEvent.class, this::applicationCommand);
 		handle(ButtonInteractionEvent.class, this::button);
 		handle(SelectMenuInteractionEvent.class, this::selectMenu);
-		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
 		handle(ModalSubmitInteractionEvent.class, this::modalSubmitInteraction);
+		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
 		handle(ThreadChannelCreateEvent.class, this::threadChannelCreate);
 		handle(ThreadChannelDeleteEvent.class, this::threadChannelDelete);
 		handle(ThreadChannelUpdateEvent.class, this::threadChannelUpdate);
@@ -430,12 +432,12 @@ public class DiscordHandler {
 		InteractionHandler.selectMenu(this, event);
 	}
 
-	private void chatInputAutoComplete(ChatInputAutoCompleteEvent event) {
-		InteractionHandler.chatInputAutoComplete(this, event);
-	}
-
 	private void modalSubmitInteraction(ModalSubmitInteractionEvent event) {
 		InteractionHandler.modalSubmitInteraction(this, event);
+	}
+
+	private void chatInputAutoComplete(ChatInputAutoCompleteEvent event) {
+		InteractionHandler.chatInputAutoComplete(this, event);
 	}
 
 	private void threadChannelCreate(ThreadChannelCreateEvent event) {
@@ -491,7 +493,7 @@ public class DiscordHandler {
 		gc.adminLogChannelEmbed(spec -> {
 			spec.description(sb1.toString());
 			spec.timestamp(message.getDate().toInstant());
-			spec.author(u.getTag(), null, u.getAvatarUrl());
+			spec.author(u.getTag(), u.getAvatarUrl());
 			spec.footer(reason, null);
 		});
 	}

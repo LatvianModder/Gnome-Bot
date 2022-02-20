@@ -2,9 +2,9 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.BasicDocument;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.ReactionAddEvent;
@@ -14,7 +14,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.rest.entity.RestChannel;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
@@ -186,12 +185,10 @@ public class ReactionHandler {
 									}
 
 									for (String s : content) {
-										webHook.execute(WebhookExecuteRequest.builder()
-												.avatarUrl(a.getAvatarUrl())
-												.username(a.getDisplayName())
+										webHook.execute(MessageBuilder.create()
+												.webhookName(a.getDisplayName())
+												.webhookAvatarUrl(a.getAvatarUrl())
 												.content(s)
-												.allowedMentions(DiscordMessage.noMentions().toData())
-												.build()
 										);
 									}
 								});

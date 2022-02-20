@@ -47,7 +47,7 @@ public class HelpCommand extends ApplicationCommands {
 		sb.append("`)\n");
 		sb.append(DiscordCommandImpl.COMMAND_LIST.stream().filter(c -> c.callback.hasPermission(c, event.context)).map(DiscordCommandImpl::getInfo).sorted().collect(Collectors.joining("\n")));
 
-		long macros = event.context.gc.macros.count();
+		long macros = event.context.gc.getMacroMap().size();
 
 		if (macros > 0L) {
 			sb.append("\n\n`");

@@ -13,6 +13,7 @@ import discord4j.core.object.component.TextInput;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author LatvianModder
@@ -43,7 +44,7 @@ public class ModalEventWrapper extends ComponentEventWrapper {
 
 	@Override
 	public String toString() {
-		return super.toString() + " " + options + " " + selectMenuOptions;
+		return super.toString() + " {" + options.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue().asString()).collect(Collectors.joining(", ")) + "} " + selectMenuOptions;
 	}
 
 	public boolean has(String id) {

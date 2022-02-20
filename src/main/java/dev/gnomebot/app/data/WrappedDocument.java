@@ -1,6 +1,8 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import dev.gnomebot.app.util.MapWrapper;
 import discord4j.common.util.Snowflake;
 import org.bson.conversions.Bson;
@@ -87,30 +89,36 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 		return getID();
 	}
 
-	public void update(Bson update) {
+	public UpdateResult update(Bson update) {
 		Object id = document.get("_id", null);
 
 		if (id != null) {
 			collection.query(id).update(update);
 		}
+
+		return CollectionQuery.ZERO_UPDATES;
 	}
 
-	public void update(String key, Object value) {
+	public UpdateResult update(String key, Object value) {
 		document.map.put(key, value);
-		update(Updates.set(key, value));
+		return update(Updates.set(key, value));
 	}
 
-	public void update(List<Bson> updates) {
+	public UpdateResult update(List<Bson> updates) {
 		if (!updates.isEmpty()) {
-			update(updates.size() == 1 ? updates.get(0) : Updates.combine(updates));
+			return update(updates.size() == 1 ? updates.get(0) : Updates.combine(updates));
 		}
+
+		return CollectionQuery.ZERO_UPDATES;
 	}
 
-	public final void delete() {
+	public final DeleteResult delete() {
 		Object id = document.get("_id", null);
 
 		if (id != null) {
-			collection.query(id).delete();
+			return collection.query(id).delete();
 		}
+
+		return CollectionQuery.ZERO_DELETES;
 	}
 }

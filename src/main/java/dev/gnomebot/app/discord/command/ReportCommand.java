@@ -4,11 +4,12 @@ import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author LatvianModder
@@ -21,6 +22,10 @@ public class ReportCommand extends ApplicationCommands {
 			.run(ReportCommand::run);
 
 	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+		if (!event.context.gc.reportChannel.isSet()) {
+			throw new DiscordCommandException("Report channel is not set up!");
+		}
+
 		Member member = event.get("user").asMember().orElse(null);
 
 		if (member == null) {
@@ -37,6 +42,17 @@ public class ReportCommand extends ApplicationCommands {
 	}
 
 	public static void presentModal(DeferrableInteractionEventWrapper<?> event, Snowflake channel, Member member) {
-		event.presentModal("report/" + channel.asString() + "/" + member.getId().asString(), "Report " + member.getDisplayName(), Collections.singletonList(ActionRow.of(TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false))));
+		List<SelectMenu.Option> options = new ArrayList<>();
+
+		for (String s : event.context.gc.reportOptions.get().split(" \\| ")) {
+			options.add(SelectMenu.Option.of(s, s));
+		}
+
+		options.add(SelectMenu.Option.of("Other", "Other"));
+
+		event.presentModal("report/" + channel.asString() + "/" + member.getId().asString(), "Report " + member.getDisplayName(),
+				// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
+				TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
+		);
 	}
 }

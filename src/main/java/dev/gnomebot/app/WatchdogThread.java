@@ -1,7 +1,7 @@
 package dev.gnomebot.app;
 
+import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
-import discord4j.discordjson.json.WebhookExecuteRequest;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,7 +61,7 @@ public class WatchdogThread extends Thread {
 			if (majorErrors >= MAX_ERRORS) {
 				majorErrors = MAX_ERRORS - 1;
 				majorError("Timed out");
-				Config.get().death_webhook.execute(WebhookExecuteRequest.builder().content(String.join("\n", errorList)).build());
+				Config.get().death_webhook.execute(MessageBuilder.create().content(errorList));
 				app.restart();
 				break;
 			}

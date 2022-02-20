@@ -57,7 +57,7 @@ public class WarnCommand extends ApplicationCommands {
 
 		event.context.gc.adminLogChannelEmbed(spec -> {
 			spec.description("Bad " + user.getMention());
-			spec.author(user.getTag() + " was warned", null, user.getAvatarUrl());
+			spec.author(user.getTag() + " was warned", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);
 			spec.inlineField("DM successful", dm ? "Yes" : "No");
 			spec.footer(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());

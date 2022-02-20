@@ -13,17 +13,18 @@ import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Paste;
+import dev.gnomebot.app.discord.command.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
-import dev.gnomebot.app.discord.legacycommand.MuteCommand;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
@@ -40,7 +41,6 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
-import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.rest.RestClient;
 import discord4j.rest.entity.RestChannel;
 import org.bson.Document;
@@ -636,7 +636,7 @@ public class MessageHandler {
 
 				spec.description(builder.toString());
 				spec.timestamp(message.getTimestamp());
-				spec.author(member.getTag(), null, member.getAvatarUrl());
+				spec.author(member.getTag(), member.getAvatarUrl());
 
 				if (!images.isEmpty()) {
 					spec.thumbnail(images.get(0).toString());
@@ -769,12 +769,10 @@ public class MessageHandler {
 		}
 
 		if (GNOME_MENTION_PATTERN.matcher(contentNoEmojis).find()) {
-			Config.get().gnome_mention_webhook.execute(WebhookExecuteRequest.builder()
+			Config.get().gnome_mention_webhook.execute(MessageBuilder.create()
 					.content(discordMessage.getURLAsArrow(context.gc) + " " + content)
-					.avatarUrl(user.getAvatarUrl())
-					.username(user.getUsername() + " [" + gc + "]")
-					.allowedMentions(DiscordMessage.noMentions().toData())
-					.build()
+					.webhookName(user.getUsername() + " [" + gc + "]")
+					.webhookAvatarUrl(user.getAvatarUrl())
 			);
 		}
 
@@ -839,7 +837,7 @@ public class MessageHandler {
 
 			try {
 				String macroName = reader.readString().orElse("").trim();
-				Macro macro = context.gc.macros.query().eq("command_name", macroName.toLowerCase()).first();
+				Macro macro = context.gc.getMacro(macroName);
 
 				if (macro != null) {
 					macro.update(Updates.inc("uses", 1));

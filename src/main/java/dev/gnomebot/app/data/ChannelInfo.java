@@ -225,8 +225,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		return member != null && checkPermissions(member, permissions);
 	}
 
-	@Nullable
-	public WebHook getOrCreateWebhook() {
+	public Optional<WebHook> getOrCreateWebhook() {
 		TopLevelGuildMessageChannel c = getChannel();
 
 		if (c != null) {
@@ -243,14 +242,14 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 				}
 
 				if (webhook != null) {
-					return new WebHook(webhook);
+					return Optional.of(new WebHook(webhook));
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 
-		return null;
+		return Optional.empty();
 	}
 
 	public Optional<String> getTopic() {

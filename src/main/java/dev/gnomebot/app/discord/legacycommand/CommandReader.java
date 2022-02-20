@@ -8,11 +8,9 @@ import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.Pair;
 import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -27,7 +25,7 @@ public class CommandReader extends SimpleStringReader {
 		gc = g;
 	}
 
-	public Optional<User> readUser() throws DiscordCommandException {
+	public Optional<User> readUser() {
 		Optional<String> ns = readString();
 
 		if (ns.isEmpty()) {
@@ -90,20 +88,6 @@ public class CommandReader extends SimpleStringReader {
 
 			throw new DiscordCommandException("User not found!");
 		}
-	}
-
-	public Optional<Member> readMember() throws DiscordCommandException {
-		Optional<User> u = readUser();
-
-		if (u.isPresent()) {
-			try {
-				return Optional.of(Objects.requireNonNull(gc.getMember(u.get().getId())));
-			} catch (Exception ex) {
-				throw new DiscordCommandException("Too late! They're gone already.");
-			}
-		}
-
-		return Optional.empty();
 	}
 
 	public Optional<ChannelInfo> readChannelInfo() throws DiscordCommandException {

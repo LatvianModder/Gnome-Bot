@@ -3,10 +3,8 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.cli.CLICommand;
 import dev.gnomebot.app.cli.CLIEvent;
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
-import discord4j.core.object.entity.Member;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +25,13 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			)
 			.run(CLIApplicationCommand::run);
 
-	private static class CLIEventFromCommand extends CLIEvent {
+	public static class CLIEventFromCommand extends CLIEvent {
+		public final ApplicationCommandEventWrapper event;
 		private final List<String> responseText = new ArrayList<>();
 
-		public CLIEventFromCommand(GuildCollections g, Member m, CommandReader r) {
-			super(g, m, r);
+		public CLIEventFromCommand(ApplicationCommandEventWrapper e, CommandReader r) {
+			super(e.context.gc, e.context.sender, r);
+			event = e;
 		}
 
 		@Override
@@ -62,7 +62,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 		}
 
 		CommandReader reader = new CommandReader(event.context.gc, event.get("arguments").asString());
-		CLIEventFromCommand event1 = new CLIEventFromCommand(event.context.gc, event.context.sender, reader);
+		CLIEventFromCommand event1 = new CLIEventFromCommand(event, reader);
 
 		try {
 			command.callback.run(event1);
@@ -72,11 +72,13 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			event1.respond(ex.toString());
 		}
 
-		if (!event1.responseText.isEmpty()) {
-			event1.response.content(String.join("\n", event1.responseText));
-		}
+		if (event1.response != null) {
+			if (!event1.responseText.isEmpty()) {
+				event1.response.content(String.join("\n", event1.responseText));
+			}
 
-		event.respond(event1.response);
+			event.respond(event1.response);
+		}
 	}
 
 	private static void suggestCommands(ChatCommandSuggestionEvent event) {

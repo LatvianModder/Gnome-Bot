@@ -73,7 +73,7 @@ public class DefineCommand extends ApplicationCommands {
 					builder.addComponent(ActionRow.of(list));
 				}
 
-				event.editInitial(builder);
+				event.edit().respond(builder);
 				return;
 			}
 		} catch (Exception ex) {

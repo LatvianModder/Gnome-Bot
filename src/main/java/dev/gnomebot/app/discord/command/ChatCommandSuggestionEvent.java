@@ -54,7 +54,7 @@ public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInpu
 	}
 
 	public void suggest(String name, Object value, int priority) {
-		suggestions.add(new ChatCommandSuggestion(name, value, priority));
+		suggestions.add(new ChatCommandSuggestion(name, value, name.toLowerCase(), priority));
 	}
 
 	public void suggest(String name, Object value) {

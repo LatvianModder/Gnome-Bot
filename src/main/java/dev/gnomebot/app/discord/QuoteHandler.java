@@ -114,7 +114,7 @@ public class QuoteHandler {
 			}
 
 			UserData author = m.author();
-			quoteEmbed.author(author.username(), quoteURL, Utils.getAvatarUrl(author));
+			quoteEmbed.author(author.username(), Utils.getAvatarUrl(author), quoteURL);
 
 			quoteEmbed.color(EmbedColors.GRAY);
 			quoteEmbed.description("[Quote ➤](" + quoteURL + ") " + content);

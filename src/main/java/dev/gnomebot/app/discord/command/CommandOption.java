@@ -16,6 +16,7 @@ import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class CommandOption extends BasicOption {
@@ -54,7 +55,17 @@ public class CommandOption extends BasicOption {
 	}
 
 	public Optional<Member> asMember() throws DiscordCommandException {
-		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readMember();
+		Optional<User> u = asUser();
+
+		if (u.isPresent()) {
+			try {
+				return Optional.of(Objects.requireNonNull(context.gc.getMember(u.get().getId())));
+			} catch (Exception ex) {
+				throw new DiscordCommandException("Too late! They're gone already.");
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	public Optional<CachedRole> asRole() throws DiscordCommandException {
@@ -73,7 +84,7 @@ public class CommandOption extends BasicOption {
 				throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Wait a minute, you're not the server owner! Only the server owner can do this");
 			}
 
-			return Optional.ofNullable(ci.getOrCreateWebhook());
+			return ci.getOrCreateWebhook();
 		}
 
 		String n = value.trim().toLowerCase();

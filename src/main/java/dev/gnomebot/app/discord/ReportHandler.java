@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -10,7 +9,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.rest.util.AllowedMentions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,14 +25,14 @@ public class ReportHandler {
 
 	public static void report(ComponentEventWrapper event, Snowflake channelId, Snowflake messageId, String reason) {
 		if (reason.equals("-")) {
-			event.edit(2).respond("It's ok, everyone makes mistakes.");
+			event.edit().respond(MessageBuilder.create("It's ok, everyone makes mistakes.").noComponents());
 			return;
 		}
 
 		Optional<ChannelInfo> c = event.context.gc.reportChannel.messageChannel();
 
 		if (c.isEmpty()) {
-			event.edit(2).respond("Report channel not set up!");
+			event.edit().respond(MessageBuilder.create("Report channel not set up!").noComponents());
 			return;
 		}
 
@@ -42,14 +40,14 @@ public class ReportHandler {
 		Message m = channel.getMessage(messageId);
 
 		if (m == null) {
-			event.edit(2).respond("Message already deleted!");
+			event.edit().respond(MessageBuilder.create("Message already deleted!").noComponents());
 			return;
 		}
 
 		User author = m.getAuthor().orElse(null);
 
 		if (author == null) {
-			event.edit(2).respond("User already gone!");
+			event.edit().respond(MessageBuilder.create("User already gone!").noComponents());
 			return;
 		}
 
@@ -64,7 +62,7 @@ public class ReportHandler {
 		String quoteURL = QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, m.getId());
 		EmbedBuilder reportEmbed = EmbedBuilder.create();
 		reportEmbed.color(EmbedColors.RED);
-		reportEmbed.author(author.getTag(), quoteURL, author.getAvatarUrl());
+		reportEmbed.author(author.getTag(), author.getAvatarUrl(), quoteURL);
 		reportEmbed.description("[Quote ➤](" + quoteURL + ") " + m.getContent());
 		reportEmbed.footer("Reported by " + event.context.sender.getTag() + " [" + reason + "]", event.context.sender.getAvatarUrl());
 
@@ -82,10 +80,9 @@ public class ReportHandler {
 
 			if (role != null) {
 				reportMessage.content(role + " " + author.getTag() + " (" + author.getMention() + ") has been reported!\nReason: **" + reason + "**");
-				reportMessage.allowedMentions(AllowedMentions.builder().allowRole(role.id).build());
+				reportMessage.allowRoleMentions(role.id);
 			} else {
 				reportMessage.content(author.getTag() + " (" + author.getMention() + ") has been reported!\nReason: **" + reason + "**");
-				reportMessage.allowedMentions(DiscordMessage.noMentions());
 			}
 
 			reportMessage.addEmbed(reportEmbed);
@@ -115,9 +112,9 @@ public class ReportHandler {
 		}
 
 		if (role != null) {
-			event.edit(2).respond("Message reported & " + role + " have been notified!");
+			event.edit().respond(MessageBuilder.create("Message reported & " + role + " have been notified!").noComponents());
 		} else {
-			event.edit(2).respond("Message reported!");
+			event.edit().respond(MessageBuilder.create("Message reported!").noComponents());
 		}
 
 		m.addReaction(Emojis.WARNING).subscribe();

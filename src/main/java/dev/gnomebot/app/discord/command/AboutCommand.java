@@ -14,9 +14,16 @@ public class AboutCommand extends ApplicationCommands {
 	@RootCommand
 	public static final CommandBuilder COMMAND = root("about")
 			.description("Info about Gnome Bot")
-			.run(AboutCommand::run);
+			.add(sub("gnome")
+					.description("Info about Gnome Bot")
+					.run(AboutCommand::gnome)
+			)
+			.add(sub("macro")
+					.description("Info about macros")
+					.run(AboutCommand::macro)
+			);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void gnome(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		long s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
 
@@ -31,5 +38,20 @@ public class AboutCommand extends ApplicationCommands {
 		}
 
 		event.respond(content);
+	}
+
+	private static void macro(ApplicationCommandEventWrapper event) {
+		event.respond("""
+				Extras allow you to add buttons to your macro, change it into script or embed, etc. List of available properties:
+								
+				clear - Remove all extras when editing
+				hidden - /macro list will not show this macro
+				embed [title] - Changes macro into embed with optional title
+				script <js> - Instead of printing text, it runs Text as script instead (WIP!)
+				edit <macro> - Edits original message to new macro
+				macro <name> <macro> - Adds a macro button
+				url <name> <url> - Adds a URL button
+				newrow - Adds new component row
+				""");
 	}
 }

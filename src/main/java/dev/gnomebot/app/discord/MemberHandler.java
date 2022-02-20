@@ -268,7 +268,7 @@ public class MemberHandler {
 				gc.adminLogChannelEmbed(spec -> {
 					spec.description("Bye " + event.getUser().getMention());
 					spec.timestamp(Instant.now());
-					spec.author(event.getUser().getTag() + " was banned", null, event.getUser().getAvatarUrl());
+					spec.author(event.getUser().getTag() + " was banned", event.getUser().getAvatarUrl());
 					spec.field("Reason", reason);
 
 					if (responsible == null) {
@@ -305,7 +305,7 @@ public class MemberHandler {
 			spec.color(EmbedColors.RED);
 			spec.description("Welcome back " + event.getUser().getMention());
 			spec.timestamp(Instant.now());
-			spec.author(event.getUser().getTag() + " was unbanned", null, event.getUser().getAvatarUrl());
+			spec.author(event.getUser().getTag() + " was unbanned", event.getUser().getAvatarUrl());
 		});
 	}
 }

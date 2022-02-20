@@ -6,7 +6,7 @@ import discord4j.core.object.reaction.ReactionEmoji;
 /**
  * @author LatvianModder
  */
-public class DiscordCommandException extends Exception {
+public class DiscordCommandException extends RuntimeException {
 	public enum Type {
 		ERROR,
 		NO_PERMISSION,

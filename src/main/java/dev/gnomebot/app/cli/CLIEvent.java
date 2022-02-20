@@ -9,7 +9,7 @@ public abstract class CLIEvent {
 	public final GuildCollections gc;
 	public final Member sender;
 	public final CommandReader reader;
-	public final MessageBuilder response;
+	public MessageBuilder response;
 
 	public CLIEvent(GuildCollections g, Member m, CommandReader r) {
 		gc = g;

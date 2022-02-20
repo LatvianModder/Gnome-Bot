@@ -198,7 +198,7 @@ public class ChannelCommands extends ApplicationCommands {
 		Map<StatKey, MutableLong> dailyXp = new HashMap<>();
 
 		for (ChannelInfo channelInfo : event.context.gc.getChannelList()) {
-			event.editInitial("1/4 Counting messages in " + channelInfo.getMention() + "...");
+			event.edit().respond("1/4 Counting messages in " + channelInfo.getMention() + "...");
 			long channelId = channelInfo.id.asLong();
 
 			for (DiscordMessage m : event.context.gc.messages.query().eq("channel", channelId).projectionFields("timestamp", "user")) {
@@ -222,7 +222,7 @@ public class ChannelCommands extends ApplicationCommands {
 		event.context.gc.messageCount.drop();
 		event.context.gc.messageXp.drop();
 
-		event.editInitial("2/4 Updating message counters...");
+		event.edit().respond("2/4 Updating message counters...");
 
 		for (Map.Entry<StatKey, MutableLong> entry : dailyCount.entrySet()) {
 			Document doc = new Document();
@@ -233,7 +233,7 @@ public class ChannelCommands extends ApplicationCommands {
 			event.context.gc.messageCount.insert(doc);
 		}
 
-		event.editInitial("3/4 Updating message xp...");
+		event.edit().respond("3/4 Updating message xp...");
 
 		for (Map.Entry<StatKey, MutableLong> entry : dailyXp.entrySet()) {
 			Document doc = new Document();
@@ -244,7 +244,7 @@ public class ChannelCommands extends ApplicationCommands {
 			event.context.gc.messageXp.insert(doc);
 		}
 
-		event.editInitial("4/4 Updating user data...");
+		event.edit().respond("4/4 Updating user data...");
 
 		for (DiscordMember member : event.context.gc.members.query()) {
 			long c = MutableLong.valueOf(totalCount.get(member.getUID()));
@@ -260,7 +260,7 @@ public class ChannelCommands extends ApplicationCommands {
 		}
 
 		long time = (System.currentTimeMillis() - start) / 1000L;
-		event.editInitial("XP refreshed from " + total + " messages in " + Utils.prettyTimeString(time) + "!");
+		event.edit().respond("XP refreshed from " + total + " messages in " + Utils.prettyTimeString(time) + "!");
 	}
 
 	private static void autoThreads(ApplicationCommandEventWrapper event) throws Exception {
@@ -358,9 +358,9 @@ public class ChannelCommands extends ApplicationCommands {
 					service.deleteMessage(channel.id.asLong(), id, null).block();
 				}
 
-				event.editInitial("Done!");
+				event.edit().respond("Done!");
 			} catch (Exception ex) {
-				event.editInitial("Error! " + ex);
+				event.edit().respond("Error! " + ex);
 			}
 		});
 	}
