@@ -7,7 +7,7 @@ public class CLIAdvancedLoggingAll {
 	@RootCommand
 	public static final CLICommand COMMAND = CLICommand.make("advanced_logging_all")
 			.description("Toggles advanced logging in all guilds")
-			.trustedOnly()
+			.ownerOnly()
 			.run(CLIAdvancedLoggingAll::run);
 
 	private static void run(CLIEvent event) {

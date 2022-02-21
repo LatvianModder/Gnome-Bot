@@ -8,7 +8,7 @@ public class CLIUpdateCommand {
 	@RootCommand
 	public static final CLICommand COMMAND = CLICommand.make("update_command")
 			.description("Update command")
-			.trustedOnly()
+			.ownerOnly()
 			.run(CLIUpdateCommand::run);
 
 	private static void run(CLIEvent event) throws Exception {

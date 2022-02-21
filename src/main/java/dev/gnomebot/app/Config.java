@@ -6,6 +6,8 @@ import dev.gnomebot.app.util.URLRequest;
 import discord4j.common.util.Snowflake;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author LatvianModder
@@ -33,6 +35,8 @@ public class Config {
 	public final WebHook gnome_mention_webhook;
 	public final WebHook gnome_dm_webhook;
 	public final Snowflake gnome_dm_channel_id;
+	public final Snowflake owner;
+	public final Set<Snowflake> trusted;
 
 	private Config(Path file) {
 		ConfigFile c = new ConfigFile(file);
@@ -57,6 +61,21 @@ public class Config {
 		gnome_mention_webhook = new WebHook(c.getString("gnome_mention_webhook", ""));
 		gnome_dm_webhook = new WebHook(c.getString("gnome_dm_webhook", ""));
 		gnome_dm_channel_id = c.getSnowflake("gnome_dm_channel_id");
+		owner = c.getSnowflake("owner");
+
+		trusted = new HashSet<>();
+
+		for (String s : c.getStringList("trusted")) {
+			try {
+				Snowflake id = Snowflake.of(s);
+
+				if (id.asLong() != 0L) {
+					trusted.add(id);
+				}
+			} catch (Exception ex) {
+				App.error("Invalid trusted ID: " + s + ", must be their snowflake ID");
+			}
+		}
 
 		if (port < 1024 || port > 65535) {
 			throw new IllegalArgumentException("Port has to be between [1024, 65535]!");
@@ -64,5 +83,9 @@ public class Config {
 
 		c.save();
 		App.success("Loaded Gnome config with panel URL: " + panel_url);
+	}
+
+	public boolean isTrusted(Snowflake id) {
+		return owner.asLong() == id.asLong() || trusted.contains(id);
 	}
 }

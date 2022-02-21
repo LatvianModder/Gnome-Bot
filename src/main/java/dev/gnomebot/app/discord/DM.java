@@ -64,7 +64,7 @@ public class DM {
 		try {
 			return Objects.requireNonNull(user.getPrivateChannel().block());
 		} catch (Exception ex) {
-			throw new GnomeException("This command requires DMs to be enabled for this guild!");
+			throw new GnomeException("This command requires user's DMs to be enabled for this guild!");
 		}
 	}
 

@@ -14,7 +14,7 @@ public class CLICommand {
 	public String description = "";
 	public final List<CLIArgument> arguments = new ArrayList<>();
 	public boolean admin = true;
-	public boolean trusted = false;
+	public int trusted = 0;
 	public CLICallback callback;
 	public boolean ephemeral = true;
 
@@ -29,7 +29,12 @@ public class CLICommand {
 	}
 
 	public CLICommand trustedOnly() {
-		trusted = true;
+		trusted = 1;
+		return this;
+	}
+
+	public CLICommand ownerOnly() {
+		trusted = 2;
 		return this;
 	}
 

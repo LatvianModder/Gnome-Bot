@@ -503,7 +503,6 @@ public class DiscordHandler {
 	}
 
 	public boolean updateGlobalCommand(String cmd) {
-		App.info("Updating slash command " + cmd + "...");
 		CommandBuilder command = ApplicationCommands.COMMANDS.get(cmd);
 
 		if (command != null) {
@@ -512,10 +511,10 @@ public class DiscordHandler {
 					.onErrorResume(e -> Mono.empty())
 					.block();
 
-			App.success("Done!");
+			App.success("Updated global command " + cmd);
 			return true;
 		} else {
-			App.error("Command not found!");
+			App.error("Command " + cmd + " not found!");
 			return false;
 		}
 	}
@@ -525,8 +524,19 @@ public class DiscordHandler {
 				.doOnError(e -> App.error("Unable to delete global command " + id.asString() + ": " + e))
 				.onErrorResume(e -> Mono.empty())
 				.block();
+	}
 
-		App.success("Done!");
+	public boolean deleteGlobalCommand(String cmd) {
+		for (ApplicationCommandData data : getGlobalCommands()) {
+			if (data.name().equals(cmd)) {
+				deleteGlobalCommand(Snowflake.of(data.id()));
+				App.success("Deleted global command " + cmd);
+				return true;
+			}
+		}
+
+		App.error("Command " + cmd + " not found!");
+		return false;
 	}
 
 	public void deleteGuildCommand(Snowflake guild, Snowflake id) {

@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.gnomebot.app.server.handler.Response;
@@ -242,6 +243,17 @@ public class WebServer implements Consumer<JavalinConfig> {
 				content.p().span("red").string("You must be logged in to view this page!");
 				content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
 				content.p().string("You can refresh this page once you've logged in.");
+				return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
+			} else if (handler.trusted && (req.token == null || !Config.get().isTrusted(req.token.userId))) {
+				Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+				content.p().span("red").string("You're not cool enough to view this page!");
+				content.p().string("This page can only be viewed by bot owners!");
+
+				if (req.token == null) {
+					content.p().string("If you are one of the bot owners, type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
+					content.p().string("You can refresh this page once you've logged in.");
+				}
+
 				return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
 			}
 

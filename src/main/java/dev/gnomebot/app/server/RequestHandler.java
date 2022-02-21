@@ -17,6 +17,7 @@ public class RequestHandler {
 	public HandlerType method;
 	public int cacheSeconds;
 	public AuthLevel authLevel;
+	public boolean trusted;
 	public boolean log;
 
 	public RequestHandler(App m, String p, ServerPathHandler h) {
@@ -37,6 +38,7 @@ public class RequestHandler {
 		method = HandlerType.GET;
 		cacheSeconds = 0;
 		authLevel = AuthLevel.LOGGED_IN;
+		trusted = false;
 		log = false;
 	}
 
@@ -97,6 +99,11 @@ public class RequestHandler {
 
 	public RequestHandler owner() {
 		return auth(AuthLevel.OWNER);
+	}
+
+	public RequestHandler trusted() {
+		trusted = true;
+		return this;
 	}
 
 	public RequestHandler log() {

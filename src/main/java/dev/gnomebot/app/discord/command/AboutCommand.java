@@ -21,6 +21,10 @@ public class AboutCommand extends ApplicationCommands {
 			.add(sub("macro")
 					.description("Info about macros")
 					.run(AboutCommand::macro)
+			)
+			.add(sub("pings")
+					.description("Info about pings")
+					.run(AboutCommand::pings)
 			);
 
 	private static void gnome(ApplicationCommandEventWrapper event) {
@@ -73,6 +77,21 @@ public class AboutCommand extends ApplicationCommands {
 								
 				`newrow`
 				Adds new component row (not required for first row)
+				""");
+	}
+
+	private static void pings(ApplicationCommandEventWrapper event) {
+		event.respond("""
+				You can set specific phrases to pings you:
+								
+				`<single_word> <webhook_name>`
+				Remove all extras when editing
+								
+				`<"two words"> <webhook_name>`
+				Multiple word combo must be wrapped in quotation marks
+								
+				`/regex/ <webhook_name>`
+				You can also use regular expressions
 				""");
 	}
 }

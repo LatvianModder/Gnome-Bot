@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.legacycommand;
 
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
@@ -138,7 +139,7 @@ public class CommandContext {
 	}
 
 	public boolean isTrusted() {
-		return isTrusted(sender.getId().asLong());
+		return Config.get().isTrusted(sender.getId());
 	}
 
 	public boolean isAdmin() {
@@ -153,10 +154,5 @@ public class CommandContext {
 		if (message != null) {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
-	}
-
-	public static boolean isTrusted(long id) {
-		// Lat / Green / Mikey / Gnomette
-		return id == 143142144469762048L || id == 96827649573273600L || id == 196688486357663744L || id == 873185409604157460L;
 	}
 }

@@ -5,7 +5,7 @@ import dev.gnomebot.app.discord.command.RootCommand;
 public class CLICleanupDB {
 	@RootCommand
 	public static final CLICommand COMMAND = CLICommand.make("cleanup_db")
-			.trustedOnly()
+			.ownerOnly()
 			.description("Cleans up old data")
 			.run(CLICleanupDB::run);
 

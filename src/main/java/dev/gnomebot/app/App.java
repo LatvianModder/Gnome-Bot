@@ -1,10 +1,7 @@
 package dev.gnomebot.app;
 
-import com.mongodb.client.model.Filters;
-import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.DiscordMessage;
-import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
@@ -32,35 +29,17 @@ import dev.gnomebot.app.util.ScheduledTaskCallback;
 import dev.gnomebot.app.util.Table;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.rest.http.client.ClientException;
 import org.bson.conversions.Bson;
-import org.jetbrains.annotations.Nullable;
 
-import javax.management.MBeanServer;
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.io.BufferedWriter;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.lang.management.ManagementFactory;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -136,122 +115,11 @@ public class App implements Runnable {
 		commands.add("reload", matcher -> reload());
 		commands.add("token", matcher -> info(Utils.createToken()));
 		commands.add(Pattern.compile("^update_slash_command ([\\w-\\s]+)$"), matcher -> discordHandler.updateGlobalCommand(matcher.group(1)));
-		commands.add(Pattern.compile("^delete_global_slash_command ([\\w-\\s]+)$"), matcher -> deleteGlobalSlashCommand(matcher.group(1)));
-		commands.add(Pattern.compile("^delete_guild_slash_command ([\\w-\\s]+) (\\d+)$"), matcher -> deleteGuildSlashCommand(matcher.group(1), Snowflake.of(matcher.group(2))));
-		commands.add("list_global_slash_commands", matcher -> listGlobalSlashCommands());
-		commands.add(Pattern.compile("^list_guild_slash_commands (\\d+)$"), matcher -> listGuildSlashCommands(Snowflake.of(matcher.group(1))));
+		commands.add(Pattern.compile("^delete_slash_command ([\\w-\\s]+)$"), matcher -> discordHandler.deleteGlobalCommand(matcher.group(1)));
+		commands.add("list_slash_commands", matcher -> listGlobalSlashCommands());
 		commands.add(Pattern.compile("^leave_guild (\\d+)$"), matcher -> leaveGuild(Snowflake.of(matcher.group(1))));
-		commands.add("heapdump", matcher -> heapdump());
-		commands.add("dbs", matcher -> printDatabases());
-		commands.add("fonts", matcher -> printFonts());
 
 		commands.add(Pattern.compile("^remove_modifiers (.*)$"), matcher -> info(CharMap.MODIFIER_PATTERN.matcher(matcher.group(1)).replaceAll("")));
-
-		commands.add(Pattern.compile("^regex_find (.*)$"), matcher -> {
-			Pattern pattern = Pattern.compile(matcher.group(1), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-			UserCache cache = discordHandler.createUserCache();
-
-			for (DiscordMessage m : db.guildModdedMC().messages.query().regex("content", pattern).limit(100).descending("timestamp")) {
-				info(Ansi.CYAN + m.getUIDSnowflake().asString() + " / " + m.getDate().toInstant() + Ansi.GREEN + " #" + "unknown" + " " + Ansi.YELLOW + cache.get(Snowflake.of(m.getUserID())).get().getUsername() + ": " + Ansi.RESET + m.getContent());
-			}
-		});
-
-		commands.add(Pattern.compile("^isolate_convo (.+)$"), matcher -> {
-			List<Bson> userList = new ArrayList<>();
-
-			for (String s : matcher.group(1).split(" ")) {
-				userList.add(Filters.eq("user", db.guildModdedMC().getUserID(s)));
-			}
-
-			printMessageTable(Collections.singletonList(Filters.or(userList)), 200);
-		});
-
-		commands.add(Pattern.compile("^print_dms (.+)$"), matcher -> {
-			PrivateChannel channel;
-			try {
-				channel = DM.open(discordHandler.getUser(Snowflake.of(matcher.group(1))));
-				Snowflake lastId = channel.getLastMessageId().orElse(null);
-
-				if (lastId == null) {
-					error("No DMs!");
-					return;
-				}
-
-				Table table = new Table("From", "Timestamp", "Title", "Content");
-
-				Message message = channel.getMessageById(lastId).block();
-
-				if (!message.getContent().isEmpty()) {
-					table.addRow(message.getUserData().id().asString(), message.getTimestamp().toString(), "", message.getContent());
-				}
-
-				for (Embed embed : message.getEmbeds()) {
-					table.addRow(message.getUserData().id().asString(), message.getTimestamp().toString(), embed.getTitle(), embed.getDescription());
-				}
-
-				for (Message message1 : channel.getMessagesBefore(lastId).toIterable()) {
-					if (!message1.getContent().isEmpty()) {
-						table.addRow(message1.getUserData().id().asString(), message1.getTimestamp().toString(), "", message1.getContent());
-					}
-
-					for (Embed embed : message1.getEmbeds()) {
-						table.addRow(message1.getUserData().id().asString(), message1.getTimestamp().toString(), embed.getTitle(), embed.getDescription());
-					}
-				}
-
-				table.print();
-				Files.write(AppPaths.DATA_GUILDS.resolve("dms-" + matcher.group(1) + ".txt"), table.getCSVBytes(false));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		});
-
-		commands.add("last_deleted_messages", matcher -> {
-			//printMessageTable(Collections.singletonList(Filters.bitsAnySet("flags", DiscordMessage.FLAG_DELETED)), 50);
-		});
-
-		commands.add(Pattern.compile("^guilds( \\d+)?$"), matcher -> printGuilds(matcher.group(1)));
-
-		commands.add(Pattern.compile("^find_bad_words (.+)$"), matcher -> {
-			printMessageTable(Arrays.asList(Filters.eq("user", db.guildModdedMC().getUserID(matcher.group(1))), Filters.regex("content", db.guildModdedMC().badWordRegex)), 1000);
-		});
-
-		commands.add(Pattern.compile("^export_messages (.+)$"), matcher -> {
-			long id = db.guildModdedMC().getUserID(matcher.group(1));
-			LinkedList<ExportedMessage> list = new LinkedList<>();
-
-			for (DiscordMessage m : db.guildModdedMC().messages.query().eq("user", id)) {
-				if (list.size() % 10000 == 0) {
-					info("Gathered " + list.size() + " so far...");
-				}
-
-				ExportedMessage message = new ExportedMessage();
-				message.timestamp = m.getDate().getTime();
-				message.channel = m.getChannelID();
-				message.flags = m.flags;
-				message.content = m.getContent();
-				list.add(message);
-			}
-
-			info("Done gathering messages! Sorting...");
-
-			list.sort(ExportedMessage.COMPARATOR);
-
-			info("Done sorting! Saving to file...");
-
-			CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
-			try (OutputStream out = Files.newOutputStream(AppPaths.DATA_GUILDS.resolve(id + ".csv"));
-				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, encoder))) {
-				for (ExportedMessage line : list) {
-					writer.append(line.toString());
-					writer.newLine();
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-
-			info("Done!");
-		});
 
 		commands.add("colors", matcher -> {
 			StringBuilder line1 = new StringBuilder();
@@ -497,103 +365,10 @@ public class App implements Runnable {
 		}
 	}
 
-	public void deleteGlobalSlashCommand(String id) {
-		for (ApplicationCommandData data : discordHandler.getGlobalCommands()) {
-			if (data.name().equals(id)) {
-				discordHandler.deleteGlobalCommand(Snowflake.of(data.id()));
-				return;
-			}
-		}
-	}
-
-	public void deleteGuildSlashCommand(String id, Snowflake guild) {
-		for (ApplicationCommandData data : discordHandler.getGuildCommands(guild)) {
-			if (data.name().equals(id)) {
-				discordHandler.deleteGuildCommand(guild, Snowflake.of(data.id()));
-				return;
-			}
-		}
-	}
-
 	public void listGlobalSlashCommands() {
 		for (ApplicationCommandData data : discordHandler.getGlobalCommands()) {
 			info(data.id() + " : " + data.name());
 		}
-	}
-
-	public void listGuildSlashCommands(Snowflake guild) {
-		for (ApplicationCommandData data : discordHandler.getGuildCommands(guild)) {
-			info(data.id() + " : " + data.name());
-		}
-	}
-
-	public void heapdump() {
-		System.gc();
-
-		try {
-			MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-			HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
-			mxBean.getDiagnosticOptions().forEach(App::info);
-			String filename = "run/files/heapdump-" + Instant.now().toString().replace(':', '-') + ".hprof";
-			mxBean.dumpHeap(filename, false);
-			warn("Heap dump saved: " + ((Files.size(AppPaths.DATA_GUILDS.resolve(filename)) / 1024L) / 1024D) + " MB");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-
-	public void printDatabases() {
-		Table table = new Table("DB", "Count");
-
-		db.collections.values().stream().sorted(Comparator.comparing(o -> o.id)).forEach(collection -> {
-			Table.Cell[] cells = table.addRow();
-			cells[0].value(collection.id);
-			cells[1].value(Long.toUnsignedString(collection.count()));
-		});
-
-		table.print();
-	}
-
-	public void printFonts() {
-		for (Font font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
-			info(font.getFontName());
-		}
-	}
-
-	public void printGuilds(@Nullable String find) {
-		if (find != null) {
-			info("Looking for: " + find);
-		}
-
-		Snowflake findId = find == null || find.isEmpty() ? null : Snowflake.of(find.trim());
-
-		long guilds = 0L;
-		long members = 0L;
-		Table table = new Table("ID", "Name", "Members", "Gnome Messages");
-
-		for (Guild guild : discordHandler.getSelfGuilds()) {
-			long c = 0L;
-
-			if (findId != null) {
-				for (Member member : guild.getMembers().toIterable()) {
-					if (member.getId().equals(findId)) {
-						info("Found " + find.trim() + " in " + guild.getName());
-					}
-
-					c++;
-				}
-			} else {
-				c = guild.getMembers().count().block();
-			}
-
-			long gm = db.guild(guild.getId()).messages.query().eq("user", discordHandler.selfId.asLong()).count();
-			table.addRow(guild.getId().asString(), guild.getName(), c, gm);
-			members += c;
-			guilds++;
-		}
-
-		table.print();
-		App.info("Gnome Bot is in " + guilds + " guilds, total " + members + " members");
 	}
 
 	public void leaveGuild(Snowflake id) {

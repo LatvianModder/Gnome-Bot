@@ -1,5 +1,6 @@
 package dev.gnomebot.app.util;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -7,6 +8,9 @@ import discord4j.common.util.Snowflake;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class ConfigFile {
@@ -67,6 +71,22 @@ public class ConfigFile {
 
 	public boolean getBoolean(String key, boolean def) {
 		return get(key, new JsonPrimitive(def)).getAsBoolean();
+	}
+
+	public List<String> getStringList(String key) {
+		JsonElement e = get(key, new JsonArray());
+
+		if (e.isJsonArray()) {
+			List<String> s = new ArrayList<>();
+
+			for (JsonElement e1 : e.getAsJsonArray()) {
+				s.add(e1.getAsString());
+			}
+
+			return s;
+		}
+
+		return Collections.emptyList();
 	}
 
 	public boolean has(String key) {

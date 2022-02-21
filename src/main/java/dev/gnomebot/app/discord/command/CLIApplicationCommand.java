@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.cli.CLICommand;
 import dev.gnomebot.app.cli.CLIEvent;
@@ -53,11 +54,17 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			event.acknowledge();
 		}
 
-		if (command.trusted) {
+		if (command.trusted == 1) {
 			if (!event.context.isTrusted()) {
 				throw new GnomeException("Only trusted users can use this command!");
 			}
-		} else if (command.admin) {
+		} else if (command.trusted == 2) {
+			if (!Config.get().owner.equals(event.context.sender.getId())) {
+				throw new GnomeException("Only bot owner can use this command!");
+			}
+		}
+
+		if (command.admin) {
 			event.context.checkSenderAdmin();
 		}
 
@@ -83,11 +90,11 @@ public class CLIApplicationCommand extends ApplicationCommands {
 
 	private static void suggestCommands(ChatCommandSuggestionEvent event) {
 		for (CLICommand command : CLI.COMMANDS.values()) {
-			if (command.trusted && !event.context.isTrusted()) {
+			if (command.trusted == 1 && !event.context.isTrusted()) {
 				continue;
-			}
-
-			if (command.admin && !event.context.isAdmin()) {
+			} else if (command.trusted == 2 && !Config.get().owner.equals(event.context.sender.getId())) {
+				continue;
+			} else if (command.admin && !event.context.isAdmin()) {
 				continue;
 			}
 
