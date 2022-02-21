@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import discord4j.common.util.Snowflake;
@@ -43,7 +43,7 @@ public class AvatarCommand extends ApplicationCommands {
 				String s = gc.iconUrl.get();
 
 				if (s.isEmpty()) {
-					throw new DiscordCommandException("Guild doesn't have an avatar!");
+					throw new GnomeException("Guild doesn't have an avatar!");
 				}
 
 				if (event.isUserInteraction()) {

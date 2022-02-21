@@ -6,7 +6,6 @@ import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberHandler;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import discord4j.core.object.entity.Member;
 
@@ -30,7 +29,7 @@ public class LockdownCommand extends ApplicationCommands {
 					.run(LockdownCommand::disable)
 			);
 
-	private static void enable(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void enable(ApplicationCommandEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		boolean wasOff = !event.context.gc.lockdownMode.get();
@@ -83,7 +82,7 @@ public class LockdownCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void disable(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void disable(ApplicationCommandEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		boolean wasOn = event.context.gc.lockdownMode.get();

@@ -8,7 +8,7 @@ import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
@@ -74,7 +74,7 @@ public class FindCommand extends ApplicationCommands {
 					.run(FindCommand::adminRoles)
 			);
 
-	private static void members(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void members(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		List<Pair<String, String>> list = new ArrayList<>();
 		Predicate<Member> predicate = member -> true;
@@ -108,7 +108,7 @@ public class FindCommand extends ApplicationCommands {
 		event.respond(list.stream().sorted((o1, o2) -> o1.b.compareToIgnoreCase(o2.b)).map(Pair::getA).collect(Collectors.toList()));
 	}
 
-	private static void messages(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void messages(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
 		int length = 0;
@@ -149,7 +149,7 @@ public class FindCommand extends ApplicationCommands {
 		event.respond(list);
 	}
 
-	private static void quietMemberCount(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void quietMemberCount(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		int total = event.context.gc.getGuild().getMembers().count().block().intValue();
 		event.context.gc.getGuild()
@@ -162,7 +162,7 @@ public class FindCommand extends ApplicationCommands {
 				.subscribe(count -> event.respond(count + " / " + total + " quiet people [" + (int) (count * 100D / (double) total) + "%]"));
 	}
 
-	private static void messageHistoryExport(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void messageHistoryExport(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		PrivateChannel c = DM.open(event.context.sender);
 
@@ -177,7 +177,7 @@ public class FindCommand extends ApplicationCommands {
 		try {
 			m = Objects.requireNonNull(c.createMessage("Gathering messages...").block());
 		} catch (Exception ex) {
-			throw new DiscordCommandException("This command requires DMs to be enabled for this guild!");
+			throw new GnomeException("This command requires DMs to be enabled for this guild!");
 		}
 
 		LinkedList<ExportedMessage> list = new LinkedList<>();
@@ -254,7 +254,7 @@ public class FindCommand extends ApplicationCommands {
 		event.respond("Done! Check your DMs!");
 	}
 
-	private static void messageCountPerMonth(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void messageCountPerMonth(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		ChannelInfo channelInfo = event.get("channel").asChannelInfo().orElse(null);
 
@@ -269,7 +269,7 @@ public class FindCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void adminRoles(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void adminRoles(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.respond("Admin roles:\n\n" + event.context.gc.getRoleList().stream().filter(r -> r.adminRole).map(r -> "<@&" + r.id.asString() + ">").collect(Collectors.joining("\n")));
 	}

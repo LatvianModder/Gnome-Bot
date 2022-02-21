@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.MessageFilter;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.Button;
@@ -37,11 +37,11 @@ public class BadWordsCommand extends ApplicationCommands {
 					.run(BadWordsCommand::viewRegex)
 			);
 
-	private static void test(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void test(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 
 		if (event.context.gc.badWordRegex == null) {
-			throw new DiscordCommandException("Bad words aren't configured for this server!");
+			throw new GnomeException("Bad words aren't configured for this server!");
 		}
 
 		String text = event.get("text").asString();
@@ -82,29 +82,29 @@ public class BadWordsCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void list(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void list(ApplicationCommandEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		if (event.context.gc.badWordRegex == null) {
-			throw new DiscordCommandException("Bad words aren't configured for this server!");
+			throw new GnomeException("Bad words aren't configured for this server!");
 		}
 
 		event.respond(String.join("\n", event.context.gc.badWords.get()));
 	}
 
-	private static void add(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void add(ApplicationCommandEventWrapper event) {
 		throw wip();
 	}
 
-	private static void remove(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void remove(ApplicationCommandEventWrapper event) {
 		throw wip();
 	}
 
-	private static void viewRegex(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void viewRegex(ApplicationCommandEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		if (event.context.gc.badWordRegex == null) {
-			throw new DiscordCommandException("Bad words aren't configured for this server!");
+			throw new GnomeException("Bad words aren't configured for this server!");
 		}
 
 		event.respond(MessageBuilder.create("Bad Word Regex").addComponentRow(Button.link(App.url("api/guild/bad-word-regex/" + event.context.gc.guildId.asString()), "View")));

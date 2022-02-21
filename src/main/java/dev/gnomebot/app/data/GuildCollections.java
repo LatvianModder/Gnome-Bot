@@ -324,6 +324,8 @@ public class GuildCollections {
 		for (MessageFilter filter : messageFilters) {
 			filter.compile();
 		}
+
+		updateMacroMap();
 	}
 
 	public String getClickableName() {

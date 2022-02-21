@@ -1,6 +1,7 @@
 package dev.gnomebot.app.util;
 
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,6 +88,10 @@ public class SimpleStringReader {
 		return s.isEmpty() ? Optional.empty() : Optional.of(s);
 	}
 
+	public Optional<ReactionEmoji> readEmoji() {
+		return readString().map(Utils::stringToReaction);
+	}
+
 	public Optional<String> peekString() {
 		int p = position;
 		Optional<String> s = readString();
@@ -108,10 +113,10 @@ public class SimpleStringReader {
 			return Optional.of(Boolean.FALSE);
 		}
 
-		throw new DiscordCommandException("Failed to parse boolean!").pos(p);
+		throw new GnomeException("Failed to parse boolean!").pos(p);
 	}
 
-	public Optional<Long> readLong() throws DiscordCommandException {
+	public Optional<Long> readLong() {
 		int p = position;
 		Optional<String> s = readString();
 
@@ -122,7 +127,7 @@ public class SimpleStringReader {
 		try {
 			return Optional.of(Long.parseLong(s.get()));
 		} catch (Exception ex) {
-			throw new DiscordCommandException("Failed to parse number!").pos(p);
+			throw new GnomeException("Failed to parse number!").pos(p);
 		}
 	}
 
@@ -150,7 +155,7 @@ public class SimpleStringReader {
 			try {
 				t = Long.parseLong(simpleMatcher.group(1));
 			} catch (Exception ex) {
-				throw new DiscordCommandException("Failed to parse number!").pos(p);
+				throw new GnomeException("Failed to parse number!").pos(p);
 			}
 
 			t1 = switch (simpleMatcher.group(2)) {
@@ -160,21 +165,21 @@ public class SimpleStringReader {
 				case "d" -> t * 86400L;
 				case "w" -> t * 7L * 86400L;
 				case "y" -> t * 365L * 86400L;
-				default -> throw new DiscordCommandException("Unknown time multiplier: " + simpleMatcher.group(2) + "!").pos(p);
+				default -> throw new GnomeException("Unknown time multiplier: " + simpleMatcher.group(2) + "!").pos(p);
 			};
 		} else {
 			try {
 				t = Long.parseLong(s.get());
 			} catch (Exception ex) {
-				throw new DiscordCommandException("Failed to parse number!").pos(p);
+				throw new GnomeException("Failed to parse number!").pos(p);
 			}
 
 			if (t <= 0L) {
-				throw new DiscordCommandException("Invalid timespan!").pos(p);
+				throw new GnomeException("Invalid timespan!").pos(p);
 			}
 
 			int p1 = position;
-			String q = readString().orElseThrow(() -> new DiscordCommandException("Missing time quantifier!").pos(p1)).toLowerCase();
+			String q = readString().orElseThrow(() -> new GnomeException("Missing time quantifier!").pos(p1)).toLowerCase();
 
 			if (q.startsWith("s")) {
 				t1 = t;
@@ -191,7 +196,7 @@ public class SimpleStringReader {
 			} else if (q.startsWith("y")) {
 				t1 = t * 365L * 86400L;
 			} else {
-				throw new DiscordCommandException("Invalid time quantifier!").pos(p1);
+				throw new GnomeException("Invalid time quantifier!").pos(p1);
 			}
 		}
 
@@ -220,7 +225,7 @@ public class SimpleStringReader {
 		long l = s.getAsLong() / 86400L;
 
 		if (l <= 0L) {
-			throw new DiscordCommandException("Invalid timespan!").pos(p);
+			throw new GnomeException("Invalid timespan!").pos(p);
 		}
 
 		return OptionalLong.of(l);

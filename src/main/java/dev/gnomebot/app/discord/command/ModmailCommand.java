@@ -13,7 +13,7 @@ public class ModmailCommand extends ApplicationCommands {
 
 	private static void run(ApplicationCommandEventWrapper event) {
 		if (event.context.gc.adminMessagesChannel.isSet()) {
-			event.presentModal("modmail", "Send a message to server owners", TextInput.paragraph("message", "Message", "Write your message here! Please, don't send joke messages."));
+			event.respondModal("modmail", "Send a message to server owners", TextInput.paragraph("message", "Message", "Write your message here! Please, don't send joke messages."));
 		} else {
 			event.respond("Modmail channel not set! You'll have to DM someone.");
 		}

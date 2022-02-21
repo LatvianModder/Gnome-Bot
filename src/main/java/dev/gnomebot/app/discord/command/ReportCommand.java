@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.SelectMenu;
@@ -21,21 +21,21 @@ public class ReportCommand extends ApplicationCommands {
 			.add(user("user").required())
 			.run(ReportCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		if (!event.context.gc.reportChannel.isSet()) {
-			throw new DiscordCommandException("Report channel is not set up!");
+			throw new GnomeException("Report channel is not set up!");
 		}
 
 		Member member = event.get("user").asMember().orElse(null);
 
 		if (member == null) {
-			throw new DiscordCommandException("Can't report non-members!");
+			throw new GnomeException("Can't report non-members!");
 		} else if (member.getId().equals(event.context.sender.getId())) {
-			throw new DiscordCommandException("You can't report your own messages!");
+			throw new GnomeException("You can't report your own messages!");
 		} else if (member.isBot()) {
-			throw new DiscordCommandException("You can't report bot messages!");
+			throw new GnomeException("You can't report bot messages!");
 		} else if (event.context.gc.getAuthLevel(member).is(AuthLevel.ADMIN)) {
-			throw new DiscordCommandException("You can't report admin messages!");
+			throw new GnomeException("You can't report admin messages!");
 		}
 
 		presentModal(event, event.context.channelInfo.id, member);
@@ -50,7 +50,7 @@ public class ReportCommand extends ApplicationCommands {
 
 		options.add(SelectMenu.Option.of("Other", "Other"));
 
-		event.presentModal("report/" + channel.asString() + "/" + member.getId().asString(), "Report " + member.getDisplayName(),
+		event.respondModal("report/" + channel.asString() + "/" + member.getId().asString(), "Report " + member.getDisplayName(),
 				// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
 				TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
 		);

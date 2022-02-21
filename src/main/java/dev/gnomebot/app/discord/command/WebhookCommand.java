@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.UserWebhook;
 import dev.gnomebot.app.discord.WebHook;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -40,18 +40,18 @@ public class WebhookCommand extends ApplicationCommands {
 					.run(WebhookCommand::execute)
 			);
 
-	private static void add(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void add(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		String n = event.get("name").asString().trim().toLowerCase();
 
 		if (n.isEmpty() || event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first() != null) {
-			throw new DiscordCommandException("Invalid or taken name!");
+			throw new GnomeException("Invalid or taken name!");
 		}
 
 		Matcher matcher = WEBHOOK_PATTERN.matcher(event.get("url").asString());
 
 		if (!matcher.matches()) {
-			throw new DiscordCommandException("Invalid webhook URL!");
+			throw new GnomeException("Invalid webhook URL!");
 		}
 
 		Document document = new Document();
@@ -64,21 +64,21 @@ public class WebhookCommand extends ApplicationCommands {
 		event.respond("Webhook '" + n + "' added!");
 	}
 
-	private static void remove(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void remove(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		String n = event.get("name").asString().trim().toLowerCase();
 
 		UserWebhook webhook = event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first();
 
 		if (webhook == null) {
-			throw new DiscordCommandException("Webhook not found! Try `/webhook list`");
+			throw new GnomeException("Webhook not found! Try `/webhook list`");
 		}
 
 		webhook.delete();
 		event.respond("Webhook deleted!");
 	}
 
-	private static void list(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void list(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
 
@@ -96,10 +96,10 @@ public class WebhookCommand extends ApplicationCommands {
 		WebHook w = event.get("name").asWebhook().orElse(null);
 
 		if (w == null) {
-			throw new DiscordCommandException("Webhook not found! Try `/webhook list`");
+			throw new GnomeException("Webhook not found! Try `/webhook list`");
 		}
 
-		throw new DiscordCommandException("WIP!");
+		throw new GnomeException("WIP!");
 
 		/*
 		String content = event.get("content").asContentOrFetch();

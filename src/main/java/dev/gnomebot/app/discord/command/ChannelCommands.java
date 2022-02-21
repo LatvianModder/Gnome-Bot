@@ -5,7 +5,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MutableLong;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -123,7 +123,7 @@ public class ChannelCommands extends ApplicationCommands {
 		ChannelInfo info = event.get("channel").asChannelInfoOrCurrent();
 
 		if (info == null) {
-			throw new DiscordCommandException("Invalid channel!");
+			throw new GnomeException("Invalid channel!");
 		}
 
 		event.respond(info.getMention() + " XP: " + info.xp);
@@ -136,7 +136,7 @@ public class ChannelCommands extends ApplicationCommands {
 		ChannelInfo info = event.get("channel").asChannelInfoOrCurrent();
 
 		if (info == null) {
-			throw new DiscordCommandException("Invalid channel!");
+			throw new GnomeException("Invalid channel!");
 		}
 
 		long xp = Math.max(0L, event.get("xp").asLong());

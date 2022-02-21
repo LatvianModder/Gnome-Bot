@@ -33,7 +33,7 @@ public class AboutCommand extends ApplicationCommands {
 		content.add("Gnome Response time: **" + s + " ms**");
 
 		if (event.context.gc != null) {
-			content.add("Chat command prefix: **" + event.context.gc.prefix + "**");
+			content.add("Legacy command prefix: **" + event.context.gc.prefix + "**");
 			content.add("Macro prefix: **" + event.context.gc.macroPrefix + "**");
 		}
 
@@ -46,11 +46,11 @@ public class AboutCommand extends ApplicationCommands {
 								
 				clear - Remove all extras when editing
 				hidden - /macro list will not show this macro
-				embed [title] - Changes macro into embed with optional title
+				embed ["title"] - Changes macro into embed with optional title
 				script <js> - Instead of printing text, it runs Text as script instead (WIP!)
-				edit <macro> - Edits original message to new macro
-				macro <name> <macro> - Adds a macro button
-				url <name> <url> - Adds a URL button
+				url <"name"> <"url"> - Adds a URL button
+				macro <"name"> <macro> [gray|blurple|green|red] [emoji] - Adds a macro button (creates new ephemeral message)
+				edit_macro <"name"> <macro> [gray|blurple|green|red] [emoji] - Adds a macro button (edits original message)
 				newrow - Adds new component row
 				""");
 	}

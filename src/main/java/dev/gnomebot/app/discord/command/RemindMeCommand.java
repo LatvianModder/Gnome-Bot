@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.Utils;
 
 import java.time.Instant;
@@ -18,7 +17,7 @@ public class RemindMeCommand extends ApplicationCommands {
 			.add(bool("private"))
 			.run(RemindMeCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		String text = event.get("text").asString();
 		long timer = event.get("timer").asSeconds().orElse(60L * 60L);
 		boolean dm = event.get("private").asBoolean(true);

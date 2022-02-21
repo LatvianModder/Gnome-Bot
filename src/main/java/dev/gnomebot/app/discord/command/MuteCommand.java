@@ -9,7 +9,6 @@ import dev.gnomebot.app.discord.EmbedColors;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -44,7 +43,7 @@ public class MuteCommand extends ApplicationCommands {
 			.add(time("time", false))
 			.run(MuteCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkBotPerms(Permission.BAN_MEMBERS);
 		event.context.checkSenderPerms(Permission.BAN_MEMBERS);
@@ -98,7 +97,7 @@ public class MuteCommand extends ApplicationCommands {
 		// ReactionHandler.addListener();
 	}
 
-	public static void mute(CommandContext context, Member m, long seconds, String reason, String auto) throws DiscordCommandException {
+	public static void mute(CommandContext context, Member m, long seconds, String reason, String auto) {
 		DiscordMember discordMember = context.gc.members.findFirst(m);
 		Date expires = new Date(System.currentTimeMillis() + seconds * 1000L);
 		Instant expiresInstant = expires.toInstant();

@@ -6,15 +6,18 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
+import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -58,16 +61,75 @@ public class Macro extends WrappedDocument<Macro> {
 		return document.getLong("slash_command");
 	}
 
-	public MessageBuilder createMessage(boolean removeLinks) {
+	public MessageBuilder createMessage(Snowflake sender, boolean removeLinks) {
 		MessageBuilder builder = MessageBuilder.create();
-		List<String> lines = new ArrayList<>();
 
-		for (String s : getContent()
+		List<String> lines = new ArrayList<>(Arrays.asList(getContent()
 				.replaceAll("role:(\\d+)", "<@&$1>")
 				.replaceAll("user:(\\d+)", "<@$1>")
 				.replace("mention:here", "@here")
 				.replace("mention:everyone", "@everyone")
-				.split("\n")) {
+				.split("\n"))
+		);
+
+		if (lines.isEmpty()) {
+			lines.add("Missingno");
+		} else if (removeLinks) {
+			for (int i = 0; i < lines.size(); i++) {
+				lines.set(i, REMOVE_MD_LINKS.matcher(lines.get(i)).replaceAll("$1"));
+			}
+		}
+
+		builder.content(lines);
+
+		List<ActionComponent> components = new ArrayList<>();
+
+		for (String extra : getExtra()) {
+			SimpleStringReader reader = new SimpleStringReader(extra);
+			String command = reader.readString().orElse("");
+
+			switch (command) {
+				case "newrow" -> {
+					if (!components.isEmpty()) {
+						builder.addComponent(ActionRow.of(components));
+					}
+
+					components = new ArrayList<>();
+				}
+				case "macro", "edit_macro" -> {
+					String name = reader.readString().orElse("");
+					String macro = reader.readString().orElse("");
+					String color = reader.readString().orElse("gray");
+					ReactionEmoji emoji = reader.readEmoji().orElse(null);
+
+					if (!name.isEmpty() && !macro.isEmpty()) {
+						String id = command + "/" + macro + "/" + sender.asString();
+
+						switch (color) {
+							case "gray" -> components.add(Button.secondary(id, emoji, name));
+							case "blurple" -> components.add(Button.primary(id, emoji, name));
+							case "green" -> components.add(Button.success(id, emoji, name));
+							case "red" -> components.add(Button.danger(id, emoji, name));
+						}
+					}
+				}
+				case "url" -> {
+					String name = reader.readString().orElse("");
+					String url = reader.readString().orElse("");
+					ReactionEmoji emoji = reader.readEmoji().orElse(null);
+
+					if (!name.isEmpty() && !url.isEmpty()) {
+						components.add(Button.link(url, emoji, name));
+					}
+				}
+			}
+		}
+
+		if (!components.isEmpty()) {
+			builder.addComponent(ActionRow.of(components));
+		}
+
+		/*
 			if (s.startsWith("$ ")) {
 				try {
 					JsonElement element = Utils.GSON.fromJson(s.substring(2), JsonElement.class);
@@ -79,16 +141,7 @@ public class Macro extends WrappedDocument<Macro> {
 				lines.add(s);
 			}
 		}
-
-		if (lines.isEmpty()) {
-			lines.add("No content");
-		}
-
-		if (removeLinks) {
-			builder.content(REMOVE_MD_LINKS.matcher(String.join("\n", lines)).replaceAll("$1"));
-		} else {
-			builder.content(lines);
-		}
+		 */
 
 		return builder;
 	}

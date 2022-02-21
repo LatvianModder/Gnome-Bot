@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.EmbedColors;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import discord4j.core.object.entity.User;
@@ -19,7 +19,7 @@ public class UnmuteCommand extends ApplicationCommands {
 
 	private static void run(ApplicationCommandEventWrapper event) {
 		if (!event.context.gc.mutedRole.isSet()) {
-			throw new DiscordCommandException("Muted role not set!");
+			throw new GnomeException("Muted role not set!");
 		}
 
 		event.context.checkBotPerms(Permission.BAN_MEMBERS);
@@ -28,9 +28,9 @@ public class UnmuteCommand extends ApplicationCommands {
 		User user = event.get("user").asUser().orElse(null);
 
 		if (user == null) {
-			throw new DiscordCommandException("User not found!");
+			throw new GnomeException("User not found!");
 		} else if (user.isBot() || event.context.gc.getAuthLevel(user.getId()).is(AuthLevel.ADMIN)) {
-			throw new DiscordCommandException("Nice try.");
+			throw new GnomeException("Nice try.");
 		}
 
 		event.acknowledge();

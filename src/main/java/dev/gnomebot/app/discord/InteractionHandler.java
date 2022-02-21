@@ -15,7 +15,7 @@ import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.CommandBuilder;
 import dev.gnomebot.app.discord.command.ModpackCommand;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -68,16 +68,14 @@ public class InteractionHandler {
 		}
 
 		try {
-			if (command != null) {
-				ApplicationCommandEventWrapper w = new ApplicationCommandEventWrapper(gc, event, options);
+			ApplicationCommandEventWrapper w = new ApplicationCommandEventWrapper(gc, event, options);
 
+			if (command != null) {
 				try {
 					command.callback.run(w);
-				} catch (DiscordCommandException ex) {
-					w.acknowledgeEphemeral();
+				} catch (GnomeException ex) {
 					w.respond(ex.getMessage());
 				} catch (Exception ex) {
-					w.acknowledgeEphemeral();
 					w.respond(ex.toString());
 					ex.printStackTrace();
 				}
@@ -85,7 +83,7 @@ public class InteractionHandler {
 				Macro macro = gc.getMacro(event.getCommandName());
 
 				if (macro != null) {
-					event.reply(macro.createMessage(false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
+					event.reply(macro.createMessage(w.context.sender.getId(), false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 					macro.update(Updates.inc("uses", 1));
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
@@ -116,7 +114,7 @@ public class InteractionHandler {
 				try {
 					try {
 						button(eventWrapper);
-					} catch (DiscordCommandException ex) {
+					} catch (GnomeException ex) {
 						App.error("Error in " + eventWrapper + ": " + ex.getMessage());
 						eventWrapper.respond(ex.getMessage());
 					} catch (Exception ex) {
@@ -143,7 +141,7 @@ public class InteractionHandler {
 				try {
 					try {
 						selectMenu(eventWrapper, event.getValues());
-					} catch (DiscordCommandException ex) {
+					} catch (GnomeException ex) {
 						eventWrapper.respond(ex.getMessage());
 					} catch (Exception ex) {
 						eventWrapper.respond("Error: " + ex);
@@ -173,7 +171,7 @@ public class InteractionHandler {
 				try {
 					try {
 						modalSubmit(eventWrapper);
-					} catch (DiscordCommandException ex) {
+					} catch (GnomeException ex) {
 						App.error("Error in " + eventWrapper + ": " + ex.getMessage());
 						eventWrapper.respond(ex.getMessage());
 					} catch (Exception ex) {
@@ -246,11 +244,12 @@ public class InteractionHandler {
 		}
 	}
 
-	private static void button(ComponentEventWrapper event) throws DiscordCommandException {
+	private static void button(ComponentEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "unmute" -> unmute(event, Snowflake.of(event.path[1]));
-			case "macro" -> macro(event, event.path[1]);
+			case "macro" -> macro(event, event.path[1], null);
+			case "edit_macro" -> macro(event, event.path[1], Snowflake.of(event.path[2]));
 			case "feedback" -> feedback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
 			case "warn" -> warn(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "kick" -> kick(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
@@ -260,24 +259,24 @@ public class InteractionHandler {
 			case "modal_test" -> modalTest(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
-				throw new DiscordCommandException("Unknown button ID: " + Arrays.asList(event.path));
+				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
 			}
 		}
 	}
 
-	private static void selectMenu(ComponentEventWrapper event, List<String> values) throws DiscordCommandException {
+	private static void selectMenu(ComponentEventWrapper event, List<String> values) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "poll" -> poll(event, Integer.parseInt(event.path[1]), values.get(0));
 			case "report" -> ReportHandler.report(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]), values.get(0));
 			default -> {
 				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
-				throw new DiscordCommandException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
+				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
 			}
 		}
 	}
 
-	private static void modalSubmit(ModalEventWrapper event) throws DiscordCommandException {
+	private static void modalSubmit(ModalEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "modal_test" -> event.respond("Modal: " + event);
@@ -288,13 +287,13 @@ public class InteractionHandler {
 			case "edit_macro" -> editMacro(event, event.path[1]);
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
-				throw new DiscordCommandException("Unknown modal ID: " + event);
+				throw new GnomeException("Unknown modal ID: " + event);
 			}
 		}
 	}
 
 	// Actions //
-	private static void feedback(ComponentEventWrapper event, int number, Vote vote) throws DiscordCommandException {
+	private static void feedback(ComponentEventWrapper event, int number, Vote vote) {
 		DiscordFeedback feedback = event.context.gc.feedback.query().eq("number", number).first();
 
 		if (feedback == null) {
@@ -305,7 +304,7 @@ public class InteractionHandler {
 		Message m = event.context.channelInfo.getMessage(Snowflake.of(feedback.getUID()));
 
 		if (!feedback.getStatus().canEdit()) {
-			throw new DiscordCommandException("You can't vote for this suggestion, it's already decided on!");
+			throw new GnomeException("You can't vote for this suggestion, it's already decided on!");
 		}
 
 		if (event.context.gc.feedbackVoteRole.is(event.context.sender)) {
@@ -316,46 +315,54 @@ public class InteractionHandler {
 				m.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
 			}
 		} else {
-			throw new DiscordCommandException("You can't vote for this suggestion, you have to have " + event.context.gc.regularRole + " role!");
+			throw new GnomeException("You can't vote for this suggestion, you have to have " + event.context.gc.regularRole + " role!");
 		}
 	}
 
-	private static void warn(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void warn(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
 		//other.kick(reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Warned by " + event.context.sender.getUsername() + "!")).getData()));
 		event.respond("Warned <@" + other.asString() + ">");
 	}
 
-	private static void kick(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void kick(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
 		event.context.gc.getGuild().kick(other, reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Kicked by " + event.context.sender.getUsername() + "!")).getData()));
 		event.respond("Kicked <@" + other.asString() + ">");
 	}
 
-	private static void ban(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) throws DiscordCommandException {
+	private static void ban(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
 		event.context.gc.getGuild().ban(other, BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Banned by " + event.context.sender.getUsername() + "!")).getData()));
 		event.respond("Banned <@" + other.asString() + ">");
 	}
 
-	private static void unmute(ComponentEventWrapper event, Snowflake other) throws DiscordCommandException {
+	private static void unmute(ComponentEventWrapper event, Snowflake other) {
 		event.context.checkSenderAdmin();
 		event.context.gc.unmute(other, 0L);
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.secondary("none", Emojis.CHECKMARK, "Unmuted by " + event.context.sender.getUsername() + "!")).getData()));
 		event.respond("Unmuted <@" + other.asString() + ">");
 	}
 
-	private static void macro(ComponentEventWrapper event, String id) throws DiscordCommandException {
-		Macro macro = event.context.gc.getMacro(id.toLowerCase());
+	private static void macro(ComponentEventWrapper event, String name, Snowflake owner) {
+		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro '" + id + "' not found!");
+			throw new GnomeException("Macro '" + name + "' not found!");
 		}
 
-		event.respond(macro.createMessage(false).ephemeral(true));
+		if (owner != null) {
+			if (owner.asLong() != event.context.sender.getId().asLong()) {
+				event.acknowledge();
+			} else {
+				event.edit().respond(macro.createMessage(owner, false).ephemeral(true));
+			}
+		} else {
+			event.respond(macro.createMessage(event.context.sender.getId(), false).ephemeral(true));
+		}
 	}
 
 	private static void poll(ComponentEventWrapper event, int number, String value) {
@@ -418,7 +425,7 @@ public class InteractionHandler {
 		).subscribe();
 	}
 
-	private static void modmail(ModalEventWrapper event) throws DiscordCommandException {
+	private static void modmail(ModalEventWrapper event) {
 		event.respond("Message sent!");
 
 		String message = event.get("message").asString();
@@ -431,7 +438,7 @@ public class InteractionHandler {
 		));
 	}
 
-	private static void report(ModalEventWrapper event, Snowflake channel, Snowflake user) throws DiscordCommandException {
+	private static void report(ModalEventWrapper event, Snowflake channel, Snowflake user) {
 		if (true) {
 			event.respond("Reporting isn't implemented yet! You'll have to ping admins");
 			return;
@@ -466,14 +473,14 @@ public class InteractionHandler {
 		 */
 	}
 
-	private static void feedback(ModalEventWrapper event) throws DiscordCommandException {
+	private static void feedback(ModalEventWrapper event) {
 		//event.respond("Feedback sent!");
 
 		// event.acknowledgeEphemeral();
 		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
-			throw new DiscordCommandException("Feedback channel is not set up on this server!");
+			throw new GnomeException("Feedback channel is not set up on this server!");
 		}
 
 		String suggestion = event.get("feedback").asString();
@@ -526,13 +533,13 @@ public class InteractionHandler {
 
 	private static void addMacro(ModalEventWrapper event, String name) {
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		} else if (name.length() > 50) {
-			throw new DiscordCommandException("Macro name too long! Max 50 characters.");
+			throw new GnomeException("Macro name too long! Max 50 characters.");
 		}
 
 		if (event.context.gc.getMacro(name) != null) {
-			throw new DiscordCommandException("Macro with that name already exists!");
+			throw new GnomeException("Macro with that name already exists!");
 		}
 
 		String content = event.get("content").asString()
@@ -542,7 +549,7 @@ public class InteractionHandler {
 				.replace("@everyone", "mention:everyone");
 
 		if (content.isEmpty()) {
-			throw new DiscordCommandException("Can't have empty content!");
+			throw new GnomeException("Can't have empty content!");
 		}
 
 		List<String> extra = new ArrayList<>(Arrays.stream(event.get("extra").asString().trim().split("\n")).map(String::trim).filter(s -> !s.isEmpty()).toList());
@@ -569,13 +576,15 @@ public class InteractionHandler {
 
 	private static void editMacro(ModalEventWrapper event, String name) {
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		}
 
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro not found!");
+			throw new GnomeException("Macro not found!");
+		} else if (macro.getAuthor() != event.context.sender.getId().asLong() && !event.context.isAdmin()) {
+			throw new GnomeException("You can only edit your own macros!");
 		}
 
 		String rename = event.get("rename").asString(macro.getName());
@@ -585,11 +594,11 @@ public class InteractionHandler {
 
 		if (!rename.equals(macro.getName())) {
 			if (rename.length() > 50) {
-				throw new DiscordCommandException("Macro name too long! Max 50 characters.");
+				throw new GnomeException("Macro name too long! Max 50 characters.");
 			}
 
 			if (event.context.gc.getMacro(rename) != null) {
-				throw new DiscordCommandException("Macro with that name already exists!");
+				throw new GnomeException("Macro with that name already exists!");
 			}
 
 			slashId = macro.setSlashCommand(false);

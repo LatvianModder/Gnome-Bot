@@ -19,7 +19,6 @@ import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Channel;
@@ -56,7 +55,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -829,20 +827,6 @@ public class Utils {
 		return a.getTimestamp().toEpochMilli() > b.getTimestamp().toEpochMilli() ? a : b;
 	}
 
-	public static List<LayoutComponent> parseRows(JsonArray a) {
-		List<LayoutComponent> rows = new ArrayList<>();
-
-		for (JsonElement e : a) {
-			if (e.isJsonArray()) {
-				rows.add(parseRow(e.getAsJsonArray()));
-			} else {
-				return Collections.singletonList(parseRow(a));
-			}
-		}
-
-		return rows;
-	}
-
 	public static ActionRow parseRow(JsonArray a) {
 		List<ActionComponent> row = new ArrayList<>();
 
@@ -929,5 +913,15 @@ public class Utils {
 	public static int ceil(double d) {
 		int i = (int) d;
 		return d > (double) i ? i + 1 : i;
+	}
+
+	public static JsonArray asArray(JsonElement element) {
+		if (element.isJsonArray()) {
+			return element.getAsJsonArray();
+		}
+
+		JsonArray array = new JsonArray();
+		array.add(element);
+		return array;
 	}
 }

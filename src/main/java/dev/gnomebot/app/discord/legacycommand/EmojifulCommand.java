@@ -56,7 +56,7 @@ public class EmojifulCommand {
 
 			try {
 				context.reply(MessageBuilder.create("Done!\nCategory: " + cat1 + "\nEmojis: Everything lol").addFile("emojiful-" + cat1 + ".zip", out.toByteArray()));
-			} catch (DiscordCommandException e) {
+			} catch (GnomeException e) {
 				e.printStackTrace();
 			}
 
@@ -117,7 +117,7 @@ public class EmojifulCommand {
 
 				try {
 					context.reply(MessageBuilder.create("Done!\nCategory: " + cat + "\nEmojis: " + reactions.stream().map(Utils::reactionToString).collect(Collectors.joining(" "))).addFile("emojiful-" + cat + ".zip", out.toByteArray()));
-				} catch (DiscordCommandException e) {
+				} catch (GnomeException e) {
 					e.printStackTrace();
 				}
 			}

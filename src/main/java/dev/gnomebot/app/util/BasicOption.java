@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.data.Currency;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import discord4j.common.util.Snowflake;
 
 import java.time.ZoneId;
@@ -150,7 +150,7 @@ public class BasicOption {
 		} catch (Exception ex) {
 		}
 
-		throw new DiscordCommandException("Unknown zone ID!");
+		throw new GnomeException("Unknown zone ID!");
 	}
 
 	public String asContentOrFetch() throws Exception {

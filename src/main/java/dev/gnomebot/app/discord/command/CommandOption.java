@@ -6,7 +6,7 @@ import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.BasicOption;
 import dev.gnomebot.app.util.Pair;
@@ -42,33 +42,33 @@ public class CommandOption extends BasicOption {
 				'}';
 	}
 
-	public Optional<User> asUser() throws DiscordCommandException {
+	public Optional<User> asUser() {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readUser();
 	}
 
-	public Optional<ChannelInfo> asChannelInfo() throws DiscordCommandException {
+	public Optional<ChannelInfo> asChannelInfo() {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readChannelInfo();
 	}
 
-	public ChannelInfo asChannelInfoOrCurrent() throws DiscordCommandException {
+	public ChannelInfo asChannelInfoOrCurrent() {
 		return asChannelInfo().orElse(context.channelInfo);
 	}
 
-	public Optional<Member> asMember() throws DiscordCommandException {
+	public Optional<Member> asMember() {
 		Optional<User> u = asUser();
 
 		if (u.isPresent()) {
 			try {
 				return Optional.of(Objects.requireNonNull(context.gc.getMember(u.get().getId())));
 			} catch (Exception ex) {
-				throw new DiscordCommandException("Too late! They're gone already.");
+				throw new GnomeException("Too late! They're gone already.");
 			}
 		}
 
 		return Optional.empty();
 	}
 
-	public Optional<CachedRole> asRole() throws DiscordCommandException {
+	public Optional<CachedRole> asRole() {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readRole();
 	}
 
@@ -76,12 +76,12 @@ public class CommandOption extends BasicOption {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readChannelAndMessage();
 	}
 
-	public Optional<WebHook> asWebhook() throws DiscordCommandException {
+	public Optional<WebHook> asWebhook() {
 		ChannelInfo ci = asChannelInfo().orElse(null);
 
 		if (ci != null) {
 			if (!context.gc.getAuthLevel(context.sender).is(AuthLevel.OWNER)) {
-				throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "Wait a minute, you're not the server owner! Only the server owner can do this");
+				throw new GnomeException(GnomeException.Type.NO_PERMISSION, "Wait a minute, you're not the server owner! Only the server owner can do this");
 			}
 
 			return ci.getOrCreateWebhook();

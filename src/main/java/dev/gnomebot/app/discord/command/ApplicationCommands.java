@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Currency;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import discord4j.core.object.command.ApplicationCommandOption;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
@@ -44,11 +44,11 @@ public class ApplicationCommands {
 		App.info("Found " + COMMANDS.size() + " slash commands");
 	}
 
-	public static DiscordCommandException error(String message) {
-		return new DiscordCommandException(message);
+	public static GnomeException error(String message) {
+		return new GnomeException(message);
 	}
 
-	public static DiscordCommandException wip() {
+	public static GnomeException wip() {
 		return error("WIP!");
 	}
 

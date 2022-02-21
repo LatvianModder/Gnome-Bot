@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.MemberCache;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
@@ -21,7 +20,7 @@ public class WarnsCommand extends ApplicationCommands {
 			.add(user("user"))
 			.run(WarnsCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 
 		if (event.has("user") && event.get("user").asString().equals("all")) {

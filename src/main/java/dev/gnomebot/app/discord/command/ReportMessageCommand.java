@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -22,25 +22,25 @@ public class ReportMessageCommand extends ApplicationCommands {
 		Optional<ChannelInfo> c = event.context.gc.reportChannel.messageChannel();
 
 		if (c.isEmpty()) {
-			throw new DiscordCommandException("Report channel not set up!");
+			throw new GnomeException("Report channel not set up!");
 		}
 
 		Message m = event.context.findMessage(event.get("message").asSnowflake()).orElse(null);
 
 		if (m == null) {
-			throw new DiscordCommandException("Message not found... __What.__");
+			throw new GnomeException("Message not found... __What.__");
 		}
 
 		User user = m.getAuthor().orElse(null);
 
 		if (user == null) {
-			throw new DiscordCommandException("Can't report non-members!");
+			throw new GnomeException("Can't report non-members!");
 		}
 
 		if (user.getId().equals(event.context.sender.getId())) {
-			throw new DiscordCommandException("You can't report your own messages!");
+			throw new GnomeException("You can't report your own messages!");
 		} else if (user.isBot()) {
-			throw new DiscordCommandException("You can't report bot messages!");
+			throw new GnomeException("You can't report bot messages!");
 		}
 
 		Member member = null;
@@ -51,9 +51,9 @@ public class ReportMessageCommand extends ApplicationCommands {
 		}
 
 		if (member == null) {
-			throw new DiscordCommandException("Can't report non-members!");
+			throw new GnomeException("Can't report non-members!");
 		} else if (event.context.gc.getAuthLevel(member).is(AuthLevel.ADMIN)) {
-			throw new DiscordCommandException("You can't report admin messages!");
+			throw new GnomeException("You can't report admin messages!");
 		}
 
 		ReportCommand.presentModal(event, m.getChannelId(), member);

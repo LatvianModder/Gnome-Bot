@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.Macro;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -71,16 +71,16 @@ public class MacroCommand extends ApplicationCommands {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		} else if (name.length() > 50) {
-			throw new DiscordCommandException("Macro name too long! Max 50 characters.");
+			throw new GnomeException("Macro name too long! Max 50 characters.");
 		}
 
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro != null) {
 			if (macro.getAuthor() == event.context.sender.getId().asLong()) {
-				event.presentModal("edit_macro/" + macro.getName(), "Editing macro '" + macro.getName() + "'",
+				event.respondModal("edit_macro/" + macro.getName(), "Editing macro '" + macro.getName() + "'",
 						TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.getName()),
 						TextInput.paragraph("content", "Content").prefilled(macro.getContent()),
 						TextInput.paragraph("extra", "Extra").required(false).prefilled(String.join("\n", macro.getExtra())).placeholder(EXTRA_PLACEHOLDER)
@@ -88,11 +88,11 @@ public class MacroCommand extends ApplicationCommands {
 
 				return;
 			} else {
-				throw new DiscordCommandException("Macro with that name already exists!");
+				throw new GnomeException("Macro with that name already exists!");
 			}
 		}
 
-		event.presentModal("add_macro/" + name, "Adding macro '" + name + "'",
+		event.respondModal("add_macro/" + name, "Adding macro '" + name + "'",
 				TextInput.paragraph("content", "Content"),
 				TextInput.paragraph("extra", "Extra").required(false).placeholder(EXTRA_PLACEHOLDER)
 		);
@@ -102,18 +102,16 @@ public class MacroCommand extends ApplicationCommands {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		}
 
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro not found!");
-		} else if (macro.getAuthor() != event.context.sender.getId().asLong()) {
-			event.context.checkSenderAdmin();
+			throw new GnomeException("Macro not found!");
 		}
 
-		event.presentModal("edit_macro/" + macro.getName(), "Editing macro '" + macro.getName() + "'",
+		event.respondModal("edit_macro/" + macro.getName(), "Editing macro '" + macro.getName() + "'",
 				TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.getName()),
 				TextInput.paragraph("content", "Content").prefilled(macro.getContent()),
 				TextInput.paragraph("extra", "Extra").required(false).prefilled(String.join("\n", macro.getExtra())).placeholder(EXTRA_PLACEHOLDER)
@@ -124,13 +122,13 @@ public class MacroCommand extends ApplicationCommands {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		}
 
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro not found!");
+			throw new GnomeException("Macro not found!");
 		} else if (macro.getAuthor() != event.context.sender.getId().asLong()) {
 			event.context.checkSenderAdmin();
 		}
@@ -172,13 +170,13 @@ public class MacroCommand extends ApplicationCommands {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		}
 
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro not found!");
+			throw new GnomeException("Macro not found!");
 		}
 
 		event.acknowledge();
@@ -193,7 +191,7 @@ public class MacroCommand extends ApplicationCommands {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
-			throw new DiscordCommandException("Macro name can't be empty!");
+			throw new GnomeException("Macro name can't be empty!");
 		}
 
 		event.context.checkSenderAdmin();
@@ -201,7 +199,7 @@ public class MacroCommand extends ApplicationCommands {
 		Macro macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
-			throw new DiscordCommandException("Macro not found!");
+			throw new GnomeException("Macro not found!");
 		}
 
 		event.acknowledge();

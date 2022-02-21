@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
@@ -53,7 +52,7 @@ public class ApplicationCommandEventWrapper extends DeferrableInteractionEventWr
 		return options.containsKey(id);
 	}
 
-	public CommandOption get(String id) throws DiscordCommandException {
+	public CommandOption get(String id) {
 		CommandOption o = options.get(id);
 
 		if (o == null) {

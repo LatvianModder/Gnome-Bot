@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.MessageHandler;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
@@ -21,7 +20,7 @@ public class RankCommand extends ApplicationCommands {
 			.add(channel("channel"))
 			.run(RankCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledge();
 
 		Member m = event.get("member").asMember().orElse(event.context.sender);

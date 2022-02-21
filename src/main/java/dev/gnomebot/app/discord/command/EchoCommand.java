@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import discord4j.rest.util.Permission;
 
 /**
@@ -14,7 +13,7 @@ public class EchoCommand extends ApplicationCommands {
 			.add(string("message").required())
 			.run(EchoCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderPerms(Permission.MANAGE_MESSAGES);
 		String message = event.get("message").asString();

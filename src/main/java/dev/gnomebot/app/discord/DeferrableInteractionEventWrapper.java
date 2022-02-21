@@ -5,6 +5,7 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.Utils;
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -118,11 +119,11 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 		return respond(MessageBuilder.create(embed));
 	}
 
-	public void presentModal(String customId, String title, Collection<LayoutComponent> components) {
-		event.presentModal(title, customId, components).block();
+	public void respondModal(String customId, String title, Collection<LayoutComponent> components) {
+		event.presentModal(Utils.trim(title, 45), customId, components).block();
 	}
 
-	public void presentModal(String customId, String title, ActionComponent... textInputs) {
-		presentModal(customId, title, Arrays.stream(textInputs).map(ActionRow::of).collect(Collectors.toList()));
+	public void respondModal(String customId, String title, ActionComponent... textInputs) {
+		respondModal(customId, title, Arrays.stream(textInputs).map(ActionRow::of).collect(Collectors.toList()));
 	}
 }

@@ -77,9 +77,9 @@ public final class DiscordCommandImpl {
 		DiscordCommandImpl command = COMMAND_MAP.get(commandName);
 
 		if (command == null) {
-			throw new DiscordCommandException(DiscordCommandException.Type.NOT_FOUND, "Command not found!");
+			throw new GnomeException(GnomeException.Type.NOT_FOUND, "Command not found!");
 		} else if (!ignorePermissions && !command.callback.hasPermission(command, context)) {
-			throw new DiscordCommandException(DiscordCommandException.Type.NO_PERMISSION, "You don't have permission to use this command!").reaction(Emojis.POLICE_CAR);
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to use this command!").reaction(Emojis.POLICE_CAR);
 		} else {
 			context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.COMMAND)
 					.channel(context.channelInfo.id)

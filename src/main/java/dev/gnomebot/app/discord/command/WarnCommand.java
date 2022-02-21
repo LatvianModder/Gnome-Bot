@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
@@ -20,7 +19,7 @@ public class WarnCommand extends ApplicationCommands {
 			.add(string("reason"))
 			.run(WarnCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkBotPerms(Permission.BAN_MEMBERS);
 		event.context.checkSenderPerms(Permission.BAN_MEMBERS);

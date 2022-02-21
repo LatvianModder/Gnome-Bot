@@ -24,7 +24,7 @@ public class EditButtonsCommand {
 		Message m = context.findMessage(Snowflake.of(reader.readLong().orElse(0L))).orElse(null);
 
 		if (m == null) {
-			throw new DiscordCommandException("Message not found!");
+			throw new GnomeException("Message not found!");
 		}
 
 		String t = reader.readRemainingString().orElse("");
@@ -59,7 +59,7 @@ public class EditButtonsCommand {
 
 			context.upvote();
 		} else {
-			throw new DiscordCommandException("Message must be written in a code block!");
+			throw new GnomeException("Message must be written in a code block!");
 		}
 	};
 }

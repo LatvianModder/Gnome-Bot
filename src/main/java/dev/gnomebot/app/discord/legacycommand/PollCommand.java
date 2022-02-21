@@ -30,11 +30,11 @@ public class PollCommand {
 		List<String> s = Arrays.stream(reader.readRemainingString().orElse("").split("\n")).filter(str -> !str.isEmpty()).collect(Collectors.toList());
 
 		if (s.isEmpty()) {
-			throw new DiscordCommandException("Poll can't have empty question!").ephemeral().deleteMessage();
+			throw new GnomeException("Poll can't have empty question!").ephemeral().deleteMessage();
 		} else if (s.size() == 2) {
-			throw new DiscordCommandException("Poll must have at least 2 options!").ephemeral().deleteMessage();
+			throw new GnomeException("Poll must have at least 2 options!").ephemeral().deleteMessage();
 		} else if (s.size() > 11) {
-			throw new DiscordCommandException("Poll has too many options! (Max 10)").ephemeral().deleteMessage();
+			throw new GnomeException("Poll has too many options! (Max 10)").ephemeral().deleteMessage();
 		} else if (s.size() == 1) {
 			s.add("Yes");
 			s.add("No");

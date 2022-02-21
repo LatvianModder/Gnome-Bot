@@ -4,7 +4,7 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordFeedback;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
@@ -53,12 +53,12 @@ public class FeedbackCommands extends ApplicationCommands {
 		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
-			throw new DiscordCommandException("Feedback channel is not set up on this server!");
+			throw new GnomeException("Feedback channel is not set up on this server!");
 		} else if (!event.context.gc.feedbackSuggestRole.is(event.context.sender)) {
-			throw new DiscordCommandException("To submit feedback you need " + event.context.gc.feedbackSuggestRole + " role!");
+			throw new GnomeException("To submit feedback you need " + event.context.gc.feedbackSuggestRole + " role!");
 		}
 
-		event.presentModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
+		event.respondModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
 	}
 
 	private static void changeStatus(ApplicationCommandEventWrapper event, DiscordFeedback.Status status) {
@@ -101,19 +101,19 @@ public class FeedbackCommands extends ApplicationCommands {
 		event.respond("Status of #" + id + " changed to " + status.titleSuffix);
 	}
 
-	private static void approve(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void approve(ApplicationCommandEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.APPROVED);
 	}
 
-	private static void deny(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void deny(ApplicationCommandEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.DENIED);
 	}
 
-	private static void consider(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void consider(ApplicationCommandEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.CONSIDERED);
 	}
 
-	private static void cleanup(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void cleanup(ApplicationCommandEventWrapper event) {
 		event.context.checkSenderAdmin();
 		event.acknowledge();
 

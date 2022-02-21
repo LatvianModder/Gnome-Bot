@@ -33,9 +33,9 @@ public class HelpCommand {
 		DiscordCommandImpl cmd = DiscordCommandImpl.COMMAND_MAP.get(s);
 
 		if (cmd == null) {
-			throw new DiscordCommandException("Command not found!");
+			throw new GnomeException("Command not found!");
 		} else if (!cmd.callback.hasPermission(cmd, context)) {
-			throw new DiscordCommandException("You don't have permission to use this command!");
+			throw new GnomeException("You don't have permission to use this command!");
 		}
 
 		StringBuilder sb = new StringBuilder();

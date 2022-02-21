@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.command.CommandOption;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.MessageComponent;
@@ -51,7 +50,7 @@ public class ModalEventWrapper extends ComponentEventWrapper {
 		return options.containsKey(id);
 	}
 
-	public CommandOption get(String id) throws DiscordCommandException {
+	public CommandOption get(String id) {
 		CommandOption o = options.get(id);
 
 		if (o == null) {

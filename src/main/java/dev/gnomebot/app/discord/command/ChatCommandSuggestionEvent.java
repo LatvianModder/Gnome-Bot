@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.InteractionEventWrapper;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 
@@ -43,7 +42,7 @@ public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInpu
 		return options.containsKey(id);
 	}
 
-	public CommandOption get(String id) throws DiscordCommandException {
+	public CommandOption get(String id) {
 		CommandOption o = options.get(id);
 
 		if (o == null) {

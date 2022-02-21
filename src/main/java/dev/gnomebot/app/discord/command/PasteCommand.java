@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.Paste;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.Button;
@@ -21,7 +20,7 @@ public class PasteCommand extends ApplicationCommands {
 			.add(string("message_or_url").required())
 			.run(PasteCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		String mu = event.get("message_or_url").asString();
 
 		Matcher urlm = URL_REGEX.matcher(mu);

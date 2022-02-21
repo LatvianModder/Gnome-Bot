@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.util.Utils;
 
 import java.util.Optional;
@@ -16,7 +15,7 @@ public class MembercountCommand extends ApplicationCommands {
 			.add(role("role"))
 			.run(MembercountCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		event.acknowledge();
 		Optional<CachedRole> role = event.get("role").asRole();
 

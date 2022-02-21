@@ -19,7 +19,7 @@ public class UpdateRegularRolesCommand {
 		boolean confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
 
 		if (!context.gc.regularRole.isSet() || context.gc.regularMessages.get() <= 0) {
-			throw new DiscordCommandException("Regular role not set!");
+			throw new GnomeException("Regular role not set!");
 		}
 
 		final Snowflake role = context.gc.regularRole.get();

@@ -11,7 +11,7 @@ public class CountCommandUsesCommand {
 		String s = reader.readString().orElse("");
 
 		if (s.isEmpty()) {
-			throw new DiscordCommandException("Requires command name!");
+			throw new GnomeException("Requires command name!");
 		}
 
 		context.reply(s + ": " + context.gc.auditLog.count(Filters.and(Filters.eq("type", "command"), Filters.eq("old_content", s))));

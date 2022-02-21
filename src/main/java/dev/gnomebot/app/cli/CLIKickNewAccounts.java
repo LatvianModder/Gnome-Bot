@@ -2,7 +2,6 @@ package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.command.RootCommand;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
@@ -13,7 +12,7 @@ public class CLIKickNewAccounts {
 			.description("Kicks new accounts")
 			.run(CLIKickNewAccounts::run);
 
-	private static void run(CLIEvent event) throws DiscordCommandException {
+	private static void run(CLIEvent event) {
 		long kickSeconds = Math.min(event.reader.readSeconds().orElse(86400L), 604800L);
 		long nowSecond = Instant.now().getEpochSecond();
 		long kicked = 0L;

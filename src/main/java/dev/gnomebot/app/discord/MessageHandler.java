@@ -16,8 +16,8 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.command.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
@@ -513,7 +513,7 @@ public class MessageHandler {
 
 					try {
 						MuteCommand.mute(context, member, seconds, "Potential Scam URL", "Muted " + member.getMention());
-					} catch (DiscordCommandException e) {
+					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
 
@@ -540,7 +540,7 @@ public class MessageHandler {
 
 					try {
 						MuteCommand.mute(context, member, seconds, "Mentioning @everyone or @here", "Muted " + member.getMention());
-					} catch (DiscordCommandException e) {
+					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
 
@@ -567,7 +567,7 @@ public class MessageHandler {
 
 					try {
 						MuteCommand.mute(context, member, seconds, "URL Shortener Link", "Muted " + member.getMention());
-					} catch (DiscordCommandException e) {
+					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
 
@@ -791,8 +791,8 @@ public class MessageHandler {
 				DiscordCommandImpl.run(context, reader, content, false);
 				App.LOGGER.commandSuccess();
 				return true;
-			} catch (DiscordCommandException ex) {
-				if (ex.type == DiscordCommandException.Type.NOT_FOUND) {
+			} catch (GnomeException ex) {
+				if (ex.type == GnomeException.Type.NOT_FOUND) {
 					return false;
 				}
 
@@ -807,14 +807,14 @@ public class MessageHandler {
 					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
 						try {
 							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-						} catch (DiscordCommandException e) {
+						} catch (GnomeException e) {
 							e.printStackTrace();
 						}
 					}
 				} else {
 					try {
 						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-					} catch (DiscordCommandException e) {
+					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
 				}
@@ -841,11 +841,11 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.update(Updates.inc("uses", 1));
-					context.reply(macro.createMessage(true));
+					context.reply(macro.createMessage(context.sender.getId(), true));
 					App.LOGGER.commandSuccess();
 					return true;
 				}
-			} catch (DiscordCommandException ex) {
+			} catch (GnomeException ex) {
 				App.LOGGER.commandFail();
 				context.message.addReaction(ex.reaction).subscribe();
 
@@ -857,14 +857,14 @@ public class MessageHandler {
 					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
 						try {
 							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-						} catch (DiscordCommandException e) {
+						} catch (GnomeException e) {
 							e.printStackTrace();
 						}
 					}
 				} else {
 					try {
 						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-					} catch (DiscordCommandException e) {
+					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
 				}

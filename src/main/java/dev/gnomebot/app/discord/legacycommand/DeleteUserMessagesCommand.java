@@ -24,7 +24,7 @@ public class DeleteUserMessagesCommand {
 		long time = reader.readSeconds().orElse(300L);
 
 		if (time > 7.884e+6) {
-			throw new DiscordCommandException("Can't delete messages older than 3 months!");
+			throw new GnomeException("Can't delete messages older than 3 months!");
 		}
 
 		context.handler.app.queueBlockingTask(task -> {

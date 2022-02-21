@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
 import discord4j.rest.util.Permission;
 
@@ -18,7 +17,7 @@ public class HelpCommand extends ApplicationCommands {
 			.add(string("command"))
 			.run(HelpCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws DiscordCommandException {
+	private static void run(ApplicationCommandEventWrapper event) {
 		String cmd = event.get("command").asString();
 
 		if (cmd.equals("permissions")) {

@@ -4,7 +4,7 @@ import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.cli.CLICommand;
 import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +55,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 
 		if (command.trusted) {
 			if (!event.context.isTrusted()) {
-				throw new DiscordCommandException("Only trusted users can use this command!");
+				throw new GnomeException("Only trusted users can use this command!");
 			}
 		} else if (command.admin) {
 			event.context.checkSenderAdmin();
@@ -66,7 +66,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 
 		try {
 			command.callback.run(event1);
-		} catch (DiscordCommandException ex) {
+		} catch (GnomeException ex) {
 			event1.respond(ex.getMessage());
 		} catch (Exception ex) {
 			event1.respond(ex.toString());

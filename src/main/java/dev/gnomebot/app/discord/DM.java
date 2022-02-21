@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.Config;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandException;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
@@ -60,11 +60,11 @@ public class DM {
 		return DM_CHANNELS_REVERSE.get(id);
 	}
 
-	public static PrivateChannel open(User user) throws DiscordCommandException {
+	public static PrivateChannel open(User user) {
 		try {
 			return Objects.requireNonNull(user.getPrivateChannel().block());
 		} catch (Exception ex) {
-			throw new DiscordCommandException("This command requires DMs to be enabled for this guild!");
+			throw new GnomeException("This command requires DMs to be enabled for this guild!");
 		}
 	}
 

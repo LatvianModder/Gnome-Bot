@@ -62,7 +62,7 @@ public class CommandReader extends SimpleStringReader {
 				}
 			}
 
-			throw new DiscordCommandException("User not found!");
+			throw new GnomeException("User not found!");
 		}
 
 		try {
@@ -86,11 +86,11 @@ public class CommandReader extends SimpleStringReader {
 				}
 			}
 
-			throw new DiscordCommandException("User not found!");
+			throw new GnomeException("User not found!");
 		}
 	}
 
-	public Optional<ChannelInfo> readChannelInfo() throws DiscordCommandException {
+	public Optional<ChannelInfo> readChannelInfo() {
 		Optional<String> ns = readString();
 
 		if (ns.isEmpty()) {
@@ -108,7 +108,7 @@ public class CommandReader extends SimpleStringReader {
 		} catch (Exception ex) {
 		}
 
-		throw new DiscordCommandException("Channel not found!");
+		throw new GnomeException("Channel not found!");
 	}
 
 	public Optional<Pair<ChannelInfo, Snowflake>> readChannelAndMessage() {
@@ -139,7 +139,7 @@ public class CommandReader extends SimpleStringReader {
 		return Optional.empty();
 	}
 
-	public Optional<CachedRole> readRole() throws DiscordCommandException {
+	public Optional<CachedRole> readRole() {
 		Optional<String> ns = readString();
 
 		if (ns.isEmpty()) {
@@ -189,7 +189,7 @@ public class CommandReader extends SimpleStringReader {
 				}
 			}
 
-			throw new DiscordCommandException("Role not found!");
+			throw new GnomeException("Role not found!");
 		}
 	}
 }
