@@ -44,14 +44,35 @@ public class AboutCommand extends ApplicationCommands {
 		event.respond("""
 				Extras allow you to add buttons to your macro, change it into script or embed, etc. List of available properties:
 								
-				clear - Remove all extras when editing
-				hidden - /macro list will not show this macro
-				embed ["title"] - Changes macro into embed with optional title
-				script <js> - Instead of printing text, it runs Text as script instead (WIP!)
-				url <"name"> <"url"> - Adds a URL button
-				macro <"name"> <macro> [gray|blurple|green|red] [emoji] - Adds a macro button (creates new ephemeral message)
-				edit_macro <"name"> <macro> [gray|blurple|green|red] [emoji] - Adds a macro button (edits original message)
-				newrow - Adds new component row
+				`clear`
+				Remove all extras when editing
+								
+				`hidden`
+				/macro list will not show this macro
+								
+				`embed ["title"] [#RRGGBB]`
+				Changes macro into embed with optional title
+								
+				`embed_field <"name"> <"value">`
+				Changes macro into embed with optional title
+								
+				`inline_embed_field <"title"> <"value">`
+				Changes macro into embed with optional title
+								
+				`script <js>`
+				Instead of printing text, it runs Text as script instead (WIP!)
+								
+				`url <"name"> <"url">`
+				Adds a URL button
+								
+				`macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
+				Adds a macro button (creates new ephemeral message)
+								
+				`edit_macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
+				Adds a macro button (edits original message)
+								
+				`newrow`
+				Adds new component row (not required for first row)
 				""");
 	}
 }

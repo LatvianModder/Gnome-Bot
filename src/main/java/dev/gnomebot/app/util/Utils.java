@@ -18,7 +18,6 @@ import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
-import discord4j.core.object.component.Button;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Channel;
@@ -825,36 +824,6 @@ public class Utils {
 
 	public static Snowflake newest(Snowflake a, Snowflake b) {
 		return a.getTimestamp().toEpochMilli() > b.getTimestamp().toEpochMilli() ? a : b;
-	}
-
-	public static ActionRow parseRow(JsonArray a) {
-		List<ActionComponent> row = new ArrayList<>();
-
-		for (JsonElement e : a) {
-			JsonObject o = e.getAsJsonObject();
-
-			if (o.has("macro_button")) {
-				Button.Style style = o.has("style") ? Button.Style.of(o.get("style").getAsInt()) : Button.Style.SECONDARY;
-
-				String id = "macro/" + o.get("macro_button").getAsString();
-				String label = o.has("label") ? o.get("label").getAsString() : null;
-				ReactionEmoji emoji = o.has("emoji") ? Utils.stringToReaction(o.get("emoji").getAsString().trim()) : null;
-
-				switch (style) {
-					case PRIMARY -> row.add(Button.primary(id, emoji, label));
-					case SECONDARY -> row.add(Button.secondary(id, emoji, label));
-					case SUCCESS -> row.add(Button.success(id, emoji, label));
-					case DANGER -> row.add(Button.danger(id, emoji, label));
-				}
-			} else if (o.has("url_button")) {
-				String url = o.get("url_button").getAsString();
-				String label = o.has("label") ? o.get("label").getAsString() : null;
-				ReactionEmoji emoji = o.has("emoji") ? Utils.stringToReaction(o.get("emoji").getAsString()) : null;
-				row.add(Button.link(url, emoji, label));
-			}
-		}
-
-		return ActionRow.of(row);
 	}
 
 	@Nullable

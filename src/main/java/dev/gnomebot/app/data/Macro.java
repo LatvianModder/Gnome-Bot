@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
@@ -15,9 +16,9 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
+import discord4j.rest.util.Color;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -63,25 +64,11 @@ public class Macro extends WrappedDocument<Macro> {
 
 	public MessageBuilder createMessage(Snowflake sender, boolean removeLinks) {
 		MessageBuilder builder = MessageBuilder.create();
+		EmbedBuilder embedBuilder = EmbedBuilder.create();
 
-		List<String> lines = new ArrayList<>(Arrays.asList(getContent()
-				.replaceAll("role:(\\d+)", "<@&$1>")
-				.replaceAll("user:(\\d+)", "<@$1>")
-				.replace("mention:here", "@here")
-				.replace("mention:everyone", "@everyone")
-				.split("\n"))
-		);
+		List<String> lines = new ArrayList<>();
 
-		if (lines.isEmpty()) {
-			lines.add("Missingno");
-		} else if (removeLinks) {
-			for (int i = 0; i < lines.size(); i++) {
-				lines.set(i, REMOVE_MD_LINKS.matcher(lines.get(i)).replaceAll("$1"));
-			}
-		}
-
-		builder.content(lines);
-
+		boolean hasEmbed = false;
 		List<ActionComponent> components = new ArrayList<>();
 
 		for (String extra : getExtra()) {
@@ -122,6 +109,24 @@ public class Macro extends WrappedDocument<Macro> {
 						components.add(Button.link(url, emoji, name));
 					}
 				}
+				case "embed" -> {
+					hasEmbed = true;
+					embedBuilder.title(reader.readString().orElse(""));
+
+					String s = reader.readString().orElse("");
+
+					if (s.startsWith("#") && s.length() == 7) {
+						embedBuilder.color(Color.of(Integer.decode(s)));
+					}
+				}
+				case "embed_field" -> {
+					hasEmbed = true;
+					embedBuilder.field(reader.readString().orElse(""), reader.readString().orElse(""));
+				}
+				case "inline_embed_field" -> {
+					hasEmbed = true;
+					embedBuilder.inlineField(reader.readString().orElse(""), reader.readString().orElse(""));
+				}
 			}
 		}
 
@@ -129,19 +134,31 @@ public class Macro extends WrappedDocument<Macro> {
 			builder.addComponent(ActionRow.of(components));
 		}
 
-		/*
-			if (s.startsWith("$ ")) {
-				try {
-					JsonElement element = Utils.GSON.fromJson(s.substring(2), JsonElement.class);
-					builder.addComponent(Utils.parseRow(element.getAsJsonArray()));
-				} catch (Exception ex) {
-					lines.add("Invalid component format: " + ex);
-				}
+		for (String s : getContent()
+				.replaceAll("role:(\\d+)", "<@&$1>")
+				.replaceAll("user:(\\d+)", "<@$1>")
+				.replace("mention:here", "@here")
+				.replace("mention:everyone", "@everyone")
+				.split("\n")) {
+			if (removeLinks) {
+				lines.add(REMOVE_MD_LINKS.matcher(s).replaceAll("$1"));
 			} else {
 				lines.add(s);
 			}
 		}
-		 */
+
+		if (lines.isEmpty()) {
+			lines.add("Missingno");
+		}
+
+		if (hasEmbed) {
+			builder.content("");
+			embedBuilder.description(lines);
+			builder.addEmbed(embedBuilder);
+		} else {
+			builder.content(lines);
+			builder.noEmbeds();
+		}
 
 		return builder;
 	}
