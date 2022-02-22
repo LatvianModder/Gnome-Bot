@@ -81,17 +81,6 @@ public class AboutCommand extends ApplicationCommands {
 	}
 
 	private static void pings(ApplicationCommandEventWrapper event) {
-		event.respond("""
-				You can set specific phrases to pings you:
-								
-				`<single_word> <webhook_name>`
-				Remove all extras when editing
-								
-				`<"two words"> <webhook_name>`
-				Multiple word combo must be wrapped in quotation marks
-								
-				`/regex/ <webhook_name>`
-				You can also use regular expressions
-				""");
+		event.respond(PingsCommand.HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
 	}
 }

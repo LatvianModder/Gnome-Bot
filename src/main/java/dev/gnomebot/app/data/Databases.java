@@ -7,6 +7,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
+import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -41,6 +42,7 @@ public class Databases {
 	public final Map<Snowflake, GuildCollections> guildCollections;
 	public final WrappedCollection<BasicDocument> mmShowcase;
 	public final WrappedCollection<UserWebhook> userWebhooks;
+	public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
 
 	public WebToken selfToken;
@@ -59,12 +61,8 @@ public class Databases {
 		guildCollections = new HashMap<>();
 		mmShowcase = create("mm_showcase", BasicDocument::new);
 		userWebhooks = create("user_webhooks", UserWebhook::new);
+		userPings = create("user_pings", UserPings::new);
 		pastes = create("pastes", Paste::new);
-	}
-
-	// hardcoded
-	public GuildCollections guildModdedMC() {
-		return guild(Snowflake.of(166630061217153024L));
 	}
 
 	@Nullable

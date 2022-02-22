@@ -59,6 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -110,6 +111,7 @@ public class Utils {
 
 	public static final Route THREAD_ROUTE = Routes.START_THREAD_WITH_MESSAGE;
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
+	public static final Pattern REGEX_PATTERN = Pattern.compile("/(.*)/([a-z]*)");
 
 	private static MessageDigest getMD5() {
 		try {
@@ -892,5 +894,75 @@ public class Utils {
 		JsonArray array = new JsonArray();
 		array.add(element);
 		return array;
+	}
+
+	@Nullable
+	public static Pattern parseSafeRegEx(String string, int defaultFlags) {
+		if (string.length() < 3) {
+			return null;
+		}
+
+		Matcher matcher = REGEX_PATTERN.matcher(string);
+
+		if (!matcher.matches()) {
+			return null;
+		}
+
+		int flags = defaultFlags;
+		String f = matcher.group(2);
+
+		for (int i = 0; i < f.length(); ++i) {
+			switch (f.charAt(i)) {
+				case 'U' -> flags |= 256;
+				case 'd' -> flags |= 1;
+				case 'i' -> flags |= 2;
+				case 'm' -> flags |= 8;
+				case 's' -> flags |= 32;
+				case 'u' -> flags |= 64;
+				case 'x' -> flags |= 4;
+			}
+		}
+
+		String pattern = matcher.group(1);
+
+		// check if pattern contains dangerous regex characters
+
+		return Pattern.compile(pattern, flags);
+	}
+
+	public static String toRegexString(Pattern pattern) {
+		StringBuilder sb = new StringBuilder("/");
+		sb.append(pattern.pattern());
+		sb.append('/');
+		int flags = pattern.flags();
+		if ((flags & 1) != 0) {
+			sb.append('d');
+		}
+
+		if ((flags & 2) != 0) {
+			sb.append('i');
+		}
+
+		if ((flags & 4) != 0) {
+			sb.append('x');
+		}
+
+		if ((flags & 8) != 0) {
+			sb.append('m');
+		}
+
+		if ((flags & 32) != 0) {
+			sb.append('s');
+		}
+
+		if ((flags & 64) != 0) {
+			sb.append('u');
+		}
+
+		if ((flags & 256) != 0) {
+			sb.append('U');
+		}
+
+		return sb.toString();
 	}
 }

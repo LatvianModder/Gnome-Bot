@@ -9,12 +9,14 @@ import dev.gnomebot.app.data.DiscordPoll;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Vote;
+import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.command.ApplicationCommandEventWrapper;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.CommandBuilder;
 import dev.gnomebot.app.discord.command.ModpackCommand;
+import dev.gnomebot.app.discord.command.PingsCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -257,6 +259,7 @@ public class InteractionHandler {
 			case "refresh_modpack" -> refreshModpack(event);
 			case "stop" -> stopOngoingAction(event, event.path[1]);
 			case "modal_test" -> modalTest(event);
+			case "pings" -> PingsCommand.modal(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -285,6 +288,7 @@ public class InteractionHandler {
 			case "feedback" -> feedback(event);
 			case "add_macro" -> addMacro(event, event.path[1]);
 			case "edit_macro" -> editMacro(event, event.path[1]);
+			case "pings" -> pings(event);
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
 				throw new GnomeException("Unknown modal ID: " + event);
@@ -629,5 +633,38 @@ public class InteractionHandler {
 
 		event.context.gc.updateMacroMap();
 		event.respond(MessageBuilder.create("Macro '" + rename + "' updated!").ephemeral(false));
+	}
+
+	private static void pings(ModalEventWrapper event) {
+		if (!event.context.isTrusted()) {
+			event.respond("WIP!");
+			return;
+		}
+
+		String config = event.get("config").asString().trim();
+
+		try {
+			event.context.gc.db.userPings.query(event.context.sender).upsert(Collections.singletonList(Updates.set("config", config)));
+
+			if (config.isEmpty()) {
+				event.context.gc.db.app.pingHandler.update();
+				event.respond("Pings cleared!");
+				return;
+			}
+
+			UserPings.compile(config);
+			event.context.gc.db.app.pingHandler.update();
+			event.respond("Pings set!");
+		} catch (GnomeException ex) {
+			event.respond(MessageBuilder.create("Syntax error on line " + ex.position + ":\n" + ex.getMessage()).addComponentRow(
+					Button.primary("pings", "Edit"),
+					Button.secondary("pings_help", "Help")
+			));
+		} catch (Exception ex) {
+			event.respond(MessageBuilder.create("Syntax error:\n" + ex.getMessage()).addComponentRow(
+					Button.primary("pings", "Edit"),
+					Button.secondary("pings_help", "Help")
+			));
+		}
 	}
 }

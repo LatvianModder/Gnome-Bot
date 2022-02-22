@@ -1,13 +1,12 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.discord.ScamHandler;
-import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.RequestHandler;
@@ -33,14 +32,11 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.rest.http.client.ClientException;
-import org.bson.conversions.Bson;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -97,6 +93,8 @@ public class App implements Runnable {
 	public Databases db;
 	public WebServer webServer;
 	public DiscordHandler discordHandler;
+	// TODO: Move more handlers from static instances to here
+	public PingHandler pingHandler;
 
 	@Override
 	public void run() {
@@ -149,6 +147,8 @@ public class App implements Runnable {
 		App.info("Discord handler loaded");
 
 		db.createSelfToken();
+
+		pingHandler = new PingHandler(db);
 
 		webServer = new WebServer(this);
 
@@ -311,30 +311,6 @@ public class App implements Runnable {
 				task.afterAddedScheduled();
 			}
 		}
-	}
-
-	private void printMessageTable(List<Bson> filter, int limit) {
-		List<DiscordMessage> messages = new ArrayList<>();
-
-		for (DiscordMessage m : db.guildModdedMC().messages.query().filters(filter).limit(limit).descending("timestamp")) {
-			messages.add(m);
-		}
-
-		Collections.reverse(messages);
-
-		Table table = new Table("Time", "Channel", "Member", "Content");
-		UserCache cache = discordHandler.createUserCache();
-
-		for (DiscordMessage m : messages) {
-			Table.Cell[] cells = table.addRow();
-			cells[0].value(m.getDate().toInstant());
-			cells[1].value(m.getChannelID());
-			cells[2].value(cache.get(Snowflake.of(m.getUserID())).get().getUsername());
-			cells[3].value(m.getContent().replace("\n", " | "));
-		}
-
-		table.print();
-		info("Results: " + table.rows.size());
 	}
 
 	public void restart() {

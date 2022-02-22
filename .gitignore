@@ -1,5 +1,5 @@
 # eclipse
-bin
+/bin
 *.launch
 .settings
 .metadata
@@ -7,21 +7,19 @@ bin
 .project
 
 # idea
-out
+/out
 *.ipr
 *.iws
 *.iml
 .idea
 
 # gradle
-build
+/build
 .gradle
-logs
+/logs
 
 # other
-eclipse
-data
-run.sh
-launch.sh
+/eclipse
+/data
+*.sh
 *.log
-data

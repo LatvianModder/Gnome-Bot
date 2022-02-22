@@ -1,6 +1,8 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.ping.PingData;
+import dev.gnomebot.app.data.ping.PingDestination;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
@@ -15,7 +17,7 @@ import reactor.core.publisher.Mono;
 /**
  * @author LatvianModder
  */
-public class WebHook {
+public class WebHook implements PingDestination {
 	public static final String BASE_URL = "https://discord.com/api/webhooks/";
 
 	public final Snowflake id;
@@ -28,7 +30,7 @@ public class WebHook {
 		int si = path.indexOf('/');
 
 		if (si == -1) {
-			id = Snowflake.of(0L);
+			id = Utils.NO_SNOWFLAKE;
 			token = "";
 		} else {
 			id = Snowflake.of(path.substring(0, si));
@@ -50,6 +52,11 @@ public class WebHook {
 
 	public WebHook withThread(String thread) {
 		return new WebHook(this, thread);
+	}
+
+	@Override
+	public String toString() {
+		return "WebHook{" + id.asString() + "/" + threadId + '}';
 	}
 
 	public WebhookService getWebhookService() {
@@ -88,5 +95,17 @@ public class WebHook {
 
 	public Mono<Void> delete(String messageId) {
 		return getWebhookService().deleteWebhookMessage(id.asLong(), token, messageId);
+	}
+
+	@Override
+	public void relayPing(PingData pingData) {
+		try {
+			execute(MessageBuilder.create()
+					.content("[➤](" + pingData.url() + ") " + pingData.content())
+					.webhookName(pingData.username() + " [" + pingData.gc() + "]")
+					.webhookAvatarUrl(pingData.avatar())
+			);
+		} catch (Exception ex) {
+		}
 	}
 }

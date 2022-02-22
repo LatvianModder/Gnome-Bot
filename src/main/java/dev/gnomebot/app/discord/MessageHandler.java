@@ -4,7 +4,6 @@ import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
@@ -24,7 +23,6 @@ import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
@@ -64,7 +62,6 @@ import java.util.regex.Pattern;
 public class MessageHandler {
 	public static final Pattern MESSAGE_URL_PATTERN = Pattern.compile("<?https?://(?:(?:canary|ptb)\\.)?(?:discordapp|discord)\\.(?:com|net)/channels/(\\d+)/(\\d+)/(\\d+)>?", Pattern.MULTILINE);
 	public static final Pattern INVITE_PATTERN = Pattern.compile("(?:discord\\.com/invite|discord\\.gg)/(\\w+)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-	public static final Pattern GNOME_MENTION_PATTERN = Pattern.compile("gnom|712800443566260316", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern IP_PATTERN = Pattern.compile("\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b(.*\\.jar)?", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern EVERYONE_MENTION_PATTERN = Pattern.compile("(`?)\\\\?@(?:everyone|here)\\1");
 	public static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```\\w*\\n.*```", Pattern.MULTILINE | Pattern.DOTALL);
@@ -768,13 +765,7 @@ public class MessageHandler {
 			}
 		}
 
-		if (GNOME_MENTION_PATTERN.matcher(contentNoEmojis).find()) {
-			Config.get().gnome_mention_webhook.execute(MessageBuilder.create()
-					.content(discordMessage.getURLAsArrow(context.gc) + " " + content)
-					.webhookName(user.getUsername() + " [" + gc + "]")
-					.webhookAvatarUrl(user.getAvatarUrl())
-			);
-		}
+		gc.db.app.pingHandler.handle(gc, channelInfo, user, content, discordMessage.getURL(gc));
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {
 			gc.discordJS.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
