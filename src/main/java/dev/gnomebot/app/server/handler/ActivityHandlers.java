@@ -16,7 +16,6 @@ import dev.gnomebot.app.util.canvas.ImageCanvas;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
-import discord4j.rest.util.Permission;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -282,7 +281,7 @@ public class ActivityHandlers {
 		try {
 			request.gc.getChannelList()
 					.stream()
-					.filter(c -> c.checkPermissions(request.token.userId, Permission.VIEW_CHANNEL))
+					.filter(c -> c.canViewChannel(request.token.userId))
 					.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
 					.forEach(c -> {
 						MessageInfo mi = new MessageInfo();

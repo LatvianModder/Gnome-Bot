@@ -17,7 +17,40 @@ import java.util.stream.Collectors;
  * @author LatvianModder
  */
 public class MacroCommand extends ApplicationCommands {
-	private static final String EXTRA_PLACEHOLDER = "For info about Extras run /about macro";
+	public static final String EXTRA_PLACEHOLDER = "For info about Extras run /about macro";
+	public static final String HELP = """
+			Extras allow you to add buttons to your macro, change it into script or embed, etc. List of available properties:
+							
+			`clear`
+			Remove all extras when editing
+							
+			`hidden`
+			/macro list will not show this macro
+							
+			`embed ["title"] [#RRGGBB]`
+			Changes macro into embed with optional title
+							
+			`embed_field <"name"> <"value">`
+			Changes macro into embed with optional title
+							
+			`inline_embed_field <"title"> <"value">`
+			Changes macro into embed with optional title
+							
+			`script <js>`
+			Instead of printing text, it runs Text as script instead (WIP!)
+							
+			`url <"name"> <"url">`
+			Adds a URL button
+							
+			`macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
+			Adds a macro button (creates new ephemeral message)
+							
+			`edit_macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
+			Adds a macro button (edits original message)
+							
+			`newrow`
+			Adds new component row (not required for first row)
+			""";
 
 	private static final Pattern FORMAT_ESCAPE = Pattern.compile("([*_~@])");
 

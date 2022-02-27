@@ -157,7 +157,7 @@ public class Logger {
 		event(Ansi.MAGENTA, "\uD83D\uDE7E"); // 🙾
 	}
 
-	public void refreshedMemberCache() {
+	public void refreshedPings() {
 		event(Ansi.GREEN, "\uD83D\uDE7E"); // 🙾
 	}
 

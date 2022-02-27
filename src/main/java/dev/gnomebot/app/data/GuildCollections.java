@@ -40,6 +40,7 @@ import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.discordjson.Id;
+import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MemberData;
 import discord4j.rest.util.Image;
 import org.bson.Document;
@@ -674,7 +675,18 @@ public class GuildCollections {
 
 	public ChannelInfo getOrMakeChannelInfo(Snowflake id) {
 		ChannelInfo ci = getChannelMap().get(id);
-		return ci == null ? new ChannelInfo(this, channelInfo, MapWrapper.EMPTY, id) : ci;
+
+		if (ci == null) {
+			ci = new ChannelInfo(this, channelInfo, MapWrapper.EMPTY, id);
+			ChannelData data = ci.getChannelData();
+			Id parentId = data == null ? null : data.parentId().toOptional().orElse(Optional.empty()).orElse(null);
+
+			if (parentId != null) {
+				ci = getOrMakeChannelInfo(Snowflake.of(parentId)).thread(id, "-");
+			}
+		}
+
+		return ci;
 	}
 
 	public void usernameSuggestions(ChatCommandSuggestionEvent event) {

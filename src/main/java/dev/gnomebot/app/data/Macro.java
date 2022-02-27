@@ -63,6 +63,10 @@ public class Macro extends WrappedDocument<Macro> {
 	}
 
 	public MessageBuilder createMessage(Snowflake sender, boolean removeLinks) {
+		return createMessage(getContent(), getExtra(), sender, removeLinks);
+	}
+
+	public static MessageBuilder createMessage(String contentString, List<String> extraList, Snowflake sender, boolean removeLinks) {
 		MessageBuilder builder = MessageBuilder.create();
 		EmbedBuilder embedBuilder = EmbedBuilder.create();
 
@@ -71,7 +75,7 @@ public class Macro extends WrappedDocument<Macro> {
 		boolean hasEmbed = false;
 		List<ActionComponent> components = new ArrayList<>();
 
-		for (String extra : getExtra()) {
+		for (String extra : extraList) {
 			SimpleStringReader reader = new SimpleStringReader(extra);
 			String command = reader.readString().orElse("");
 
@@ -134,7 +138,7 @@ public class Macro extends WrappedDocument<Macro> {
 			builder.addComponent(ActionRow.of(components));
 		}
 
-		for (String s : getContent()
+		for (String s : contentString
 				.replaceAll("role:(\\d+)", "<@&$1>")
 				.replaceAll("user:(\\d+)", "<@$1>")
 				.replace("mention:here", "@here")

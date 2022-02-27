@@ -1,12 +1,16 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.UserWebhook;
-import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.TextInput;
+import discord4j.core.object.entity.Message;
 import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,11 +36,8 @@ public class WebhookCommand extends ApplicationCommands {
 					.run(WebhookCommand::list)
 			)
 			.add(sub("execute")
-					.add(string("name").required())
-					//.add(string("content").description("Use ^https://rawlink.txt to fetch content from URL"))
-					//.add(string("buttons").description("Use ^https://rawlink.json to fetch json from URL"))
-					//.add(string("edit_id").description("Message ID to edit, dont set to post new message"))
-					//.add(string("thread_id").description("Thread ID to post in"))
+					.add(channel("channel"))
+					.add(string("edit_id").description("Message ID to edit, leave blank to post new message"))
 					.run(WebhookCommand::execute)
 			);
 
@@ -44,7 +45,13 @@ public class WebhookCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		String n = event.get("name").asString().trim().toLowerCase();
 
-		if (n.isEmpty() || event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first() != null) {
+		try {
+			Snowflake.of(n);
+			throw new GnomeException("Invalid or taken name!");
+		} catch (Exception ex) {
+		}
+
+		if (n.isEmpty() || n.length() > 50 || event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first() != null) {
 			throw new GnomeException("Invalid or taken name!");
 		}
 
@@ -62,6 +69,7 @@ public class WebhookCommand extends ApplicationCommands {
 		event.context.gc.db.userWebhooks.insert(document);
 
 		event.respond("Webhook '" + n + "' added!");
+		event.context.gc.db.app.pingHandler.update();
 	}
 
 	private static void remove(ApplicationCommandEventWrapper event) {
@@ -76,6 +84,7 @@ public class WebhookCommand extends ApplicationCommands {
 
 		webhook.delete();
 		event.respond("Webhook deleted!");
+		event.context.gc.db.app.pingHandler.update();
 	}
 
 	private static void list(ApplicationCommandEventWrapper event) {
@@ -89,55 +98,25 @@ public class WebhookCommand extends ApplicationCommands {
 		event.respond(list.isEmpty() ? "None" : String.join("\n", list));
 	}
 
-	private static void execute(ApplicationCommandEventWrapper event) throws Exception {
-		event.acknowledgeEphemeral();
-		event.context.checkSenderAdmin();
+	private static void execute(ApplicationCommandEventWrapper event) {
+		event.context.checkSenderOwner();
+		ChannelInfo ci = event.get("channel").asChannelInfoOrCurrent();
+		Snowflake editId = event.get("edit_id").asSnowflake();
 
-		WebHook w = event.get("name").asWebhook().orElse(null);
+		if (editId.asLong() != 0L) {
+			Message message = Objects.requireNonNull(ci.getMessage(editId));
 
-		if (w == null) {
-			throw new GnomeException("Webhook not found! Try `/webhook list`");
-		}
-
-		throw new GnomeException("WIP!");
-
-		/*
-		String content = event.get("content").asContentOrFetch();
-		String buttons = event.get("buttons").asContentOrFetch();
-
-		List<LayoutComponent> components = null;
-
-		if (!buttons.isEmpty()) {
-			JsonArray a = Utils.GSON.fromJson(buttons, JsonArray.class);
-			components = Utils.parseRows(a);
-		}
-
-		if (content.isEmpty() && components == null) {
-			throw new DiscordCommandException("No content or components!");
-		}
-
-		String editId = event.get("edit_id").asString();
-		String threadId = event.get("thread_id").asString();
-
-		if (!threadId.isEmpty()) {
-			w = w.withThread(threadId);
-		}
-
-		MessageBuilder builder = MessageBuilder.create();
-
-		if (!content.isEmpty()) {
-			builder.content(content);
-		}
-
-		builder.components(components);
-
-		if (editId.isEmpty()) {
-			w.execute(builder);
+			event.respondModal("webhook/" + ci.id.asString() + "/" + editId.asString(), "Execute Webhook",
+					TextInput.paragraph("content", "Content", 0, 2000).required(false).prefilled(message.getContent()),
+					TextInput.paragraph("extra", "Extra").required(false).placeholder(MacroCommand.EXTRA_PLACEHOLDER)
+			);
 		} else {
-			w.edit(editId, builder).block();
+			event.respondModal("webhook/" + ci.id.asString() + "/0", "Execute Webhook",
+					TextInput.paragraph("content", "Content", 0, 2000).required(false),
+					TextInput.paragraph("extra", "Extra").required(false).placeholder(MacroCommand.EXTRA_PLACEHOLDER),
+					TextInput.small("username", "Username", 0, 100).required(false).placeholder("Override username"),
+					TextInput.small("avatar_url", "Avatar URL").required(false).placeholder("Override avatar")
+			);
 		}
-
-		event.respond("Done!");
-		 */
 	}
 }

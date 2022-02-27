@@ -11,7 +11,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.service.ChannelService;
-import discord4j.rest.util.Permission;
 import org.bson.Document;
 
 import java.time.Instant;
@@ -110,7 +109,7 @@ public class ChannelCommands extends ApplicationCommands {
 		sb.append("Channel XP:");
 
 		for (ChannelInfo ch : channelsWithXp) {
-			if (ch.getPermissions(event.context.sender.getId()).contains(Permission.VIEW_CHANNEL)) {
+			if (ch.canViewChannel(event.context.sender.getId())) {
 				sb.append("\n<#").append(Snowflake.asString(ch.getUID())).append(">: ").append(ch.xp);
 			}
 		}

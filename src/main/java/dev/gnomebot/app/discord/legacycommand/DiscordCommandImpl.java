@@ -130,7 +130,7 @@ public final class DiscordCommandImpl {
 		} else if (permissionLevel == AuthLevel.MEMBER) {
 			return true;
 		} else if (permissionLevel == AuthLevel.OWNER) {
-			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.getPermissions(context.sender.getId()).contains(Permission.ADMINISTRATOR));
+			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.checkPermissions(context.sender.getId(), Permission.ADMINISTRATOR));
 		}
 
 		return context.sender != null && context.gc.adminRole.is(context.sender);

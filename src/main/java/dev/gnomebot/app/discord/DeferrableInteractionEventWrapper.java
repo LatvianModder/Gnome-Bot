@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
@@ -120,6 +121,10 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 	}
 
 	public void respondModal(String customId, String title, Collection<LayoutComponent> components) {
+		if (customId.length() > 100) {
+			throw new GnomeException("Invalid custom modal ID: `" + customId + "`");
+		}
+
 		event.presentModal(Utils.trim(title, 45), customId, components).block();
 	}
 

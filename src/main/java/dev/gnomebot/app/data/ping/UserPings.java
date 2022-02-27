@@ -93,13 +93,15 @@ public class UserPings extends WrappedDocument<UserPings> {
 
 				char c = line.charAt(0);
 
+				if (c == '#') {
+					continue;
+				}
+
 				if (line.length() < 3 || line.charAt(1) != ' ') {
 					throw new GnomeException("Second symbol must be a space");
 				}
 
 				switch (c) {
-					case '#' -> {
-					}
 					case '+', '-' -> {
 						String s = line.substring(2);
 
@@ -116,7 +118,7 @@ public class UserPings extends WrappedDocument<UserPings> {
 
 							current.pings.add(new Ping(pattern, c == '+'));
 						} else {
-							String[] s1 = s.split(" ");
+							String[] s1 = s.split(" ", 2);
 
 							switch (s1[0]) {
 								case "bots" -> current.bots = c == '+';

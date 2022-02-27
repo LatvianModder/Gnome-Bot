@@ -164,7 +164,7 @@ public class FindCommand extends ApplicationCommands {
 
 	private static void messageHistoryExport(ApplicationCommandEventWrapper event) {
 		event.acknowledgeEphemeral();
-		PrivateChannel c = DM.open(event.context.sender);
+		PrivateChannel c = DM.open(event.context.gc.db.app.discordHandler, event.context.sender.getId());
 
 		Snowflake memberId = event.get("member").asMember().orElse(event.context.sender).getId();
 

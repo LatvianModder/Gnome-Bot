@@ -1,21 +1,63 @@
 package dev.gnomebot.app.data.ping;
 
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.util.TimeLimitedCharSequence;
 import discord4j.common.util.Snowflake;
 
 import java.util.Arrays;
 
 public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination destination, UserPingConfig config) {
+	public static class ThreadRelayPing extends Thread {
+		private final PingDestination destination;
+		private final PingData pingData;
+
+		public ThreadRelayPing(PingDestination destination, PingData pingData) {
+			this.destination = destination;
+			this.pingData = pingData;
+			setDaemon(true);
+		}
+
+		@Override
+		public void run() {
+			try {
+				long start = System.nanoTime();
+				destination.relayPing(pingData);
+				long time = System.nanoTime() - start;
+
+				if (time >= 1000L) {
+					App.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + this);
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
 	public void handle(PingData pingData) {
-		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData) && match(pingData.content())) {
-			destination.relayPing(pingData);
+		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
+			long start = System.nanoTime();
+
+			if (match(pingData.match())) {
+				long time = System.nanoTime() - start;
+
+				if (time >= 10L) {
+					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
+				}
+
+				new ThreadRelayPing(destination, pingData).start();
+			}
 		}
 	}
 
 	public boolean match(String content) {
-		for (Ping ping : pings) {
-			if (ping.pattern().matcher(content).find()) {
-				return ping.allow();
+		try {
+			for (Ping ping : pings) {
+				if (ping != null && ping.pattern().matcher(new TimeLimitedCharSequence(content, 100L)).find()) {
+					return ping.allow();
+				}
 			}
+		} catch (Exception ex) {
+			return false;
 		}
 
 		return false;

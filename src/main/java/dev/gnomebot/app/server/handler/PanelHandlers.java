@@ -14,7 +14,6 @@ import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.util.Table;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
-import discord4j.rest.util.Permission;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
@@ -111,7 +110,7 @@ public class PanelHandlers {
 
 		UserCache userCache = request.app.discordHandler.createUserCache();
 		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
-		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.getPermissions(request.member.getId()).contains(Permission.VIEW_CHANNEL)).map(ci -> ci.id).collect(Collectors.toSet());
+		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();

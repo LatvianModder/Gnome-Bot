@@ -7,10 +7,7 @@ import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.BasicOption;
-import dev.gnomebot.app.util.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.entity.Member;
@@ -72,19 +69,12 @@ public class CommandOption extends BasicOption {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readRole();
 	}
 
-	public Optional<Pair<ChannelInfo, Snowflake>> asChannelAndMessage() {
-		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readChannelAndMessage();
-	}
-
 	public Optional<WebHook> asWebhook() {
 		ChannelInfo ci = asChannelInfo().orElse(null);
 
 		if (ci != null) {
-			if (!context.gc.getAuthLevel(context.sender).is(AuthLevel.OWNER)) {
-				throw new GnomeException(GnomeException.Type.NO_PERMISSION, "Wait a minute, you're not the server owner! Only the server owner can do this");
-			}
-
-			return ci.getOrCreateWebhook();
+			context.checkSenderOwner();
+			return ci.getWebHook();
 		}
 
 		String n = value.trim().toLowerCase();

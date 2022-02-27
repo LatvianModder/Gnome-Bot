@@ -22,7 +22,6 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
-import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
@@ -138,39 +137,32 @@ public class MessageHandler {
 			Member member = event.getMember().orElse(null);
 			MessageChannel channel = m.getChannel().block();
 
-			if (channel instanceof PrivateChannel && !author.isBot()) {
+			if (channel instanceof PrivateChannel privateChannel && !author.isBot()) {
 				String content = Emojis.stripEmojis(m.getContent());
-				DM.log(handler, author, m);
+				DM.log(handler, privateChannel, author, m);
 
 				if (FAST_READ_PATTERN.matcher(content).find()) {
-					DM.reply(handler, author, channel, "I don't believe it.");
+					DM.reply(handler, privateChannel, author, channel, "I don't believe it.");
 				} else if (NO_U_PATTERN.matcher(content).find()) {
-					DM.reply(handler, author, channel, "no u");
+					DM.reply(handler, privateChannel, author, channel, "no u");
 				} else if (HI_PATTERN.matcher(content).find()) {
-					DM.reply(handler, author, channel, "Hi");
+					DM.reply(handler, privateChannel, author, channel, "Hi");
 				} else if (OK_PATTERN.matcher(content).find()) {
-					DM.reply(handler, author, channel, "ok");
+					DM.reply(handler, privateChannel, author, channel, "ok");
 				} else if (SORRY_PATTERN.matcher(content).find()) {
-					DM.reply(handler, author, channel, "It's ok");
+					DM.reply(handler, privateChannel, author, channel, "It's ok");
 				} else if (content.contains("m a bot")) {
-					DM.reply(handler, author, channel, "No I don't think so. I'm a bot!");
+					DM.reply(handler, privateChannel, author, channel, "No I don't think so. I'm a bot!");
 				} else {
-					DM.reply(handler, author, channel, "Why are you talking to me? I'm a bot");
+					DM.reply(handler, privateChannel, author, channel, "Why are you talking to me? I'm a bot");
 				}
 			} else if (member != null && event.getGuildId().isPresent()) {
 				var gc = handler.app.db.guildOrNull(event.getGuildId().orElse(null));
-				ChannelInfo channelInfo = gc == null ? null : gc.getChannelMap().get(event.getMessage().getChannelId());
+				Snowflake topLevelChannelId = gc == null ? null : channel instanceof ThreadChannel threadChannel ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
+				ChannelInfo channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
 
-				if (channelInfo == null && gc != null && channel instanceof ThreadChannel) {
-					channelInfo = new ChannelInfo(gc, gc.channelInfo, MapWrapper.EMPTY, event.getMessage().getChannelId());
-
-					channelInfo.thread = true;
-					channelInfo.name = ((ThreadChannel) channel).getName();
-					channelInfo.xp = 0L;
-					channelInfo.totalMessages = 0L;
-					channelInfo.totalXp = 0L;
-					channelInfo.autoThread = false;
-					channelInfo.autoUpvote = false;
+				if (channelInfo != null && channel instanceof ThreadChannel threadChannel) {
+					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
 				}
 
 				if (channelInfo != null) {
@@ -239,10 +231,10 @@ public class MessageHandler {
 
 	@SuppressWarnings("deprecation")
 	public static void messageCreated(DiscordHandler handler, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
-		Snowflake dmId = DM.getUserFromDmChannel(channelInfo.id);
+		DM.DMChannel dmId = DM.getUserFromDmChannel(channelInfo.id);
 
 		if (dmId != null && !message.getContent().isEmpty()) {
-			DM.send(handler, handler.getUser(dmId), message.getContent(), true);
+			DM.send(handler, handler.getUser(dmId.userId()), message.getContent(), true);
 			return;
 		}
 
@@ -739,40 +731,42 @@ public class MessageHandler {
 			return;
 		}
 
-		boolean thankGnome = THANK_GNOME_PATTERN.matcher(contentNoEmojis).find();
+		if (!contentNoEmojis.isEmpty()) {
+			boolean thankGnome = THANK_GNOME_PATTERN.matcher(contentNoEmojis).find();
 
-		if (handleRealCommand(context, content)) {
-			//App.info("Gnome command: " + content);
-		} else if (handleMacro(context, content, macroPrefix)) {
-			//App.info("Custom command: " + content);
-		} else if (thankGnome || (flags & DiscordMessage.FLAG_MENTIONS_BOT) != 0L) {
-			if (thankGnome) {
-				message.addReaction(Emojis.GNOME_HAHA_YES).subscribe();
-			} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
-				channelInfo.createMessage("no u").subscribe();
-			} else if (contentNoEmojis.contains("help")) {
-				channelInfo.createMessage("Try `" + gc.prefix + "help`").subscribe();
-			} else if (contentNoEmojis.contains("prefix")) {
-				channelInfo.createMessage("Current command prefix is `" + gc.prefix + "`").subscribe();
-			} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
-				channelInfo.createMessage("Hi").subscribe();
-			} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
-				channelInfo.createMessage("ok").subscribe();
-			} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().equals(gc.db.app.discordHandler.selfId)) {
-				channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
-			} else {
-				channelInfo.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
+			if (handleLegacyCommand(context, content)) {
+				//App.info("Gnome command: " + content);
+			} else if (handleMacro(context, content, macroPrefix)) {
+				//App.info("Custom command: " + content);
+			} else if (thankGnome || (flags & DiscordMessage.FLAG_MENTIONS_BOT) != 0L) {
+				if (thankGnome) {
+					message.addReaction(Emojis.GNOME_HAHA_YES).subscribe();
+				} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
+					channelInfo.createMessage("no u").subscribe();
+				} else if (contentNoEmojis.contains("help")) {
+					channelInfo.createMessage("Try `" + gc.prefix + "help`").subscribe();
+				} else if (contentNoEmojis.contains("prefix")) {
+					channelInfo.createMessage("Current command prefix is `" + gc.prefix + "`").subscribe();
+				} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
+					channelInfo.createMessage("Hi").subscribe();
+				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
+					channelInfo.createMessage("ok").subscribe();
+				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().equals(gc.db.app.discordHandler.selfId)) {
+					channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
+				} else {
+					channelInfo.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
+				}
 			}
-		}
 
-		gc.db.app.pingHandler.handle(gc, channelInfo, user, content, discordMessage.getURL(gc));
+			gc.db.app.pingHandler.handle(gc, channelInfo, user, contentNoEmojis, content, discordMessage.getURL(gc));
+		}
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {
 			gc.discordJS.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
 		}
 	}
 
-	private static boolean handleRealCommand(CommandContext context, String content) {
+	private static boolean handleLegacyCommand(CommandContext context, String content) {
 		String prefix = context.gc.prefix.get();
 
 		if (content.startsWith(prefix) && content.length() > prefix.length()) {

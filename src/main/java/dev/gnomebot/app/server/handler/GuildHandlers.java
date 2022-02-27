@@ -28,7 +28,6 @@ import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
-import discord4j.rest.util.Permission;
 import org.bson.conversions.Bson;
 
 import java.awt.image.BufferedImage;
@@ -128,7 +127,7 @@ public class GuildHandlers {
 				JsonObject o = new JsonObject();
 				o.addProperty("id", channelInfo.id.asString());
 				o.addProperty("name", channelInfo.getName());
-				o.addProperty("visible", channelInfo.getPermissions(request.token.userId).contains(Permission.VIEW_CHANNEL));
+				o.addProperty("visible", channelInfo.canViewChannel(request.token.userId));
 				o.addProperty("xp", channelInfo.xp);
 				c.add(o);
 			}
@@ -309,7 +308,7 @@ public class GuildHandlers {
 
 		UserCache userCache = request.app.discordHandler.createUserCache();
 		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
-		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.getPermissions(request.member.getId()).contains(Permission.VIEW_CHANNEL)).map(ci -> ci.id).collect(Collectors.toSet());
+		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();

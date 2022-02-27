@@ -6,7 +6,6 @@ import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Webhook;
 import discord4j.core.object.entity.channel.GuildChannel;
@@ -17,7 +16,6 @@ import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MessageData;
 import discord4j.discordjson.possible.Possible;
 import discord4j.rest.entity.RestChannel;
-import discord4j.rest.util.Image;
 import discord4j.rest.util.PaginationUtil;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
@@ -37,7 +35,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	public final GuildCollections gc;
 	public final Snowflake id;
 	public String name;
-	public boolean thread;
+	public ChannelInfo threadParent;
 
 	public long xp;
 	public long totalMessages;
@@ -47,7 +45,8 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 
 	private final LazyOptional<RestChannel> rest;
 	private final LazyOptional<ChannelData> channelData;
-	private final LazyOptional<TopLevelGuildMessageChannel> channel;
+	private final LazyOptional<TopLevelGuildMessageChannel> topLevelChannel;
+	private final LazyOptional<WebHook> webHook;
 	private Map<Snowflake, PermissionSet> cachedPermissions;
 
 	public ChannelInfo(GuildCollections g, WrappedCollection<ChannelInfo> c, MapWrapper d, @Nullable Snowflake _id) {
@@ -55,7 +54,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		gc = g;
 		id = _id == null ? Snowflake.of(document.getLong("_id")) : _id;
 		name = "";
-		thread = false;
+		threadParent = null;
 		xp = document.getLong("xp");
 		totalMessages = document.getLong("total_messages");
 		totalXp = document.getLong("total_xp");
@@ -64,7 +63,11 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 
 		rest = LazyOptional.of(() -> RestChannel.create(gc.getClient().getRestClient(), id));
 		channelData = LazyOptional.of(() -> gc.getClient().getRestClient().getChannelService().getChannel(id.asLong()).block());
-		channel = LazyOptional.of(() -> {
+		topLevelChannel = LazyOptional.of(() -> {
+			if (threadParent != null) {
+				return threadParent.getTopLevelChannel();
+			}
+
 			try {
 				GuildChannel channel = gc.getGuild().getChannelById(id).block();
 				return channel instanceof TopLevelGuildMessageChannel ? (TopLevelGuildMessageChannel) channel : null;
@@ -76,6 +79,39 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 				}
 			}
 		});
+		webHook = LazyOptional.of(() -> {
+			TopLevelGuildMessageChannel tlc = getTopLevelChannel();
+
+			if (tlc != null) {
+				Webhook webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
+
+				if (webhook == null) {
+					webhook = tlc.createWebhook(WebhookCreateSpec.builder().reason("Gnome webhook").build()).block();
+				}
+
+				if (webhook != null) {
+					return new WebHook(this, webhook);
+				}
+			}
+
+			return null;
+		});
+	}
+
+	public ChannelInfo thread(Snowflake threadId, String name) {
+		ChannelInfo ci = new ChannelInfo(gc, collection, MapWrapper.EMPTY, threadId);
+		ci.threadParent = this;
+		ci.name = name;
+		ci.xp = xp; // TODO: Add config for thread xp but for now just re-use parent channel xp
+		ci.totalMessages = 0L;
+		ci.totalXp = 0L;
+		ci.autoThread = false;
+		ci.autoUpvote = false;
+		return ci;
+	}
+
+	public Snowflake getTopId() {
+		return threadParent == null ? id : threadParent.getTopId();
 	}
 
 	public void updateFrom(GuildChannel ch) {
@@ -95,8 +131,8 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	}
 
 	@Nullable
-	public TopLevelGuildMessageChannel getChannel() {
-		return channel.get();
+	public TopLevelGuildMessageChannel getTopLevelChannel() {
+		return topLevelChannel.get();
 	}
 
 	@Nullable
@@ -173,7 +209,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		name = "";
 		rest.invalidate();
 		channelData.invalidate();
-		channel.invalidate();
+		topLevelChannel.invalidate();
 		cachedPermissions = null;
 	}
 
@@ -193,27 +229,11 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		PermissionSet set = cachedPermissions.get(member);
 
 		if (set == null) {
-			set = Utils.getEffectivePermissions(getChannel(), member);
+			set = Utils.getEffectivePermissions(getTopLevelChannel(), member);
 			cachedPermissions.put(member, set);
 		}
 
 		return set;
-	}
-
-	public boolean checkPermissions(Member member, Permission... permissions) {
-		if (permissions.length == 0) {
-			return true;
-		}
-
-		PermissionSet perms = getPermissions(member.getId());
-
-		for (Permission p : permissions) {
-			if (!perms.contains(p)) {
-				return true;
-			}
-		}
-
-		return true;
 	}
 
 	public boolean checkPermissions(Snowflake memberId, Permission... permissions) {
@@ -221,35 +241,31 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 			return true;
 		}
 
-		Member member = gc.getMember(memberId);
-		return member != null && checkPermissions(member, permissions);
-	}
+		PermissionSet perms = getPermissions(memberId);
 
-	public Optional<WebHook> getOrCreateWebhook() {
-		TopLevelGuildMessageChannel c = getChannel();
-
-		if (c != null) {
-			try {
-				Webhook webhook = c.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
-
-				if (webhook == null) {
-					webhook = c.createWebhook(WebhookCreateSpec.builder()
-							.avatarOrNull(gc.getGuild().getIcon(Image.Format.PNG).block())
-							.name(gc.toString())
-							.reason("Gnome webhook")
-							.build()
-					).block();
-				}
-
-				if (webhook != null) {
-					return Optional.of(new WebHook(webhook));
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
+		for (Permission p : permissions) {
+			if (!perms.contains(p)) {
+				return false;
 			}
 		}
 
-		return Optional.empty();
+		return true;
+	}
+
+	public boolean checkPermissions(Snowflake memberId, Permission permission) {
+		return getPermissions(memberId).contains(permission);
+	}
+
+	public boolean canViewChannel(Snowflake memberId) {
+		return checkPermissions(memberId, Permission.VIEW_CHANNEL);
+	}
+
+	public Optional<WebHook> getWebHook() {
+		if (threadParent != null) {
+			return threadParent.getWebHook().map(webHook1 -> webHook1.withThread(this, id.asString()));
+		}
+
+		return webHook.getOptional();
 	}
 
 	public Optional<String> getTopic() {

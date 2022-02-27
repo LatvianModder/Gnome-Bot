@@ -39,7 +39,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.rest.util.Permission;
@@ -260,6 +259,8 @@ public class InteractionHandler {
 			case "stop" -> stopOngoingAction(event, event.path[1]);
 			case "modal_test" -> modalTest(event);
 			case "pings" -> PingsCommand.modal(event);
+			case "pings_help" -> pingsHelp(event);
+			case "regex_help" -> regexHelp(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -289,6 +290,7 @@ public class InteractionHandler {
 			case "add_macro" -> addMacro(event, event.path[1]);
 			case "edit_macro" -> editMacro(event, event.path[1]);
 			case "pings" -> pings(event);
+			case "webhook" -> webhook(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
 				throw new GnomeException("Unknown modal ID: " + event);
@@ -420,13 +422,18 @@ public class InteractionHandler {
 	}
 
 	private static void modalTest(ComponentEventWrapper event) {
-		event.event.presentModal(InteractionPresentModalSpec.builder()
-				.title("Modal Test")
-				.customId("modal_test")
-				.addComponent(ActionRow.of(TextInput.small("modal_test_1", "Test 1", "Placeholder text 1")))
-				.addComponent(ActionRow.of(TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text 2").required(false)))
-				.build()
-		).subscribe();
+		event.respondModal("modal_test", "Modal Test",
+				TextInput.small("modal_test_1", "Test 1", "Placeholder text 1"),
+				TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text 2").required(false)
+		);
+	}
+
+	private static void pingsHelp(ComponentEventWrapper event) {
+		event.respond(PingsCommand.HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
+	}
+
+	private static void regexHelp(ComponentEventWrapper event) {
+		event.respond(PingsCommand.HELP_REGEX);
 	}
 
 	private static void modmail(ModalEventWrapper event) {
@@ -434,7 +441,7 @@ public class InteractionHandler {
 
 		String message = event.get("message").asString();
 
-		event.context.gc.adminMessagesChannel.messageChannel().flatMap(ChannelInfo::getOrCreateWebhook).ifPresent(w -> w.execute(MessageBuilder.create()
+		event.context.gc.adminMessagesChannel.messageChannel().flatMap(ChannelInfo::getWebHook).ifPresent(w -> w.execute(MessageBuilder.create()
 				.webhookName("Modmail from " + event.context.sender.getTag())
 				.webhookAvatarUrl(event.context.sender.getAvatarUrl())
 				.allowUserMentions(event.context.sender.getId())
@@ -636,9 +643,9 @@ public class InteractionHandler {
 	}
 
 	private static void pings(ModalEventWrapper event) {
-		if (!event.context.isTrusted()) {
-			event.respond("WIP!");
-			return;
+		if (!event.context.isAdmin()) {
+			// event.respond("WIP! For now this command is only available to admins!");
+			// return;
 		}
 
 		String config = event.get("config").asString().trim();
@@ -658,13 +665,39 @@ public class InteractionHandler {
 		} catch (GnomeException ex) {
 			event.respond(MessageBuilder.create("Syntax error on line " + ex.position + ":\n" + ex.getMessage()).addComponentRow(
 					Button.primary("pings", "Edit"),
-					Button.secondary("pings_help", "Help")
+					Button.secondary("pings_help", "Help"),
+					Button.secondary("regex_help", "RegEx Guide")
 			));
 		} catch (Exception ex) {
 			event.respond(MessageBuilder.create("Syntax error:\n" + ex.getMessage()).addComponentRow(
 					Button.primary("pings", "Edit"),
-					Button.secondary("pings_help", "Help")
+					Button.secondary("pings_help", "Help"),
+					Button.secondary("regex_help", "RegEx Guide")
 			));
 		}
+	}
+
+	private static void webhook(ModalEventWrapper event, Snowflake channelId, Snowflake editId) {
+		event.context.checkSenderOwner();
+		ChannelInfo ci = event.context.gc.getOrMakeChannelInfo(channelId);
+		WebHook webHook = ci.getWebHook().orElse(null);
+
+		if (webHook == null) {
+			throw new GnomeException("Failed to retrieve webhook!");
+		}
+
+		String content = event.get("content").asString();
+		List<String> extra = Arrays.asList(event.get("extra").asString().split("\n"));
+		MessageBuilder message = Macro.createMessage(content, extra, Utils.NO_SNOWFLAKE, false);
+
+		if (editId.asLong() != 0L) {
+			webHook.execute(message);
+		} else {
+			message.webhookName(event.get("username").asString(event.context.gc.toString()));
+			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
+			webHook.edit(editId.asString(), message);
+		}
+
+		event.respond("Done!");
 	}
 }

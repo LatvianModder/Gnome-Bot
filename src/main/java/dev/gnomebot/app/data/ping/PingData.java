@@ -5,5 +5,5 @@ import dev.gnomebot.app.data.GuildCollections;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 
-public record PingData(GuildCollections gc, ChannelInfo channel, User user, Snowflake userId, String username, String avatar, boolean bot, String content, String url) {
+public record PingData(GuildCollections gc, ChannelInfo channel, User user, Snowflake userId, String username, String avatar, boolean bot, String match, String content, String url) {
 }

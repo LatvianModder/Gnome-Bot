@@ -1,6 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ping.PingData;
 import dev.gnomebot.app.data.ping.PingDestination;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -20,11 +21,13 @@ import reactor.core.publisher.Mono;
 public class WebHook implements PingDestination {
 	public static final String BASE_URL = "https://discord.com/api/webhooks/";
 
+	public final ChannelInfo channel;
 	public final Snowflake id;
 	public final String token;
 	public final String threadId;
 
 	public WebHook(String path) {
+		channel = null;
 		threadId = "";
 
 		int si = path.indexOf('/');
@@ -38,20 +41,22 @@ public class WebHook implements PingDestination {
 		}
 	}
 
-	public WebHook(Webhook webhook) {
+	public WebHook(ChannelInfo c, Webhook webhook) {
+		channel = c;
 		id = webhook.getId();
 		token = webhook.getToken().orElse("unknown");
 		threadId = "";
 	}
 
-	private WebHook(WebHook from, String t) {
+	private WebHook(WebHook from, ChannelInfo c, String t) {
+		channel = c;
 		id = from.id;
 		token = from.token;
 		threadId = t;
 	}
 
-	public WebHook withThread(String thread) {
-		return new WebHook(this, thread);
+	public WebHook withThread(ChannelInfo c, String thread) {
+		return threadId.equals(thread) ? this : new WebHook(this, c, thread);
 	}
 
 	@Override

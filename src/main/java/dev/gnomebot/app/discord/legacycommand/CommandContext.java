@@ -64,7 +64,7 @@ public class CommandContext {
 	}
 
 	public void checkSenderPerms(@Nullable ChannelInfo channelInfo, Permission... perms) {
-		if (channelInfo != null && channelInfo.getPermissions(sender.getId()).containsAll(PermissionSet.of(perms))) {
+		if (channelInfo != null && channelInfo.checkPermissions(sender.getId(), perms)) {
 			return;
 		}
 

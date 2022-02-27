@@ -111,6 +111,7 @@ public class Utils {
 
 	public static final Route THREAD_ROUTE = Routes.START_THREAD_WITH_MESSAGE;
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
+	public static final Route GET_DM_CHANNELS = Route.get("/users/@me/channels");
 	public static final Pattern REGEX_PATTERN = Pattern.compile("/(.*)/([a-z]*)");
 
 	private static MessageDigest getMD5() {
@@ -862,7 +863,7 @@ public class Utils {
 			return set;
 		} catch (Exception ex) {
 			App.error("Failed to get permissions for " + member.asString() + " in " + ((GuildChannel) channel).getName() + ": " + ex);
-			ex.printStackTrace();
+			// ex.printStackTrace();
 		}
 
 		return PermissionSet.none();
@@ -926,7 +927,6 @@ public class Utils {
 		String pattern = matcher.group(1);
 
 		// check if pattern contains dangerous regex characters
-
 		return Pattern.compile(pattern, flags);
 	}
 
