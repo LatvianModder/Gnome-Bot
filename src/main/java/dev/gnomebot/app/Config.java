@@ -37,6 +37,7 @@ public class Config {
 	public final Snowflake gnome_dm_channel_id;
 	public final Snowflake owner;
 	public final Set<Snowflake> trusted;
+	public final String wolfram_alpha_token;
 
 	private Config(Path file) {
 		ConfigFile c = new ConfigFile(file);
@@ -76,6 +77,8 @@ public class Config {
 				App.error("Invalid trusted ID: " + s + ", must be their snowflake ID");
 			}
 		}
+
+		wolfram_alpha_token = c.getString("wolfram_alpha_token", "");
 
 		if (port < 1024 || port > 65535) {
 			throw new IllegalArgumentException("Port has to be between [1024, 65535]!");
