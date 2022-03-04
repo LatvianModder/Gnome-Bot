@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.UserWebhook;
+import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
@@ -18,10 +19,10 @@ import java.util.regex.Pattern;
  * @author LatvianModder
  */
 public class WebhookCommand extends ApplicationCommands {
-	public static final Pattern WEBHOOK_PATTERN = Pattern.compile("https://.*discord(?:app)?.com/api/webhooks/(\\d+)/([\\w-]+)");
+	public static final Pattern WEBHOOK_PATTERN = Pattern.compile("https://.*discord(?:app)?.com/api/(?:v\\d+/)?webhooks/(\\d+)/([\\w-]+)");
 
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("webhook")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("webhook")
 			.description("Manage your webhooks")
 			.add(sub("add")
 					.add(string("name").required())
@@ -41,7 +42,7 @@ public class WebhookCommand extends ApplicationCommands {
 					.run(WebhookCommand::execute)
 			);
 
-	private static void add(ApplicationCommandEventWrapper event) {
+	private static void add(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		String n = event.get("name").asString().trim().toLowerCase();
 
@@ -72,7 +73,7 @@ public class WebhookCommand extends ApplicationCommands {
 		event.context.gc.db.app.pingHandler.update();
 	}
 
-	private static void remove(ApplicationCommandEventWrapper event) {
+	private static void remove(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		String n = event.get("name").asString().trim().toLowerCase();
 
@@ -87,18 +88,18 @@ public class WebhookCommand extends ApplicationCommands {
 		event.context.gc.db.app.pingHandler.update();
 	}
 
-	private static void list(ApplicationCommandEventWrapper event) {
+	private static void list(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
 
 		for (UserWebhook webhook : event.context.gc.db.userWebhooks.query().eq("user", event.context.sender.getId().asLong())) {
-			list.add("- " + webhook.getName());
+			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHook.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
 		}
 
 		event.respond(list.isEmpty() ? "None" : String.join("\n", list));
 	}
 
-	private static void execute(ApplicationCommandEventWrapper event) {
+	private static void execute(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderOwner();
 		ChannelInfo ci = event.get("channel").asChannelInfoOrCurrent();
 		Snowflake editId = event.get("edit_id").asSnowflake();

@@ -15,13 +15,13 @@ import java.util.List;
  * @author LatvianModder
  */
 public class ReportCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("report")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("report")
 			.description("Report a user to the admins")
 			.add(user("user").required())
 			.run(ReportCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		if (!event.context.gc.reportChannel.isSet()) {
 			throw new GnomeException("Report channel is not set up!");
 		}

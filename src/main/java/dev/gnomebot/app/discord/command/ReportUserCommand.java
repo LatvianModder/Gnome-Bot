@@ -11,19 +11,18 @@ import java.util.Optional;
  * @author LatvianModder
  */
 public class ReportUserCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("Report User")
-			.userInteraction()
+	@RegisterCommand
+	public static final UserInteractionBuilder COMMAND = userInteraction("Report User")
 			.run(ReportUserCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(UserInteractionEventWrapper event) {
 		Optional<ChannelInfo> c = event.context.gc.reportChannel.messageChannel();
 
 		if (c.isEmpty()) {
 			throw new GnomeException("Report channel not set up!");
 		}
 
-		Member member = event.get("user").asMember().orElse(null);
+		Member member = event.getMember();
 
 		if (member == null) {
 			throw new GnomeException("Can't report non-members!");

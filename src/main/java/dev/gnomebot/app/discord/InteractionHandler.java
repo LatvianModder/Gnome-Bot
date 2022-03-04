@@ -10,13 +10,14 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.data.ping.UserPings;
-import dev.gnomebot.app.discord.command.ApplicationCommandEventWrapper;
-import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
-import dev.gnomebot.app.discord.command.CommandBuilder;
+import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
+import dev.gnomebot.app.discord.command.InteractionType;
+import dev.gnomebot.app.discord.command.MessageInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.ModpackCommand;
 import dev.gnomebot.app.discord.command.PingsCommand;
+import dev.gnomebot.app.discord.command.UserInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -25,13 +26,13 @@ import dev.gnomebot.app.util.OngoingAction;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
-import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
@@ -52,24 +53,23 @@ import java.util.Date;
 import java.util.List;
 
 public class InteractionHandler {
-	public static void applicationCommand(DiscordHandler handler, ApplicationCommandInteractionEvent event) {
+	public static void chatInputInteraction(DiscordHandler handler, ChatInputInteractionEvent event) {
 		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
-
-		if (gc == null) {
-			event.reply("DM interactions aren't supported!").withEphemeral(true).subscribe();
-			return;
-		}
-
-		CommandBuilder command = ApplicationCommands.COMMANDS.get(event.getCommandName());
-		List<ApplicationCommandInteractionOption> options = event instanceof ChatInputInteractionEvent ? ((ChatInputInteractionEvent) event).getOptions() : new ArrayList<>();
+		var command = InteractionType.CHAT_INPUT.builders.get(event.getCommandName());
+		var options = event.getOptions();
 
 		while (command != null && options.size() == 1 && options.get(0).getValue().isEmpty()) {
 			command = command.getSub(options.get(0).getName());
 			options = options.get(0).getOptions();
 		}
 
+		if (command != null && !command.supportsDM && gc == null) {
+			event.reply("DM interactions aren't supported!").withEphemeral(true).subscribe();
+			return;
+		}
+
 		try {
-			ApplicationCommandEventWrapper w = new ApplicationCommandEventWrapper(gc, event, options);
+			var w = new ChatInputInteractionEventWrapper(gc, event, options);
 
 			if (command != null) {
 				try {
@@ -90,6 +90,66 @@ public class InteractionHandler {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
 				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static void userInteraction(DiscordHandler handler, UserInteractionEvent event) {
+		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var command = InteractionType.USER.builders.get(event.getCommandName());
+
+		if (command != null && !command.supportsDM && gc == null) {
+			event.reply("DM interactions aren't supported!").withEphemeral(true).subscribe();
+			return;
+		}
+
+		try {
+			var w = new UserInteractionEventWrapper(gc, event);
+
+			if (command != null) {
+				try {
+					command.callback.run(w);
+				} catch (GnomeException ex) {
+					w.respond(ex.getMessage());
+				} catch (Exception ex) {
+					w.respond(ex.toString());
+					ex.printStackTrace();
+				}
+			} else {
+				App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
+				event.reply("Command not found!").withEphemeral(true).subscribe();
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static void messageInteraction(DiscordHandler handler, MessageInteractionEvent event) {
+		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var command = InteractionType.MESSAGE.builders.get(event.getCommandName());
+
+		if (command != null && !command.supportsDM && gc == null) {
+			event.reply("DM interactions aren't supported!").withEphemeral(true).subscribe();
+			return;
+		}
+
+		try {
+			var w = new MessageInteractionEventWrapper(gc, event);
+
+			if (command != null) {
+				try {
+					command.callback.run(w);
+				} catch (GnomeException ex) {
+					w.respond(ex.getMessage());
+				} catch (Exception ex) {
+					w.respond(ex.toString());
+					ex.printStackTrace();
+				}
+			} else {
+				App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
+				event.reply("Command not found!").withEphemeral(true).subscribe();
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -192,8 +252,8 @@ public class InteractionHandler {
 			return;
 		}
 
-		CommandBuilder command = ApplicationCommands.COMMANDS.get(event.getCommandName());
-		List<ApplicationCommandInteractionOption> options = event.getOptions();
+		var command = InteractionType.CHAT_INPUT.builders.get(event.getCommandName());
+		var options = event.getOptions();
 
 		while (command != null && options.size() == 1 && options.get(0).getValue().isEmpty()) {
 			command = command.getSub(options.get(0).getName());
@@ -206,7 +266,7 @@ public class InteractionHandler {
 
 				if (eventWrapper.focused != null) {
 					// App.info(eventWrapper.focused.name + " " + command + " " + optionsToString(new StringBuilder(), options));
-					CommandBuilder sub = command.getSub(eventWrapper.focused.name);
+					var sub = command.getSub(eventWrapper.focused.name);
 
 					if (sub != null && sub.suggestions != null) {
 						sub.suggestions.getSuggestions(eventWrapper);
@@ -248,6 +308,7 @@ public class InteractionHandler {
 	private static void button(ComponentEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
+			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
 			case "unmute" -> unmute(event, Snowflake.of(event.path[1]));
 			case "macro" -> macro(event, event.path[1], null);
 			case "edit_macro" -> macro(event, event.path[1], Snowflake.of(event.path[2]));
@@ -271,7 +332,9 @@ public class InteractionHandler {
 	private static void selectMenu(ComponentEventWrapper event, List<String> values) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
+			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
 			case "poll" -> poll(event, Integer.parseInt(event.path[1]), values.get(0));
+			case "punish" -> punishMenu(event, Snowflake.of(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
 			case "report" -> ReportHandler.report(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]), values.get(0));
 			default -> {
 				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
@@ -283,6 +346,7 @@ public class InteractionHandler {
 	private static void modalSubmit(ModalEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
+			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
 			case "modal_test" -> event.respond("Modal: " + event);
 			case "modmail" -> modmail(event);
 			case "report" -> report(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
@@ -299,6 +363,17 @@ public class InteractionHandler {
 	}
 
 	// Actions //
+
+	private static void deleteMessage(DeferrableInteractionEventWrapper<?> event, Snowflake owner) {
+		if (event.context.isAdmin() || event.context.sender.getId().asLong() == owner.asLong()) {
+			event.getResponse().deleteInitialResponse().block();
+		} else if (event.requiresTextResponse()) {
+			event.respond("You can't delete this message!");
+		} else {
+			event.acknowledge();
+		}
+	}
+
 	private static void feedback(ComponentEventWrapper event, int number, Vote vote) {
 		DiscordFeedback feedback = event.context.gc.feedback.query().eq("number", number).first();
 
@@ -395,6 +470,26 @@ public class InteractionHandler {
 				EmbedCreateFields.Footer footer = Utils.getFooter(m);
 				m.edit(MessageEditSpec.builder().addEmbed(poll.edit(event.context.gc, footer)).build()).subscribe();
 			}
+		}
+	}
+
+	private static void punishMenu(ComponentEventWrapper event, Snowflake userId, String reason, String type) {
+		event.context.checkSenderAdmin();
+
+		switch (type) {
+			case "kick" -> {
+				event.context.gc.getGuild().kick(userId, reason).subscribe();
+				event.respond("Kicked <@" + userId.asString() + ">");
+			}
+			case "ban" -> {
+				event.context.gc.getGuild().ban(userId, BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
+				event.respond("Banned <@" + userId.asString() + ">");
+			}
+			case "unmute" -> {
+				event.context.gc.unmute(userId, 0L);
+				event.respond("Unmuted <@" + userId.asString() + ">");
+			}
+			default -> event.respond("This action cannot be undone!");
 		}
 	}
 
@@ -659,7 +754,7 @@ public class InteractionHandler {
 				return;
 			}
 
-			UserPings.compile(config);
+			UserPings.compile(event.context.gc.db, event.context.sender.getId(), config);
 			event.context.gc.db.app.pingHandler.update();
 			event.respond("Pings set!");
 		} catch (GnomeException ex) {

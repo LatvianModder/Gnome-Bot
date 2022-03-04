@@ -131,4 +131,8 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 	public void respondModal(String customId, String title, ActionComponent... textInputs) {
 		respondModal(customId, title, Arrays.stream(textInputs).map(ActionRow::of).collect(Collectors.toList()));
 	}
+
+	public boolean requiresTextResponse() {
+		return true;
+	}
 }

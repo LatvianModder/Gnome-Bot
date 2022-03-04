@@ -24,8 +24,8 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 				destination.relayPing(pingData);
 				long time = System.nanoTime() - start;
 
-				if (time >= 1000L) {
-					App.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + this);
+				if (time >= 1_000_000_000L) { // 1000.000 ms
+					App.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + destination);
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -40,7 +40,7 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 			if (match(pingData.match())) {
 				long time = System.nanoTime() - start;
 
-				if (time >= 10L) {
+				if (time >= 100_000L) { // 0.100 ms
 					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
 				}
 

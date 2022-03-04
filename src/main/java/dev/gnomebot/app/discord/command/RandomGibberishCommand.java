@@ -6,8 +6,8 @@ import java.util.Random;
  * @author LatvianModder
  */
 public class RandomGibberishCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("random_gibberish")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("random_gibberish")
 			.description("Just generates random gibberish text. You can use it as 'alien language' or something")
 			.run(RandomGibberishCommand::run);
 
@@ -19,7 +19,7 @@ public class RandomGibberishCommand extends ApplicationCommands {
 		c[index + 1] = c[index] == 'q' ? 'u' : SET_1.charAt(r.nextInt(SET_1.length()));
 	}
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		StringBuilder sb = new StringBuilder();
 		Random random = new Random();

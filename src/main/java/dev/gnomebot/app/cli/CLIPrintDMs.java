@@ -1,9 +1,9 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIPrintDMs {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("print_dms")
 			.description("Prints bot DMs with user")
 			.trustedOnly()

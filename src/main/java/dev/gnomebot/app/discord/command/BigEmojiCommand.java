@@ -7,13 +7,13 @@ import discord4j.core.object.reaction.ReactionEmoji;
  * @author LatvianModder
  */
 public class BigEmojiCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("bigemoji")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("bigemoji")
 			.description("Get image version of an emoji")
 			.add(string("emoji").required())
 			.run(BigEmojiCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 		ReactionEmoji emoji = Utils.stringToReaction(event.get("emoji").asString());
 

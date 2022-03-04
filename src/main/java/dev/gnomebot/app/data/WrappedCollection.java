@@ -54,7 +54,7 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 		return expires(indexId, key, 28L, TimeUnit.DAYS);
 	}
 
-	public MongoCollection<Document> getCollection() {
+	public synchronized MongoCollection<Document> getCollection() {
 		if (collection == null) {
 			//App.info("Initialized collection " + id);
 

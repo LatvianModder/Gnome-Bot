@@ -8,7 +8,7 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
-import dev.gnomebot.app.discord.command.CommandBuilder;
+import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
 import dev.gnomebot.app.util.MutableLong;
 import discord4j.common.util.Snowflake;
@@ -35,11 +35,13 @@ import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.guild.MemberLeaveEvent;
 import discord4j.core.event.domain.guild.MemberUpdateEvent;
 import discord4j.core.event.domain.guild.UnbanEvent;
-import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
+import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.lifecycle.ReconnectFailEvent;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
@@ -64,7 +66,6 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.shard.MemberRequestFilter;
-import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.UserData;
 import discord4j.discordjson.json.UserGuildData;
 import discord4j.discordjson.json.gateway.Dispatch;
@@ -111,9 +112,8 @@ public class DiscordHandler {
 		app = a;
 
 		try {
-			//addDispatcherType(EventNames.THREAD_LIST_SYNC, null);
-			//addDispatcherType(EventNames.THREAD_MEMBER_UPDATE, null);
-			//addDispatcherType(EventNames.THREAD_MEMBERS_UPDATE, null);
+			// addDispatcherType(EventNames.PRESENCE_UPDATE, null);
+			addDispatcherType("GUILD_JOIN_REQUEST_UPDATE", null);
 			addDispatcherType("APPLICATION_COMMAND_PERMISSIONS_UPDATE", null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -153,8 +153,9 @@ public class DiscordHandler {
 		}
 
 		DiscordCommandImpl.find();
-		ApplicationCommands.find();
+		ApplicationCommands.findCommands();
 		CLI.find();
+		CustomInteractionTypes.init();
 
 		handle(ReadyEvent.class, this::ready);
 		handle(GuildCreateEvent.class, this::guildCreated);
@@ -186,7 +187,9 @@ public class DiscordHandler {
 		handle(BanEvent.class, this::banned);
 		handle(UnbanEvent.class, this::unbanned);
 		handle(VoiceStateUpdateEvent.class, this::stateUpdate);
-		handle(ApplicationCommandInteractionEvent.class, this::applicationCommand);
+		handle(ChatInputInteractionEvent.class, this::chatInputInteraction);
+		handle(UserInteractionEvent.class, this::userInteraction);
+		handle(MessageInteractionEvent.class, this::messageInteraction);
 		handle(ButtonInteractionEvent.class, this::button);
 		handle(SelectMenuInteractionEvent.class, this::selectMenu);
 		handle(ModalSubmitInteractionEvent.class, this::modalSubmitInteraction);
@@ -420,8 +423,16 @@ public class DiscordHandler {
 		VoiceHandler.stateUpdate(this, event);
 	}
 
-	private void applicationCommand(ApplicationCommandInteractionEvent event) {
-		InteractionHandler.applicationCommand(this, event);
+	private void chatInputInteraction(ChatInputInteractionEvent event) {
+		InteractionHandler.chatInputInteraction(this, event);
+	}
+
+	private void userInteraction(UserInteractionEvent event) {
+		InteractionHandler.userInteraction(this, event);
+	}
+
+	private void messageInteraction(MessageInteractionEvent event) {
+		InteractionHandler.messageInteraction(this, event);
 	}
 
 	private void button(ButtonInteractionEvent event) {
@@ -500,60 +511,6 @@ public class DiscordHandler {
 
 	public UserCache createUserCache() {
 		return new UserCache(this);
-	}
-
-	public boolean updateGlobalCommand(String cmd) {
-		CommandBuilder command = ApplicationCommands.COMMANDS.get(cmd);
-
-		if (command != null) {
-			client.getRestClient().getApplicationService().createGlobalApplicationCommand(applicationId, command.createRootRequest())
-					.doOnError(e -> App.error("Unable to create global command " + command.name + ": " + e))
-					.onErrorResume(e -> Mono.empty())
-					.block();
-
-			App.success("Updated global command " + cmd);
-			return true;
-		} else {
-			App.error("Command " + cmd + " not found!");
-			return false;
-		}
-	}
-
-	public void deleteGlobalCommand(Snowflake id) {
-		client.getRestClient().getApplicationService().deleteGlobalApplicationCommand(applicationId, id.asLong())
-				.doOnError(e -> App.error("Unable to delete global command " + id.asString() + ": " + e))
-				.onErrorResume(e -> Mono.empty())
-				.block();
-	}
-
-	public boolean deleteGlobalCommand(String cmd) {
-		for (ApplicationCommandData data : getGlobalCommands()) {
-			if (data.name().equals(cmd)) {
-				deleteGlobalCommand(Snowflake.of(data.id()));
-				App.success("Deleted global command " + cmd);
-				return true;
-			}
-		}
-
-		App.error("Command " + cmd + " not found!");
-		return false;
-	}
-
-	public void deleteGuildCommand(Snowflake guild, Snowflake id) {
-		client.getRestClient().getApplicationService().deleteGuildApplicationCommand(applicationId, guild.asLong(), id.asLong())
-				.doOnError(e -> App.error("Unable to delete guild command " + id.asString() + ": " + e))
-				.onErrorResume(e -> Mono.empty())
-				.block();
-
-		App.success("Done!");
-	}
-
-	public Iterable<ApplicationCommandData> getGlobalCommands() {
-		return client.getRestClient().getApplicationService().getGlobalApplicationCommands(applicationId).toIterable();
-	}
-
-	public Iterable<ApplicationCommandData> getGuildCommands(Snowflake guild) {
-		return client.getRestClient().getApplicationService().getGuildApplicationCommands(applicationId, guild.asLong()).toIterable();
 	}
 
 	public User getSelfUser() {

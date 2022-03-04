@@ -19,8 +19,8 @@ import java.util.List;
  * @author LatvianModder
  */
 public class FeedbackCommands extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("feedback")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("feedback")
 			.description("Feedback")
 			.add(sub("submit")
 					.description("Open a suggestion form that will be post message in feedback channel for community to vote")
@@ -49,7 +49,7 @@ public class FeedbackCommands extends ApplicationCommands {
 					.run(FeedbackCommands::cleanup)
 			);
 
-	private static void submit(ApplicationCommandEventWrapper event) {
+	private static void submit(ChatInputInteractionEventWrapper event) {
 		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
@@ -61,7 +61,7 @@ public class FeedbackCommands extends ApplicationCommands {
 		event.respondModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
 	}
 
-	private static void changeStatus(ApplicationCommandEventWrapper event, DiscordFeedback.Status status) {
+	private static void changeStatus(ChatInputInteractionEventWrapper event, DiscordFeedback.Status status) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -101,19 +101,19 @@ public class FeedbackCommands extends ApplicationCommands {
 		event.respond("Status of #" + id + " changed to " + status.titleSuffix);
 	}
 
-	private static void approve(ApplicationCommandEventWrapper event) {
+	private static void approve(ChatInputInteractionEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.APPROVED);
 	}
 
-	private static void deny(ApplicationCommandEventWrapper event) {
+	private static void deny(ChatInputInteractionEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.DENIED);
 	}
 
-	private static void consider(ApplicationCommandEventWrapper event) {
+	private static void consider(ChatInputInteractionEventWrapper event) {
 		changeStatus(event, DiscordFeedback.Status.CONSIDERED);
 	}
 
-	private static void cleanup(ApplicationCommandEventWrapper event) {
+	private static void cleanup(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderAdmin();
 		event.acknowledge();
 

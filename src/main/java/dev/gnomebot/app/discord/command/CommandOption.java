@@ -65,6 +65,20 @@ public class CommandOption extends BasicOption {
 		return Optional.empty();
 	}
 
+	public Optional<Member> asOptionalMember() {
+		Optional<User> u = asUser();
+
+		if (u.isPresent()) {
+			try {
+				return Optional.ofNullable(context.gc.getMember(u.get().getId()));
+			} catch (Exception ex) {
+				return Optional.empty();
+			}
+		}
+
+		return Optional.empty();
+	}
+
 	public Optional<CachedRole> asRole() {
 		return value.isEmpty() ? Optional.empty() : new CommandReader(context.gc, value).readRole();
 	}

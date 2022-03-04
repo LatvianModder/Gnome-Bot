@@ -11,8 +11,8 @@ import java.util.List;
  * @author LatvianModder
  */
 public class AboutCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("about")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("about")
 			.description("Info about Gnome Bot")
 			.add(sub("gnome")
 					.description("Info about Gnome Bot")
@@ -31,7 +31,7 @@ public class AboutCommand extends ApplicationCommands {
 					.run(AboutCommand::regex)
 			);
 
-	private static void gnome(ApplicationCommandEventWrapper event) {
+	private static void gnome(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		long s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
 
@@ -48,15 +48,15 @@ public class AboutCommand extends ApplicationCommands {
 		event.respond(content);
 	}
 
-	private static void macro(ApplicationCommandEventWrapper event) {
+	private static void macro(ChatInputInteractionEventWrapper event) {
 		event.respond(MacroCommand.HELP);
 	}
 
-	private static void pings(ApplicationCommandEventWrapper event) {
+	private static void pings(ChatInputInteractionEventWrapper event) {
 		event.respond(PingsCommand.HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
 	}
 
-	private static void regex(ApplicationCommandEventWrapper event) {
+	private static void regex(ChatInputInteractionEventWrapper event) {
 		event.respond(PingsCommand.HELP_REGEX);
 	}
 }

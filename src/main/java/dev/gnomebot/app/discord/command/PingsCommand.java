@@ -9,12 +9,13 @@ import discord4j.core.object.component.TextInput;
  * @author LatvianModder
  */
 public class PingsCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("pings")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
 			.description("Manage pings")
+			.add(bool("share").description("If set to true, this will print your config in channel"))
 			.run(PingsCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		modal(event);
 	}
 
@@ -44,7 +45,7 @@ public class PingsCommand extends ApplicationCommands {
 			`-/+ user ID` - Deny/Allow pings from this user
 			`-/+ bots` - Deny/Allow pings from bot users
 			`-/+ self` - Deny/Allow pings from yourself
-			`@ group_name` - Create a new group. Required before RegEx. Group name is destination of where your ping message will go
+			`@ group_name` - Create a new group where your pings will go, required before RegEx. Use `@ dm` to receive a DM, otherwise set up a webhook with `/webhook`
 			`-/+ /RegEx/flags` - Deny/Allow RegEx. If message matches, rest will be skipped. You may add multiple under each group
 			`# Comment line` - You can write any comment you want here
 						
@@ -56,12 +57,12 @@ public class PingsCommand extends ApplicationCommands {
 						
 			A very basic example that will ping you when someone says your name, case insensitive:
 			```
-			@ mentions
+			@ dm
 			+ /{USER}/i```
 			Here's similar example, it will match "HeLLo" but ignore "HELLO" and will also ignore pings from bots:
 			```
 			- bots
-			@ mentions
+			@ dm
 			- /HELLO/
 			+ /hello/i```
 			""";

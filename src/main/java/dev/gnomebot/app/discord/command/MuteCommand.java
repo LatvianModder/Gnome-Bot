@@ -35,33 +35,32 @@ import java.util.List;
  * @author LatvianModder
  */
 public class MuteCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("mute")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("mute")
 			.description("Mutes a member")
 			.add(user("user").required())
 			.add(string("reason"))
 			.add(time("time", false))
 			.run(MuteCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkBotPerms(Permission.BAN_MEMBERS);
 		event.context.checkSenderPerms(Permission.BAN_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
-		Member member = null;
-
-		try {
-			member = user == null ? null : user.asMember(event.context.gc.guildId).block();
-		} catch (Exception ex) {
+		if (!event.context.gc.mutedRole.isSet()) {
+			throw error("Mute role not set!");
 		}
+
+		User user = event.get("user").asUser().orElse(null);
+		long seconds = event.get("time").asSeconds().orElse(21600L);
 
 		String reason0 = event.get("reason").asString();
 		String reason = reason0.isEmpty() ? "Not specified" : reason0;
 
 		if (user == null) {
 			throw error("User not found!");
-		} else if (user.isBot() || member != null && event.context.gc.getAuthLevel(member).is(AuthLevel.ADMIN)) {
+		} else if (user.isBot() || event.context.gc.getAuthLevel(user.getId()).is(AuthLevel.ADMIN)) {
 			throw error("Nice try.");
 		}
 
@@ -74,9 +73,16 @@ public class MuteCommand extends ApplicationCommands {
 			event.context.reply(event.context.sender.getMention() + " muted " + user.getMention() + ": " + reason);
 		}
 
-		event.respond("Muted! DM successful: " + dm);
+		DiscordMember discordMember = event.context.gc.members.findFirst(user.getId().asLong());
 
-		// event.gc.getGuild().kick(user.getId(), reason).subscribe();
+		if (discordMember == null) {
+			throw error("User not found!");
+		}
+
+		discordMember.update(Updates.set("muted", new Date(System.currentTimeMillis() + seconds * 1000L)));
+
+		event.context.gc.mutedRole.add(user.getId(), "Muted");
+		event.context.gc.unmute(user.getId(), seconds);
 
 		event.context.gc.adminLogChannelEmbed(spec -> {
 			spec.description("Bad " + user.getMention());
@@ -95,6 +101,8 @@ public class MuteCommand extends ApplicationCommands {
 
 		// m.addReaction(DiscordHandler.EMOJI_COMMAND_ERROR).block();
 		// ReactionHandler.addListener();
+
+		event.respond("Muted! DM successful: " + dm);
 	}
 
 	public static void mute(CommandContext context, Member m, long seconds, String reason, String auto) {
@@ -144,13 +152,11 @@ public class MuteCommand extends ApplicationCommands {
 				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
 			}
 		} else {
-			String id = m.getId().asString() + "/" + ComponentEventWrapper.encode(reason);
-			adminButtons.add(ActionRow.of(SelectMenu.of("button",
-					SelectMenu.Option.of("None", "none"),
-					SelectMenu.Option.of("Ban", "ban/" + id).withEmoji(Emojis.NO_ENTRY),
-					SelectMenu.Option.of("Kick", "kick/" + id).withEmoji(Emojis.BOOT),
-					// SelectMenu.Option.of("Warn", "warn/" + id).withEmoji(Emojis.WARNING),
-					SelectMenu.Option.of("Unmute", "unmute/" + id).withEmoji(Emojis.CHECKMARK)
+			adminButtons.add(ActionRow.of(SelectMenu.of(Utils.trim("punish/" + m.getId().asString() + "/" + ComponentEventWrapper.encode(reason), 100),
+					SelectMenu.Option.of("Ban", "ban").withEmoji(Emojis.NO_ENTRY),
+					SelectMenu.Option.of("Kick", "kick").withEmoji(Emojis.BOOT),
+					// SelectMenu.Option.of("Warn", "warn").withEmoji(Emojis.WARNING),
+					SelectMenu.Option.of("Unmute", "unmute").withEmoji(Emojis.CHECKMARK)
 			).withPlaceholder("Select Action").withMinValues(0).withMaxValues(1)));
 
 			if (contextMessage != null) {

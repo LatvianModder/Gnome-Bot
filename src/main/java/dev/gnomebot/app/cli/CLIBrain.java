@@ -1,10 +1,10 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.Logger;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIBrain {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("brain")
 			.description("Gnome brain")
 			.run(CLIBrain::run);

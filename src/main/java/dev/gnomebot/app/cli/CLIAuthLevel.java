@@ -1,9 +1,9 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIAuthLevel {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("auth_level")
 			.description("Print your auth level in Gnome Panel")
 			.noAdmin()

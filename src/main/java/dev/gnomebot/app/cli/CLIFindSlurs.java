@@ -1,9 +1,9 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIFindSlurs {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("find_slurs")
 			.description("Find slurs")
 			.run(CLIFindSlurs::run);

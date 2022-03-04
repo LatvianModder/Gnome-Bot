@@ -54,8 +54,8 @@ public class MacroCommand extends ApplicationCommands {
 
 	private static final Pattern FORMAT_ESCAPE = Pattern.compile("([*_~@])");
 
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("macro")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("macro")
 			.description("Manage macros")
 			.add(sub("add")
 					.add(string("name").required())
@@ -100,7 +100,7 @@ public class MacroCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void add(ApplicationCommandEventWrapper event) {
+	private static void add(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
@@ -131,7 +131,7 @@ public class MacroCommand extends ApplicationCommands {
 		);
 	}
 
-	private static void edit(ApplicationCommandEventWrapper event) {
+	private static void edit(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
@@ -151,7 +151,7 @@ public class MacroCommand extends ApplicationCommands {
 		);
 	}
 
-	private static void remove(ApplicationCommandEventWrapper event) {
+	private static void remove(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
@@ -173,7 +173,7 @@ public class MacroCommand extends ApplicationCommands {
 		event.respond("Macro '" + macro.getName() + "' removed!");
 	}
 
-	private static void list(ApplicationCommandEventWrapper event) {
+	private static void list(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
 		User author = event.get("author").asUser().orElse(null);
 		String name = event.get("name").asString().toLowerCase();
@@ -199,7 +199,7 @@ public class MacroCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void info(ApplicationCommandEventWrapper event) {
+	private static void info(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {
@@ -220,7 +220,7 @@ public class MacroCommand extends ApplicationCommands {
 		event.respond(EmbedBuilder.create().title("Macro '" + macro.getName() + "'").description(list));
 	}
 
-	private static void slashCommand(ApplicationCommandEventWrapper event) {
+	private static void slashCommand(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
 		if (name.isEmpty()) {

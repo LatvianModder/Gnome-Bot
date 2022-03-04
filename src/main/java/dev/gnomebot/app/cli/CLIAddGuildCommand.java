@@ -1,9 +1,9 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIAddGuildCommand {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("add_guild_command")
 			.description("Adds a new guild command")
 			.arg('n', CLIArgument.Type.STRING)

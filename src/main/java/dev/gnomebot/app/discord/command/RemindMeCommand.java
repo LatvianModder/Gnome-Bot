@@ -9,15 +9,15 @@ import java.time.Instant;
  * @author LatvianModder
  */
 public class RemindMeCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("remindme")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("remindme")
 			.description("Set a reminder")
 			.add(string("text").required())
 			.add(time("timer", false).description("Format can be '10 hours' or '5 days' etc"))
 			.add(bool("private"))
 			.run(RemindMeCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		String text = event.get("text").asString();
 		long timer = event.get("timer").asSeconds().orElse(60L * 60L);
 		boolean dm = event.get("private").asBoolean(true);

@@ -6,8 +6,8 @@ import dev.gnomebot.app.App;
  * @author LatvianModder
  */
 public class PanelCommands extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("panel")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("panel")
 			.description("Panel commands")
 			.add(sub("login")
 					.description("Log in to the panel")
@@ -22,19 +22,19 @@ public class PanelCommands extends ApplicationCommands {
 					.run(PanelCommands::logoutEveryone)
 			);
 
-	private static void login(ApplicationCommandEventWrapper event) throws Exception {
+	private static void login(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		String tokenString = event.context.gc.db.getEncodedToken(event.context.sender.getId().asLong(), event.context.sender.getUsername());
 		event.respond("[Click here to open the panel!](<" + App.url("panel/login?logintoken=" + tokenString) + ">)");
 	}
 
-	private static void logout(ApplicationCommandEventWrapper event) throws Exception {
+	private static void logout(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		App.instance.db.invalidateToken(event.context.sender.getId().asLong());
 		event.respond("Your Gnome Panel login tokens have been invalidated!");
 	}
 
-	private static void logoutEveryone(ApplicationCommandEventWrapper event) throws Exception {
+	private static void logoutEveryone(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderTrusted();
 		App.instance.db.invalidateAllTokens();

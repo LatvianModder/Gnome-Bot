@@ -52,13 +52,8 @@ public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<Com
 		return Optional.empty();
 	}
 
-	/*
-	public Optional<MessageData> respond(String content) {
-		if (acknowledged) {
-			return Optional.of(getResponse().createFollowupMessageEphemeral(Utils.trimContent(content)).block());
-		} else {
-			return super.respond(content);
-		}
+	@Override
+	public boolean requiresTextResponse() {
+		return false;
 	}
-	 */
 }

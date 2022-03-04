@@ -14,8 +14,8 @@ import java.util.List;
  * @author LatvianModder
  */
 public class CLIApplicationCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("cli")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("cli")
 			.description("Run a CLI command")
 			.add(string("command")
 					.suggest(CLIApplicationCommand::suggestCommands)
@@ -27,10 +27,10 @@ public class CLIApplicationCommand extends ApplicationCommands {
 			.run(CLIApplicationCommand::run);
 
 	public static class CLIEventFromCommand extends CLIEvent {
-		public final ApplicationCommandEventWrapper event;
+		public final ChatInputInteractionEventWrapper event;
 		private final List<String> responseText = new ArrayList<>();
 
-		public CLIEventFromCommand(ApplicationCommandEventWrapper e, CommandReader r) {
+		public CLIEventFromCommand(ChatInputInteractionEventWrapper e, CommandReader r) {
 			super(e.context.gc, e.context.sender, r);
 			event = e;
 		}
@@ -41,7 +41,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		CLICommand command = CLI.COMMANDS.get(event.get("command").asString());
 
 		if (command == null) {

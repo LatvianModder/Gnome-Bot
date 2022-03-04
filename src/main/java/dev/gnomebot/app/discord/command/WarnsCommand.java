@@ -14,13 +14,13 @@ import java.util.List;
  * @author LatvianModder
  */
 public class WarnsCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("warns")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("warns")
 			.description("Lists warnings")
 			.add(user("user"))
 			.run(WarnsCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 
 		if (event.has("user") && event.get("user").asString().equals("all")) {

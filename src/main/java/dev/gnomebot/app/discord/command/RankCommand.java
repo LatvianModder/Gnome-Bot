@@ -12,15 +12,15 @@ import discord4j.core.object.entity.Member;
  * @author LatvianModder
  */
 public class RankCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("rank")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")
 			.description("Rank")
 			.add(time("timespan", true))
 			.add(user("member"))
 			.add(channel("channel"))
 			.run(RankCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
 
 		Member m = event.get("member").asMember().orElse(event.context.sender);

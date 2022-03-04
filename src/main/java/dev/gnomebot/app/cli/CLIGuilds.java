@@ -1,9 +1,9 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLIGuilds {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("guilds")
 			.description("Print all guilds bot is in")
 			.trustedOnly()

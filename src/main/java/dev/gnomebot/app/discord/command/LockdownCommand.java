@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
  * @author LatvianModder
  */
 public class LockdownCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("lockdown")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("lockdown")
 			.add(sub("enable")
 					.description("Enables lockdown mode")
 					.add(time("kick_time", false))
@@ -29,7 +29,7 @@ public class LockdownCommand extends ApplicationCommands {
 					.run(LockdownCommand::disable)
 			);
 
-	private static void enable(ApplicationCommandEventWrapper event) {
+	private static void enable(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		boolean wasOff = !event.context.gc.lockdownMode.get();
@@ -82,7 +82,7 @@ public class LockdownCommand extends ApplicationCommands {
 		}
 	}
 
-	private static void disable(ApplicationCommandEventWrapper event) {
+	private static void disable(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderAdmin();
 
 		boolean wasOn = event.context.gc.lockdownMode.get();

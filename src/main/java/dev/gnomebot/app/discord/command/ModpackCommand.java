@@ -16,8 +16,8 @@ import java.util.List;
  * @author LatvianModder
  */
 public class ModpackCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("modpack")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modpack")
 			.description("Gives you a random Minecraft modpack to play")
 			.run(ModpackCommand::run);
 
@@ -57,7 +57,7 @@ public class ModpackCommand extends ApplicationCommands {
 		return getPacks().get(Utils.RANDOM.nextInt(getPacks().size()));
 	}
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 		Pack pack = getRandomPack();
 

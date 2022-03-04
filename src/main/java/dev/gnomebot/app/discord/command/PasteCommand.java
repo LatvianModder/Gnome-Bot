@@ -14,13 +14,13 @@ import java.util.regex.Pattern;
 public class PasteCommand extends ApplicationCommands {
 	public static final Pattern URL_REGEX = Pattern.compile("https://(?:media|cdn)\\.(?:discordapp|discord)\\.(?:com|net)/attachments/(\\d+)/(\\d+)/(\\S+)");
 
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("paste")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("paste")
 			.description("Paste a file")
 			.add(string("message_or_url").required())
 			.run(PasteCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		String mu = event.get("message_or_url").asString();
 
 		Matcher urlm = URL_REGEX.matcher(mu);

@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
  * @author LatvianModder
  */
 public class ChannelCommands extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("channel")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("channel")
 			.description("Channel stuff")
 			.add(subGroup("xp")
 					.description("Check and update channel XP")
@@ -100,7 +100,7 @@ public class ChannelCommands extends ApplicationCommands {
 					.run(ChannelCommands::deleteMessagesBetween)
 			);
 
-	private static void listXp(ApplicationCommandEventWrapper event) throws Exception {
+	private static void listXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 
 		List<ChannelInfo> channelsWithXp = event.context.gc.getChannelList().stream().filter(s -> s.xp > 0L).collect(Collectors.toList());
@@ -117,7 +117,7 @@ public class ChannelCommands extends ApplicationCommands {
 		event.respond(sb.toString());
 	}
 
-	private static void getXp(ApplicationCommandEventWrapper event) throws Exception {
+	private static void getXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		ChannelInfo info = event.get("channel").asChannelInfoOrCurrent();
 
@@ -128,7 +128,7 @@ public class ChannelCommands extends ApplicationCommands {
 		event.respond(info.getMention() + " XP: " + info.xp);
 	}
 
-	private static void setXp(ApplicationCommandEventWrapper event) throws Exception {
+	private static void setXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -146,7 +146,7 @@ public class ChannelCommands extends ApplicationCommands {
 		event.respond(info.getMention() + " XP set to " + info.xp);
 	}
 
-	private static void setAllXp(ApplicationCommandEventWrapper event) throws Exception {
+	private static void setAllXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -161,7 +161,7 @@ public class ChannelCommands extends ApplicationCommands {
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void refreshXp(ApplicationCommandEventWrapper event) throws Exception {
+	private static void refreshXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -262,7 +262,7 @@ public class ChannelCommands extends ApplicationCommands {
 		event.edit().respond("XP refreshed from " + total + " messages in " + Utils.prettyTimeString(time) + "!");
 	}
 
-	private static void autoThreads(ApplicationCommandEventWrapper event) throws Exception {
+	private static void autoThreads(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -278,7 +278,7 @@ public class ChannelCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void autoUpvote(ApplicationCommandEventWrapper event) throws Exception {
+	private static void autoUpvote(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -294,12 +294,12 @@ public class ChannelCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void threadTitle(ApplicationCommandEventWrapper event) throws Exception {
+	private static void threadTitle(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 		throw wip();
 	}
 
-	private static void downloadAllImages(ApplicationCommandEventWrapper event) throws Exception {
+	private static void downloadAllImages(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -315,19 +315,19 @@ public class ChannelCommands extends ApplicationCommands {
 		throw wip();
 	}
 
-	private static void deleteMessagesAfter(ApplicationCommandEventWrapper event) throws Exception {
+	private static void deleteMessagesAfter(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		throw wip();
 	}
 
-	private static void deleteMessagesBefore(ApplicationCommandEventWrapper event) throws Exception {
+	private static void deleteMessagesBefore(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		throw wip();
 	}
 
-	private static void deleteMessagesBetween(ApplicationCommandEventWrapper event) throws Exception {
+	private static void deleteMessagesBetween(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 

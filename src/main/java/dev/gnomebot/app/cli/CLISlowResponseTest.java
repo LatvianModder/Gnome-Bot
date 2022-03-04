@@ -1,10 +1,10 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.discord.command.CLIApplicationCommand;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 
 public class CLISlowResponseTest {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("slow_response_test")
 			.description("Slow response")
 			.noAdmin()

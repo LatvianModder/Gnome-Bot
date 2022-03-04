@@ -29,6 +29,7 @@ public interface AppPaths {
 	Path EMOJI_CACHE = makeDir(CACHE.resolve("emoji"));
 
 	Path CONFIG_FILE = DATA.resolve("config.json");
+	Path COMMANDS_FILE = DATA.resolve("commands");
 	Path DATA_GUILDS = makeDir(DATA.resolve("guilds"));
 	Path DATA_PUBLIC = makeDir(DATA.resolve("public"));
 	Path DATA_BAD_DOMAINS = DATA.resolve("bad_domains.txt");

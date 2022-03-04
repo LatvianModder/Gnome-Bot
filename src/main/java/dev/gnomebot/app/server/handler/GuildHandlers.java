@@ -394,7 +394,7 @@ public class GuildHandlers {
 		return JsonResponse.array(array);
 	}
 
-	public static Response badWordRegex(ServerRequest request) {
+	public static Response slurRegex(ServerRequest request) {
 		if (request.gc.badWordRegex == null) {
 			return Response.NO_CONTENT;
 		}

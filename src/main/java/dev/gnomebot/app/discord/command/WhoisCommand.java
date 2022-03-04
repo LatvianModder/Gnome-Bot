@@ -5,6 +5,7 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.rest.util.Image;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Collectors;
 
@@ -12,42 +13,38 @@ import java.util.stream.Collectors;
  * @author LatvianModder
  */
 public class WhoisCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("whois")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("whois")
 			.description("Information about a user")
 			.add(user("user").required())
-			.run(WhoisCommand::run);
+			.run(WhoisCommand::runChatInput);
 
-	@RootCommand
-	public static final CommandBuilder USER_COMMAND = root("User Info")
-			.userInteraction()
-			.run(WhoisCommand::run);
+	@RegisterCommand
+	public static final UserInteractionBuilder USER_COMMAND = userInteraction("User Info")
+			.run(WhoisCommand::runUser);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
-		if (event.isUserInteraction()) {
-			event.acknowledgeEphemeral();
-		} else {
-			event.acknowledge();
-		}
+	private static void runChatInput(ChatInputInteractionEventWrapper event) {
+		event.acknowledge();
+		run(event, event.get("user").asUser().get(), event.get("user").asOptionalMember().orElse(null));
+	}
 
-		User user = event.get("user").asUser().get();
+	private static void runUser(UserInteractionEventWrapper event) {
+		event.acknowledgeEphemeral();
+		run(event, event.user, event.getMember());
+	}
 
+	private static void run(ApplicationCommandInteractionEventWrapper<?> event, User user, @Nullable Member member) {
 		EmbedBuilder embed = EmbedBuilder.create()
 				.title(user.getTag())
 				.inlineField("Created", Utils.formatRelativeDate(user.getId().getTimestamp()))
 				.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
 
-		try {
-			Member member = user.asMember(event.context.gc.guildId).block();
+		if (member != null) {
+			embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
 
-			if (member != null) {
-				embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
-
-				if (!member.getRoleIds().isEmpty()) {
-					embed.field("Roles", member.getRoleIds().stream().map(r -> "<@&" + r.asString() + ">").collect(Collectors.joining(" ")));
-				}
+			if (!member.getRoleIds().isEmpty()) {
+				embed.field("Roles", member.getRoleIds().stream().map(r -> "<@&" + r.asString() + ">").collect(Collectors.joining(" ")));
 			}
-		} catch (Exception ex) {
 		}
 
 		event.respond(embed);

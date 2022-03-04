@@ -6,8 +6,8 @@ import dev.gnomebot.app.discord.ScamHandler;
  * @author LatvianModder
  */
 public class ScamsCommands extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("scams")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("scams")
 			.description("Commands to manage scam URL detection")
 			.add(subGroup("domains")
 					.description("Manage domains")
@@ -42,13 +42,13 @@ public class ScamsCommands extends ApplicationCommands {
 					.run(ScamsCommands::test)
 			);
 
-	private static void fetchDomains(ApplicationCommandEventWrapper event) throws Exception {
+	private static void fetchDomains(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderTrusted();
 		ScamHandler.fetchDomains(() -> event.respond("Done!"));
 	}
 
-	private static void checkDomain(ApplicationCommandEventWrapper event) throws Exception {
+	private static void checkDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		String domain = event.get("domain").asString();
 
@@ -59,7 +59,7 @@ public class ScamsCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void blockDomain(ApplicationCommandEventWrapper event) throws Exception {
+	private static void blockDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		String domain = event.get("domain").asString();
@@ -72,7 +72,7 @@ public class ScamsCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void allowDomain(ApplicationCommandEventWrapper event) throws Exception {
+	private static void allowDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		String domain = event.get("domain").asString();
@@ -85,7 +85,7 @@ public class ScamsCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void removeDomain(ApplicationCommandEventWrapper event) throws Exception {
+	private static void removeDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		String domain = event.get("domain").asString();
@@ -98,7 +98,7 @@ public class ScamsCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void test(ApplicationCommandEventWrapper event) throws Exception {
+	private static void test(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		String text = event.get("text").asString();

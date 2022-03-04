@@ -67,7 +67,12 @@ public class DM {
 	}
 
 	@Nullable
-	public static DMChannel getUserFromDmChannel(Snowflake id) {
+	public static DMChannel getChannelFromUser(Snowflake userId) {
+		return DM_CHANNELS_USER.get(userId);
+	}
+
+	@Nullable
+	public static DMChannel getChannelFromMessage(Snowflake id) {
 		return DM_CHANNELS_MESSAGE.get(id);
 	}
 

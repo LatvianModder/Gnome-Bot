@@ -1,11 +1,11 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.DiscordAnsi;
 
 public class CLITestAnsi {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("test_ansi")
 			.description("Test ANSI")
 			.noAdmin()

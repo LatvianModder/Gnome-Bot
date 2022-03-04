@@ -9,13 +9,13 @@ import java.util.Optional;
  * @author LatvianModder
  */
 public class MembercountCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("membercount")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("membercount")
 			.description("Displays member count")
 			.add(role("role"))
 			.run(MembercountCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
 		Optional<CachedRole> role = event.get("role").asRole();
 

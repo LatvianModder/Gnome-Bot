@@ -10,13 +10,13 @@ import java.util.List;
  * @author LatvianModder
  */
 public class ModnamesCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("modnames")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modnames")
 			.description("Displays 10 randomly generated mod names")
 			.add(string("type"))
 			.run(ModnamesCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 		String type = event.get("type").asString();
 

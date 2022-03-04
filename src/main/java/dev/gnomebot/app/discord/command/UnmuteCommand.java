@@ -11,13 +11,13 @@ import discord4j.rest.util.Permission;
  * @author LatvianModder
  */
 public class UnmuteCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("unmute")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("unmute")
 			.description("Unmutes a member")
 			.add(user("user").required())
 			.run(UnmuteCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		if (!event.context.gc.mutedRole.isSet()) {
 			throw new GnomeException("Muted role not set!");
 		}

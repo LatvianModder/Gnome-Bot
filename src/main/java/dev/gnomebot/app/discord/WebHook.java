@@ -21,6 +21,10 @@ import reactor.core.publisher.Mono;
 public class WebHook implements PingDestination {
 	public static final String BASE_URL = "https://discord.com/api/webhooks/";
 
+	public static String getUrl(String id, String token) {
+		return BASE_URL + id + "/" + token;
+	}
+
 	public final ChannelInfo channel;
 	public final Snowflake id;
 	public final String token;
@@ -78,7 +82,7 @@ public class WebHook implements PingDestination {
 		try {
 			MultipartRequest<? extends WebhookExecuteRequest> request = message.toMultipartWebhookExecuteRequest();
 			body = Utils.bodyToString(request.getFiles().isEmpty() ? request.getJsonPayload() : request); // support multipart
-			URLRequest.of(BASE_URL + id.asString() + "/" + token)
+			URLRequest.of(getUrl(id.asString(), token))
 					.query("wait", true)
 					.query("thread_id", threadId.isEmpty() ? null : threadId)
 					.contentType(request.getFiles().isEmpty() ? "application/json" : "multipart/form-data")

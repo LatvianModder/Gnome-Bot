@@ -15,15 +15,15 @@ import discord4j.rest.util.Permission;
  * @author LatvianModder
  */
 public class BanCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("ban")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("ban")
 			.description("Bans a member")
 			.add(user("user").required())
 			.add(string("reason"))
 			.add(bool("delete_messages").description("Deletes Messages"))
 			.run(BanCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkBotPerms(Permission.BAN_MEMBERS);
 		event.context.checkSenderPerms(Permission.BAN_MEMBERS);

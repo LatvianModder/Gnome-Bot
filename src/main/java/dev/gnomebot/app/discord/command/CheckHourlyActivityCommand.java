@@ -12,15 +12,15 @@ import java.util.Date;
  * @author LatvianModder
  */
 public class CheckHourlyActivityCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("check_hourly_activity")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("check_hourly_activity")
 			.description("Check hourly activity of a member")
 			.add(user("member"))
 			.add(integer("days"))
 			.add(zone("timezone"))
 			.run(CheckHourlyActivityCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		Member member = event.get("member").asMember().orElse(event.context.sender);
 

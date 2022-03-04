@@ -11,8 +11,8 @@ import java.util.Random;
  * @author LatvianModder
  */
 public class ForcePingableNameCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("force_pingable_name")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("force_pingable_name")
 			.description("Forces username to be mentionable, transforms unicode characters into basic latin")
 			.add(user("member").required())
 			.run(ForcePingableNameCommand::run);
@@ -32,7 +32,7 @@ public class ForcePingableNameCommand extends ApplicationCommands {
 		return CharMap.makePingable(name, randomUserName(id, 6));
 	}
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		Member member = event.get("member").asMember().get();

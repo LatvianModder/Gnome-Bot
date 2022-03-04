@@ -19,13 +19,15 @@ import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.SelectMenu;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.channel.Channel;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.json.UserData;
+import discord4j.rest.http.client.ClientException;
 import discord4j.rest.route.Route;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.Permission;
@@ -62,6 +64,9 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static discord4j.rest.util.Image.Format.GIF;
+import static discord4j.rest.util.Image.Format.PNG;
 
 /**
  * @author LatvianModder
@@ -834,6 +839,15 @@ public class Utils {
 		return data.avatar().map(s -> "https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + s + ".png?size=128").orElse(null);
 	}
 
+	public static String getAvatarUrl(User user, @Nullable Member member) {
+		if (member != null) {
+			boolean animated = member.hasAnimatedGuildAvatar();
+			return member.getGuildAvatarUrl(animated ? GIF : PNG).orElse(member.getAvatarUrl());
+		}
+
+		return user.getAvatarUrl();
+	}
+
 	public static Object getPrivate(Object obj, Class<?> c, String f) {
 		try {
 			Field field = c.getDeclaredField(f);
@@ -846,13 +860,13 @@ public class Utils {
 		return null;
 	}
 
-	public static PermissionSet getEffectivePermissions(Channel channel, Snowflake member) {
-		if (!(channel instanceof GuildChannel)) {
+	public static PermissionSet getEffectivePermissions(@Nullable GuildChannel channel, Snowflake member) {
+		if (channel == null) {
 			return PermissionSet.none();
 		}
 
 		try {
-			PermissionSet set = ((GuildChannel) channel).getEffectivePermissions(member).block();
+			PermissionSet set = channel.getEffectivePermissions(member).block();
 
 			if (set == null || set.isEmpty()) {
 				return PermissionSet.none();
@@ -861,9 +875,13 @@ public class Utils {
 			}
 
 			return set;
+		} catch (ClientException ex) {
+			if (ex.getStatus().code() != 404) {
+				App.error("Failed to get permissions for " + member.asString() + " in " + channel.getName() + ": " + ex);
+			}
 		} catch (Exception ex) {
-			App.error("Failed to get permissions for " + member.asString() + " in " + ((GuildChannel) channel).getName() + ": " + ex);
-			// ex.printStackTrace();
+			App.error("Failed to get permissions for " + member.asString() + " in " + channel.getName() + ": " + ex);
+			ex.printStackTrace();
 		}
 
 		return PermissionSet.none();

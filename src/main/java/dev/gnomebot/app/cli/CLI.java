@@ -1,7 +1,7 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.FieldInfo;
@@ -17,7 +17,7 @@ public class CLI {
 		COMMANDS.clear();
 
 		String pkg = CLI.class.getPackage().getName();
-		String commandAnnotation = RootCommand.class.getName();
+		String commandAnnotation = RegisterCommand.class.getName();
 		//enableAllInfo()
 		try (ScanResult scanResult = new ClassGraph().enableFieldInfo().enableAnnotationInfo().acceptPackages(pkg).scan()) {
 			for (ClassInfo commandClassInfo : scanResult.getClassesWithFieldAnnotation(commandAnnotation)) {

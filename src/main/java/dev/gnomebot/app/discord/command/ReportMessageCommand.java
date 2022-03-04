@@ -13,19 +13,18 @@ import java.util.Optional;
  * @author LatvianModder
  */
 public class ReportMessageCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("Report Message")
-			.messageInteraction()
+	@RegisterCommand
+	public static final MessageInteractionBuilder COMMAND = messageInteraction("Report Message")
 			.run(ReportMessageCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(MessageInteractionEventWrapper event) throws Exception {
 		Optional<ChannelInfo> c = event.context.gc.reportChannel.messageChannel();
 
 		if (c.isEmpty()) {
 			throw new GnomeException("Report channel not set up!");
 		}
 
-		Message m = event.context.findMessage(event.get("message").asSnowflake()).orElse(null);
+		Message m = event.message;
 
 		if (m == null) {
 			throw new GnomeException("Message not found... __What.__");

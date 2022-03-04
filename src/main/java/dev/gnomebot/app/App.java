@@ -7,6 +7,7 @@ import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.discord.ScamHandler;
+import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.RequestHandler;
@@ -30,7 +31,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.presence.ClientPresence;
-import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.rest.http.client.ClientException;
 
 import java.time.Duration;
@@ -112,9 +112,6 @@ public class App implements Runnable {
 		commands.add("restart", matcher -> restart());
 		commands.add("reload", matcher -> reload());
 		commands.add("token", matcher -> info(Utils.createToken()));
-		commands.add(Pattern.compile("^update_slash_command ([\\w-\\s]+)$"), matcher -> discordHandler.updateGlobalCommand(matcher.group(1)));
-		commands.add(Pattern.compile("^delete_slash_command ([\\w-\\s]+)$"), matcher -> discordHandler.deleteGlobalCommand(matcher.group(1)));
-		commands.add("list_slash_commands", matcher -> listGlobalSlashCommands());
 		commands.add(Pattern.compile("^leave_guild (\\d+)$"), matcher -> leaveGuild(Snowflake.of(matcher.group(1))));
 
 		commands.add(Pattern.compile("^remove_modifiers (.*)$"), matcher -> info(CharMap.MODIFIER_PATTERN.matcher(matcher.group(1)).replaceAll("")));
@@ -179,7 +176,7 @@ public class App implements Runnable {
 		webServer.add("api/guild/member/:guild/:member", GuildHandlers::member).member().cacheMinutes(5);
 		webServer.add("api/guild/unpingable-names/:guild", GuildHandlers::unpingableNames).admin();
 		webServer.add("api/guild/audit-log/:guild", GuildHandlers::auditLog).admin().log();
-		webServer.add("api/guild/bad-word-regex/:guild", GuildHandlers::badWordRegex).member().log();
+		webServer.add("api/guild/slur-regex/:guild", GuildHandlers::slurRegex).member().log();
 		webServer.add("api/guild/export-messages/:guild/:member", GuildHandlers::exportMessages).admin().log();
 
 		webServer.add("api/guild/activity/leaderboard/:guild/:days", ActivityHandlers::leaderboard).member().cacheHours(1);
@@ -246,6 +243,13 @@ public class App implements Runnable {
 
 		ScamHandler.loadDomains();
 		DM.loadDmChannels();
+
+		try {
+			ApplicationCommands.updateCommands(discordHandler);
+		} catch (Exception ex) {
+			error("Failed to update commands:");
+			ex.printStackTrace();
+		}
 
 		success("Server restarted!");
 		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));
@@ -338,12 +342,6 @@ public class App implements Runnable {
 
 		for (GuildCollections gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);
-		}
-	}
-
-	public void listGlobalSlashCommands() {
-		for (ApplicationCommandData data : discordHandler.getGlobalCommands()) {
-			info(data.id() + " : " + data.name());
 		}
 	}
 

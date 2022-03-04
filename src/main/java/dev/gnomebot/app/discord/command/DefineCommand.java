@@ -19,13 +19,13 @@ import java.util.List;
  * @author LatvianModder
  */
 public class DefineCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("define")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("define")
 			.description("Prints dictionary definition of a word")
 			.add(string("word").required())
 			.run(DefineCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 
 		try {

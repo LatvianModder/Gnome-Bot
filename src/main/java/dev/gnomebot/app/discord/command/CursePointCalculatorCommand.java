@@ -7,14 +7,14 @@ import dev.gnomebot.app.util.Table;
  * @author LatvianModder
  */
 public class CursePointCalculatorCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("curse_point_calculator")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("curse_point_calculator")
 			.description("Curse Point calculator")
 			.add(number("daily_points").required())
 			.add(currency("currency"))
 			.run(CursePointCalculatorCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		Currency c = event.get("currency").asCurrency().orElse(Currency.USD);
 		double points = Math.min(Math.max(0D, event.get("daily_points").asDouble(0D)), 100000D);

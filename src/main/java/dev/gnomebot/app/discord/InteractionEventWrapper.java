@@ -1,12 +1,11 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
-import discord4j.core.event.domain.interaction.MessageInteractionEvent;
-import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.rest.interaction.InteractionResponse;
 
 import java.time.Instant;
@@ -26,7 +25,7 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 	public InteractionEventWrapper(GuildCollections gc, T e) {
 		event = e;
 		context = createContext();
-		context.handler = gc.db.app.discordHandler;
+		context.handler = gc == null ? App.instance.discordHandler : gc.db.app.discordHandler;
 		context.gc = gc;
 		context.channelInfo = gc.getOrMakeChannelInfo(e.getInteraction().getChannelId());
 		context.message = event.getInteraction().getMessage().orElse(null);
@@ -55,13 +54,5 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 
 	public InteractionResponse getResponse() {
 		throw new IllegalStateException("Response not supported in this type of interaction!");
-	}
-
-	public boolean isUserInteraction() {
-		return event instanceof UserInteractionEvent;
-	}
-
-	public boolean isMessageInteraction() {
-		return event instanceof MessageInteractionEvent;
 	}
 }

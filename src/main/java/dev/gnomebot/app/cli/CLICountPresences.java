@@ -1,10 +1,10 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.Utils;
 
 public class CLICountPresences {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("count_presences")
 			.description("Counts presences")
 			.run(CLICountPresences::run);

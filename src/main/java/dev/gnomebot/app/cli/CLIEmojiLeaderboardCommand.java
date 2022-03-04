@@ -3,7 +3,7 @@ package dev.gnomebot.app.cli;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 
@@ -40,7 +40,7 @@ public class CLIEmojiLeaderboardCommand {
 		}
 	}
 
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("emoji_leaderboard")
 			.description("Emoji leaderboard")
 			.noAdmin()

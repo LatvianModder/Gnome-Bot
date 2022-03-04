@@ -11,14 +11,14 @@ import discord4j.rest.util.Permission;
  * @author LatvianModder
  */
 public class KickCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("kick")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("kick")
 			.description("Kicks a member")
 			.add(user("user").required())
 			.add(string("reason"))
 			.run(KickCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkBotPerms(Permission.KICK_MEMBERS);
 		event.context.checkSenderPerms(Permission.KICK_MEMBERS);

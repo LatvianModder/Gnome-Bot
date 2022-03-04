@@ -231,7 +231,7 @@ public class MessageHandler {
 
 	@SuppressWarnings("deprecation")
 	public static void messageCreated(DiscordHandler handler, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
-		DM.DMChannel dmId = DM.getUserFromDmChannel(channelInfo.id);
+		DM.DMChannel dmId = DM.getChannelFromMessage(channelInfo.id);
 
 		if (dmId != null && !message.getContent().isEmpty()) {
 			DM.send(handler, handler.getUser(dmId.userId()), message.getContent(), true);
@@ -686,10 +686,11 @@ public class MessageHandler {
 				}
 
 				c = EXTRA_SPACE_PATTERN.matcher(REMOVE_FORMATTING_PATTERN.matcher(URL_PATTERN.matcher(c).replaceAll("[$1 link]").replace("[www.", "[").replace('"', '’').replace('\'', '’')).replaceAll("$2")).replaceAll(" ").trim();
+				c = STRIP_URL_PATTERN.matcher(c).replaceAll("").trim();
 
 				String n;
 
-				if (STRIP_URL_PATTERN.matcher(c).replaceAll("").trim().isEmpty()) {
+				if (c.isEmpty()) {
 					n = Utils.trim("Post by " + u, 100);
 				} else {
 					String u1 = Utils.trim(u, 94);

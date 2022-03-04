@@ -24,8 +24,8 @@ public class LeaderboardCommand extends ApplicationCommands {
 		public int color;
 	}
 
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("leaderboard")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("leaderboard")
 			.description("Leaderboard")
 			.add(time("timespan", true))
 			.add(integer("limit"))
@@ -33,7 +33,7 @@ public class LeaderboardCommand extends ApplicationCommands {
 			.add(role("role"))
 			.run(LeaderboardCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 
 		long limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));

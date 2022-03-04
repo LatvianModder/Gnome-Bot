@@ -7,6 +7,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
+import dev.gnomebot.app.data.ping.InteractionDocument;
 import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Utils;
@@ -44,6 +45,7 @@ public class Databases {
 	public final WrappedCollection<UserWebhook> userWebhooks;
 	public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
+	public final WrappedCollection<InteractionDocument> interactions;
 
 	public WebToken selfToken;
 
@@ -63,6 +65,7 @@ public class Databases {
 		userWebhooks = create("user_webhooks", UserWebhook::new);
 		userPings = create("user_pings", UserPings::new);
 		pastes = create("pastes", Paste::new);
+		interactions = create("interactions", InteractionDocument::new);
 	}
 
 	@Nullable

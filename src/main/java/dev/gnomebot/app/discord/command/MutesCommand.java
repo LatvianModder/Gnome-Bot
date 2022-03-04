@@ -11,12 +11,13 @@ import java.util.List;
  * @author LatvianModder
  */
 public class MutesCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("mutes")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("mutes")
 			.description("Prints all mutes")
+			.add(user("user"))
 			.run(MutesCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) throws Exception {
+	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
@@ -30,6 +31,10 @@ public class MutesCommand extends ApplicationCommands {
 			}
 		}
 
-		event.respond(String.join("\n", list));
+		if (list.isEmpty()) {
+			event.respond("None!");
+		} else {
+			event.respond(String.join("\n", list));
+		}
 	}
 }

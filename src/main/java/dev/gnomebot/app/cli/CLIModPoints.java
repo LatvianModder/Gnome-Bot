@@ -2,11 +2,11 @@ package dev.gnomebot.app.cli;
 
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.URLRequest;
 
 public class CLIModPoints {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("mod_points")
 			.description("Mod Points")
 			.noAdmin()

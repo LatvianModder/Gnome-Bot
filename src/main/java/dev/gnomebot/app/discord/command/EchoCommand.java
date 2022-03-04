@@ -7,13 +7,13 @@ import discord4j.rest.util.Permission;
  * @author LatvianModder
  */
 public class EchoCommand extends ApplicationCommands {
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("echo")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("echo")
 			.description("Sends message back as bot")
 			.add(string("message").required())
 			.run(EchoCommand::run);
 
-	private static void run(ApplicationCommandEventWrapper event) {
+	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderPerms(Permission.MANAGE_MESSAGES);
 		String message = event.get("message").asString();

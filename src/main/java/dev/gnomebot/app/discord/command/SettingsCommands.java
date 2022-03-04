@@ -5,8 +5,8 @@ package dev.gnomebot.app.discord.command;
  */
 public class SettingsCommands extends ApplicationCommands {
 	//todo move everything to json files
-	@RootCommand
-	public static final CommandBuilder COMMAND = root("settings")
+	@RegisterCommand
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("settings")
 			.description("Configure Gnome bot")
 			.add(sub("set")
 					.description("Change a setting")
@@ -20,13 +20,13 @@ public class SettingsCommands extends ApplicationCommands {
 					.run(SettingsCommands::get)
 			);
 
-	private static void set(ApplicationCommandEventWrapper event) throws Exception {
+	private static void set(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderOwner();
 		event.respond("WIP!");
 	}
 
-	private static void get(ApplicationCommandEventWrapper event) throws Exception {
+	private static void get(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 		event.respond("WIP!");

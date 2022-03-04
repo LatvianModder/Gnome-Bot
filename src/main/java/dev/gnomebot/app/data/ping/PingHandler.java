@@ -69,7 +69,7 @@ public class PingHandler {
 				Snowflake userId = pings.getUIDSnowflake();
 
 				try {
-					for (UserPings.PingBuilder builder : pings.createBuilders()) {
+					for (UserPings.PingBuilder builder : pings.createBuilders(db, userId)) {
 						for (String s : builder.name.split(",")) {
 							PingDestination destination = destinationMap.computeIfAbsent(userId.asString() + "/" + s.trim(), this::createDestination);
 

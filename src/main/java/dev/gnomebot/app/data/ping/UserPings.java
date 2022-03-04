@@ -1,7 +1,9 @@
 package dev.gnomebot.app.data.ping;
 
+import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.WrappedCollection;
 import dev.gnomebot.app.data.WrappedDocument;
+import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Utils;
@@ -24,8 +26,8 @@ public class UserPings extends WrappedDocument<UserPings> {
 		return document.getString("config");
 	}
 
-	public List<PingBuilder> createBuilders() {
-		return compile(getConfig());
+	public List<PingBuilder> createBuilders(Databases db, Snowflake userId) {
+		return compile(db, userId, getConfig());
 	}
 
 	public static class PingBuilder {
@@ -70,7 +72,7 @@ public class UserPings extends WrappedDocument<UserPings> {
 		}
 	}
 
-	public static List<PingBuilder> compile(String config) {
+	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config) {
 		int lineno = 0;
 		List<PingBuilder> list = new ArrayList<>();
 
@@ -106,6 +108,10 @@ public class UserPings extends WrappedDocument<UserPings> {
 						String s = line.substring(2);
 
 						if (s.startsWith("/")) {
+							if (s.lastIndexOf('/') < 2) {
+								throw new GnomeException("RegEx must end with /[flags]!");
+							}
+
 							Pattern pattern = Utils.parseSafeRegEx(s, 0);
 
 							if (pattern == null) {
@@ -117,6 +123,12 @@ public class UserPings extends WrappedDocument<UserPings> {
 							}
 
 							current.pings.add(new Ping(pattern, c == '+'));
+						} else if (s.startsWith("\"")) {
+							if (s.length() < 3 || s.charAt(s.length() - 1) != '"') {
+								throw new GnomeException("String must end with \"!");
+							}
+
+							current.pings.add(new Ping(Pattern.compile("\\b" + s.substring(1, s.length() - 1).replaceAll("([.?$^!+*\\[\\]{}<>()\\\\])", "\\\\$1") + "\\b", Pattern.CASE_INSENSITIVE), c == '+'));
 						} else {
 							String[] s1 = s.split(" ", 2);
 
@@ -138,6 +150,14 @@ public class UserPings extends WrappedDocument<UserPings> {
 						group = root.copy();
 						group.name = line.substring(2);
 						current = group;
+
+						if (group.name.equals("dm")) {
+							if (DM.getChannelFromUser(userId) == null) {
+								throw new GnomeException("You must message <@" + db.app.discordHandler.selfId.asString() + "> first before you can use DM channel!");
+							}
+						} else if (db.userWebhooks.query().eq("user", userId.asLong()).eq("name", group.name).first() == null) {
+							throw new GnomeException("Unknown webhook '" + group.name + "'! Set it up with `/webhook add`");
+						}
 					}
 					default -> throw new GnomeException("Invalid character '" + c + "'");
 				}

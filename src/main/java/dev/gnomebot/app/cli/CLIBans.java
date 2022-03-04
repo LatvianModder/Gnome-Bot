@@ -2,13 +2,13 @@ package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.UserCache;
-import dev.gnomebot.app.discord.command.RootCommand;
+import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.Table;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.Ban;
 
 public class CLIBans {
-	@RootCommand
+	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("bans")
 			.description("Export all bans")
 			.run(CLIBans::run);
