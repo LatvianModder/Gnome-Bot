@@ -16,7 +16,7 @@ import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.InteractionType;
 import dev.gnomebot.app.discord.command.MessageInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.ModpackCommand;
-import dev.gnomebot.app.discord.command.PingsCommand;
+import dev.gnomebot.app.discord.command.PingsCommands;
 import dev.gnomebot.app.discord.command.UserInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.ButtonEventJS;
@@ -72,6 +72,10 @@ public class InteractionHandler {
 			var w = new ChatInputInteractionEventWrapper(gc, event, options);
 
 			if (command != null) {
+				if (App.debug) {
+					App.info("Chat command '" + event.getCommandName() + "': " + w.options);
+				}
+
 				try {
 					command.callback.run(w);
 				} catch (GnomeException ex) {
@@ -319,9 +323,9 @@ public class InteractionHandler {
 			case "refresh_modpack" -> refreshModpack(event);
 			case "stop" -> stopOngoingAction(event, event.path[1]);
 			case "modal_test" -> modalTest(event);
-			case "pings" -> PingsCommand.modal(event);
-			case "pings_help" -> pingsHelp(event);
-			case "regex_help" -> regexHelp(event);
+			case "pings" -> PingsCommands.edit(event);
+			case "pings_help" -> PingsCommands.help(event);
+			case "regex_help" -> PingsCommands.regexHelp(event);
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -521,14 +525,6 @@ public class InteractionHandler {
 				TextInput.small("modal_test_1", "Test 1", "Placeholder text 1"),
 				TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text 2").required(false)
 		);
-	}
-
-	private static void pingsHelp(ComponentEventWrapper event) {
-		event.respond(PingsCommand.HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
-	}
-
-	private static void regexHelp(ComponentEventWrapper event) {
-		event.respond(PingsCommand.HELP_REGEX);
 	}
 
 	private static void modmail(ModalEventWrapper event) {
@@ -754,7 +750,20 @@ public class InteractionHandler {
 				return;
 			}
 
-			UserPings.compile(event.context.gc.db, event.context.sender.getId(), config);
+			var pings = UserPings.compile(event.context.gc.db, event.context.sender.getId(), config);
+
+			App.success(event.context.sender.getUsername() + " updated their pings:");
+
+			for (var ping : pings) {
+				App.info("- name: " + ping.name);
+				App.info("  config: " + ping.buildConfig());
+				App.info("  pings:");
+
+				for (var p : ping.pings) {
+					App.info("  " + p);
+				}
+			}
+
 			event.context.gc.db.app.pingHandler.update();
 			event.respond("Pings set!");
 		} catch (GnomeException ex) {

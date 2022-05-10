@@ -56,7 +56,7 @@ public class LeaderboardCommand extends ApplicationCommands {
 			url += "&role=" + role.id.asString();
 		}
 
-		URLRequest<BufferedImage> req = Utils.internalRequest(url).toImage();
+		URLRequest<BufferedImage> req = Utils.internalRequest(url).timeout(30000).toImage();
 
 		try {
 			ByteArrayOutputStream imageData = new ByteArrayOutputStream();

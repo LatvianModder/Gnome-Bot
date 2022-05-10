@@ -11,7 +11,7 @@ public record DMDestination(Snowflake userId, PrivateChannel dmChannel) implemen
 		try {
 			dmChannel.createMessage(MessageBuilder.create(EmbedBuilder.create()
 					.author(pingData.username() + " [" + pingData.gc() + "]", pingData.avatar())
-					.description("[➤](" + pingData.url() + ") " + pingData.content())
+					.description("[Ping ➤](" + pingData.url() + ") " + pingData.content())
 			).toMessageCreateSpec()).block();
 		} catch (Exception ex) {
 		}

@@ -93,7 +93,7 @@ public class ImportMessagesCommand {
 			context.reply("Imported " + count + " messages from " + channelNames + " from " + memberCache.getCacheSize() + " members in " + Utils.prettyTimeString(totalTime) + " @ " + (int) (count / (double) totalTime) + " m/s");
 
 			if (task.cancelled) {
-				context.reply("Importing was cancelled! To continue run\n```" + context.gc.prefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a.id.asString() + ":" + ch.b.asString()).collect(Collectors.joining(" ")) + "```");
+				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a.id.asString() + ":" + ch.b.asString()).collect(Collectors.joining(" ")) + "```");
 			}
 		});
 	};

@@ -50,7 +50,7 @@ public class RemoveRoleMembersCommand {
 			if (confirm) {
 				context.reply("<@&" + role.asString() + ">: removed " + removed);
 			} else {
-				context.reply("<@&" + role.asString() + ">: removed " + removed + "\n\nType `" + context.gc.prefix + "remove_role_members <role> confirm` to change roles");
+				context.reply("<@&" + role.asString() + ">: removed " + removed + "\n\nType `" + context.gc.legacyPrefix + "remove_role_members <role> confirm` to change roles");
 			}
 		});
 	};

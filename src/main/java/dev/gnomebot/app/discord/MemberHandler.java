@@ -160,6 +160,8 @@ public class MemberHandler {
 			return;
 		}
 
+		gc.pushRecentUser(member.getId(), member.getTag());
+
 		long prevMessages = 0L;
 		Document mdoc = gc.members.query(member.getId().asLong()).firstDocument();
 

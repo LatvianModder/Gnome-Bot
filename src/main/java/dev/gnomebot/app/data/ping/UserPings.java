@@ -70,6 +70,15 @@ public class UserPings extends WrappedDocument<UserPings> {
 		public UserPingInstance buildInstance(Snowflake user, PingDestination destination) {
 			return new UserPingInstance(pings.toArray(Ping.NO_PINGS), user, destination, buildConfig());
 		}
+
+		@Override
+		public String toString() {
+			return "{" +
+					"name='" + name + '\'' +
+					", config=" + buildConfig() +
+					", pings=" + pings +
+					'}';
+		}
 	}
 
 	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config) {

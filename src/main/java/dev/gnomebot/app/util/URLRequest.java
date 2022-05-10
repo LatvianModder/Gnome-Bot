@@ -102,6 +102,7 @@ public class URLRequest<T> {
 	private Consumer<HttpURLConnection> connectionProcessor;
 	private HttpURLConnection connection;
 	private String hiddenUrlPart;
+	private int timeout;
 
 	private URLRequest(String u, Mapper<T> m) {
 		url = u;
@@ -115,6 +116,7 @@ public class URLRequest<T> {
 		connectionProcessor = connection -> {
 		};
 		hiddenUrlPart = "";
+		timeout = 10000;
 	}
 
 	@Override
@@ -201,6 +203,11 @@ public class URLRequest<T> {
 
 	public URLRequest<T> hiddenUrlPart(String part) {
 		hiddenUrlPart = part;
+		return this;
+	}
+
+	public URLRequest<T> timeout(int t) {
+		timeout = t;
 		return this;
 	}
 
@@ -295,6 +302,8 @@ public class URLRequest<T> {
 		connection.setRequestMethod(m);
 		connection.setDoInput(true);
 		connection.setDoOutput(out != null);
+		connection.setConnectTimeout(timeout);
+		connection.setReadTimeout(timeout);
 
 		connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36");

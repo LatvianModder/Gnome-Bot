@@ -15,8 +15,8 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.command.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
@@ -460,7 +460,7 @@ public class MessageHandler {
 		}
 
 		if (!user.isBot()) {
-			gc.pushRecentUser(member.getId(), member.getTag());
+			gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
 
 			for (Snowflake mention : message.getUserMentionIds()) {
 				handler.getUserTag(mention).ifPresent(tag -> gc.pushRecentUser(mention, tag));
@@ -745,9 +745,9 @@ public class MessageHandler {
 				} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
 					channelInfo.createMessage("no u").subscribe();
 				} else if (contentNoEmojis.contains("help")) {
-					channelInfo.createMessage("Try `" + gc.prefix + "help`").subscribe();
+					channelInfo.createMessage("Try `" + gc.legacyPrefix + "help`").subscribe();
 				} else if (contentNoEmojis.contains("prefix")) {
-					channelInfo.createMessage("Current command prefix is `" + gc.prefix + "`").subscribe();
+					channelInfo.createMessage("Current command prefix is `" + gc.legacyPrefix + "`").subscribe();
 				} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
 					channelInfo.createMessage("Hi").subscribe();
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
@@ -768,13 +768,13 @@ public class MessageHandler {
 	}
 
 	private static boolean handleLegacyCommand(CommandContext context, String content) {
-		String prefix = context.gc.prefix.get();
+		String prefix = context.gc.legacyPrefix.get();
 
 		if (content.startsWith(prefix) && content.length() > prefix.length()) {
 			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));
 
 			try {
-				DiscordCommandImpl.run(context, reader, content, false);
+				LegacyCommands.run(context, reader, content, false);
 				App.LOGGER.commandSuccess();
 				return true;
 			} catch (GnomeException ex) {

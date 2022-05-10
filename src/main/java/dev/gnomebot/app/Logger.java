@@ -3,39 +3,39 @@ package dev.gnomebot.app;
 import dev.gnomebot.app.util.Ansi;
 import discord4j.core.object.presence.ClientPresence;
 
+import java.io.BufferedOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
 public class Logger {
 	public static final SimpleDateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
-
-	public static class SysOut extends PrintStream {
-		public final String color;
-
-		public SysOut(PrintStream out, String c) {
-			super(out);
-			color = c;
-		}
-
-		// TODO: Wrap output methods with color codes
-	}
-
 	public static final String[] BRAIN = new String[750];
 
 	static {
 		Arrays.fill(BRAIN, "");
 	}
 
-	private final PrintStream out = System.out;
-	private final Object eventLock = new Object();
-	private int event = 0;
-	private boolean firstEvent = true;
+	private final PrintStream out;
+	private final Object eventLock;
+	private int event;
+	private boolean firstEvent;
 
 	public Logger() {
-		System.setOut(new SysOut(out, Ansi.RESET));
-		System.setErr(new SysOut(out, Ansi.DARK_RED));
+		out = System.out;
+		eventLock = new Object();
+		event = 0;
+		firstEvent = true;
+
+		try {
+			PrintStream fileOut = new PrintStream(new BufferedOutputStream(Files.newOutputStream(AppPaths.LOG)), true);
+			System.setOut(fileOut);
+			System.setErr(fileOut);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	public void log(Object message, String color) {

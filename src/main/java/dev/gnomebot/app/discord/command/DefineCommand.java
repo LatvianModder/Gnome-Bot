@@ -65,7 +65,15 @@ public class DefineCommand extends ApplicationCommands {
 					JsonObject o1 = e.getAsJsonObject();
 
 					if (!o1.get("audio_url").getAsString().isEmpty()) {
-						list.add(Button.link(o1.get("audio_url").getAsString(), ReactionEmoji.unicode("\uD83C\uDFB5"), o1.get("text").getAsString()));
+						String url = o1.get("audio_url").getAsString();
+
+						if (url.endsWith(".mp3")) {
+							if (url.startsWith("https:https://")) {
+								url = url.substring(6);
+							}
+
+							list.add(Button.link(url, ReactionEmoji.unicode("\uD83C\uDFB5"), o1.get("text").getAsString()));
+						}
 					}
 				}
 
@@ -73,7 +81,7 @@ public class DefineCommand extends ApplicationCommands {
 					builder.addComponent(ActionRow.of(list));
 				}
 
-				event.edit().respond(builder);
+				event.respond(builder);
 				return;
 			}
 		} catch (Exception ex) {

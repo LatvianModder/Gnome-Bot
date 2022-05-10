@@ -96,7 +96,7 @@ public class UpdateRegularRolesCommand {
 
 			if (!confirm) {
 				reply.add("");
-				reply.add("Type `" + context.gc.prefix + "update_regular_roles confirm` to change roles");
+				reply.add("Type `" + context.gc.legacyPrefix + "update_regular_roles confirm` to change roles");
 			}
 
 			context.reply(String.join("\n", reply));

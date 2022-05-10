@@ -17,9 +17,11 @@ import dev.gnomebot.app.server.handler.ActivityHandlers;
 import dev.gnomebot.app.server.handler.GuildHandlers;
 import dev.gnomebot.app.server.handler.InfoHandlers;
 import dev.gnomebot.app.server.handler.MiscHandlers;
-import dev.gnomebot.app.server.handler.PanelHandlers;
 import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.server.handler.SpecialHandlers;
+import dev.gnomebot.app.server.handler.panel.AuditLogHandlers;
+import dev.gnomebot.app.server.handler.panel.PanelHandlers;
+import dev.gnomebot.app.server.handler.panel.ScamWebHandlers;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
@@ -46,6 +48,7 @@ import java.util.regex.Pattern;
 public class App implements Runnable {
 	public static final Instant START_INSTANT = Instant.now();
 	public static final Logger LOGGER = new Logger();
+	public static boolean debug = false;
 	public static App instance;
 
 	public static void main(String[] args) {
@@ -101,6 +104,7 @@ public class App implements Runnable {
 		Locale.setDefault(Locale.US);
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
+		System.out.println("Log start: " + Instant.now());
 
 		running = true;
 		blockingTasks = new ArrayList<>();
@@ -111,6 +115,10 @@ public class App implements Runnable {
 
 		commands.add("restart", matcher -> restart());
 		commands.add("reload", matcher -> reload());
+		commands.add("debug", matcher -> {
+			debug = !debug;
+			success("Debug mode: " + (debug ? "enabled" : "disabled"));
+		});
 		commands.add("token", matcher -> info(Utils.createToken()));
 		commands.add(Pattern.compile("^leave_guild (\\d+)$"), matcher -> leaveGuild(Snowflake.of(matcher.group(1))));
 
@@ -134,6 +142,8 @@ public class App implements Runnable {
 			info("Sending to all CLI clients: " + message);
 			WSHandler.CLI.broadcast(message);
 		});
+
+		commands.add("guilds", matcher -> printGuilds());
 
 		db = new Databases(this);
 
@@ -181,6 +191,7 @@ public class App implements Runnable {
 
 		webServer.add("api/guild/activity/leaderboard/:guild/:days", ActivityHandlers::leaderboard).member().cacheHours(1);
 		webServer.add("api/guild/activity/leaderboard-image/:guild/:days", ActivityHandlers::leaderboardImage).member().cacheHours(1);
+		webServer.add("api/guild/activity/rank/:guild/:member/:days", ActivityHandlers::rank).member().cacheHours(0); // 1
 		webServer.add("api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5);
 		webServer.add("api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5);
 
@@ -189,9 +200,10 @@ public class App implements Runnable {
 		webServer.add("panel", PanelHandlers::root).log();
 		webServer.add("panel/login", PanelHandlers::login).noAuth().log();
 		webServer.add("panel/:guild", PanelHandlers::guild).member();
-		webServer.add("panel/:guild/offenses", PanelHandlers::offenses).member();
-		webServer.add("panel/:guild/offenses/:user", PanelHandlers::offensesOf).admin();
-		webServer.add("panel/:guild/audit-log", PanelHandlers::auditLog).admin();
+		webServer.add("panel/:guild/audit-log", AuditLogHandlers::auditLog).admin();
+		webServer.add("panel/:guild/offenses", AuditLogHandlers::offenses).member();
+		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
+		webServer.add("panel/:guild/scams", ScamWebHandlers::scams).admin();
 
 		webServer.addWS("api/cli", WSHandler.CLI);
 
@@ -347,5 +359,18 @@ public class App implements Runnable {
 
 	public void leaveGuild(Snowflake id) {
 		discordHandler.client.getGuildById(id).flatMap(Guild::leave).subscribe();
+	}
+
+	public void printGuilds() {
+		Table table = new Table("Name", "Owner", "Members", "Messages", "Gnome Messages", "ID");
+
+		for (Guild g : discordHandler.getSelfGuilds()) {
+			info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
+			var gc = db.guild(g.getId());
+
+			table.addRow(Utils.trim(g.getName(), 70), gc.getMember(g.getOwnerId()).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", discordHandler.selfId.asLong()).count(), g.getId().asString());
+		}
+
+		table.print();
 	}
 }

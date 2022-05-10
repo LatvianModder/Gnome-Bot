@@ -106,7 +106,7 @@ public class GuildCollections {
 	public final ChannelConfig logNewAccountsChannel;
 	public final ChannelConfig logLeavingChannel;
 	public final ChannelConfig reportChannel;
-	public final StringConfig prefix;
+	public final StringConfig legacyPrefix;
 	public final StringConfig macroPrefix;
 	public final StringConfig inviteCode;
 	public List<MessageFilter> messageFilters = new ArrayList<>(); // TODO: Implement
@@ -181,7 +181,7 @@ public class GuildCollections {
 		logNewAccountsChannel = config.add(new ChannelConfig(this, "log_new_accounts")).title("Log New Accounts Channel");
 		logLeavingChannel = config.add(new ChannelConfig(this, "log_leaving")).title("Log Leaving Channel");
 		reportChannel = config.add(new ChannelConfig(this, "report_channel")).title("Report Channel");
-		prefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
+		legacyPrefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
 		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
 		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
 		//settings.add("message_filters", () -> messageFilters, v -> messageFilters = v, messageFilters, (ListTransformer<Document, MessageFilter>) MessageFilter::new, (ListTransformer<MessageFilter, Document>) value -> value == null ? new Document() : value.toDocument());

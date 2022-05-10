@@ -9,7 +9,7 @@ import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
-import dev.gnomebot.app.discord.legacycommand.DiscordCommandImpl;
+import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
 import dev.gnomebot.app.util.MutableLong;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClientBuilder;
@@ -152,7 +152,7 @@ public class DiscordHandler {
 			throw new RuntimeException("Discord client is null!");
 		}
 
-		DiscordCommandImpl.find();
+		LegacyCommands.find();
 		ApplicationCommands.findCommands();
 		CLI.find();
 		CustomInteractionTypes.init();
@@ -327,6 +327,7 @@ public class DiscordHandler {
 
 			if (b.value > 0L) {
 				gc.memberUpdated(member.getId(), 0);
+				gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
 			}
 		}
 	}

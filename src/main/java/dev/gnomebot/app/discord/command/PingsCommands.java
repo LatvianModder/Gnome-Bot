@@ -2,22 +2,32 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.component.TextInput;
 
 /**
  * @author LatvianModder
  */
-public class PingsCommand extends ApplicationCommands {
+public class PingsCommands extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
 			.description("Manage pings")
-			.add(bool("share").description("If set to true, this will print your config in channel"))
-			.run(PingsCommand::run);
-
-	private static void run(ChatInputInteractionEventWrapper event) {
-		modal(event);
-	}
+			.add(sub("edit")
+					.description("Edit pings")
+					.run(PingsCommands::edit)
+			)
+			.add(sub("share")
+					.description("Shares your pings config in channel")
+					.run(PingsCommands::share)
+			)
+			.add(sub("help")
+					.description("Prints info on how to use pings")
+					.run(PingsCommands::help)
+			).add(sub("regex_help")
+					.description("Prints info on how to use RegEx")
+					.run(PingsCommands::regexHelp)
+			);
 
 	public static final String HELP = """
 			With `/pings` you can configure specific words that will mention you in either DM or a private channel with webhook.
@@ -105,12 +115,31 @@ public class PingsCommand extends ApplicationCommands {
 			**This guide is still incomplete!**
 			""";
 
-	public static void modal(DeferrableInteractionEventWrapper<?> event) {
+	public static void edit(DeferrableInteractionEventWrapper<?> event) {
 		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
 		event.respondModal("pings", "Manage Pings", TextInput.paragraph("config", "Config")
 				.placeholder(Utils.trim("@ mentions\n+ /" + event.context.sender.getUsername() + "/i\n\nRun `/about pings` for info on how to set up pings", 100))
 				.required(false)
 				.prefilled(pings == null ? "" : pings.getConfig())
 		);
+	}
+
+	private static void share(ChatInputInteractionEventWrapper event) {
+		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
+
+		if (pings == null) {
+			event.respond("You don't have any pings set up.");
+		} else {
+			event.acknowledge();
+			event.respond(MessageBuilder.create("`/pings` config:\n```\n" + pings.getConfig().replace("```", "\\```") + "```").ephemeral(false));
+		}
+	}
+
+	public static void help(DeferrableInteractionEventWrapper<?> event) {
+		event.respond(HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
+	}
+
+	public static void regexHelp(DeferrableInteractionEventWrapper<?> event) {
+		event.respond(HELP_REGEX);
 	}
 }

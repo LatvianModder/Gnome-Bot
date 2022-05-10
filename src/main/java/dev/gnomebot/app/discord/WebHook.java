@@ -110,7 +110,7 @@ public class WebHook implements PingDestination {
 	public void relayPing(PingData pingData) {
 		try {
 			execute(MessageBuilder.create()
-					.content("[➤](" + pingData.url() + ") " + pingData.content())
+					.content("[Ping ➤](" + pingData.url() + ") " + pingData.content())
 					.webhookName(pingData.username() + " [" + pingData.gc() + "]")
 					.webhookAvatarUrl(pingData.avatar())
 			);

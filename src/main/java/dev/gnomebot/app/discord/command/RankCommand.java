@@ -23,12 +23,14 @@ public class RankCommand extends ApplicationCommands {
 	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
 
+		// event.respond("Currently this command is out of order! Sorry for inconvenience!");
+
 		Member m = event.get("member").asMember().orElse(event.context.sender);
 		long days = event.get("timespan").asDays().orElse(90L);
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
-				JsonArray leaderboardJson = Utils.readInternalJson("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).getAsJsonArray();
+				JsonArray leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJson().block().getAsJsonArray();
 				String id = m.getId().asString();
 
 				for (JsonElement e : leaderboardJson) {

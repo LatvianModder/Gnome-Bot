@@ -89,7 +89,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	}
 
 	public String getURLAsArrow(GuildCollections gc) {
-		return "[➤](" + getURL(gc) + ")";
+		return "[Quote ➤](" + getURL(gc) + ")";
 	}
 
 	private void deleteOrEdit(GuildCollections gc, boolean deleted, String newContent, boolean auditLog) {

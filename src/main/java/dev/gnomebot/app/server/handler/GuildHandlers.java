@@ -73,7 +73,7 @@ public class GuildHandlers {
 			json.addProperty("id", request.gc.guildId.asString());
 			json.addProperty("name", request.gc.name.get());
 			json.addProperty("owner", request.gc.getGuild().getOwnerId().asString());
-			json.addProperty("prefix", request.gc.prefix.get());
+			json.addProperty("prefix", request.gc.legacyPrefix.get());
 			json.addProperty("invite", request.gc.inviteCode.get());
 		});
 	}

@@ -44,20 +44,20 @@ dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 
 	implementation("curse.maven:rhino-416294:3604722") { transitive = false }
-	implementation('io.javalin:javalin:4.3.0')
+	implementation('io.javalin:javalin:4.4.0')
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
 	// implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
 	implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
 	// implementation("com.discord4j:discord-json:1.7.0-SNAPSHOT") { changing = true }
 	// implementation('com.github.Discord4J:Discord4J:feature~buttons-SNAPSHOT')
 	// implementation("org.mongodb:mongo-java-driver:3.12.8")
-	implementation('org.mongodb:mongodb-driver-sync:4.4.1')
-	implementation("com.google.code.gson:gson:2.8.9")
+	implementation('org.mongodb:mongodb-driver-sync:4.6.0')
+	implementation('com.google.code.gson:gson:2.9.0')
 	implementation("org.slf4j:slf4j-simple:2.0.0-alpha5")
 	// implementation ("com.fasterxml.jackson.core:jackson-databind:2.11.2")
-	implementation("com.google.guava:guava:31.0.1-jre") { exclude group: "com.google.code.findbugs" }
+	implementation('com.google.guava:guava:31.1-jre') { exclude group: "com.google.code.findbugs" }
 	// implementation ("org.mindrot:jbcrypt:0.4")
-	implementation("io.github.classgraph:classgraph:4.8.138")
+	implementation('io.github.classgraph:classgraph:4.8.146')
 	// implementation ("com.kcthota:emoji4j:6.0")
 	implementation("com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1")
 }

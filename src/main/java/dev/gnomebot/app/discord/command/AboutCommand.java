@@ -24,11 +24,11 @@ public class AboutCommand extends ApplicationCommands {
 			)
 			.add(sub("pings")
 					.description("Info about pings")
-					.run(AboutCommand::pings)
+					.run(PingsCommands::help)
 			)
 			.add(sub("regex")
 					.description("Info about Regular Expressions")
-					.run(AboutCommand::regex)
+					.run(PingsCommands::regexHelp)
 			);
 
 	private static void gnome(ChatInputInteractionEventWrapper event) {
@@ -41,7 +41,7 @@ public class AboutCommand extends ApplicationCommands {
 		content.add("Gnome Response time: **" + s + " ms**");
 
 		if (event.context.gc != null) {
-			content.add("Legacy command prefix: **" + event.context.gc.prefix + "**");
+			content.add("Legacy command prefix: **" + event.context.gc.legacyPrefix + "**");
 			content.add("Macro prefix: **" + event.context.gc.macroPrefix + "**");
 		}
 
@@ -50,13 +50,5 @@ public class AboutCommand extends ApplicationCommands {
 
 	private static void macro(ChatInputInteractionEventWrapper event) {
 		event.respond(MacroCommand.HELP);
-	}
-
-	private static void pings(ChatInputInteractionEventWrapper event) {
-		event.respond(PingsCommand.HELP.replace("{USER}", event.context.sender.getUsername().toLowerCase()));
-	}
-
-	private static void regex(ChatInputInteractionEventWrapper event) {
-		event.respond(PingsCommand.HELP_REGEX);
 	}
 }

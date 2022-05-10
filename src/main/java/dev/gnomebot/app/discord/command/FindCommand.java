@@ -9,6 +9,7 @@ import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
@@ -57,6 +58,7 @@ public class FindCommand extends ApplicationCommands {
 					.add(user("member"))
 					.add(integer("flags"))
 					.add(bool("recently_deleted"))
+					.add(bool("activity"))
 					.run(FindCommand::messages)
 			)
 			.add(sub("quiet_member_count")
@@ -113,6 +115,8 @@ public class FindCommand extends ApplicationCommands {
 		List<String> list = new ArrayList<>();
 		int length = 0;
 
+		boolean activity = event.get("activity").asBoolean(false);
+
 		if (!event.get("recently_deleted").asBoolean(false)) {
 			CollectionQuery<DiscordMessage> messages = event.context.gc.messages.query().descending("timestamp").filter(Filters.gte("timestamp", new Date(System.currentTimeMillis() - 15778476000L))).limit(100);
 
@@ -130,6 +134,8 @@ public class FindCommand extends ApplicationCommands {
 				messages.filter(Filters.bitsAnySet("flags", event.get("flags").asInt()));
 			}
 
+			long count = messages.count();
+
 			for (DiscordMessage message : messages) {
 				String s = message.getURLAsArrow(event.context.gc) + " <@" + Snowflake.of(message.getUserID()).asString() + "> " + message.getContent();
 				list.add(s);
@@ -140,13 +146,19 @@ public class FindCommand extends ApplicationCommands {
 					break;
 				}
 			}
+
+			list.add(0, "Found " + count + " messages");
 		}
 
-		if (list.isEmpty()) {
-			list.add("404");
-		}
+		if (activity) {
+			event.respond(MessageBuilder.create("Activity:").addFile("activity.csv", String.join("\n", list).getBytes(StandardCharsets.UTF_8)));
+		} else {
+			if (list.isEmpty()) {
+				list.add("404");
+			}
 
-		event.respond(list);
+			event.respond(list);
+		}
 	}
 
 	private static void quietMemberCount(ChatInputInteractionEventWrapper event) {

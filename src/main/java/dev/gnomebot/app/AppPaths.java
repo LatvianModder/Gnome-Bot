@@ -23,6 +23,7 @@ public interface AppPaths {
 	Path RESOURCES = makeDir(Path.of("resources"));
 	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
 	Path DATA = makeDir(Path.of("data"));
+	Path LOG = DATA.resolve("log.txt");
 
 	Path CACHE = makeDir(DATA.resolve("cache"));
 	Path AVATAR_CACHE = makeDir(CACHE.resolve("avatars"));
