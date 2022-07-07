@@ -1,5 +1,6 @@
 package dev.gnomebot.app.util;
 
+import dev.gnomebot.app.App;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -25,6 +26,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MessageBuilder {
@@ -40,6 +42,37 @@ public class MessageBuilder {
 
 	public static MessageBuilder create(EmbedBuilder spec) {
 		return create().addEmbed(spec);
+	}
+
+	public static MessageBuilder of(Object object) {
+		if (object == null) {
+			return null;
+		} else if (object instanceof CharSequence) {
+			return create(object.toString());
+		} else if (object instanceof Map<?, ?> map) {
+			MessageBuilder builder = MessageBuilder.create();
+
+			if (map.get("content") instanceof CharSequence s) {
+				builder.content(s.toString());
+			}
+
+			if (map.get("embed") instanceof Map m) {
+				builder.addEmbed(EmbedBuilder.of(m));
+			}
+
+			if (map.get("embeds") instanceof Iterable itr) {
+				for (var o : itr) {
+					if (o instanceof Map m) {
+						builder.addEmbed(EmbedBuilder.of(m));
+					}
+				}
+			}
+
+			return builder;
+		}
+
+		App.error("Invalid script message: " + object);
+		return MessageBuilder.create("Invalid script message!");
 	}
 
 	private String content;

@@ -1,4 +1,2 @@
-@NonnullByDefault
+@dev.gnomebot.app.util.NonnullByDefault
 package dev.gnomebot.app.script;
-
-import dev.gnomebot.app.util.NonnullByDefault;

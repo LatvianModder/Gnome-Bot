@@ -30,7 +30,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	public static final long FLAG_BAD_WORD = 1L << 11L;
 	public static final long FLAG_TTS = 1L << 19L;
 	public static final long FLAG_MULTILINE = 1L << 20L;
-	public static final long FLAG_SUSPICIOUS = 1L << 21L;
+	public static final long FLAG_IP = 1L << 21L;
 	public static final long FLAG_ATTACHMENTS = 1L << 22L;
 	//public static final long FLAG_DM = 1L << 23L;
 	public static final long FLAG_FILES = 1L << 24L;

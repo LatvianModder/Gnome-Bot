@@ -1,9 +1,12 @@
 package dev.gnomebot.app.script;
 
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.Id;
 
 public final class WrappedId implements WithId {
+	public static final WrappedId NONE = new WrappedId(Utils.NO_SNOWFLAKE);
+
 	private final String asString;
 	private final long asLong;
 

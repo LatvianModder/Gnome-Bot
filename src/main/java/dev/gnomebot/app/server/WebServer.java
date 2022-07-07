@@ -95,8 +95,11 @@ public class WebServer implements Consumer<JavalinConfig> {
 			h.b.closeAll(StatusCode.SHUTDOWN, "GnomeBot Restarting");
 		}
 
-		javalin.stop();
-		javalin = null;
+		if (javalin != null) {
+			javalin.stop();
+			javalin = null;
+		}
+
 		handlerList.clear();
 	}
 

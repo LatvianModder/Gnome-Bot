@@ -7,6 +7,7 @@ import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.script.event.ButtonEventJS;
 import dev.gnomebot.app.script.event.EventHandler;
 import dev.gnomebot.app.script.event.MessageEventJS;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.NativeJavaClass;
@@ -34,6 +35,8 @@ public class DiscordJS {
 	public final EventHandler<MessageEventJS> onMessage = new EventHandler<>();
 	public final EventHandler<MessageEventJS> onAfterMessage = new EventHandler<>();
 	public final EventHandler<ButtonEventJS> onButton = new EventHandler<>();
+	public final EventHandler<ButtonEventJS> onSelectMenu = new EventHandler<>();
+	public final EventHandler<ButtonEventJS> onModal = new EventHandler<>();
 	public final Map<String, Consumer<MessageEventJS>> customMacros = new HashMap<>();
 
 	public DiscordJS(GuildCollections g, boolean ro) {
@@ -50,6 +53,7 @@ public class DiscordJS {
 				typeWrappers.register(Snowflake.class, o -> o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Snowflake.of(o.toString()));
 				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Snowflake.of(o.toString())));
 				typeWrappers.register(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
+				typeWrappers.register(MessageBuilder.class, MessageBuilder::of);
 
 				for (Path file : Files.walk(gc.paths.scripts).filter(Files::isRegularFile).toList()) {
 					Path rfile = gc.paths.scripts.relativize(file);
@@ -93,5 +97,9 @@ public class DiscordJS {
 		} catch (Exception ex) {
 			return false;
 		}
+	}
+
+	public void addMacro(String name, Consumer<MessageEventJS> callback) {
+		customMacros.put(name, callback);
 	}
 }

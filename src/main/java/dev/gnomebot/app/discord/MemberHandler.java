@@ -57,7 +57,7 @@ public class MemberHandler {
 						.build()
 				).block();
 
-				gc.adminLogChannelEmbed(spec -> {
+				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 					spec.footer(member.getTag() + " / " + member.getId().asString(), member.getAvatarUrl());
 					StringBuilder sb = new StringBuilder("Forced pingable name: `");
 					sb.append(newName);
@@ -267,7 +267,7 @@ public class MemberHandler {
 			if (responsible != null && responsible.isBot()) {
 				gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(event.getUser().getMention() + " (" + event.getUser().getTag() + ") was banned by " + responsible.getMention() + ": " + reason).subscribe());
 			} else {
-				gc.adminLogChannelEmbed(spec -> {
+				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 					spec.description("Bye " + event.getUser().getMention());
 					spec.timestamp(Instant.now());
 					spec.author(event.getUser().getTag() + " was banned", event.getUser().getAvatarUrl());
@@ -303,7 +303,7 @@ public class MemberHandler {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 		updateMember(gc, event.getUser(), null, ACTION_UNBANNED, gc.members.findFirst(event.getUser()), null);
 
-		gc.adminLogChannelEmbed(spec -> {
+		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 			spec.color(EmbedColors.RED);
 			spec.description("Welcome back " + event.getUser().getMention());
 			spec.timestamp(Instant.now());

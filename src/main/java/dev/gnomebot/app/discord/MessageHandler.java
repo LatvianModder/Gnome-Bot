@@ -358,7 +358,7 @@ public class MessageHandler {
 					int d = Integer.parseInt(ipMatcher.group(4));
 
 					if (IPUtils.isIP(a, b, c, d)) {
-						flags |= DiscordMessage.FLAG_SUSPICIOUS;
+						flags |= DiscordMessage.FLAG_IP;
 						break;
 					}
 				} catch (Exception ex) {
@@ -480,7 +480,7 @@ public class MessageHandler {
 
 		if (!member.isBot() && !authLevel.is(AuthLevel.ADMIN)) {
 			if (gc.badWordRegex != null && (flags & DiscordMessage.FLAG_BAD_WORD) != 0L) {
-				handler.suspiciousMessageModLog(gc, discordMessage, member, "Bad Word", s -> gc.badWordRegex.matcher(s).replaceAll(" **__ $0 __** "));
+				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Bad Word", s -> gc.badWordRegex.matcher(s).replaceAll(" **__ $0 __** "));
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAD_WORD)
 						.channel(channelInfo.id)
@@ -510,7 +510,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, discordMessage, member, "Potential Scam URL: " + scam, s -> s);
+					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Potential Scam URL: " + scam, s -> s);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
@@ -537,7 +537,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, discordMessage, member, "Mentions @everyone / @here", s -> s);
+					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Mentions @everyone / @here", s -> s);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.EVERYONE_PING)
@@ -564,7 +564,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, discordMessage, member, "URL Shortener Link", s -> s);
+					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "URL Shortener Link", s -> s);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.URL_SHORTENER)
@@ -576,7 +576,7 @@ public class MessageHandler {
 			}
 
 			if (member.getRoleIds().isEmpty() && INVITE_PATTERN.matcher(contentNoEmojis).find()) {
-				handler.suspiciousMessageModLog(gc, discordMessage, member, "Suspicious Invite", s -> s);
+				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Suspicious Invite", s -> s);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.DISCORD_INVITE)
 						.channel(channelInfo.id)
@@ -586,8 +586,8 @@ public class MessageHandler {
 				);
 			}
 
-			if ((flags & DiscordMessage.FLAG_SUSPICIOUS) != 0L) {
-				handler.suspiciousMessageModLog(gc, discordMessage, member, "IP Address", s -> s);
+			if ((flags & DiscordMessage.FLAG_IP) != 0L) {
+				handler.suspiciousMessageModLog(gc, gc.logIpAddressesChannel, discordMessage, member, "IP Address", s -> s);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.IP_ADDRESS)
 						.channel(channelInfo.id)
@@ -610,7 +610,7 @@ public class MessageHandler {
 			message.delete().subscribe();
 			return;
 		} else if (handleQuotes == 0 && gc.adminLogChannel.isSet() && !member.isBot() && gc.adminRole.isMentioned(message)) {
-			gc.adminLogChannelEmbed(spec -> {
+			gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 				StringBuilder builder = new StringBuilder("[Admin ping:](");
 				QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId());
 				builder.append(")\n\n");

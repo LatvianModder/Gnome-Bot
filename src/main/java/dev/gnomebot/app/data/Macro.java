@@ -1,14 +1,11 @@
 package dev.gnomebot.app.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
-import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -165,38 +162,6 @@ public class Macro extends WrappedDocument<Macro> {
 		}
 
 		return builder;
-	}
-
-	public static void addComponent(List<ActionComponent> components, JsonElement element) {
-		if (element.isJsonArray()) {
-			for (JsonElement e : element.getAsJsonArray()) {
-				addComponent(components, e);
-			}
-
-			return;
-		}
-
-		JsonObject o = element.getAsJsonObject();
-
-		if (o.has("macro_button")) {
-			Button.Style style = o.has("style") ? Button.Style.of(o.get("style").getAsInt()) : Button.Style.SECONDARY;
-
-			String id = "macro/" + o.get("macro_button").getAsString();
-			String label = o.has("label") ? o.get("label").getAsString() : null;
-			ReactionEmoji emoji = o.has("emoji") ? Utils.stringToReaction(o.get("emoji").getAsString().trim()) : null;
-
-			switch (style) {
-				case PRIMARY -> components.add(Button.primary(id, emoji, label));
-				case SECONDARY -> components.add(Button.secondary(id, emoji, label));
-				case SUCCESS -> components.add(Button.success(id, emoji, label));
-				case DANGER -> components.add(Button.danger(id, emoji, label));
-			}
-		} else if (o.has("url_button")) {
-			String url = o.get("url_button").getAsString();
-			String label = o.has("label") ? o.get("label").getAsString() : null;
-			ReactionEmoji emoji = o.has("emoji") ? Utils.stringToReaction(o.get("emoji").getAsString()) : null;
-			components.add(Button.link(url, emoji, label));
-		}
 	}
 
 	public long setSlashCommand(boolean b) {

@@ -86,7 +86,7 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 				Webhook webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
 
 				if (webhook == null) {
-					webhook = tlc.createWebhook(WebhookCreateSpec.builder().reason("Gnome webhook").build()).block();
+					webhook = tlc.createWebhook(WebhookCreateSpec.builder().name("Gnome").reason("Gnome Bot webhook").build()).block();
 				}
 
 				if (webhook != null) {

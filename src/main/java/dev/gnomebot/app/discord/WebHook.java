@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ping.PingData;
@@ -76,13 +77,13 @@ public class WebHook implements PingDestination {
 		return getWebhookService().executeWebhook(id.asLong(), token, true, message.toMultipartWebhookExecuteRequest());
 	}
 
-	public boolean execute(MessageBuilder message) {
+	public Snowflake execute(MessageBuilder message) {
 		String body = "{}";
 
 		try {
 			MultipartRequest<? extends WebhookExecuteRequest> request = message.toMultipartWebhookExecuteRequest();
 			body = Utils.bodyToString(request.getFiles().isEmpty() ? request.getJsonPayload() : request); // support multipart
-			URLRequest.of(getUrl(id.asString(), token))
+			var result = URLRequest.of(getUrl(id.asString(), token))
 					.query("wait", true)
 					.query("thread_id", threadId.isEmpty() ? null : threadId)
 					.contentType(request.getFiles().isEmpty() ? "application/json" : "multipart/form-data")
@@ -90,11 +91,16 @@ public class WebHook implements PingDestination {
 					.outString(body)
 					.hiddenUrlPart(token)
 					.block();
-			return true;
+
+			if (result instanceof JsonObject o && o.has("id")) {
+				return Snowflake.of(o.get("id").getAsString());
+			}
+
+			return Utils.NO_SNOWFLAKE;
 		} catch (Exception ex) {
 			App.error("Failed to execute webhook " + id.asString() + " with body " + body);
 			ex.printStackTrace();
-			return false;
+			return Utils.NO_SNOWFLAKE;
 		}
 	}
 
@@ -110,8 +116,8 @@ public class WebHook implements PingDestination {
 	public void relayPing(PingData pingData) {
 		try {
 			execute(MessageBuilder.create()
-					.content("[Ping ➤](" + pingData.url() + ") " + pingData.content())
-					.webhookName(pingData.username() + " [" + pingData.gc() + "]")
+					.content("[Ping ➤](" + pingData.url() + ") from **" + pingData.gc() + "** in " + pingData.channel().getMention() + "\n" + pingData.content())
+					.webhookName(pingData.username())
 					.webhookAvatarUrl(pingData.avatar())
 			);
 		} catch (Exception ex) {

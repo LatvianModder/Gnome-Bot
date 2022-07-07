@@ -7,6 +7,7 @@ import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.config.ChannelConfig;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
@@ -79,6 +80,7 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +143,9 @@ public class DiscordHandler {
 				))
 				.setMemberRequestFilter(MemberRequestFilter.none())
 				.login()
-				.block());
+				.timeout(Duration.ofMinutes(5L))
+				.block()
+		);
 
 		selfId = client.getSelfId();
 		applicationId = client.getRestClient().getApplicationId().block();
@@ -152,11 +156,13 @@ public class DiscordHandler {
 			throw new RuntimeException("Discord client is null!");
 		}
 
+		App.info("Looking for commands");
 		LegacyCommands.find();
 		ApplicationCommands.findCommands();
 		CLI.find();
 		CustomInteractionTypes.init();
 
+		App.info("Loading discord handler events...");
 		handle(ReadyEvent.class, this::ready);
 		handle(GuildCreateEvent.class, this::guildCreated);
 		handle(ReconnectFailEvent.class, this::disconnected);
@@ -201,6 +207,7 @@ public class DiscordHandler {
 		handle(ThreadMembersUpdateEvent.class, this::threadMembersUpdate);
 		handle(ThreadListSyncEvent.class, this::threadListSync);
 
+		App.info("Connecting to discord servers...");
 		client.onDisconnect().subscribe(this::disconnected);
 	}
 
@@ -476,8 +483,8 @@ public class DiscordHandler {
 		ThreadHandler.listSync(this, event);
 	}
 
-	public void suspiciousMessageModLog(GuildCollections gc, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
-		if (!gc.adminLogChannel.isSet()) {
+	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfig channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
+		if (!channelConfig.isSet()) {
 			return;
 		}
 
@@ -502,7 +509,7 @@ public class DiscordHandler {
 		sb1.append("> from ").append(u.getMention()).append("\n\n");
 		sb1.append(content.apply(message.getContent()));
 
-		gc.adminLogChannelEmbed(spec -> {
+		gc.adminLogChannelEmbed(channelConfig, spec -> {
 			spec.description(sb1.toString());
 			spec.timestamp(message.getDate().toInstant());
 			spec.author(u.getTag(), u.getAvatarUrl());

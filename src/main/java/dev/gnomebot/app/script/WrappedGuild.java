@@ -11,27 +11,21 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class WrappedGuild implements WithId {
+public class WrappedGuild extends DiscordObject {
 	public final transient DiscordJS discordJS;
 	public final transient GuildCollections gc;
-	public final WrappedId id;
 	public final Map<String, WrappedChannel> channels;
 	public final Map<String, WrappedRole> roles;
 	public final Map<String, WrappedMember> members;
 
 	public WrappedGuild(DiscordJS d, GuildCollections w) {
+		super(new WrappedId(w.guildId));
 		discordJS = d;
 		gc = w;
-		id = new WrappedId(gc.guildId);
 
-		channels = new DynamicMap<>(id -> new WrappedChannel(this, new WrappedId(Snowflake.of(id))));
+		channels = new DynamicMap<>(id -> new WrappedChannel(new WrappedId(Snowflake.of(id)), this));
 		roles = Collections.unmodifiableMap(gc.getRoleMap().values().stream().map(r -> new WrappedRole(this, r)).collect(Collectors.toMap(k -> k.id.asString(), Function.identity())));
-		members = new DynamicMap<>(id -> new WrappedMember(this, new WrappedId(Snowflake.of(id))));
-	}
-
-	@Override
-	public WrappedId getWrappedId() {
-		return id;
+		members = new DynamicMap<>(id -> new WrappedMember(new WrappedId(Snowflake.of(id)), this));
 	}
 
 	@Override
@@ -49,7 +43,7 @@ public class WrappedGuild implements WithId {
 		Snowflake snowflake = Snowflake.of(id);
 
 		if (gc.getMember(snowflake) == null) {
-			return new WrappedUser(this, new WrappedId(snowflake));
+			return new WrappedUser(new WrappedId(snowflake), this);
 		}
 
 		return m;

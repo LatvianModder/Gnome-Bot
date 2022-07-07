@@ -7,14 +7,14 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.Sticker;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.util.EntityUtil;
+import discord4j.discordjson.Id;
+import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.DMCreateRequest;
 import discord4j.discordjson.json.ImmutableStartThreadRequest;
 import discord4j.rest.service.ChannelService;
@@ -74,6 +74,27 @@ public class DM {
 	@Nullable
 	public static DMChannel getChannelFromMessage(Snowflake id) {
 		return DM_CHANNELS_MESSAGE.get(id);
+	}
+
+	public static long openId(DiscordHandler handler, Snowflake userId) {
+		DMChannel c = DM_CHANNELS_USER.get(userId);
+
+		if (c != null && c.channelId.asLong() != 0L) {
+			try {
+				return c.channelId.asLong();
+			} catch (Exception ex) {
+			}
+		}
+
+		try {
+			return Objects.requireNonNull(handler.client.getRestClient().getUserService()
+					.createDM(DMCreateRequest.builder().recipientId(userId.asString()).build())
+					.map(ChannelData::id)
+					.map(Id::asLong)
+					.block());
+		} catch (Exception ex) {
+			throw new GnomeException("This command requires user's DMs to be enabled for this guild!");
+		}
 	}
 
 	public static PrivateChannel open(DiscordHandler handler, Snowflake userId) {
@@ -156,12 +177,12 @@ public class DM {
 	public static void log(DiscordHandler handler, PrivateChannel privateChannel, User author, Message message) {
 		StringBuilder builder = new StringBuilder(message.getContent());
 
-		for (Attachment attachment : message.getAttachments()) {
+		for (var attachment : message.getAttachments()) {
 			builder.append('\n');
 			builder.append(attachment.getUrl());
 		}
 
-		for (Sticker sticker : message.getStickers()) {
+		for (var sticker : message.getStickersItems()) {
 			builder.append('\n');
 			builder.append("(Sticker) ").append(sticker.getId()).append(":").append(sticker.getName());
 		}

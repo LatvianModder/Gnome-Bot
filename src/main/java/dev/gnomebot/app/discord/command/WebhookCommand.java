@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.UserWebhook;
+import dev.gnomebot.app.data.WebhookExecuteExtra;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import discord4j.common.util.Snowflake;
@@ -106,10 +107,11 @@ public class WebhookCommand extends ApplicationCommands {
 
 		if (editId.asLong() != 0L) {
 			Message message = Objects.requireNonNull(ci.getMessage(editId));
+			WebhookExecuteExtra info = event.context.gc.db.webhookExecuteExtra.findFirst(editId.asLong());
 
 			event.respondModal("webhook/" + ci.id.asString() + "/" + editId.asString(), "Execute Webhook",
 					TextInput.paragraph("content", "Content", 0, 2000).required(false).prefilled(message.getContent()),
-					TextInput.paragraph("extra", "Extra").required(false).placeholder(MacroCommand.EXTRA_PLACEHOLDER)
+					TextInput.paragraph("extra", "Extra").required(false).prefilled(info == null ? "" : info.getExtra()).placeholder(MacroCommand.EXTRA_PLACEHOLDER)
 			);
 		} else {
 			event.respondModal("webhook/" + ci.id.asString() + "/0", "Execute Webhook",

@@ -9,8 +9,8 @@ version '1.0.0'
 archivesBaseName = 'gnome-bot'
 mainClassName = 'dev.gnomebot.app.App'
 
-sourceCompatibility = 16
-targetCompatibility = 16
+sourceCompatibility = 17
+targetCompatibility = 17
 
 compileJava.options.encoding = 'UTF-8'
 
@@ -43,8 +43,8 @@ repositories {
 dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 
-	implementation("curse.maven:rhino-416294:3604722") { transitive = false }
-	implementation('io.javalin:javalin:4.4.0')
+	implementation("curse.maven:rhino-416294:3846163") { transitive = false }
+	implementation('io.javalin:javalin:4.6.1')
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
 	// implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
 	implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
@@ -57,7 +57,7 @@ dependencies {
 	// implementation ("com.fasterxml.jackson.core:jackson-databind:2.11.2")
 	implementation('com.google.guava:guava:31.1-jre') { exclude group: "com.google.code.findbugs" }
 	// implementation ("org.mindrot:jbcrypt:0.4")
-	implementation('io.github.classgraph:classgraph:4.8.146')
+	implementation('io.github.classgraph:classgraph:4.8.147')
 	// implementation ("com.kcthota:emoji4j:6.0")
 	implementation("com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1")
 }

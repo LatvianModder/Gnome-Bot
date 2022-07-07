@@ -1,5 +1,6 @@
 package dev.gnomebot.app.util;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColors;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class EmbedBuilder {
@@ -62,6 +64,45 @@ public class EmbedBuilder {
 		authorUrl = null;
 		authorIconUrl = null;
 		fields = null;
+	}
+
+	public static EmbedBuilder of(Object object) {
+		if (object == null) {
+			return null;
+		} else if (object instanceof CharSequence) {
+			return create(object.toString());
+		} else if (object instanceof Map map) {
+			EmbedBuilder builder = EmbedBuilder.create();
+
+			if (map.get("title") instanceof CharSequence s) {
+				builder.title(s.toString());
+			}
+
+			if (map.get("description") instanceof CharSequence s) {
+				builder.description(s.toString());
+			}
+
+			if (map.get("url") instanceof CharSequence s) {
+				builder.url(s.toString());
+			}
+
+			if (map.get("image") instanceof CharSequence s) {
+				builder.image(s.toString());
+			}
+
+			if (map.get("thumbnail") instanceof CharSequence s) {
+				builder.thumbnail(s.toString());
+			}
+
+			if (map.get("color") instanceof Color c) {
+				builder.color(c);
+			}
+
+			return builder;
+		}
+
+		App.error("Invalid script embbed: " + object);
+		return EmbedBuilder.create("Invalid script embed!");
 	}
 
 	public EmbedBuilder title(String title) {

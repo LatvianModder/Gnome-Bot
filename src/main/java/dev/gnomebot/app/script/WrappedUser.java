@@ -10,22 +10,16 @@ import java.util.Optional;
 
 import static discord4j.rest.util.Image.Format.GIF;
 
-public class WrappedUser implements WithId {
+public class WrappedUser extends DiscordObject {
 	public final WrappedGuild guild;
-	public final WrappedId id;
 	private String name;
 	private String discriminator;
 	private Boolean bot;
 	private Optional<String> avatarId;
 
-	public WrappedUser(WrappedGuild g, WrappedId i) {
+	public WrappedUser(WrappedId id, WrappedGuild g) {
+		super(id);
 		guild = g;
-		id = i;
-	}
-
-	@Override
-	public WrappedId getWrappedId() {
-		return id;
 	}
 
 	@Override

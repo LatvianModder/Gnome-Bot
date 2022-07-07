@@ -594,6 +594,7 @@ public class Utils {
 		return percent((double) value / (double) total);
 	}
 
+	// TODO: Get rid of this eventually
 	public static URLRequest<InputStream> internalRequest(String path) {
 		return URLRequest.of(App.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
 	}

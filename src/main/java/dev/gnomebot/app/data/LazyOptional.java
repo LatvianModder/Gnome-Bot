@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data;
 
+import dev.gnomebot.app.App;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -45,6 +46,7 @@ public class LazyOptional<T> {
 			try {
 				object = getter.get();
 			} catch (Exception ex) {
+				App.error(ex.toString());
 			}
 		}
 

@@ -29,7 +29,7 @@ public class ConsoleCommandManager {
 
 	public void startThread() {
 		Thread consoleReader = new Thread(() -> {
-			while (app.running) {
+			while (true) {
 				try {
 					processCommand(System.console().readLine().trim());
 				} catch (Exception ex) {

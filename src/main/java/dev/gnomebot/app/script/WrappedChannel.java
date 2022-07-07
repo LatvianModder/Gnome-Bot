@@ -1,35 +1,25 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.data.DiscordMessage;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.ChannelModifyRequest;
 import discord4j.rest.service.ChannelService;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Consumer;
-
-public class WrappedChannel implements WithId, Deletable {
+public class WrappedChannel extends DiscordObject {
 	public final WrappedGuild guild;
-	public final WrappedId id;
 	private String name;
 	private String topic;
 	private Boolean nsfw;
 
-	public WrappedChannel(WrappedGuild g, WrappedId i) {
+	public WrappedChannel(WrappedId id, WrappedGuild g) {
+		super(id);
 		guild = g;
-		id = i;
 		name = null;
 		topic = null;
 		nsfw = null;
-	}
-
-	@Override
-	public WrappedId getWrappedId() {
-		return id;
 	}
 
 	@Override
@@ -126,28 +116,8 @@ public class WrappedChannel implements WithId, Deletable {
 		}
 	}
 
-	public WrappedId sendMessage(String content) {
+	public WrappedId send(MessageBuilder content) {
 		guild.discordJS.checkReadOnly();
-
-		return new WrappedId(getChannelService().createMessage(id.asLong(), MessageCreateSpec.builder()
-				.content(content)
-				.allowedMentions(DiscordMessage.noMentions())
-				.build()
-				.asRequest()
-		).block().id());
-	}
-
-	public WrappedId sendEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
-		guild.discordJS.checkReadOnly();
-
-		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-		embed.accept(builder);
-
-		return new WrappedId(getChannelService().createMessage(id.asLong(), MessageCreateSpec.builder()
-				.addEmbed(builder.build())
-				.allowedMentions(DiscordMessage.noMentions())
-				.build()
-				.asRequest()
-		).block().id());
+		return new WrappedId(getChannelService().createMessage(id.asLong(), content.toMultipartMessageCreateRequest()).block().id());
 	}
 }

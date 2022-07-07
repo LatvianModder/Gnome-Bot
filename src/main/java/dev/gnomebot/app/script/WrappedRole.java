@@ -5,22 +5,16 @@ import discord4j.discordjson.json.RoleModifyRequest;
 import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 
-public class WrappedRole implements WithId, Deletable {
+public class WrappedRole extends DiscordObject {
 	public final WrappedGuild guild;
-	public final WrappedId id;
 	public final transient CachedRole role;
 	private String name;
 
 	WrappedRole(WrappedGuild g, CachedRole w) {
+		super(new WrappedId(w.id));
 		guild = g;
-		id = new WrappedId(w.id);
 		role = w;
 		name = role.name;
-	}
-
-	@Override
-	public WrappedId getWrappedId() {
-		return id;
 	}
 
 	@Override

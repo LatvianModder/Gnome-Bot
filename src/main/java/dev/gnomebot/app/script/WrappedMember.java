@@ -17,8 +17,8 @@ import java.util.Set;
 public class WrappedMember extends WrappedUser {
 	private String nickname;
 
-	public WrappedMember(WrappedGuild g, WrappedId i) {
-		super(g, i);
+	public WrappedMember(WrappedId id, WrappedGuild g) {
+		super(id, g);
 	}
 
 	@Override

@@ -84,7 +84,7 @@ public class MuteCommand extends ApplicationCommands {
 		event.context.gc.mutedRole.add(user.getId(), "Muted");
 		event.context.gc.unmute(user.getId(), seconds);
 
-		event.context.gc.adminLogChannelEmbed(spec -> {
+		event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bad " + user.getMention());
 			spec.author(user.getTag() + " was warned", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);

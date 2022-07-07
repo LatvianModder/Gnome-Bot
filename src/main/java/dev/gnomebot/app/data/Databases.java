@@ -46,6 +46,7 @@ public class Databases {
 	public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
 	public final WrappedCollection<InteractionDocument> interactions;
+	public final WrappedCollection<WebhookExecuteExtra> webhookExecuteExtra;
 
 	public WebToken selfToken;
 
@@ -66,6 +67,7 @@ public class Databases {
 		userPings = create("user_pings", UserPings::new);
 		pastes = create("pastes", Paste::new);
 		interactions = create("interactions", InteractionDocument::new);
+		webhookExecuteExtra = create("webhook_execute_info", WebhookExecuteExtra::new);
 	}
 
 	@Nullable

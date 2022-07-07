@@ -36,7 +36,7 @@ public class PingHandler {
 
 			if (s[1].equals("dm")) {
 				try {
-					return new DMDestination(userId, DM.open(App.instance.discordHandler, userId));
+					return new DMDestination(userId, DM.openId(App.instance.discordHandler, userId));
 				} catch (Exception ex) {
 					return PingDestination.NONE;
 				}

@@ -5,43 +5,36 @@ import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.script.event.EventJS;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.MessageData;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.List;
-import java.util.function.Consumer;
 
-public class WrappedMessage implements WithId, Deletable {
+@SuppressWarnings("unused")
+public class WrappedMessage extends DiscordObject {
 	public final WrappedChannel channel;
 	public final transient Message message;
 	public final transient MessageData messageData;
-	public final WrappedId id;
 	private String content;
 	private String contentNoEmojis;
 	public transient EventJS messageEvent;
 
 	WrappedMessage(WrappedChannel c, Message w) {
+		super(new WrappedId(w.getData().id()));
 		channel = c;
 		message = w;
 		messageData = message.getData();
-		id = new WrappedId(message.getId());
 		content = message.getContent();
-	}
-
-	@Override
-	public WrappedId getWrappedId() {
-		return id;
 	}
 
 	@Override
@@ -72,13 +65,13 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public boolean isEdited() {
-		return message.getEditedTimestamp().isPresent();
+		return messageData.editedTimestamp().isPresent();
 	}
 
 	@Nullable
 	public Date getEditedTimestamp() {
-		Instant i = message.getEditedTimestamp().orElse(null);
-		return i == null ? null : Date.from(i);
+		var i = messageData.editedTimestamp().orElse("");
+		return i.isEmpty() ? null : Date.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(i, Instant::from));
 	}
 
 	public boolean isUserMentioned() {
@@ -86,15 +79,21 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public boolean isUserMentioned(Snowflake id) {
-		return message.getUserMentionIds().contains(id);
+		for (var u : messageData.mentions()) {
+			if (u.id().asLong() == id.asLong()) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public WrappedUser[] getMentionedUsers() {
-		List<Snowflake> list = message.getUserMentionIds();
+		var list = messageData.mentions();
 		WrappedUser[] array = new WrappedUser[list.size()];
 
 		for (int i = 0; i < array.length; i++) {
-			array[i] = channel.guild.getUser(list.get(i).asString());
+			array[i] = channel.guild.getUser(list.get(i).id().asString());
 		}
 
 		return array;
@@ -105,15 +104,15 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public boolean isRoleMentioned(Snowflake id) {
-		return message.getRoleMentionIds().contains(id);
+		return messageData.mentionRoles().contains(id.asString());
 	}
 
 	public WrappedRole[] getMentionedRoles() {
-		List<Snowflake> list = message.getRoleMentionIds();
+		var list = messageData.mentionRoles();
 		WrappedRole[] array = new WrappedRole[list.size()];
 
 		for (int i = 0; i < array.length; i++) {
-			array[i] = channel.guild.roles.get(list.get(i).asString());
+			array[i] = channel.guild.roles.get(list.get(i));
 		}
 
 		return array;
@@ -132,7 +131,7 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public boolean hasStickers() {
-		return messageData.stickers().toOptional().isPresent();
+		return messageData.stickerItems().toOptional().isPresent();
 	}
 
 	@Nullable
@@ -189,16 +188,16 @@ public class WrappedMessage implements WithId, Deletable {
 	}
 
 	public boolean isPinned() {
-		return message.isPinned();
+		return messageData.pinned();
 	}
 
 	public void setPinned(boolean b) {
 		channel.guild.discordJS.checkReadOnly();
 
 		if (b != message.isPinned()) {
-			message.pin().block();
+			channel.getChannelService().addPinnedMessage(channel.id.asLong(), id.asLong()).block();
 		} else {
-			message.unpin().block();
+			channel.getChannelService().deletePinnedMessage(channel.id.asLong(), id.asLong()).block();
 		}
 	}
 
@@ -233,30 +232,9 @@ public class WrappedMessage implements WithId, Deletable {
 		return "https://discord.com/channels/" + channel.guild.id.asString() + "/" + channel.id.asString() + "/" + id.asString();
 	}
 
-	public WrappedId replyMessage(String content) {
+	public WrappedMessage reply(MessageBuilder message) {
 		channel.guild.discordJS.checkReadOnly();
-
-		return new WrappedId(channel.getChannelService().createMessage(channel.id.asLong(), MessageCreateSpec.builder()
-				.content(content)
-				.messageReference(Snowflake.of(id.asLong()))
-				.allowedMentions(DiscordMessage.noMentions())
-				.build()
-				.asRequest()
-		).block().id());
-	}
-
-	public WrappedId replyEmbed(Consumer<EmbedCreateSpec.Builder> embed) {
-		channel.guild.discordJS.checkReadOnly();
-
-		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-		embed.accept(builder);
-
-		return new WrappedId(channel.getChannelService().createMessage(channel.id.asLong(), MessageCreateSpec.builder()
-				.addEmbed(builder.build())
-				.messageReference(Snowflake.of(id.asLong()))
-				.allowedMentions(DiscordMessage.noMentions())
-				.build()
-				.asRequest()
-		).block().id());
+		message.messageReference(id.asSnowflake());
+		return new WrappedMessage(channel, new Message(channel.guild.gc.db.app.discordHandler.client, channel.getChannelService().createMessage(channel.id.asLong(), message.toMultipartMessageCreateRequest()).block()));
 	}
 }

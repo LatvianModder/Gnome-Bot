@@ -94,7 +94,7 @@ public class CommandContext {
 	}
 
 	public void adminLog(Color col, String text) {
-		gc.adminLogChannelEmbed(spec -> {
+		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 			spec.color(col);
 			spec.description(Utils.trim(text, 4096));
 			spec.timestamp(Instant.now());

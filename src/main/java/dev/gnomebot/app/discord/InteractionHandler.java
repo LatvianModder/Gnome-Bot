@@ -9,6 +9,7 @@ import dev.gnomebot.app.data.DiscordPoll;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Vote;
+import dev.gnomebot.app.data.WebhookExecuteExtra;
 import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
@@ -35,6 +36,7 @@ import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -88,8 +90,8 @@ public class InteractionHandler {
 				Macro macro = gc.getMacro(event.getCommandName());
 
 				if (macro != null) {
-					event.reply(macro.createMessage(w.context.sender.getId(), false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 					macro.update(Updates.inc("uses", 1));
+					event.reply(macro.createMessage(w.context.sender.getId(), false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
@@ -168,13 +170,12 @@ public class InteractionHandler {
 
 			if (member != null) {
 				String customId = event.getCustomId();
+				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
-					event.deferEdit().subscribe();
+				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+					eventWrapper.acknowledge();
 					return;
 				}
-
-				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
 				try {
 					try {
@@ -203,6 +204,11 @@ public class InteractionHandler {
 
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
+				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+					eventWrapper.acknowledge();
+					return;
+				}
+
 				try {
 					try {
 						selectMenu(eventWrapper, event.getValues());
@@ -225,13 +231,12 @@ public class InteractionHandler {
 
 			if (member != null) {
 				String customId = event.getCustomId();
+				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString())), true)) {
-					event.deferEdit().subscribe();
+				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+					eventWrapper.acknowledge();
 					return;
 				}
-
-				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
 
 				try {
 					try {
@@ -443,9 +448,11 @@ public class InteractionHandler {
 			if (owner.asLong() != event.context.sender.getId().asLong()) {
 				event.acknowledge();
 			} else {
+				macro.update(Updates.inc("uses", 1));
 				event.edit().respond(macro.createMessage(owner, false).ephemeral(true));
 			}
 		} else {
+			macro.update(Updates.inc("uses", 1));
 			event.respond(macro.createMessage(event.context.sender.getId(), false).ephemeral(true));
 		}
 	}
@@ -523,7 +530,12 @@ public class InteractionHandler {
 	private static void modalTest(ComponentEventWrapper event) {
 		event.respondModal("modal_test", "Modal Test",
 				TextInput.small("modal_test_1", "Test 1", "Placeholder text 1"),
-				TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text 2").required(false)
+				TextInput.paragraph("modal_test_2", "Test 2", "Placeholder text 2").required(false),
+				SelectMenu.of("select_test",
+						SelectMenu.Option.of("Test 1", "test_1"),
+						SelectMenu.Option.of("Test 2", "test_2"),
+						SelectMenu.Option.of("Test 3", "test_3")
+				)
 		);
 	}
 
@@ -793,15 +805,32 @@ public class InteractionHandler {
 		String content = event.get("content").asString();
 		List<String> extra = Arrays.asList(event.get("extra").asString().split("\n"));
 		MessageBuilder message = Macro.createMessage(content, extra, Utils.NO_SNOWFLAKE, false);
+		message.webhookName(event.get("username").asString(event.context.gc.toString()));
+		message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
+
+		Snowflake id = editId.asLong() == 0L ? webHook.execute(message) : editId;
 
 		if (editId.asLong() != 0L) {
-			webHook.execute(message);
+			webHook.edit(editId.asString(), message).block();
+
+			WebhookExecuteExtra info = event.context.gc.db.webhookExecuteExtra.findFirst(editId.asLong());
+
+			if (info != null) {
+				info.update(Updates.set("extra", String.join("\n", extra)));
+			}
+
+			event.respond("Done!");
+		} else if (id != Utils.NO_SNOWFLAKE) {
+			Document doc = new Document();
+			doc.put("_id", id.asLong());
+			doc.put("extra", String.join("\n", extra));
+			event.context.gc.db.webhookExecuteExtra.insert(doc);
+			event.respond("Done!");
 		} else {
-			message.webhookName(event.get("username").asString(event.context.gc.toString()));
-			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
-			webHook.edit(editId.asString(), message);
+			throw new GnomeException("Failed to send webhook!");
 		}
 
-		event.respond("Done!");
+		// Click this button (Or do `??gamenight` in <#397702104204050434> if it doesn't work):
+		// macro "Toggle Game Night Role" gamenight
 	}
 }

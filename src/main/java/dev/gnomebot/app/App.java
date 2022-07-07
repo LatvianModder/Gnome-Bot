@@ -101,6 +101,8 @@ public class App implements Runnable {
 
 	@Override
 	public void run() {
+		// LOGGER.replaceSystemOutLogger();
+		App.info("Starting up...");
 		Locale.setDefault(Locale.US);
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
@@ -109,8 +111,10 @@ public class App implements Runnable {
 		running = true;
 		blockingTasks = new ArrayList<>();
 
+		App.info("Loading char map...");
 		CharMap.load();
 
+		App.info("Loading console commands...");
 		ConsoleCommandManager commands = new ConsoleCommandManager(this);
 
 		commands.add("restart", matcher -> restart());
@@ -148,6 +152,7 @@ public class App implements Runnable {
 		db = new Databases(this);
 
 		commands.startThread();
+		App.info("Loading discord handler...");
 
 		discordHandler = new DiscordHandler(this);
 		discordHandler.load();
@@ -157,6 +162,7 @@ public class App implements Runnable {
 
 		pingHandler = new PingHandler(db);
 
+		App.info("Loading web server...");
 		webServer = new WebServer(this);
 
 		webServer.add("assets/:filename", MiscHandlers::assets).noAuth().cacheHours(1);
@@ -333,17 +339,32 @@ public class App implements Runnable {
 		if (!running) {
 			System.exit(0);
 			return;
+		} else {
+			running = false;
 		}
 
-		try {
-			App.instance.discordHandler.client.updatePresence(ClientPresence.invisible()).timeout(Duration.ofMillis(3000L)).block();
-		} catch (Exception ex) {
+		App.info("Stopping server...");
+
+		if (discordHandler != null) {
+			try {
+				discordHandler.client.updatePresence(ClientPresence.invisible()).timeout(Duration.ofMillis(3000L)).block();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 		}
 
 		ReactionHandler.shutdown();
 
 		for (BlockingTask task : blockingTasks) {
 			task.cancelled = true;
+		}
+
+		if (webServer != null) {
+			try {
+				webServer.stop();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 		}
 
 		running = false;

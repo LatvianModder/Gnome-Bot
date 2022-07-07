@@ -28,7 +28,9 @@ public class Logger {
 		eventLock = new Object();
 		event = 0;
 		firstEvent = true;
+	}
 
+	public void replaceSystemOutLogger() {
 		try {
 			PrintStream fileOut = new PrintStream(new BufferedOutputStream(Files.newOutputStream(AppPaths.LOG)), true);
 			System.setOut(fileOut);

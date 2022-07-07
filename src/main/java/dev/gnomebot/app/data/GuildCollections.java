@@ -106,6 +106,7 @@ public class GuildCollections {
 	public final ChannelConfig logNewAccountsChannel;
 	public final ChannelConfig logLeavingChannel;
 	public final ChannelConfig reportChannel;
+	public final ChannelConfig logIpAddressesChannel;
 	public final StringConfig legacyPrefix;
 	public final StringConfig macroPrefix;
 	public final StringConfig inviteCode;
@@ -181,6 +182,7 @@ public class GuildCollections {
 		logNewAccountsChannel = config.add(new ChannelConfig(this, "log_new_accounts")).title("Log New Accounts Channel");
 		logLeavingChannel = config.add(new ChannelConfig(this, "log_leaving")).title("Log Leaving Channel");
 		reportChannel = config.add(new ChannelConfig(this, "report_channel")).title("Report Channel");
+		logIpAddressesChannel = config.add(new ChannelConfig(this, "log_ip_addresses_channel")).title("Log IP Addresses Channel");
 		legacyPrefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
 		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
 		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
@@ -360,8 +362,8 @@ public class GuildCollections {
 		return Optional.empty();
 	}
 
-	public void adminLogChannelEmbed(Consumer<EmbedBuilder> embed) {
-		adminLogChannel.messageChannel().ifPresent(c -> {
+	public void adminLogChannelEmbed(ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
+		channelConfig.messageChannel().ifPresent(c -> {
 					EmbedBuilder builder = EmbedBuilder.create();
 					builder.color(EmbedColors.RED);
 					builder.timestamp(Instant.now());
