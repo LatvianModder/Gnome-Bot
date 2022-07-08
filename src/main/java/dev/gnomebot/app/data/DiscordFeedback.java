@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
@@ -24,11 +24,11 @@ import java.util.Objects;
  */
 public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	public enum Status {
-		NONE(0, "None", EmbedColors.BLUE, ""),
-		APPROVED(1, "Approved", EmbedColors.GREEN, "Approved"),
-		DENIED(2, "Denied", EmbedColors.RED, "Denied"),
-		CONSIDERED(3, "Considered", EmbedColors.TEAL, "Considered"),
-		IMPLEMENTED(4, "Implemented", EmbedColors.GREEN, "Implemented");
+		NONE(0, "None", EmbedColor.BLUE, ""),
+		APPROVED(1, "Approved", EmbedColor.GREEN, "Approved"),
+		DENIED(2, "Denied", EmbedColor.RED, "Denied"),
+		CONSIDERED(3, "Considered", EmbedColor.TEAL, "Considered"),
+		IMPLEMENTED(4, "Implemented", EmbedColor.GREEN, "Implemented");
 
 		public static final Status[] VALUES = values();
 

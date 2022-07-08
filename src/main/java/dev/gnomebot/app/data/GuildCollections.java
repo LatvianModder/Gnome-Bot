@@ -15,7 +15,7 @@ import dev.gnomebot.app.data.config.RoleConfig;
 import dev.gnomebot.app.data.config.StringConfig;
 import dev.gnomebot.app.data.config.StringListConfig;
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.MessageFilter;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
@@ -365,8 +365,8 @@ public class GuildCollections {
 	public void adminLogChannelEmbed(ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
 		channelConfig.messageChannel().ifPresent(c -> {
 					EmbedBuilder builder = EmbedBuilder.create();
-					builder.color(EmbedColors.RED);
-					builder.timestamp(Instant.now());
+			builder.color(EmbedColor.RED);
+			builder.timestamp(Instant.now());
 					embed.accept(builder);
 					c.createMessage(builder).subscribe();
 				}

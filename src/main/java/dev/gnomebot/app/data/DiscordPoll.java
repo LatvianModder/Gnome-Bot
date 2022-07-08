@@ -2,7 +2,7 @@ package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.MapWrapper;
 import discord4j.core.spec.EmbedCreateFields;
@@ -93,7 +93,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 			builder.addField(Emojis.NUMBER_STRINGS[i] + " " + options.get(i), "**" + v[i] + "** [" + (v[i] * 100 / sum) + "%]", true);
 		}
 
-		builder.color(EmbedColors.GRAY);
+		builder.color(EmbedColor.GRAY);
 		builder.footer(footer);
 		builder.timestamp(getDate().toInstant());
 

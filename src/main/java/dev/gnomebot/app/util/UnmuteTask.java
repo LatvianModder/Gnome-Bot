@@ -3,7 +3,7 @@ package dev.gnomebot.app.util;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.json.UserData;
 
@@ -40,7 +40,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 
 			if (data != null) {
 				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-					spec.color(EmbedColors.GREEN);
+					spec.color(EmbedColor.GREEN);
 					spec.author(data.username() + "#" + data.discriminator() + " has been unmuted!", Utils.getAvatarUrl(data));
 				});
 			}

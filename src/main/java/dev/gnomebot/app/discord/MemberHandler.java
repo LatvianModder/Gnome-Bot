@@ -304,7 +304,7 @@ public class MemberHandler {
 		updateMember(gc, event.getUser(), null, ACTION_UNBANNED, gc.members.findFirst(event.getUser()), null);
 
 		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-			spec.color(EmbedColors.RED);
+			spec.color(EmbedColor.RED);
 			spec.description("Welcome back " + event.getUser().getMention());
 			spec.timestamp(Instant.now());
 			spec.author(event.getUser().getTag() + " was unbanned", event.getUser().getAvatarUrl());

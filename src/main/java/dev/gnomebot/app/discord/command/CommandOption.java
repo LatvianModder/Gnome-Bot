@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class CommandOption extends BasicOption {
-	public final CommandContext context;
+	public final transient CommandContext context;
 	public final boolean focused;
 
 	public CommandOption(CommandContext c, String n, String v, boolean f) {

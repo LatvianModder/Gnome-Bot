@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -35,6 +35,6 @@ public class UnmuteCommand extends ApplicationCommands {
 
 		event.acknowledge();
 		event.context.gc.unmute(user.getId(), 0L);
-		event.respond(EmbedBuilder.create().color(EmbedColors.GREEN).author(user.getTag() + " has been unmuted!", user.getAvatarUrl()));
+		event.respond(EmbedBuilder.create().color(EmbedColor.GREEN).author(user.getTag() + " has been unmuted!", user.getAvatarUrl()));
 	}
 }

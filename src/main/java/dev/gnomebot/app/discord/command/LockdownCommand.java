@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberHandler;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -104,7 +104,7 @@ public class LockdownCommand extends ApplicationCommands {
 			if (event.context.channelInfo == null || !event.context.gc.adminLogChannel.is(event.context.channelInfo.id)) {
 				event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
 					spec.title("Lockdown mode disabled!");
-					spec.color(EmbedColors.GREEN);
+					spec.color(EmbedColor.GREEN);
 					spec.description(Emojis.ALERT.asFormat());
 					spec.thumbnail(Assets.EMERGENCY.getPath());
 					spec.author(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());

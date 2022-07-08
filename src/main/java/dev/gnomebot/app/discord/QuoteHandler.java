@@ -116,7 +116,7 @@ public class QuoteHandler {
 			UserData author = m.author();
 			quoteEmbed.author(author.username(), Utils.getAvatarUrl(author), quoteURL);
 
-			quoteEmbed.color(EmbedColors.GRAY);
+			quoteEmbed.color(EmbedColor.GRAY);
 			quoteEmbed.description("[Quote ➤](" + quoteURL + ") " + content);
 			quoteEmbed.timestamp(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(m.timestamp(), Instant::from));
 

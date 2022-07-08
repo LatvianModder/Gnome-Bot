@@ -49,6 +49,7 @@ public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<Com
 			event.reply(messageBuilder.toInteractionApplicationCommandCallbackSpec()).block();
 		}
 
+		acknowledged = true;
 		return Optional.empty();
 	}
 

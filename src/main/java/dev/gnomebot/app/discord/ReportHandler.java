@@ -61,7 +61,7 @@ public class ReportHandler {
 
 		String quoteURL = QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, m.getId());
 		EmbedBuilder reportEmbed = EmbedBuilder.create();
-		reportEmbed.color(EmbedColors.RED);
+		reportEmbed.color(EmbedColor.RED);
 		reportEmbed.author(author.getTag(), author.getAvatarUrl(), quoteURL);
 		reportEmbed.description("[Quote ➤](" + quoteURL + ") " + m.getContent());
 		reportEmbed.footer("Reported by " + event.context.sender.getTag() + " [" + reason + "]", event.context.sender.getAvatarUrl());

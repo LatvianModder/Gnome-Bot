@@ -5,7 +5,7 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
@@ -121,7 +121,7 @@ public class MuteCommand extends ApplicationCommands {
 		if (context.gc.autoMuteEmbed.get()) {
 			EmbedBuilder embedBuilder = EmbedBuilder.create();
 
-			embedBuilder.color(EmbedColors.RED);
+			embedBuilder.color(EmbedColor.RED);
 
 			if (!auto.isEmpty()) {
 				embedBuilder.description(auto);
@@ -165,7 +165,7 @@ public class MuteCommand extends ApplicationCommands {
 		}
 
 		EmbedBuilder embed = EmbedBuilder.create();
-		embed.color(EmbedColors.RED);
+		embed.color(EmbedColor.RED);
 		embed.author(m.getTag() + " has been muted!", m.getAvatarUrl());
 		embed.description(context.sender.getMention() + " muted " + m.getMention());
 		embed.inlineField("Reason", reason);

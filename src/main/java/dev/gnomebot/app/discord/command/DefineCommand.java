@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.command;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
@@ -36,7 +36,7 @@ public class DefineCommand extends ApplicationCommands {
 				String word = o.get("word").getAsString();
 
 				EmbedBuilder embedBuilder = EmbedBuilder.create();
-				embedBuilder.color(EmbedColors.GRAY);
+				embedBuilder.color(EmbedColor.GRAY);
 				embedBuilder.title(word);
 
 				JsonArray meanings = o.get("meanings").getAsJsonArray();

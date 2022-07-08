@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import com.mongodb.BasicDBObject;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -60,7 +60,7 @@ public class PollCommand {
 
 		Message m = context.reply(MessageBuilder.create()
 				.addEmbed(EmbedBuilder.create()
-						.color(EmbedColors.GRAY)
+						.color(EmbedColor.GRAY)
 						.url(App.url("poll/" + context.gc.guildId.asString() + "/" + number))
 						.title("Loading poll #" + number + "...")
 				)

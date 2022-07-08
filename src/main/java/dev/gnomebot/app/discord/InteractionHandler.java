@@ -20,7 +20,8 @@ import dev.gnomebot.app.discord.command.ModpackCommand;
 import dev.gnomebot.app.discord.command.PingsCommands;
 import dev.gnomebot.app.discord.command.UserInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.script.event.ButtonEventJS;
+import dev.gnomebot.app.script.event.ComponentEventJS;
+import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.OngoingAction;
@@ -172,8 +173,7 @@ public class InteractionHandler {
 				String customId = event.getCustomId();
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
-					eventWrapper.acknowledge();
+				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
 					return;
 				}
 
@@ -204,8 +204,7 @@ public class InteractionHandler {
 
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
-					eventWrapper.acknowledge();
+				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
 					return;
 				}
 
@@ -233,8 +232,7 @@ public class InteractionHandler {
 				String customId = event.getCustomId();
 				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(new ButtonEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
-					eventWrapper.acknowledge();
+				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
 					return;
 				}
 
@@ -318,6 +316,7 @@ public class InteractionHandler {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
+			case "callback" -> callback(event, event.path[1]);
 			case "unmute" -> unmute(event, Snowflake.of(event.path[1]));
 			case "macro" -> macro(event, event.path[1], null);
 			case "edit_macro" -> macro(event, event.path[1], Snowflake.of(event.path[2]));
@@ -379,6 +378,30 @@ public class InteractionHandler {
 		} else if (event.requiresTextResponse()) {
 			event.respond("You can't delete this message!");
 		} else {
+			event.acknowledge();
+		}
+	}
+
+	private static void callback(ComponentEventWrapper event, String id) {
+		ComponentCallback callback = ComponentCallback.MAP.get(id);
+
+		if (callback == null) {
+			event.respond("Callback expired!");
+		} else {
+			var delete = callback.run(event);
+
+			if (delete == ComponentCallback.SELF) {
+				ComponentCallback.MAP.remove(id);
+			} else if (delete != ComponentCallback.NONE) {
+				for (var i : delete) {
+					if (i.startsWith("callback/")) {
+						i = i.substring(9);
+					}
+
+					ComponentCallback.MAP.remove(i);
+				}
+			}
+
 			event.acknowledge();
 		}
 	}
@@ -511,7 +534,7 @@ public class InteractionHandler {
 			ModpackCommand.Pack pack = ModpackCommand.getRandomPack();
 
 			builder.addEmbed(EmbedBuilder.create()
-					.color(EmbedColors.GRAY)
+					.color(EmbedColor.GRAY)
 					.title("What pack should I play?")
 					.description("[" + pack.name + "](" + pack.url + ")")
 			);

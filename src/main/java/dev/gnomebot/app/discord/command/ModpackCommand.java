@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
@@ -63,7 +63,7 @@ public class ModpackCommand extends ApplicationCommands {
 
 		event.getResponse().editInitialResponse(WebhookMessageEditRequest.builder()
 				.addEmbed(EmbedCreateSpec.builder()
-						.color(EmbedColors.GRAY)
+						.color(EmbedColor.GRAY)
 						.title("What pack should I play?")
 						.description("[" + pack.name + "](" + pack.url + ")")
 						.build().asRequest()

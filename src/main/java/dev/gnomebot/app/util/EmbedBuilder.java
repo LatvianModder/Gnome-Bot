@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.EmbedColors;
+import dev.gnomebot.app.discord.EmbedColor;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.EmbedAuthorData;
@@ -54,7 +54,7 @@ public class EmbedBuilder {
 		description = null;
 		url = null;
 		timestamp = null;
-		defaultColor = EmbedColors.GRAY;
+		defaultColor = EmbedColor.GRAY;
 		color = null;
 		footerText = null;
 		footerIconUrl = null;
@@ -94,8 +94,8 @@ public class EmbedBuilder {
 				builder.thumbnail(s.toString());
 			}
 
-			if (map.get("color") instanceof Color c) {
-				builder.color(c);
+			if (map.containsKey("color")) {
+				builder.color(EmbedColor.of(map.get("color")));
 			}
 
 			return builder;
@@ -144,19 +144,19 @@ public class EmbedBuilder {
 	}
 
 	public EmbedBuilder redColor() {
-		return color(EmbedColors.RED);
+		return color(EmbedColor.RED);
 	}
 
 	public EmbedBuilder greenColor() {
-		return color(EmbedColors.GREEN);
+		return color(EmbedColor.GREEN);
 	}
 
 	public EmbedBuilder tealColor() {
-		return color(EmbedColors.TEAL);
+		return color(EmbedColor.TEAL);
 	}
 
 	public EmbedBuilder blueColor() {
-		return color(EmbedColors.BLUE);
+		return color(EmbedColor.BLUE);
 	}
 
 	public EmbedBuilder footer(String text, @Nullable String iconUrl) {

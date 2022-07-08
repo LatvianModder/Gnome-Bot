@@ -933,13 +933,13 @@ public class Utils {
 
 		for (int i = 0; i < f.length(); ++i) {
 			switch (f.charAt(i)) {
-				case 'U' -> flags |= 256;
-				case 'd' -> flags |= 1;
-				case 'i' -> flags |= 2;
-				case 'm' -> flags |= 8;
-				case 's' -> flags |= 32;
-				case 'u' -> flags |= 64;
-				case 'x' -> flags |= 4;
+				case 'U' -> flags |= Pattern.UNICODE_CHARACTER_CLASS;
+				case 'd' -> flags |= Pattern.UNIX_LINES;
+				case 'i' -> flags |= Pattern.CASE_INSENSITIVE;
+				case 'm' -> flags |= Pattern.MULTILINE;
+				case 's' -> flags |= Pattern.DOTALL;
+				case 'u' -> flags |= Pattern.UNICODE_CASE;
+				case 'x' -> flags |= Pattern.COMMENTS;
 			}
 		}
 
