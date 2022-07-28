@@ -43,7 +43,7 @@ repositories {
 dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 
-	implementation("curse.maven:rhino-416294:3846163") { transitive = false }
+	implementation("curse.maven:rhino-416294:3892335") { transitive = false }
 	implementation('io.javalin:javalin:4.6.1')
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
 	// implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }

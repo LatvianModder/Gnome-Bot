@@ -173,7 +173,7 @@ public class InteractionHandler {
 				String customId = event.getCustomId();
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
 				}
 
@@ -204,7 +204,7 @@ public class InteractionHandler {
 
 				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
 				}
 
@@ -232,7 +232,7 @@ public class InteractionHandler {
 				String customId = event.getCustomId();
 				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
 
-				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper), true)) {
+				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(customId, new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
 				}
 

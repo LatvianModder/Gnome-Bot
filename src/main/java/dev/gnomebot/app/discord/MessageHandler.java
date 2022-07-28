@@ -665,7 +665,7 @@ public class MessageHandler {
 				}
 			}
 
-			if (gc.discordJS.onMessage.post(messageEventJS, true)) {
+			if (gc.discordJS.onMessage.post("", messageEventJS)) {
 				return;
 			}
 		}
@@ -763,7 +763,7 @@ public class MessageHandler {
 		}
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {
-			gc.discordJS.onAfterMessage.post(new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp), false);
+			gc.discordJS.onAfterMessage.post("", new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp));
 		}
 	}
 

@@ -34,11 +34,11 @@ public class DiscordJS {
 	public final boolean readOnly;
 
 	public final Map<String, Object> customData = new HashMap<>();
-	public final EventHandler<MessageEventJS> onMessage = new EventHandler<>();
-	public final EventHandler<MessageEventJS> onAfterMessage = new EventHandler<>();
-	public final EventHandler<ComponentEventJS> onButton = new EventHandler<>();
-	public final EventHandler<ComponentEventJS> onSelectMenu = new EventHandler<>();
-	public final EventHandler<ModalEventJS> onModal = new EventHandler<>();
+	public final EventHandler<MessageEventJS> onMessage = new EventHandler<>(true);
+	public final EventHandler<MessageEventJS> onAfterMessage = new EventHandler<>(false);
+	public final EventHandler<ComponentEventJS> onButton = new EventHandler<>(true);
+	public final EventHandler<ComponentEventJS> onSelectMenu = new EventHandler<>(true);
+	public final EventHandler<ModalEventJS> onModal = new EventHandler<>(true);
 	public final Map<String, Consumer<MessageEventJS>> customMacros = new HashMap<>();
 
 	public DiscordJS(GuildCollections g, boolean ro) {
