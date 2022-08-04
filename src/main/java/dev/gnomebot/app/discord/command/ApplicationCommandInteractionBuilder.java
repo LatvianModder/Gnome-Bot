@@ -5,8 +5,6 @@ import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
-import discord4j.discordjson.json.ImmutableApplicationCommandOptionData;
-import discord4j.discordjson.json.ImmutableApplicationCommandRequest;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
@@ -124,7 +122,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		List<ApplicationCommandOptionData> list = new ArrayList<>();
 
 		for (Self builder : options.values()) {
-			ImmutableApplicationCommandOptionData.Builder b = ApplicationCommandOptionData.builder();
+			var b = ApplicationCommandOptionData.builder();
 			b.type(builder.type.getValue());
 			b.name(builder.name);
 			b.description(builder.description);
@@ -151,7 +149,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 	}
 
 	public ApplicationCommandRequest createRootRequest() {
-		ImmutableApplicationCommandRequest.Builder b = ApplicationCommandRequest.builder();
+		var b = ApplicationCommandRequest.builder();
 		b.type(interactionType.type);
 		b.name(name);
 
@@ -159,7 +157,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 			b.description(description);
 		}
 
-		List<ApplicationCommandOptionData> options = createOptions();
+		var options = createOptions();
 
 		if (!options.isEmpty()) {
 			b.options(options);
