@@ -38,6 +38,7 @@ public class Config {
 	public final Snowflake owner;
 	public final Set<Snowflake> trusted;
 	public final String wolfram_alpha_token;
+	public final boolean require_cloudflare;
 
 	private Config(Path file) {
 		ConfigFile c = new ConfigFile(file);
@@ -79,6 +80,7 @@ public class Config {
 		}
 
 		wolfram_alpha_token = c.getString("wolfram_alpha_token", "");
+		require_cloudflare = c.getBoolean("require_cloudflare", true);
 
 		if (port < 1024 || port > 65535) {
 			throw new IllegalArgumentException("Port has to be between [1024, 65535]!");

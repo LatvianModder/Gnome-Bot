@@ -186,7 +186,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 		}
 
 		private void handle0(Context ctx, String p, String ip, String country, WebToken[] tokenCallback) throws Exception {
-			if (ip.equals("0.0.0.0") || country.equals("xx")) {
+			if (Config.get().require_cloudflare && (ip.equals("0.0.0.0") || country.equals("xx"))) {
 				throw HTTPResponseCode.BAD_REQUEST.error("Missing required headers");
 			}
 
