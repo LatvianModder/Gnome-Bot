@@ -1,12 +1,21 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.Confirm;
 import dev.gnomebot.app.discord.DM;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.Utils;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
+
+import java.util.Collections;
 
 /**
  * @author LatvianModder
@@ -71,5 +80,12 @@ public class WarnCommand extends ApplicationCommands {
 
 		// m.addReaction(DiscordHandler.EMOJI_COMMAND_ERROR).block();
 		// ReactionHandler.addListener();
+	}
+
+	public static void warnButtonCallback(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
+		event.context.checkSenderAdmin();
+		//other.kick(reason).subscribe();
+		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Warned by " + event.context.sender.getUsername() + "!")).getData()));
+		event.respond("Warned <@" + other.asString() + ">");
 	}
 }

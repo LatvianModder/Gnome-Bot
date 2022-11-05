@@ -1,11 +1,20 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.Confirm;
 import dev.gnomebot.app.discord.DM;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.Utils;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
+
+import java.util.Collections;
 
 /**
  * @author LatvianModder
@@ -69,5 +78,12 @@ public class KickCommand extends ApplicationCommands {
 		// ReactionHandler.addListener();
 
 		event.respond("Kicked! DM successful: " + dm);
+	}
+
+	public static void kickButtonCallback(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
+		event.context.checkSenderAdmin();
+		event.context.gc.getGuild().kick(other, reason).subscribe();
+		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Kicked by " + event.context.sender.getUsername() + "!")).getData()));
+		event.respond("Kicked <@" + other.asString() + ">");
 	}
 }

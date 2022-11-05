@@ -1,14 +1,23 @@
 package dev.gnomebot.app.discord.command;
 
+import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.Macro;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.User;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -16,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * @author LatvianModder
  */
-public class MacroCommand extends ApplicationCommands {
+public class MacroCommands extends ApplicationCommands {
 	public static final String EXTRA_PLACEHOLDER = "For info about Extras run /about macro";
 	public static final String HELP = """
 			Extras allow you to add buttons to your macro, change it into script or embed, etc. List of available properties:
@@ -59,29 +68,29 @@ public class MacroCommand extends ApplicationCommands {
 			.description("Manage macros")
 			.add(sub("add")
 					.add(string("name").required())
-					.run(MacroCommand::add)
+					.run(MacroCommands::add)
 			)
 			.add(sub("edit")
-					.add(string("name").required().suggest(MacroCommand::suggestOwnMacro))
-					.run(MacroCommand::edit)
+					.add(string("name").required().suggest(MacroCommands::suggestOwnMacro))
+					.run(MacroCommands::edit)
 			)
 			.add(sub("remove")
-					.add(string("name").required().suggest(MacroCommand::suggestOwnMacro))
-					.run(MacroCommand::remove)
+					.add(string("name").required().suggest(MacroCommands::suggestOwnMacro))
+					.run(MacroCommands::remove)
 			)
 			.add(sub("list")
 					.add(user("author"))
 					.add(string("name"))
-					.run(MacroCommand::list)
+					.run(MacroCommands::list)
 			)
 			.add(sub("info")
-					.add(string("name").required().suggest(MacroCommand::suggestAnyMacro))
-					.run(MacroCommand::info)
+					.add(string("name").required().suggest(MacroCommands::suggestAnyMacro))
+					.run(MacroCommands::info)
 			)
 			.add(sub("slash_command")
-					.add(string("name").required().suggest(MacroCommand::suggestAnyMacro))
+					.add(string("name").required().suggest(MacroCommands::suggestAnyMacro))
 					.add(bool("enabled"))
-					.run(MacroCommand::slashCommand)
+					.run(MacroCommands::slashCommand)
 			);
 
 	private static void suggestAnyMacro(ChatCommandSuggestionEvent event) {
@@ -131,6 +140,49 @@ public class MacroCommand extends ApplicationCommands {
 		);
 	}
 
+	public static void addMacroCallback(ModalEventWrapper event, String name) {
+		if (name.isEmpty()) {
+			throw new GnomeException("Macro name can't be empty!");
+		} else if (name.length() > 50) {
+			throw new GnomeException("Macro name too long! Max 50 characters.");
+		}
+
+		if (event.context.gc.getMacro(name) != null) {
+			throw new GnomeException("Macro with that name already exists!");
+		}
+
+		String content = event.get("content").asString()
+				.replaceAll("<@&(\\d+)>", "role:$1")
+				.replaceAll("<@(\\d+)>", "user:$1")
+				.replace("@here", "mention:here")
+				.replace("@everyone", "mention:everyone");
+
+		if (content.isEmpty()) {
+			throw new GnomeException("Can't have empty content!");
+		}
+
+		List<String> extra = new ArrayList<>(Arrays.stream(event.get("extra").asString().trim().split("\n")).map(String::trim).filter(s -> !s.isEmpty()).toList());
+
+		Document document = new Document();
+		document.put("name", name);
+		document.put("content", content);
+
+		extra.remove("clear");
+
+		if (!extra.isEmpty()) {
+			document.put("extra", extra);
+		}
+
+		document.put("author", event.context.sender.getId().asLong());
+		document.put("created", new Date());
+		document.put("uses", 0);
+		document.put("type", "text");
+		event.context.gc.macros.insert(document);
+		event.context.gc.updateMacroMap();
+
+		event.respond(MessageBuilder.create("Macro '" + name + "' created!").ephemeral(false));
+	}
+
 	private static void edit(ChatInputInteractionEventWrapper event) {
 		String name = event.get("name").asString();
 
@@ -149,6 +201,63 @@ public class MacroCommand extends ApplicationCommands {
 				TextInput.paragraph("content", "Content").prefilled(macro.getContent()),
 				TextInput.paragraph("extra", "Extra").required(false).prefilled(String.join("\n", macro.getExtra())).placeholder(EXTRA_PLACEHOLDER)
 		);
+	}
+
+	public static void editMacroCallback(ModalEventWrapper event, String name) {
+		if (name.isEmpty()) {
+			throw new GnomeException("Macro name can't be empty!");
+		}
+
+		Macro macro = event.context.gc.getMacro(name);
+
+		if (macro == null) {
+			throw new GnomeException("Macro not found!");
+		} else if (macro.getAuthor() != event.context.sender.getId().asLong() && !event.context.isAdmin()) {
+			throw new GnomeException("You can only edit your own macros!");
+		}
+
+		String rename = event.get("rename").asString(macro.getName());
+
+		List<Bson> updates = new ArrayList<>();
+		long slashId = 0L;
+
+		if (!rename.equals(macro.getName())) {
+			if (rename.length() > 50) {
+				throw new GnomeException("Macro name too long! Max 50 characters.");
+			}
+
+			if (event.context.gc.getMacro(rename) != null) {
+				throw new GnomeException("Macro with that name already exists!");
+			}
+
+			slashId = macro.setSlashCommand(false);
+			updates.add(Updates.set("name", rename));
+		}
+
+		String content = event.get("content").asString(macro.getContent());
+
+		if (!content.equals(macro.getContent())) {
+			updates.add(Updates.set("content", content));
+		}
+
+		List<String> extra = Arrays.stream(event.get("extra").asString().trim().split("\n")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+
+		if (!extra.isEmpty()) {
+			if (extra.contains("clear")) {
+				updates.add(Updates.unset("extra"));
+			} else {
+				updates.add(Updates.set("extra", extra));
+			}
+		}
+
+		macro.update(updates);
+
+		if (slashId != 0L) {
+			macro.setSlashCommand(true);
+		}
+
+		event.context.gc.updateMacroMap();
+		event.respond(MessageBuilder.create("Macro '" + rename + "' updated!").ephemeral(false));
 	}
 
 	private static void remove(ChatInputInteractionEventWrapper event) {
@@ -245,6 +354,26 @@ public class MacroCommand extends ApplicationCommands {
 			event.respond("Slash command for " + macro.getName() + " enabled");
 		} else {
 			event.respond("Slash command for " + macro.getName() + " disabled");
+		}
+	}
+
+	public static void macroButtonCallback(ComponentEventWrapper event, String name, @Nullable Snowflake owner) {
+		Macro macro = event.context.gc.getMacro(name);
+
+		if (macro == null) {
+			throw new GnomeException("Macro '" + name + "' not found!");
+		}
+
+		if (owner != null) {
+			if (owner.asLong() != event.context.sender.getId().asLong()) {
+				event.acknowledge();
+			} else {
+				macro.update(Updates.inc("uses", 1));
+				event.edit().respond(macro.createMessage(owner, false).ephemeral(true));
+			}
+		} else {
+			macro.update(Updates.inc("uses", 1));
+			event.respond(macro.createMessage(event.context.sender.getId(), false).ephemeral(true));
 		}
 	}
 }

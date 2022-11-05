@@ -1,7 +1,10 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.component.ActionRow;
@@ -71,5 +74,23 @@ public class ModpackCommand extends ApplicationCommands {
 				.addComponent(ActionRow.of(Button.secondary("refresh_modpack", Emojis.REFRESH, "Refresh")).getData())
 				.build()
 		).subscribe();
+	}
+
+	public static void refreshCallback(ComponentEventWrapper event) {
+		if (event.context.message.getInteraction().isPresent() && event.context.sender.getId().equals(event.context.message.getInteraction().get().getUser().getId())) {
+			MessageBuilder builder = MessageBuilder.create();
+
+			ModpackCommand.Pack pack = ModpackCommand.getRandomPack();
+
+			builder.addEmbed(EmbedBuilder.create()
+					.color(EmbedColor.GRAY)
+					.title("What pack should I play?")
+					.description("[" + pack.name + "](" + pack.url + ")")
+			);
+
+			event.edit().respond(builder);
+		} else {
+			event.acknowledge();
+		}
 	}
 }

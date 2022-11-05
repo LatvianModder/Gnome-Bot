@@ -7,6 +7,7 @@ import io.javalin.websocket.WsConfig;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -99,8 +100,10 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 				if (session != null) {
 					App.warn(getName() + " closed: " + session + " [" + ctx.status() + (ctx.reason() == null ? "" : (" / " + ctx.reason())) + "]");
+				} else if (ctx.session.getRemoteAddress() instanceof InetSocketAddress inet) {
+					App.error("Unknown " + getName() + " session: #" + inet.getPort());
 				} else {
-					App.error("Unknown " + getName() + " session: #" + ctx.session.getRemoteAddress().getPort());
+					App.error("Unknown " + getName() + " session: #" + ctx.session.getRemoteAddress());
 				}
 			}
 		});

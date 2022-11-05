@@ -22,6 +22,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
+import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
@@ -157,13 +158,31 @@ public class MessageHandler {
 					DM.reply(handler, privateChannel, author, channel, "Why are you talking to me? I'm a bot");
 				}
 			} else if (member != null && event.getGuildId().isPresent()) {
-				var gc = handler.app.db.guildOrNull(event.getGuildId().orElse(null));
+				var gc = handler.app.db.guild(event.getGuildId().orElse(null));
 				Snowflake topLevelChannelId = gc == null ? null : channel instanceof ThreadChannel threadChannel ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
 				ChannelInfo channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
 
 				if (channelInfo != null && channel instanceof ThreadChannel threadChannel) {
 					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
 				}
+
+				// Temp fix until D4J supports forum channels
+				if (channelInfo == null && channel instanceof ThreadChannel threadChannel) {
+					channelInfo = new ChannelInfo(gc, gc.channelInfo, MapWrapper.EMPTY, threadChannel.getParentId().get());
+					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
+				}
+
+				/* testing forum channels
+				if (m.getChannelId().equals(Snowflake.of(1020391704232198144L))) {
+					App.info("Inside post, info:");
+					App.info("Guild ID: " + event.getGuildId());
+					App.info("GC: " + gc);
+					App.info("Channel Type: " + (channel != null ? channel.getType().toString() : "unknown type"));
+					App.info("Channel Class: " + (channel != null ? channel.getClass().getName() : "unknown class"));
+					App.info("Top level channel ID: " + topLevelChannelId);
+					App.info("Channel Info: " + channelInfo);
+				}
+				 */
 
 				if (channelInfo != null) {
 					messageCreated(handler, channelInfo, m, member, member, false);

@@ -2,10 +2,14 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import com.mongodb.BasicDBObject;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.DiscordPoll;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.Utils;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateFields;
@@ -84,4 +88,31 @@ public class PollCommand {
 
 		m.edit(MessageEditSpec.builder().addEmbed(context.gc.polls.findFirst(m).edit(context.gc, EmbedCreateFields.Footer.of(context.sender.getTag(), context.sender.getAvatarUrl()))).build()).subscribe();
 	};
+
+	public static void pollMenuCallback(ComponentEventWrapper event, int number, String value) {
+		DiscordPoll poll = event.context.gc.polls.query().eq("number", number).first();
+
+		if (poll == null) {
+			event.acknowledge();
+			return;
+		}
+
+		Message m = event.context.channelInfo.getMessage(Snowflake.of(poll.getUID()));
+
+		if (value.equals("vote/none")) {
+			event.acknowledge();
+
+			if (poll.setVote(event.context.sender.getId().asString(), -1)) {
+				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				m.edit(MessageEditSpec.builder().addEmbed(poll.edit(event.context.gc, footer)).build()).subscribe();
+			}
+		} else if (value.startsWith("vote/")) {
+			event.acknowledge();
+
+			if (poll.setVote(event.context.sender.getId().asString(), Integer.parseInt(value.substring(5)))) {
+				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				m.edit(MessageEditSpec.builder().addEmbed(poll.edit(event.context.gc, footer)).build()).subscribe();
+			}
+		}
+	}
 }

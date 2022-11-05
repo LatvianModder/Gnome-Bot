@@ -222,6 +222,10 @@ public class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	}
 
 	public PermissionSet getPermissions(Snowflake member) {
+		if (threadParent != null) {
+			return threadParent.getPermissions(member);
+		}
+
 		if (cachedPermissions == null) {
 			cachedPermissions = new HashMap<>();
 		}

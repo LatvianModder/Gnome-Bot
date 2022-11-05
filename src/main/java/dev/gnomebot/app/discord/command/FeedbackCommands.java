@@ -1,18 +1,33 @@
 package dev.gnomebot.app.discord.command;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordFeedback;
+import dev.gnomebot.app.data.Vote;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.Emojis;
+import dev.gnomebot.app.discord.ModalEventWrapper;
+import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
+import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.MessageEditSpec;
+import discord4j.rest.util.Permission;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -59,6 +74,64 @@ public class FeedbackCommands extends ApplicationCommands {
 		}
 
 		event.respondModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
+	}
+
+	public static void submitCallback(ModalEventWrapper event) {
+		//event.respond("Feedback sent!");
+
+		// event.acknowledgeEphemeral();
+		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
+
+		if (feedbackChannel == null) {
+			throw new GnomeException("Feedback channel is not set up on this server!");
+		}
+
+		String suggestion = event.get("feedback").asString();
+
+		int number = event.context.gc.feedbackNumber.get() + 1;
+		event.context.gc.feedbackNumber.set(number);
+		event.context.gc.feedbackNumber.save();
+
+		event.context.referenceMessage = false;
+
+		event.context.checkBotPerms(feedbackChannel, Permission.ADD_REACTIONS, Permission.SEND_MESSAGES);
+
+		Message m = feedbackChannel.createMessage(EmbedBuilder.create()
+				.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
+				.title("Loading suggestion #" + number + "...")
+		).block();
+
+		Document document = new Document();
+		document.put("_id", m.getId().asLong());
+		document.put("author", event.context.sender.getId().asLong());
+		document.put("timestamp", Date.from(m.getTimestamp()));
+		document.put("number", number);
+		document.put("content", suggestion);
+		document.put("status", 0);
+		BasicDBObject votes = new BasicDBObject();
+		votes.put(event.context.sender.getId().asString(), true);
+		document.put("votes", votes);
+		event.context.gc.feedback.insert(document);
+		m.edit(MessageEditSpec.builder().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).build()).block();
+
+		try {
+			Utils.THREAD_ROUTE.newRequest(m.getChannelId().asLong(), m.getId().asLong())
+					.body(new ThreadMessageRequest("Discussion of " + number))
+					.exchange(event.context.handler.client.getCoreResources().getRouter())
+					.skipBody()
+					.block();
+		} catch (Exception ex) {
+			App.error("Failed to create a thread for suggestion " + event.context.gc + "/#" + number);
+		}
+
+		m.edit(MessageEditSpec.builder().addComponent(ActionRow.of(
+				Button.secondary("feedback/" + number + "/upvote", Emojis.VOTEUP),
+				Button.secondary("feedback/" + number + "/mehvote", Emojis.VOTENONE),
+				Button.secondary("feedback/" + number + "/downvote", Emojis.VOTEDOWN),
+				Button.link(QuoteHandler.getChannelURL(event.context.gc.guildId, m.getId()), "Discussion")
+		)).build()).block();
+
+		event.respond(MessageBuilder.create("Your feedback has been submitted!").addComponentRow(Button.link(QuoteHandler.getMessageURL(event.context.gc.guildId, m.getChannelId(), m.getId()), "Open")));
 	}
 
 	private static void changeStatus(ChatInputInteractionEventWrapper event, DiscordFeedback.Status status) {
@@ -142,5 +215,31 @@ public class FeedbackCommands extends ApplicationCommands {
 			} catch (Exception ex) {
 			}
 		});
+	}
+
+	public static void feedbackButtonCallback(ComponentEventWrapper event, int number, Vote vote) {
+		DiscordFeedback feedback = event.context.gc.feedback.query().eq("number", number).first();
+
+		if (feedback == null) {
+			event.acknowledge();
+			return;
+		}
+
+		Message m = event.context.channelInfo.getMessage(Snowflake.of(feedback.getUID()));
+
+		if (!feedback.getStatus().canEdit()) {
+			throw new GnomeException("You can't vote for this suggestion, it's already decided on!");
+		}
+
+		if (event.context.gc.feedbackVoteRole.is(event.context.sender)) {
+			event.acknowledge();
+
+			if (feedback.setVote(event.context.sender.getId().asString(), vote)) {
+				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				m.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
+			}
+		} else {
+			throw new GnomeException("You can't vote for this suggestion, you have to have " + event.context.gc.regularRole + " role!");
+		}
 	}
 }

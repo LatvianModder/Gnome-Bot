@@ -5,12 +5,17 @@ import dev.gnomebot.app.data.WebToken;
 import discord4j.core.object.entity.User;
 import org.eclipse.jetty.websocket.api.Session;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 public record WSSession(WSHandler handler, Session session, WebToken token, User user) {
 	@Override
 	public String toString() {
-		return user.getUsername() + '#' + session.getRemoteAddress().getPort();
+		if (session.getRemoteAddress() instanceof InetSocketAddress inet) {
+			return user.getUsername() + '#' + inet.getPort();
+		} else {
+			return user.getUsername() + '#' + session.getRemoteAddress();
+		}
 	}
 
 	public void sendString(String message) {

@@ -46,7 +46,7 @@ public class JsonResponse implements Response {
 	public void result(Context ctx) {
 		ctx.status(200);
 		ctx.contentType("application/json; charset=utf-8");
-		ctx.future(CompletableFuture.supplyAsync(this::getJsonString));
+		ctx.future(() -> CompletableFuture.supplyAsync(this::getJsonString));
 	}
 
 	public String getJsonString() {

@@ -11,7 +11,7 @@ import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.Pair;
 import io.javalin.Javalin;
-import io.javalin.core.JavalinConfig;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;

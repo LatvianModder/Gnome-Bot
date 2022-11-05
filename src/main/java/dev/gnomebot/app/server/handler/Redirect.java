@@ -4,12 +4,12 @@ import dev.gnomebot.app.server.HTTPResponseCode;
 import io.javalin.http.Context;
 
 public class Redirect implements Response {
-	public static Redirect temporarily(String location) {
-		return new Redirect(HTTPResponseCode.MOVED_TEMPORARILY.code, location);
-	}
-
 	public static Redirect permanently(String location) {
 		return new Redirect(HTTPResponseCode.MOVED_PERMANENTLY.code, location);
+	}
+
+	public static Redirect temporarily(String location) {
+		return new Redirect(HTTPResponseCode.MOVED_TEMPORARILY.code, location);
 	}
 
 	public final int code;

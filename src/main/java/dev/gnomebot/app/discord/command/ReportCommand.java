@@ -1,6 +1,8 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
+import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.common.util.Snowflake;
@@ -54,5 +56,40 @@ public class ReportCommand extends ApplicationCommands {
 				// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
 				TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
 		);
+	}
+
+	public static void reportCallback(ModalEventWrapper event, Snowflake channel, Snowflake user) {
+		if (true) {
+			event.respond("Reporting isn't implemented yet! You'll have to ping admins");
+			return;
+		}
+
+		CachedRole role = event.context.gc.reportMentionRole.getRole();
+
+		if (role == null) {
+			event.respond("Thank you for your report!");
+		} else {
+			event.respond("Thank you for your report! <@&" + role.id.asString() + "> have been notified.");
+		}
+
+		/*
+		event.respond(msg -> {
+			if (role == null) {
+				msg.content("Select reason for reporting this message:");
+			} else {
+				msg.content("Select reason for reporting this message: (<@&" + role.id.asString() + "> will be pinged)");
+			}
+
+			List<SelectMenu.Option> options = new ArrayList<>();
+			options.add(SelectMenu.Option.of("Cancel", "-"));
+
+			for (String s : event.context.gc.reportOptions.get().split(" \\| ")) {
+				options.add(SelectMenu.Option.of(s, s));
+			}
+
+			options.add(SelectMenu.Option.of("Other", "Other"));
+			msg.addComponent(ActionRow.of(SelectMenu.of("report/" + m.getChannelId().asString() + "/" + m.getId().asString(), options).withPlaceholder("Select Reason...")).getData());
+		});
+		 */
 	}
 }

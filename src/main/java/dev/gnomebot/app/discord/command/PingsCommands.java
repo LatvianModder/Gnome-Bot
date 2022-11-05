@@ -1,10 +1,17 @@
 package dev.gnomebot.app.discord.command;
 
+import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
+import dev.gnomebot.app.discord.ModalEventWrapper;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
+
+import java.util.Collections;
 
 /**
  * @author LatvianModder
@@ -24,9 +31,14 @@ public class PingsCommands extends ApplicationCommands {
 			.add(sub("help")
 					.description("Prints info on how to use pings")
 					.run(PingsCommands::help)
-			).add(sub("regex_help")
+			)
+			.add(sub("regex_help")
 					.description("Prints info on how to use RegEx")
 					.run(PingsCommands::regexHelp)
+			)
+			.add(sub("test")
+					.description("Test your pings in bulk")
+					.run(PingsCommands::test)
 			);
 
 	public static final String HELP = """
@@ -124,6 +136,54 @@ public class PingsCommands extends ApplicationCommands {
 		);
 	}
 
+	public static void editCallback(ModalEventWrapper event) {
+		if (!event.context.isAdmin()) {
+			// event.respond("WIP! For now this command is only available to admins!");
+			// return;
+		}
+
+		String config = event.get("config").asString().trim();
+
+		try {
+			event.context.gc.db.userPings.query(event.context.sender).upsert(Collections.singletonList(Updates.set("config", config)));
+
+			if (config.isEmpty()) {
+				event.context.gc.db.app.pingHandler.update();
+				event.respond("Pings cleared!");
+				return;
+			}
+
+			var pings = UserPings.compile(event.context.gc.db, event.context.sender.getId(), config);
+
+			App.success(event.context.sender.getUsername() + " updated their pings:");
+
+			for (var ping : pings) {
+				App.info("- name: " + ping.name);
+				App.info("  config: " + ping.buildConfig());
+				App.info("  pings:");
+
+				for (var p : ping.pings) {
+					App.info("  " + p);
+				}
+			}
+
+			event.context.gc.db.app.pingHandler.update();
+			event.respond("Pings set!");
+		} catch (GnomeException ex) {
+			event.respond(MessageBuilder.create("Syntax error on line " + ex.position + ":\n" + ex.getMessage()).addComponentRow(
+					Button.primary("pings", "Edit"),
+					Button.secondary("pings_help", "Help"),
+					Button.secondary("regex_help", "RegEx Guide")
+			));
+		} catch (Exception ex) {
+			event.respond(MessageBuilder.create("Syntax error:\n" + ex.getMessage()).addComponentRow(
+					Button.primary("pings", "Edit"),
+					Button.secondary("pings_help", "Help"),
+					Button.secondary("regex_help", "RegEx Guide")
+			));
+		}
+	}
+
 	private static void share(ChatInputInteractionEventWrapper event) {
 		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
 
@@ -141,5 +201,9 @@ public class PingsCommands extends ApplicationCommands {
 
 	public static void regexHelp(DeferrableInteractionEventWrapper<?> event) {
 		event.respond(HELP_REGEX);
+	}
+
+	public static void test(DeferrableInteractionEventWrapper<?> event) {
+		event.respond("WIP!");
 	}
 }

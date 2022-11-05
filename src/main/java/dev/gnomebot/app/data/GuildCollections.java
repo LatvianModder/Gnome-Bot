@@ -365,8 +365,8 @@ public class GuildCollections {
 	public void adminLogChannelEmbed(ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
 		channelConfig.messageChannel().ifPresent(c -> {
 					EmbedBuilder builder = EmbedBuilder.create();
-			builder.color(EmbedColor.RED);
-			builder.timestamp(Instant.now());
+					builder.color(EmbedColor.RED);
+					builder.timestamp(Instant.now());
 					embed.accept(builder);
 					c.createMessage(builder).subscribe();
 				}
@@ -571,16 +571,14 @@ public class GuildCollections {
 		// refreshCache();
 	}
 
-	public void refreshChannelCache() {
+	public synchronized void refreshChannelCache() {
 		channelMap = null;
 		channelList = null;
 	}
 
-	public Map<Snowflake, ChannelInfo> getChannelMap() {
-		Map<Snowflake, ChannelInfo> ci = channelMap;
-
-		if (ci == null) {
-			ci = new LinkedHashMap<>();
+	public synchronized Map<Snowflake, ChannelInfo> getChannelMap() {
+		if (channelMap == null) {
+			channelMap = new LinkedHashMap<>();
 
 			try {
 				for (TopLevelGuildMessageChannel ch : getGuild().getChannels()
@@ -598,16 +596,14 @@ public class GuildCollections {
 					}
 
 					c.updateFrom(ch);
-					ci.put(ch.getId(), c);
+					channelMap.put(ch.getId(), c);
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-
-			channelMap = ci;
 		}
 
-		return ci;
+		return channelMap;
 	}
 
 	public List<ChannelInfo> getChannelList() {

@@ -49,6 +49,6 @@ public class AboutCommand extends ApplicationCommands {
 	}
 
 	private static void macro(ChatInputInteractionEventWrapper event) {
-		event.respond(MacroCommand.HELP);
+		event.respond(MacroCommands.HELP);
 	}
 }
