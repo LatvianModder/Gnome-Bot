@@ -201,6 +201,8 @@ public class App implements Runnable {
 		webServer.add("api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5);
 		webServer.add("api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5);
 
+		webServer.add("api/rust-plus/:from", MiscHandlers::rustPlus).post().noAuth().log();
+
 		webServer.add("public/:file", SpecialHandlers::publicfile).noAuth().cacheMinutes(5);
 
 		webServer.add("panel", PanelHandlers::root).log();
@@ -273,6 +275,17 @@ public class App implements Runnable {
 		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));
 		// queueScheduledTask(System.currentTimeMillis() + 4000L, task -> info("Test 2!"));
 		// queueScheduledTask(System.currentTimeMillis() + 5000L, task -> info("Test 3!"));
+
+		for (int y = 0; y < 16; y++) {
+			var str = new StringBuilder();
+
+			for (int x = 0; x < 16; x++) {
+				str.append(Ansi.b256(x + y * 16));
+				str.append("  ");
+			}
+
+			info(str);
+		}
 
 		new WatchdogThread(this).start();
 

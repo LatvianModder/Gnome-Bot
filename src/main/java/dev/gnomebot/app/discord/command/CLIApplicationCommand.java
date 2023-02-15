@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.cli.CLICommand;
@@ -103,5 +104,6 @@ public class CLIApplicationCommand extends ApplicationCommands {
 	}
 
 	private static void suggestArguments(ChatCommandSuggestionEvent event) {
+		App.info("Suggestions for " + event.get("command").asString("Unknown") + ": []");
 	}
 }

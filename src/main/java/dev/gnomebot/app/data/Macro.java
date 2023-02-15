@@ -133,6 +133,8 @@ public class Macro extends WrappedDocument<Macro> {
 
 		if (!components.isEmpty()) {
 			builder.addComponent(ActionRow.of(components));
+		} else {
+			builder.noComponents();
 		}
 
 		for (String s : contentString

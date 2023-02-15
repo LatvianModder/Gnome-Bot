@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.ping.Ping;
 import dev.gnomebot.app.data.ping.PingData;
 import dev.gnomebot.app.data.ping.PingDestination;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -33,16 +34,17 @@ public class WebHook implements PingDestination {
 
 	public WebHook(String path) {
 		channel = null;
-		threadId = "";
 
-		int si = path.indexOf('/');
+		var s = path.split("/");
 
-		if (si == -1) {
+		if (s.length == 1) {
 			id = Utils.NO_SNOWFLAKE;
 			token = "";
+			threadId = "";
 		} else {
-			id = Snowflake.of(path.substring(0, si));
-			token = path.substring(si + 1);
+			id = Snowflake.of(s[0]);
+			token = s[1];
+			threadId = s.length >= 3 ? s[2] : "";
 		}
 	}
 
@@ -113,14 +115,17 @@ public class WebHook implements PingDestination {
 	}
 
 	@Override
-	public void relayPing(PingData pingData) {
+	public void relayPing(PingData pingData, Ping ping) {
 		try {
+			App.info("Ping for WebHook[" + id.asString() + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+
 			execute(MessageBuilder.create()
 					.content("[Ping ➤](" + pingData.url() + ") from **" + pingData.gc() + "** in " + pingData.channel().getMention() + "\n" + pingData.content())
 					.webhookName(pingData.username())
 					.webhookAvatarUrl(pingData.avatar())
 			);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
 	}
 }

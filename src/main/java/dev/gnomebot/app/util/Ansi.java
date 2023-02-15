@@ -28,4 +28,12 @@ public interface Ansi {
 	String MAGENTA = "\u001B[1;35m";
 	String CYAN = "\u001B[1;36m";
 	String LIGHT_GRAY = "\u001B[1;37m";
+
+	static String c256(int code) {
+		return "\u001B[38;5;" + code + "m";
+	}
+
+	static String b256(int code) {
+		return "\u001B[48;5;" + code + "m";
+	}
 }

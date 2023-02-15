@@ -34,6 +34,7 @@ public class Config {
 	public final WebHook death_webhook;
 	public final WebHook gnome_mention_webhook;
 	public final WebHook gnome_dm_webhook;
+	public final WebHook rust_plus_webhook;
 	public final Snowflake gnome_dm_channel_id;
 	public final Snowflake owner;
 	public final Set<Snowflake> trusted;
@@ -62,6 +63,7 @@ public class Config {
 		death_webhook = new WebHook(c.getString("death_webhook", ""));
 		gnome_mention_webhook = new WebHook(c.getString("gnome_mention_webhook", ""));
 		gnome_dm_webhook = new WebHook(c.getString("gnome_dm_webhook", ""));
+		rust_plus_webhook = new WebHook(c.getString("rust_plus_webhook", ""));
 		gnome_dm_channel_id = c.getSnowflake("gnome_dm_channel_id");
 		owner = c.getSnowflake("owner");
 

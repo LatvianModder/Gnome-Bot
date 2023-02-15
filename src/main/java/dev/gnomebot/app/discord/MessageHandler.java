@@ -24,7 +24,6 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
-import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
@@ -39,6 +38,7 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
+import discord4j.core.spec.StartThreadSpec;
 import discord4j.rest.RestClient;
 import discord4j.rest.entity.RestChannel;
 import org.bson.Document;
@@ -718,11 +718,19 @@ public class MessageHandler {
 
 				// (u.endsWith("s") ? (u + "’") : (u + "’s")) + " Post Discussion"
 
+				message.startThread(StartThreadSpec.builder()
+						.name(n)
+						// .autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION2)
+						.build()
+				).block();
+
+				/*
 				Utils.THREAD_ROUTE.newRequest(channelInfo.id.asLong(), message.getId().asLong())
 						.body(new ThreadMessageRequest(n))
 						.exchange(context.handler.client.getCoreResources().getRouter())
 						.skipBody()
 						.block();
+				 */
 			} catch (Exception ex) {
 				App.error("Failed to create a thread!");
 				App.warn(ex);

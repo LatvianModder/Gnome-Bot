@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class WrappedChannel extends DiscordObject {
 	public final WrappedGuild guild;
-	private String name;
-	private String topic;
-	private Boolean nsfw;
+	protected String name;
+	protected String topic;
+	protected Boolean nsfw;
 
 	public WrappedChannel(WrappedId id, WrappedGuild g) {
 		super(id);

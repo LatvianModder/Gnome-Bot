@@ -6,13 +6,12 @@ import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.ThreadMessageRequest;
-import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageEditSpec;
+import discord4j.core.spec.StartThreadSpec;
 import discord4j.discordjson.json.MessageData;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,7 +77,7 @@ public class WrappedMessage extends DiscordObject {
 		return !messageData.mentions().isEmpty();
 	}
 
-	public boolean isUserMentioned(Snowflake id) {
+	public boolean isUserMentioned(WrappedId id) {
 		for (var u : messageData.mentions()) {
 			if (u.id().asLong() == id.asLong()) {
 				return true;
@@ -206,18 +205,15 @@ public class WrappedMessage extends DiscordObject {
 		return channel.getMessage(message.publish().block());
 	}
 
-	public void createThread(String title) {
+	public WrappedThread createThread(String title) {
 		channel.guild.discordJS.checkReadOnly();
 
 		try {
-			Utils.THREAD_ROUTE.newRequest(channel.id.asLong(), id.asLong())
-					.body(new ThreadMessageRequest(title))
-					.exchange(App.instance.discordHandler.client.getCoreResources().getRouter())
-					.skipBody()
-					.block();
+			return new WrappedThread(channel.guild, message.startThread(StartThreadSpec.builder().name(title).build()).block());
 		} catch (Exception ex) {
 			App.error("Failed to create a thread!");
 			App.warn(ex);
+			return null;
 		}
 	}
 

@@ -7,7 +7,6 @@ import dev.gnomebot.app.server.handler.Response;
 import dev.gnomebot.app.util.Utils;
 import io.javalin.http.Context;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -44,9 +43,10 @@ public class JsonResponse implements Response {
 
 	@Override
 	public void result(Context ctx) {
-		ctx.status(200);
 		ctx.contentType("application/json; charset=utf-8");
-		ctx.future(() -> CompletableFuture.supplyAsync(this::getJsonString));
+		//ctx.future(() -> CompletableFuture.supplyAsync(this::getJsonString));
+		ctx.result(getJsonString());
+		ctx.status(200);
 	}
 
 	public String getJsonString() {

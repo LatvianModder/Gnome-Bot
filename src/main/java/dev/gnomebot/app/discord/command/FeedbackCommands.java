@@ -13,15 +13,16 @@ import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.ThreadMessageRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.MessageEditSpec;
+import discord4j.core.spec.StartThreadSpec;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -115,11 +116,12 @@ public class FeedbackCommands extends ApplicationCommands {
 		m.edit(MessageEditSpec.builder().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).build()).block();
 
 		try {
-			Utils.THREAD_ROUTE.newRequest(m.getChannelId().asLong(), m.getId().asLong())
-					.body(new ThreadMessageRequest("Discussion of " + number))
-					.exchange(event.context.handler.client.getCoreResources().getRouter())
-					.skipBody()
-					.block();
+			m.startThread(StartThreadSpec.builder()
+					.name("Discussion of " + number)
+					.autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION3)
+					.build()
+			).block();
+
 		} catch (Exception ex) {
 			App.error("Failed to create a thread for suggestion " + event.context.gc + "/#" + number);
 		}

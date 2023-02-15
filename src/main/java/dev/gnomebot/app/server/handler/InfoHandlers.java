@@ -32,10 +32,12 @@ public class InfoHandlers {
 	}
 
 	public static Response user(ServerRequest request) {
-		String size = request.query("size").asString("128");
+		var size = request.query("size").asString("128");
+		var id = Snowflake.of(request.variable("user"));
+
+		// App.info("Getting info for " + id.asString());
 
 		return JsonResponse.object(json -> {
-			Snowflake id = Snowflake.of(request.variable("user"));
 			json.addProperty("id", id.asString());
 			UserData userData = request.app.discordHandler.getUserData(id);
 

@@ -4,11 +4,11 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.ThreadMessageRequest;
-import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.ThreadChannel;
+import discord4j.core.spec.StartThreadSpec;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public class ReportHandler {
 	public static class Report {
-		public Snowflake messageId;
+		public ThreadChannel message;
 		public long ttl;
 		public int reports;
 	}
@@ -88,27 +88,20 @@ public class ReportHandler {
 			reportMessage.addEmbed(reportEmbed);
 
 			report = new Report();
-			report.messageId = c.get().createMessage(reportMessage).block().getId();
+
+			var msg = c.get().createMessage(reportMessage).block();
+			report.message = msg.startThread(StartThreadSpec.builder().name(author.getUsername()).build()).block();
 			report.ttl = now + 3600000L;
-
-			Utils.THREAD_ROUTE.newRequest(c.get().id.asLong(), report.messageId.asLong())
-					.body(new ThreadMessageRequest(author.getUsername()))
-					.exchange(event.context.gc.getClient().getCoreResources().getRouter())
-					.skipBody()
-					.block();
-
 			REPORT_STACKS.put(author.getId(), report);
 		}
 
 		report.reports++;
 
-		ChannelInfo thread = event.context.gc.getOrMakeChannelInfo(report.messageId);
-
 		if (report.reports >= 2) {
-			thread.createMessage(reportEmbed).block();
+			report.message.createMessage(reportEmbed.toEmbedCreateSpec()).block();
 		} else {
-			thread.createMessage("User ID:").block();
-			thread.createMessage(author.getId().asString()).block();
+			report.message.createMessage("User ID:").block();
+			report.message.createMessage(author.getId().asString()).block();
 		}
 
 		if (role != null) {

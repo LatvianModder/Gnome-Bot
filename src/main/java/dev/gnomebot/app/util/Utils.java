@@ -114,7 +114,6 @@ public class Utils {
 			"Dec",
 	};
 
-	public static final Route THREAD_ROUTE = Routes.START_THREAD_WITH_MESSAGE;
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
 	public static final Route GET_DM_CHANNELS = Route.get("/users/@me/channels");
 	public static final Pattern REGEX_PATTERN = Pattern.compile("/(.*)/([a-z]*)");
@@ -382,7 +381,7 @@ public class Utils {
 			builder.append('{');
 			boolean first = true;
 
-			for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
+			for (var entry : element.getAsJsonObject().entrySet()) {
 				if (first) {
 					first = false;
 				} else {
