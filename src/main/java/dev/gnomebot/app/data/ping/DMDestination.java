@@ -15,7 +15,8 @@ public record DMDestination(Snowflake userId, long dmChannel) implements PingDes
 
 			App.instance.discordHandler.client.getRestClient().getChannelService().createMessage(dmChannel, MessageBuilder.create(EmbedBuilder.create()
 							.author(pingData.username(), pingData.avatar())
-							.description("[Ping ➤](" + pingData.url() + ") from **" + pingData.gc() + "** in " + pingData.channel().getMention() + "\n" + pingData.content())
+							//.description("[Ping ➤](" + pingData.url() + ") from **" + pingData.gc() + "** in " + pingData.channel().getMention() + "\n" + pingData.content())
+							.description("[Ping ➤](" + pingData.url() + ") from " + pingData.channel().getMention() + "\n" + pingData.content())
 					).toMultipartMessageCreateRequest())
 					.timeout(Duration.ofSeconds(5L))
 					.block();
