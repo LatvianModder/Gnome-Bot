@@ -40,6 +40,10 @@ public class WatchdogThread extends Thread {
 	public void run() {
 		update();
 
+		if (true) {
+			return;
+		}
+
 		while (app.running) {
 			if ((System.currentTimeMillis() - lastUpdate) >= 60000L * MAX_ERRORS) {
 				if (app.blockingTasks.isEmpty()) {

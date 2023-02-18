@@ -34,10 +34,12 @@ public class ImportMessagesCommand {
 
 		if (messageChannels.isEmpty()) {
 			for (ChannelInfo channel : context.gc.getChannelList()) {
-				Snowflake lm = channel.getLastMessageId();
+				if (channel.getChannelData() != null) {
+					Snowflake lm = channel.getLastMessageId();
 
-				if (lm != null) {
-					messageChannels.add(Pair.of(channel, lm));
+					if (lm != null) {
+						messageChannels.add(Pair.of(channel, lm));
+					}
 				}
 			}
 		}
