@@ -211,6 +211,7 @@ public class App implements Runnable {
 		webServer.add("panel/:guild/audit-log", AuditLogHandlers::auditLog).admin();
 		webServer.add("panel/:guild/offenses", AuditLogHandlers::offenses).member();
 		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
+		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
 		webServer.add("panel/:guild/scams", ScamWebHandlers::scams).admin();
 
 		webServer.addWS("api/cli", WSHandler.CLI);

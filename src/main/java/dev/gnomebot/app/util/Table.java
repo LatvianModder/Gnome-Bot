@@ -1,6 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.server.html.CombinedTag;
 import dev.gnomebot.app.server.html.PairedTag;
 import dev.gnomebot.app.server.html.Tag;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,7 @@ public class Table {
 	public static class Cell {
 		private String value = "";
 		private String unformattedValue = "";
+		private Tag tag = null;
 		private char padding = ' ';
 		private boolean alignRight = false;
 
@@ -30,6 +32,11 @@ public class Table {
 			return this;
 		}
 
+		public Tag tag() {
+			tag = new CombinedTag();
+			return tag;
+		}
+
 		public Cell padding(char p) {
 			padding = p;
 			return this;
@@ -38,6 +45,14 @@ public class Table {
 		public Cell alignRight() {
 			alignRight = true;
 			return this;
+		}
+
+		public void fill(Tag cellTag) {
+			if (tag != null) {
+				cellTag.add(tag);
+			} else {
+				cellTag.string(unformattedValue);
+			}
 		}
 	}
 
@@ -203,17 +218,20 @@ public class Table {
 	public Tag toTag() {
 		Tag table = new PairedTag("table");
 
-		Tag headTag = table.paired("tr");
+		var theadTag = table.paired("thead");
+		var headTag = theadTag.paired("tr");
 
-		for (Cell cell : head) {
-			headTag.paired("th").string(cell.unformattedValue);
+		for (var cell : head) {
+			cell.fill(headTag.paired("th"));
 		}
 
-		for (Cell[] cells : rows) {
-			Tag rowTag = table.paired("tr");
+		var tbodyTag = table.paired("tbody");
 
-			for (Cell cell : cells) {
-				rowTag.paired("td").string(cell.unformattedValue);
+		for (var cells : rows) {
+			var rowTag = tbodyTag.paired("tr");
+
+			for (var cell : cells) {
+				cell.fill(rowTag.paired("td"));
 			}
 		}
 

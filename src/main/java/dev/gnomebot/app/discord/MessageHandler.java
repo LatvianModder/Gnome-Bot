@@ -35,6 +35,7 @@ import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
@@ -157,17 +158,19 @@ public class MessageHandler {
 				} else {
 					DM.reply(handler, privateChannel, author, channel, "Why are you talking to me? I'm a bot");
 				}
-			} else if (member != null && event.getGuildId().isPresent()) {
+			} else if (member != null && channel instanceof GuildMessageChannel gchannel) {
 				var gc = handler.app.db.guild(event.getGuildId().orElse(null));
-				Snowflake topLevelChannelId = gc == null ? null : channel instanceof ThreadChannel threadChannel ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
+				var threadChannel = gchannel instanceof ThreadChannel t ? t : null;
+
+				Snowflake topLevelChannelId = gc == null ? null : threadChannel != null ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
 				ChannelInfo channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
 
-				if (channelInfo != null && channel instanceof ThreadChannel threadChannel) {
+				if (channelInfo != null && threadChannel != null) {
 					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
 				}
 
 				// Temp fix until D4J supports forum channels
-				if (channelInfo == null && channel instanceof ThreadChannel threadChannel) {
+				if (channelInfo == null && threadChannel != null) {
 					channelInfo = new ChannelInfo(gc, gc.channelInfo, MapWrapper.EMPTY, threadChannel.getParentId().get());
 					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
 				}

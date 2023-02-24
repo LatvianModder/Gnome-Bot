@@ -252,7 +252,7 @@ public class ActivityHandlers {
 		return FileResponse.image(image);
 		 */
 
-		String indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
+		var indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
 
 		for (int i = 0; i < list.size(); i++) {
 			LeaderboardCommand.LeaderboardCommandEntry entry = list.get(i);

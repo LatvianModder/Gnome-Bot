@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.util.CharMap;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.GuildMemberEditSpec;
 
@@ -17,8 +16,8 @@ public class ForcePingableNameCommand extends ApplicationCommands {
 			.add(user("member").required())
 			.run(ForcePingableNameCommand::run);
 
-	public static String randomUserName(Snowflake id, int l) {
-		Random r = new Random(id.asLong());
+	public static String randomUserName(long id, int l) {
+		Random r = new Random(id);
 		char[] c = new char[l / 2 * 2];
 
 		for (int i = 0; i < l / 2; i++) {
@@ -28,7 +27,7 @@ public class ForcePingableNameCommand extends ApplicationCommands {
 		return new String(c);
 	}
 
-	public static String makePingable(String name, Snowflake id) {
+	public static String makePingable(String name, long id) {
 		return CharMap.makePingable(name, randomUserName(id, 6));
 	}
 
@@ -37,7 +36,7 @@ public class ForcePingableNameCommand extends ApplicationCommands {
 		event.context.checkSenderAdmin();
 		Member member = event.get("member").asMember().get();
 		String name = member.getUsername();
-		String newName = makePingable(name, member.getId());
+		String newName = makePingable(name, member.getId().asLong());
 
 		try {
 			if (!newName.equals(name)) {

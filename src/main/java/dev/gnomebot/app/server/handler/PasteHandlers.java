@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class PasteHandlers {
 	public static final Pattern AT_PATTERN = Pattern.compile("([ \\t]+at )([\\w./$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
+	public static final int MAX_LINES = 50_000;
 
 	public static final String[] JAVA_AND_JS_KEYWORDS = new String[]{
 			// Common //
@@ -196,18 +197,17 @@ public class PasteHandlers {
 			fileType = TYPE_NONE;
 		}
 
-		for (int i = 0; i < lines.length; i++) {
-			if (i == 50000) {
-				pasteText.br();
-				pasteText.p().addClass("error").string("This paste is too large! Rest of it will not have formatting!").end();
-				pasteText.br();
-			}
+		if (lines.length > MAX_LINES) {
+			pasteText.p().addClass("error").string("This paste is too large! Only part of it will have formatting!").end();
+			pasteText.br();
+		}
 
+		for (int i = 0; i < lines.length; i++) {
 			String lineId = "L" + (i + 1);
 			Tag line = pasteText.p();
 			line.attr("id", lineId);
 
-			if (fileType != TYPE_NONE) {
+			if (i >= MAX_LINES || fileType != TYPE_NONE) {
 				line.addClass("info");
 			} else if (lines[i].contains("ERR")) {
 				line.addClass("error");
@@ -224,7 +224,7 @@ public class PasteHandlers {
 			line.a("#" + lineId).string(String.format(lineFormat, i + 1));
 			line.a("").string("    ");
 
-			if (i >= 50000) {
+			if (i >= MAX_LINES) {
 				line.string(lines[i]);
 				continue;
 			}

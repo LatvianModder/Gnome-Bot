@@ -4,6 +4,7 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.UserCache;
+import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.handler.Response;
@@ -11,8 +12,13 @@ import dev.gnomebot.app.server.html.RootTag;
 import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.util.Table;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
+import discord4j.discordjson.json.BanData;
+import discord4j.rest.route.Routes;
+import discord4j.rest.util.PaginationUtil;
 import org.bson.conversions.Bson;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,6 +137,62 @@ public class AuditLogHandlers {
 		}
 
 		content.add(table.toTag().addClass("auditlogtable"));
+		return content.asResponse();
+	}
+
+	private record BanEntry(String id, String name, String displayName, String discriminator, String reason) {
+	}
+
+	public static Response bans(ServerRequest request) {
+		var list = new ArrayList<BanEntry>();
+		// int count = 0;
+
+		final Guild guild = request.gc.getGuild();
+
+		// Required until D4J fixes ban pagination
+		for (var entry : PaginationUtil.paginateAfter(params -> Routes.GUILD_BANS_GET.newRequest(guild.getId().asLong())
+				.query(params)
+				.exchange(guild.getClient().getCoreResources().getRouter())
+				.bodyToMono(BanData[].class)
+				.flatMapMany(Flux::fromArray), data -> data.user().id().asLong(), 0L, 1000).toIterable()) {
+			var u = entry.user();
+			// count++;
+			// App.info("Ban #%05d %s: %s".formatted(count, u.username(), entry.reason().orElse("Unknown")));
+
+			list.add(new BanEntry(
+							u.id().asString(),
+							u.username(),
+							ForcePingableNameCommand.makePingable(u.username(), u.id().asLong()),
+							u.discriminator(),
+							entry.reason().orElse("")
+					)
+			);
+		}
+
+		list.sort((o1, o2) -> o1.displayName.compareToIgnoreCase(o2.displayName));
+
+		var content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
+		var table = new Table("#", "ID", "Name", "Reason");
+
+		String indexFormat = "%0" + String.valueOf(list.size()).length() + "d";
+
+		for (int i = 0; i < list.size(); i++) {
+			var entry = list.get(i);
+			var cells = table.addRow();
+
+			cells[0].value(String.format(indexFormat, i + 1));
+			cells[1].value(entry.id);
+
+			if (entry.displayName.equals(entry.name)) {
+				cells[2].value(entry.displayName + "#" + entry.discriminator);
+			} else {
+				cells[2].tag().paired("span").attr("title", entry.name + "#" + entry.discriminator).string(entry.displayName);
+			}
+
+			cells[3].value(entry.reason);
+		}
+
+		content.add(table.toTag().addClass("bantable"));
 		return content.asResponse();
 	}
 }

@@ -44,10 +44,6 @@ public class QuoteHandler {
 	}
 
 	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, User user) {
-		if (true) {
-			return 0;
-		}
-
 		Matcher quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
 		int quotes = 0;
 

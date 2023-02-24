@@ -389,3 +389,7 @@ p.withicon img {
 table.auditlogtable td {
     max-width: 15%;
 }
+
+table.bantable {
+    /*table-layout: fixed;*/
+}

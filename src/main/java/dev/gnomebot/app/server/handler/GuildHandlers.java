@@ -285,7 +285,7 @@ public class GuildHandlers {
 
 		for (Member m : request.gc.getGuild().getMembers().filter(m -> !CharMap.isPingable(m.getUsername()) && !CharMap.isPingable(m.getDisplayName())).sort((o1, o2) -> o1.getUsername().compareToIgnoreCase(o2.getUsername())).toIterable()) {
 			String s = m.getUsername();
-			String n = ForcePingableNameCommand.makePingable(s, m.getId());
+			String n = ForcePingableNameCommand.makePingable(s, m.getId().asLong());
 
 			if (!s.equals(n)) {
 				table.addRow(table.rows.size() + 1, m.getId().asString(), m.getTag(), n);

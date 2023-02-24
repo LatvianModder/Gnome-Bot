@@ -51,7 +51,7 @@ public class MemberHandler {
 
 		if (action == ACTION_MESSAGE && member != null && discordMessage != null && gc.forcePingableName.get() && !CharMap.isPingable(oldName) && (member.getNickname().isEmpty() || !CharMap.isPingable(member.getNickname().get()))) {
 			try {
-				String newName = ForcePingableNameCommand.makePingable(oldName, member.getId());
+				String newName = ForcePingableNameCommand.makePingable(oldName, member.getId().asLong());
 				member.edit(GuildMemberEditSpec.builder()
 						.nicknameOrNull(newName)
 						.build()
@@ -124,13 +124,12 @@ public class MemberHandler {
 		long accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
 
 		if (accountAge <= 604800L && gc.logNewAccountsChannel.isSet()) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(member.getMention());
-			sb.append(" (");
-			sb.append(member.getTag());
-			sb.append(") is a new account: ");
-			sb.append(Utils.formatRelativeDate(member.getId().getTimestamp()));
-			gc.logNewAccountsChannel.messageChannel().ifPresent(c -> c.createMessage(sb.toString()).subscribe());
+			String sb = member.getMention() +
+					" (" +
+					member.getTag() +
+					") is a new account: " +
+					Utils.formatRelativeDate(member.getId().getTimestamp());
+			gc.logNewAccountsChannel.messageChannel().ifPresent(c -> c.createMessage(sb).subscribe());
 		}
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.JOIN)

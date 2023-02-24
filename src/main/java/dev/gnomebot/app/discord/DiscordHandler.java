@@ -17,6 +17,7 @@ import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.dispatch.DispatchHandler;
 import discord4j.core.event.dispatch.DispatchHandlers;
+import discord4j.core.event.domain.AuditLogEntryCreateEvent;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.PresenceUpdateEvent;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
@@ -206,6 +207,7 @@ public class DiscordHandler {
 		handle(ThreadMemberUpdateEvent.class, this::threadMemberUpdate);
 		handle(ThreadMembersUpdateEvent.class, this::threadMembersUpdate);
 		handle(ThreadListSyncEvent.class, this::threadListSync);
+		handle(AuditLogEntryCreateEvent.class, this::auditLogEntryCreated);
 
 		App.info("Connecting to discord servers...");
 		client.onDisconnect().subscribe(this::disconnected);
@@ -481,6 +483,10 @@ public class DiscordHandler {
 
 	private void threadListSync(ThreadListSyncEvent event) {
 		ThreadHandler.listSync(this, event);
+	}
+
+	private void auditLogEntryCreated(AuditLogEntryCreateEvent event) {
+		App.warn(event.toString());
 	}
 
 	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfig channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {

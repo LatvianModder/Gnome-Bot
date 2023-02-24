@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data;
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
@@ -53,7 +52,7 @@ public class Databases {
 	public Databases(App m) {
 		app = m;
 
-		MongoClient mongoClient = MongoClients.create(Config.get().db_uri);
+		var mongoClient = MongoClients.create(Config.get().db_uri);
 		database = mongoClient.getDatabase("gnomebot");
 
 		collections = new LinkedHashMap<>();
