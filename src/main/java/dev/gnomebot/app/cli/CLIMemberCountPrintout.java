@@ -2,7 +2,7 @@ package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.command.RegisterCommand;
-import dev.gnomebot.app.util.Table;
+import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
@@ -16,7 +16,7 @@ public class CLIMemberCountPrintout {
 	private static void run(CLIEvent event) throws Exception {
 		CachedRole role = event.reader.readRole().orElse(null);
 
-		Table table = new Table("ID", "Tag");
+		var table = new Table("ID", "Tag");
 
 		for (Member member : event.gc.getMembers()) {
 			if (role == null || member.getRoleIds().contains(role.id)) {

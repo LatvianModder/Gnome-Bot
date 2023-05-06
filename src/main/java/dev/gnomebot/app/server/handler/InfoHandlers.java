@@ -6,10 +6,11 @@ import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.json.JsonResponse;
-import dev.gnomebot.app.util.Either;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.util.ImageUtil;
 import discord4j.discordjson.json.UserData;
@@ -28,7 +29,7 @@ public class InfoHandlers {
 	public static final int[] VALID_SIZES = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
 	public static Response ping(ServerRequest request) {
-		return Response.SUCCESS_JSON;
+		return JsonResponse.SUCCESS;
 	}
 
 	public static Response user(ServerRequest request) {
@@ -144,19 +145,19 @@ public class InfoHandlers {
 			json.addProperty("word", word);
 
 			try {
-				Either<JsonElement, Exception> data0 = URLRequest.of("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).toJson().blockEither();
+				var data0 = URLRequest.of("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).toJson().blockEither();
 
-				if (data0.isRight() && data0.getRight().getMessage().startsWith("Error 404") || !data0.getLeft().isJsonArray()) {
+				if (data0.isRight() && data0.right().getMessage().startsWith("Error 404") || !data0.left().isJsonArray()) {
 					return;
 				}
 
-				String firstWord = data0.getLeft().getAsJsonArray().get(0).getAsJsonObject().get("word").getAsString();
+				var firstWord = data0.left().getAsJsonArray().get(0).getAsJsonObject().get("word").getAsString();
 				json.addProperty("word", firstWord);
-				JsonArray phonetics = new JsonArray();
-				JsonArray meanings = new JsonArray();
-				HashSet<String> phoneticsSet = new HashSet<>();
+				var phonetics = new JsonArray();
+				var meanings = new JsonArray();
+				var phoneticsSet = new HashSet<String>();
 
-				for (JsonElement data1 : data0.getLeft().getAsJsonArray()) {
+				for (JsonElement data1 : data0.left().getAsJsonArray()) {
 					JsonObject data = data1.getAsJsonObject();
 
 					if (data.get("word").getAsString().equals(firstWord)) {

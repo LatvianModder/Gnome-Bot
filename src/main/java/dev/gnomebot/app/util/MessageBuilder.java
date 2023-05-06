@@ -1,6 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -208,7 +209,7 @@ public class MessageBuilder {
 		MessageCreateSpec.Builder builder = MessageCreateSpec.builder();
 
 		if (this.content != null && !this.content.isEmpty()) {
-			builder.content(Utils.trimContent(this.content));
+			builder.content(FormattingUtils.trimContent(this.content));
 		}
 
 		if (this.embeds != null && !this.embeds.isEmpty()) {
@@ -240,7 +241,7 @@ public class MessageBuilder {
 		MessageEditSpec.Builder builder = MessageEditSpec.builder();
 
 		if (this.content != null) {
-			builder.contentOrNull(this.content.isEmpty() ? null : Utils.trimContent(this.content));
+			builder.contentOrNull(this.content.isEmpty() ? null : FormattingUtils.trimContent(this.content));
 		}
 
 		if (this.embeds != null) {
@@ -264,7 +265,7 @@ public class MessageBuilder {
 		ImmutableFollowupMessageRequest.Builder builder = FollowupMessageRequest.builder();
 
 		if (this.content != null) {
-			builder.content(Utils.trimContent(this.content));
+			builder.content(FormattingUtils.trimContent(this.content));
 		}
 
 		if (this.embeds != null) {
@@ -297,7 +298,7 @@ public class MessageBuilder {
 		ImmutableWebhookMessageEditRequest.Builder builder = WebhookMessageEditRequest.builder();
 
 		if (this.content != null) {
-			builder.contentOrNull(this.content.isEmpty() ? null : Utils.trimContent(this.content));
+			builder.contentOrNull(this.content.isEmpty() ? null : FormattingUtils.trimContent(this.content));
 		}
 
 		if (this.embeds != null) {
@@ -322,7 +323,7 @@ public class MessageBuilder {
 		InteractionApplicationCommandCallbackSpec.Builder builder = InteractionApplicationCommandCallbackSpec.builder();
 
 		if (this.content != null) {
-			builder.content(Utils.trimContent(this.content));
+			builder.content(FormattingUtils.trimContent(this.content));
 		}
 
 		if (this.embeds != null) {

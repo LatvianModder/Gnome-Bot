@@ -4,6 +4,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
@@ -21,10 +22,10 @@ import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
-import dev.gnomebot.app.util.IPUtils;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.net.IPUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -192,7 +193,7 @@ public class MessageHandler {
 				}
 			}
 		} else {
-			App.LOGGER.unknownMessage();
+			App.LOGGER.event(BrainEvents.UNKNOWN_MESSAGE);
 			//App.info("Message type: " + m.getData().type() + " / " + (author == null ? "-" : author.getUsername()));
 		}
 	}
@@ -207,7 +208,7 @@ public class MessageHandler {
 				if (message != null) {
 					message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 					//App.info("Deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString() + " / by " + Snowflake.of(message.getUserID()).asString());
-					App.LOGGER.messageDeleted();
+					App.LOGGER.event(BrainEvents.MESSAGE_DELETED);
 				}
 
 				autoDelete(event.getClient().getRestClient(), event.getMessageId());
@@ -228,7 +229,7 @@ public class MessageHandler {
 					if (message != null) {
 						message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 						//App.info("Bulk deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + m.asString() + " - " + message.getContent());
-						App.LOGGER.messageDeleted();
+						App.LOGGER.event(BrainEvents.MESSAGE_DELETED);
 					}
 				}
 			});
@@ -245,7 +246,7 @@ public class MessageHandler {
 
 				if (!message.is(DiscordMessage.FLAG_BOT)) {
 					//App.info("Edited " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString());
-					App.LOGGER.messageEdited();
+					App.LOGGER.event(BrainEvents.MESSAGE_EDITED);
 				}
 			}
 		}
@@ -468,13 +469,13 @@ public class MessageHandler {
 		AuthLevel authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
 		if (user.isBot()) {
-			App.LOGGER.messageCreatedBot();
+			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_BOT);
 		} else if (authLevel.is(AuthLevel.ADMIN)) {
-			App.LOGGER.messageCreatedAdmin();
+			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_ADMIN);
 		} else if (member != null && member.getRoleIds().size() > 0) {
-			App.LOGGER.messageCreatedAnyRole();
+			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_ANY_ROLE);
 		} else {
-			App.LOGGER.messageCreatedNoRole();
+			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_NO_ROLE);
 		}
 
 		if (importing || member == null) {
@@ -536,33 +537,6 @@ public class MessageHandler {
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
-						.channel(channelInfo.id)
-						.message(message)
-						.user(member)
-						.content(content)
-				);
-			}
-
-			if ((flags & DiscordMessage.FLAG_MENTIONS_EVERYONE) == 0L && mentionsEveryone(contentNoEmojis)) {
-				if (gc.autoMuteEveryone.get() > 0 && context.gc.mutedRole.isSet()) {
-					long seconds = gc.autoMuteEveryone.get() * 60L;
-
-					context.referenceMessage = false;
-
-					try {
-						MuteCommand.mute(context, member, seconds, "Mentioning @everyone or @here", "Muted " + member.getMention());
-					} catch (GnomeException e) {
-						e.printStackTrace();
-					}
-
-					context.referenceMessage = true;
-					message.delete().subscribe();
-					return;
-				} else {
-					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Mentions @everyone / @here", s -> s);
-				}
-
-				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.EVERYONE_PING)
 						.channel(channelInfo.id)
 						.message(message)
 						.user(member)
@@ -713,10 +687,10 @@ public class MessageHandler {
 				String n;
 
 				if (c.isEmpty()) {
-					n = Utils.trim("Post by " + u, 100);
+					n = FormattingUtils.trim("Post by " + u, 100);
 				} else {
-					String u1 = Utils.trim(u, 94);
-					n = Utils.trim(c, 95 - u1.length()) + " - " + u1;
+					String u1 = FormattingUtils.trim(u, 94);
+					n = FormattingUtils.trim(c, 95 - u1.length()) + " - " + u1;
 				}
 
 				// (u.endsWith("s") ? (u + "’") : (u + "’s")) + " Post Discussion"
@@ -805,14 +779,14 @@ public class MessageHandler {
 
 			try {
 				LegacyCommands.run(context, reader, content, false);
-				App.LOGGER.commandSuccess();
+				App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
 				return true;
 			} catch (GnomeException ex) {
 				if (ex.type == GnomeException.Type.NOT_FOUND) {
 					return false;
 				}
 
-				App.LOGGER.commandFail();
+				App.LOGGER.event(BrainEvents.COMMAND_FAIL);
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {
@@ -858,11 +832,11 @@ public class MessageHandler {
 				if (macro != null) {
 					macro.update(Updates.inc("uses", 1));
 					context.reply(macro.createMessage(context.sender.getId(), true));
-					App.LOGGER.commandSuccess();
+					App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
 					return true;
 				}
 			} catch (GnomeException ex) {
-				App.LOGGER.commandFail();
+				App.LOGGER.event(BrainEvents.COMMAND_FAIL);
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {

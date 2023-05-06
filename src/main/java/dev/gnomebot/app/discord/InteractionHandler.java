@@ -27,6 +27,7 @@ import dev.gnomebot.app.discord.legacycommand.PollCommand;
 import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.util.OngoingAction;
+import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;

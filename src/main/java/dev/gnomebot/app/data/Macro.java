@@ -16,6 +16,7 @@ import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.util.Color;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -137,18 +138,12 @@ public class Macro extends WrappedDocument<Macro> {
 			builder.noComponents();
 		}
 
-		for (String s : contentString
+		Collections.addAll(lines, contentString
 				.replaceAll("role:(\\d+)", "<@&$1>")
 				.replaceAll("user:(\\d+)", "<@$1>")
 				.replace("mention:here", "@here")
 				.replace("mention:everyone", "@everyone")
-				.split("\n")) {
-			if (removeLinks) {
-				lines.add(REMOVE_MD_LINKS.matcher(s).replaceAll("$1"));
-			} else {
-				lines.add(s);
-			}
-		}
+				.split("\n"));
 
 		if (lines.isEmpty()) {
 			lines.add("Missingno");

@@ -1,26 +1,25 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
-import dev.gnomebot.app.server.handler.Response;
-import dev.gnomebot.app.server.html.RootTag;
-import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
-import dev.gnomebot.app.util.Ansi;
-import dev.gnomebot.app.util.Pair;
+import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.data.Pair;
+import dev.latvian.apps.webutils.net.Response;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.http.HttpStatus;
 import org.bson.Document;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -84,7 +83,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 		}
 
 		for (var h : webSocketHandlerList) {
-			javalin.ws(h.a, h.b);
+			javalin.ws(h.a(), h.b());
 		}
 
 		javalin.start(port);
@@ -92,7 +91,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 	public void stop() {
 		for (var h : webSocketHandlerList) {
-			h.b.closeAll(StatusCode.SHUTDOWN, "GnomeBot Restarting");
+			h.b().closeAll(StatusCode.SHUTDOWN, "GnomeBot Restarting");
 		}
 
 		if (javalin != null) {
@@ -141,7 +140,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 		}
 
 		@Override
-		public void handle(Context ctx) {
+		public void handle(Context ctx) throws Exception {
 			ctx.header("Access-Control-Allow-Origin", "*");
 			ctx.header("Cache-Control", "max-age=0, private, no-cache");
 
@@ -172,16 +171,16 @@ public class WebServer implements Consumer<JavalinConfig> {
 			try {
 				handle0(ctx, p, ip, country, tokenCallback);
 			} catch (HTTPCodeException ex) {
-				log(p, ip, country, ex.responseCode.code, tokenCallback[0]);
-				Tag content = RootTag.createSimple(getPath(ctx), "Gnome Panel");
+				log(p, ip, country, ex.responseCode, tokenCallback[0]);
+				var content = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
 				content.p().span("red").string(ex.msg);
 				content.asResponse(ex.responseCode).result(ctx);
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				log(p, ip, country, 500, tokenCallback[0]);
-				Tag content = RootTag.createSimple(getPath(ctx), "Gnome Panel");
+				log(p, ip, country, HttpStatus.INTERNAL_SERVER_ERROR, tokenCallback[0]);
+				var content = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
 				content.p().span("red").string("Internal Error: " + ex);
-				content.asResponse(HTTPResponseCode.INTERNAL_ERROR).result(ctx);
+				content.asResponse(HttpStatus.INTERNAL_SERVER_ERROR).result(ctx);
 			}
 		}
 
@@ -237,18 +236,18 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 			}
 
-			RootTag.createSimple(getPath(ctx), "Gnome Panel").p().span("red").string("Page not found!").asResponse(HTTPResponseCode.NOT_FOUND).result(ctx);
+			GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel").p().span("red").string("Page not found!").result(ctx, HttpStatus.NOT_FOUND);
 		}
 
 		private Response handle1(Context ctx, RequestHandler handler, String p, ServerRequest req) throws Exception {
 			if (handler.authLevel != AuthLevel.NO_AUTH && req.token == null) {
-				Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+				var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
 				content.p().span("red").string("You must be logged in to view this page!");
 				content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
 				content.p().string("You can refresh this page once you've logged in.");
-				return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
+				return content.asResponse(HttpStatus.UNAUTHORIZED);
 			} else if (handler.trusted && (req.token == null || !Config.get().isTrusted(req.token.userId))) {
-				Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+				var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
 				content.p().span("red").string("You're not cool enough to view this page!");
 				content.p().string("This page can only be viewed by bot owners!");
 
@@ -257,7 +256,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 					content.p().string("You can refresh this page once you've logged in.");
 				}
 
-				return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
+				return content.asResponse(HttpStatus.UNAUTHORIZED);
 			}
 
 			if (!req.variable("guild").isEmpty()) {
@@ -272,110 +271,64 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 
 				if (!req.getAuthLevel().is(handler.authLevel)) {
-					Tag content = RootTag.createSimple(req.getPath(), "Gnome Panel");
+					var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
 					content.p().span("red").string("You're not cool enough to view this page!");
 					content.p().string("Required auth level is ").span("red").string(handler.authLevel.name.toLowerCase());
 					content.p().string("Your auth level is ").span("red").string(req.getAuthLevel().name.toLowerCase());
-					return content.asResponse(HTTPResponseCode.UNAUTHORIZED);
+					return content.asResponse(HttpStatus.UNAUTHORIZED);
 				}
 			}
 
-			Response r = handler.handler.handle(req);
+			var r = handler.handler.handle(req);
 
-			if (handler.cacheSeconds != 0 && r.getCode().isOK()) {
+			if (handler.cacheSeconds != 0 && r.getStatus().getCode() / 100 == 2) {
 				ctx.header("Cache-Control", (handler.authLevel == AuthLevel.NO_AUTH ? "public" : "private") + ", max-age=" + Math.abs(handler.cacheSeconds));
 			}
 
 			if (handler.log) {
-				log(p, req.ip, req.country, r.getCode().code, req.token);
+				log(p, req.ip, req.country, r.getStatus(), req.token);
 			} else {
-				App.LOGGER.webRequest();
+				App.LOGGER.event(BrainEvents.WEB_REQUEST);
 			}
 
 			return r;
 		}
 
-		private void log(String p, String ip, String country, int status, @Nullable WebToken token) {
-			StringBuilder sout = new StringBuilder();
-			Calendar date = Calendar.getInstance();
-			String ip1 = String.format("%08X", ip.hashCode());
+		private void log(String p, String ip, String country, HttpStatus status, @Nullable WebToken token) {
+			var sout = Ansi.of();
+			var ip1 = String.format("%08X", ip.hashCode());
 
-			sout.append(Ansi.GREEN);
-
-			if (date.get(Calendar.HOUR_OF_DAY) < 10) {
-				sout.append('0');
-			}
-
-			sout.append(date.get(Calendar.HOUR_OF_DAY));
-			sout.append(':');
-
-			if (date.get(Calendar.MINUTE) < 10) {
-				sout.append('0');
-			}
-
-			sout.append(date.get(Calendar.MINUTE));
-			sout.append(':');
-
-			if (date.get(Calendar.SECOND) < 10) {
-				sout.append('0');
-			}
-
-			sout.append(date.get(Calendar.SECOND));
-			sout.append(Ansi.RESET);
-
+			sout.append(Ansi.cyan(ip1));
 			sout.append(' ');
-
-			sout.append(Ansi.CYAN);
-			sout.append(ip1);
-			sout.append(Ansi.RESET);
-
-			sout.append(' ');
-
-			sout.append(Ansi.YELLOW);
-			sout.append(country);
-			sout.append(Ansi.RESET);
-
+			sout.append(Ansi.yellow(country));
 			sout.append(' ');
 
 			if (token == null) {
-				sout.append(Ansi.YELLOW);
-				sout.append("anonymous");
-				sout.append(Ansi.RESET);
+				sout.append(Ansi.yellow("anonymous"));
 			} else {
-				sout.append(Ansi.GREEN);
-				sout.append(token.getName());
-				sout.append(Ansi.RESET);
+				sout.append(Ansi.green(token.getName()));
 			}
 
 			sout.append(' ');
-
-			sout.append((status / 100 == 4) ? Ansi.DARK_RED : Ansi.PURPLE);
-			sout.append(status);
-			sout.append(Ansi.RESET);
-
+			sout.append((status.getCode() / 100 == 4) ? Ansi.darkRed(status) : Ansi.purple(status));
 			sout.append(' ');
-
-			sout.append(Ansi.YELLOW);
-			sout.append(method.name().toUpperCase());
-			sout.append(Ansi.RESET);
-
+			sout.append(Ansi.yellow(method.name().toUpperCase()));
 			sout.append(' ');
+			sout.append(Ansi.cyan(p));
 
-			sout.append(Ansi.CYAN);
-			sout.append(p);
-			sout.append(Ansi.RESET);
+			App.info(sout);
 
-			App.info(sout.toString());
+			var date = new Date();
 
 			webServer.app.queueBlockingTask(task -> {
-				Document document = new Document();
+				var document = new Document();
 				document.put("ip", ip1);
 				document.put("country", country);
 				document.put("status", status);
 				document.put("method", method.name().toLowerCase());
 				document.put("url", p);
 				document.put("user", token == null ? 0L : token.userId.asLong());
-				document.put("timestamp", Date.from(date.toInstant()));
+				document.put("timestamp", date);
 				document.put("auth_level", (token == null ? AuthLevel.NO_AUTH : token.authLevel).name);
 				webServer.app.db.webLog.insert(document);
 			});

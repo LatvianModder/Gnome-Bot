@@ -6,7 +6,7 @@ import dev.gnomebot.app.data.WrappedDocument;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 
 import java.util.ArrayList;
@@ -121,7 +121,7 @@ public class UserPings extends WrappedDocument<UserPings> {
 								throw new GnomeException("RegEx must end with /[flags]!");
 							}
 
-							Pattern pattern = Utils.parseSafeRegEx(s, 0);
+							Pattern pattern = FormattingUtils.parseSafeRegEx(s, 0);
 
 							if (pattern == null) {
 								throw new GnomeException("Invalid RegEx!");

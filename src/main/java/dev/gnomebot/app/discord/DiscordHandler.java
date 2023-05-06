@@ -2,8 +2,9 @@ package dev.gnomebot.app.discord;
 
 import com.mongodb.Function;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
-import dev.gnomebot.app.cli.CLI;
+import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
@@ -11,7 +12,7 @@ import dev.gnomebot.app.data.config.ChannelConfig;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
-import dev.gnomebot.app.util.MutableLong;
+import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
@@ -61,6 +62,7 @@ import discord4j.core.event.domain.thread.ThreadChannelUpdateEvent;
 import discord4j.core.event.domain.thread.ThreadListSyncEvent;
 import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
 import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
+import discord4j.core.object.audit.ChangeKey;
 import discord4j.core.object.entity.Entity;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
@@ -133,8 +135,8 @@ public class DiscordHandler {
 				.setEnabledIntents(IntentSet.of(
 						Intent.GUILDS,
 						Intent.GUILD_MEMBERS,
-						Intent.GUILD_BANS,
-						Intent.GUILD_EMOJIS,
+						Intent.GUILD_MODERATION,
+						Intent.GUILD_EMOJIS_AND_STICKERS,
 						Intent.GUILD_MESSAGES,
 						Intent.GUILD_MESSAGE_REACTIONS,
 						Intent.DIRECT_MESSAGES,
@@ -160,7 +162,7 @@ public class DiscordHandler {
 		App.info("Looking for commands");
 		LegacyCommands.find();
 		ApplicationCommands.findCommands();
-		CLI.find();
+		CLICommands.find();
 		CustomInteractionTypes.init();
 
 		App.info("Loading discord handler events...");
@@ -486,7 +488,49 @@ public class DiscordHandler {
 	}
 
 	private void auditLogEntryCreated(AuditLogEntryCreateEvent event) {
-		App.warn(event.toString());
+		try {
+			auditLogEntryCreated0(event);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private void auditLogEntryCreated0(AuditLogEntryCreateEvent event) {
+		var gc = app.db.guild(event.getGuildId());
+		// App.warn(event.toString());
+		App.LOGGER.event(BrainEvents.AUDIT_LOG);
+		var e = event.getAuditLogEntry();
+
+		var target = e.getTargetId().isEmpty() ? null : gc.getMemberData(e.getTargetId().get());
+
+		if (target == null) {
+			return;
+		}
+
+		var responsible = e.getResponsibleUserId().isEmpty() ? null : gc.getMemberData(e.getResponsibleUserId().get());
+
+		var reason = e.getReason().orElse("No reason");
+
+		switch (e.getActionType()) {
+			case MEMBER_UPDATE -> {
+				if (!e.getTargetId().equals(e.getResponsibleUserId())) {
+					// App.warn("Audit Log: " + e.getResponsibleUserId().orElse(Utils.NO_SNOWFLAKE).asString() + " > " + e.getTargetId().orElse(Utils.NO_SNOWFLAKE).asString() + ": " + e.getReason().orElse("No reason"));
+
+					var timeout = e.getChange(ChangeKey.COMMUNICATION_DISABLED_UNTIL).orElse(null);
+
+					if (timeout != null) {
+						if (timeout.getCurrentValue().isEmpty()) {
+							App.warn(target.user().username() + " timeout removed by " + (responsible == null ? "System" : responsible.user().username()));
+						} else {
+							App.warn(target.user().username() + " timeout added by " + responsible.user().username() + " for '" + reason + "' until " + timeout.getCurrentValue().get());
+						}
+					}
+				}
+			}
+			case MEMBER_BAN_ADD -> App.warn(target.user().username() + " banned for '" + reason + "' by " + responsible.user().username());
+			case MEMBER_BAN_REMOVE -> App.warn(target.user().username() + " unbanned by " + responsible.user().username());
+			case AUTO_MODERATION_USER_COMMUNICATION_DISABLED -> App.info("AutoMod timed out " + target.user().username());
+		}
 	}
 
 	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfig channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
@@ -506,7 +550,7 @@ public class DiscordHandler {
 
 		//App.error("Suspicious message by " + u.getUsername() + " detected: " + content.apply(message.getContent()) + " [" + reason + "]" + Ansi.RESET);
 
-		App.LOGGER.suspiciousMessage();
+		App.LOGGER.event(BrainEvents.SUSPICIOUS_MESSAGE);
 
 		StringBuilder sb1 = new StringBuilder("[Suspicious message detected in](");
 		message.appendMessageURL(sb1);

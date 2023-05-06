@@ -21,7 +21,7 @@ public class LockdownCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("lockdown")
 			.add(sub("enable")
 					.description("Enables lockdown mode")
-					.add(time("kick_time", false))
+					.add(time("kick_time", false, true))
 					.run(LockdownCommand::enable)
 			)
 			.add(sub("disable")

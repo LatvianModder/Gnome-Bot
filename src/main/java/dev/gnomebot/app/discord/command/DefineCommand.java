@@ -7,6 +7,8 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.CodingUtils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -29,7 +31,7 @@ public class DefineCommand extends ApplicationCommands {
 		event.acknowledge();
 
 		try {
-			JsonObject o = Utils.readInternalJson("api/info/define/" + Utils.encode(event.get("word").asString())).getAsJsonObject();
+			JsonObject o = Utils.readInternalJson("api/info/define/" + CodingUtils.encodeURL(event.get("word").asString())).getAsJsonObject();
 
 			if (o.get("found").getAsBoolean()) {
 				MessageBuilder builder = MessageBuilder.create();
@@ -45,16 +47,16 @@ public class DefineCommand extends ApplicationCommands {
 					JsonObject o1 = meanings.get(i).getAsJsonObject();
 
 					StringBuilder b = new StringBuilder("*");
-					Utils.titleCase(b, o1.get("definition").getAsString());
+					FormattingUtils.titleCase(b, o1.get("definition").getAsString());
 					b.append('*');
 
 					if (!o1.get("example").getAsString().isEmpty()) {
 						b.append("\n\n\"");
-						Utils.titleCase(b, o1.get("example").getAsString());
+						FormattingUtils.titleCase(b, o1.get("example").getAsString());
 						b.append('"');
 					}
 
-					embedBuilder.field((i + 1) + ". " + o1.get("type").getAsString(), Utils.trim(b.toString(), 1024));
+					embedBuilder.field((i + 1) + ". " + o1.get("type").getAsString(), FormattingUtils.trim(b.toString(), 1024));
 				}
 
 				builder.addEmbed(embedBuilder);

@@ -6,7 +6,7 @@ import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.discord.command.CommandOption;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.CodingUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import io.javalin.http.Context;
@@ -134,8 +134,8 @@ public class ServerRequest {
 
 			// An eh implementation of multipart content
 			if (t.startsWith("multipart/form-data;")) {
-				Map<String, String> m = Utils.decodeHeaders(t);
-				MultipartStream multipartStream = new MultipartStream(new ByteArrayInputStream(b), m.get("boundary").getBytes(StandardCharsets.UTF_8));
+				var m = CodingUtils.decodeHeaders(t);
+				var multipartStream = new MultipartStream(new ByteArrayInputStream(b), m.get("boundary").getBytes(StandardCharsets.UTF_8));
 
 				try {
 					boolean nextPart = multipartStream.skipPreamble();

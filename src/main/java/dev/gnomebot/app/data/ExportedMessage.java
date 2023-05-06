@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.util.Table;
+import dev.latvian.apps.webutils.ansi.Table;
 
 import java.time.Instant;
 import java.util.Comparator;

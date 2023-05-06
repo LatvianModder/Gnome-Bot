@@ -7,12 +7,15 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.DiscordMessageCount;
-import dev.gnomebot.app.discord.command.LeaderboardCommand;
+import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.json.JsonResponse;
 import dev.gnomebot.app.util.Utils;
-import dev.gnomebot.app.util.canvas.ImageCanvas;
+import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.canvas.ImageCanvas;
+import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
@@ -159,9 +162,9 @@ public class ActivityHandlers {
 
 		leaderboardEntries.sort(null);
 
-		List<LeaderboardCommand.LeaderboardCommandEntry> list = new ArrayList<>(limit);
+		List<LeaderboardCommandEntry> list = new ArrayList<>(limit);
 
-		for (LeaderboardEntry entry : leaderboardEntries) {
+		for (var entry : leaderboardEntries) {
 			try {
 				Member member = memberMap.get(Snowflake.of(entry.userId));
 
@@ -169,10 +172,10 @@ public class ActivityHandlers {
 					continue;
 				}
 
-				var e = new LeaderboardCommand.LeaderboardCommandEntry();
+				var e = new LeaderboardCommandEntry();
 				e.id = member.getId();
 				e.name = member.getDisplayName();
-				e.xp = Utils.format(entry.xp);
+				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;
 				int col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
@@ -218,7 +221,7 @@ public class ActivityHandlers {
 
 		int w = 0;
 
-		for (LeaderboardCommand.LeaderboardCommandEntry entry : list) {
+		for (var entry : list) {
 			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
 		}
 
@@ -255,7 +258,7 @@ public class ActivityHandlers {
 		var indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
 
 		for (int i = 0; i < list.size(); i++) {
-			LeaderboardCommand.LeaderboardCommandEntry entry = list.get(i);
+			var entry = list.get(i);
 			canvas.addString(6, 36 + i * 45, String.format(indexFormat, entry.rank), Color.GRAY);
 			canvas.addString(151, 36 + i * 45, entry.name, new Color(entry.color));
 			canvas.addString(w - 6 - canvas.metrics.stringWidth(entry.xp), 36 + i * 45, entry.xp, Color.WHITE);
@@ -584,5 +587,162 @@ public class ActivityHandlers {
 
 			json.add("messages", messages);
 		});
+	}
+
+	public static Response userMentionLeaderboardImage(ServerRequest request) throws Exception {
+		return mentionLeaderboardImage(request, true);
+	}
+
+	public static Response roleMentionLeaderboardImage(ServerRequest request) throws Exception {
+		return mentionLeaderboardImage(request, false);
+	}
+
+	private static Response mentionLeaderboardImage(ServerRequest request, boolean isUser) throws Exception {
+		long time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+
+		if (time < 0L) {
+			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
+		}
+
+		var mentionId = Long.parseUnsignedLong(request.variable("mention"));
+
+		int limit = request.query("limit").asInt(20);
+		long channel = request.query("channel").asLong();
+
+		Map<Snowflake, Member> memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
+		List<Bson> agg = new ArrayList<>();
+		List<Bson> filter = new ArrayList<>();
+
+		if (channel != 0L) {
+			filter.add(Filters.eq("channel", channel));
+		}
+
+		if (time > 0L) {
+			filter.add(Filters.gt("date", new Date(System.currentTimeMillis() - time)));
+		}
+
+
+		if (filter.size() == 1) {
+			agg.add(Aggregates.match(filter.get(0)));
+		} else if (!filter.isEmpty()) {
+			agg.add(Aggregates.match(Filters.and(filter)));
+		}
+
+		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
+
+		for (var document : request.gc.messageXp.aggregate(agg)) {
+			LeaderboardEntry entry = new LeaderboardEntry();
+			entry.userId = document.getLong("_id");
+			entry.xp = ((Number) document.get("xp")).longValue();
+			leaderboardEntries.add(entry);
+		}
+
+		leaderboardEntries.sort(null);
+
+		var list = new ArrayList<LeaderboardCommandEntry>(limit);
+
+		for (var entry : leaderboardEntries) {
+			try {
+				Member member = memberMap.get(Snowflake.of(entry.userId));
+
+				if (member == null) {
+					continue;
+				}
+
+				var e = new LeaderboardCommandEntry();
+				e.id = member.getId();
+				e.name = member.getDisplayName();
+				e.xp = FormattingUtils.format(entry.xp);
+				e.rank = list.size() + 1;
+				int col = member.getColor().block().getRGB() & 0xFFFFFF;
+				e.color = col == 0 ? 0xFFFFFF : col;
+				list.add(e);
+			} catch (Exception ex) {
+			}
+
+			if (limit > 0 && list.size() >= limit) {
+				break;
+			}
+		}
+
+		if (list.isEmpty()) {
+			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
+		}
+
+		BufferedImage[] avatars = new BufferedImage[list.size()];
+		AtomicInteger avatarsRemaining = new AtomicInteger(list.size());
+
+		for (int i = 0; i < list.size(); i++) {
+			final int index = i;
+			Thread thread = new Thread(() -> {
+				try {
+					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
+				} catch (Exception ex) {
+					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
+					App.error(ex.toString());
+				}
+
+				avatarsRemaining.decrementAndGet();
+			});
+
+			thread.setDaemon(true);
+			thread.start();
+		}
+
+		while (avatarsRemaining.get() > 0) {
+			Thread.sleep(10L);
+		}
+
+		ImageCanvas canvas = new ImageCanvas();
+		canvas.setFont(new Font(request.gc.font.get(), Font.BOLD, 36));
+
+		int w = 0;
+
+		for (var entry : list) {
+			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
+		}
+
+		w = Math.max(w, 50);
+
+		/*
+		int h = Math.max(list.size() * 45, 45);
+
+		BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = image.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setBackground(new Color(0x36393F));
+		g.clearRect(0, 0, w, h);
+		g.setFont(font);
+
+		String indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
+
+		for (int i = 0; i < list.size(); i++) {
+			LeaderboardCommand.LeaderboardCommandEntry entry = list.get(i);
+			g.setColor(Color.GRAY);
+			g.drawString(String.format(indexFormat, entry.rank), 6, 36 + i * 45);
+			g.setColor(new Color(entry.color));
+			g.drawString(entry.name, 151, 36 + i * 45);
+			g.setColor(Color.WHITE);
+			g.drawString(entry.xp, w - 6 - metrics.stringWidth(entry.xp), 36 + i * 45);
+			g.drawImage(avatars[i], 100, 3 + i * 45, 42, 42, null);
+		}
+
+		g.dispose();
+		return FileResponse.image(image);
+		 */
+
+		var indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
+
+		for (int i = 0; i < list.size(); i++) {
+			var entry = list.get(i);
+			canvas.addString(6, 36 + i * 45, String.format(indexFormat, entry.rank), Color.GRAY);
+			canvas.addString(151, 36 + i * 45, entry.name, new Color(entry.color));
+			canvas.addString(w - 6 - canvas.metrics.stringWidth(entry.xp), 36 + i * 45, entry.xp, Color.WHITE);
+			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
+		}
+
+		return FileResponse.image(canvas.createImage());
 	}
 }

@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord;
 import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
@@ -173,7 +174,7 @@ public class MemberHandler {
 		}
 
 		// App.info(Utils.ANSI_GREEN + member.getTag() + Utils.ANSI_RESET + " has joined the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server!");
-		App.LOGGER.memberJoined();
+		App.LOGGER.event(BrainEvents.MEMBER_JOINED);
 
 		DiscordMember oldMember = gc.members.findFirst(member);
 
@@ -205,7 +206,7 @@ public class MemberHandler {
 		);
 
 		// App.info(Utils.ANSI_GREEN + event.getUser().getUsername() + Utils.ANSI_RESET + " has left the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server! (" + Utils.prettyTimeString(mems) + " of membership)");
-		App.LOGGER.memberLeft();
+		App.LOGGER.event(BrainEvents.MEMBER_LEFT);
 
 		if (gc.logLeavingChannel.isSet()) {
 			StringBuilder sb = new StringBuilder();
@@ -255,7 +256,7 @@ public class MemberHandler {
 			String reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
 
 			// App.info(Utils.ANSI_RED + event.getUser().getUsername() + Utils.ANSI_RESET + " was banned from " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server by " + (responsible == null ? "Unknown" : responsible.getTag()) + "! Reason: " + reason);
-			App.LOGGER.memberBanned();
+			App.LOGGER.event(BrainEvents.MEMBER_BANNED);
 
 			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAN)
 					.user(event.getUser())

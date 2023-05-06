@@ -1,6 +1,7 @@
 package dev.gnomebot.app.util;
 
 import com.google.gson.JsonObject;
+import dev.latvian.apps.webutils.gson.GsonUtils;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;
 
@@ -124,10 +125,10 @@ public class MapWrapper {
 	}
 
 	public JsonObject toJson() {
-		JsonObject json = new JsonObject();
+		var json = new JsonObject();
 
-		for (Map.Entry<String, Object> entry : map.entrySet()) {
-			json.add(entry.getKey(), Utils.toJson(entry.getValue()));
+		for (var entry : map.entrySet()) {
+			json.add(entry.getKey(), GsonUtils.toJson(entry.getValue()));
 		}
 
 		return json;

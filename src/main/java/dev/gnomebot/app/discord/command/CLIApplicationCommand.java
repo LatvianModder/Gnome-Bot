@@ -2,8 +2,8 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
-import dev.gnomebot.app.cli.CLI;
 import dev.gnomebot.app.cli.CLICommand;
+import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
@@ -43,7 +43,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 	}
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
-		CLICommand command = CLI.COMMANDS.get(event.get("command").asString());
+		CLICommand command = CLICommands.COMMANDS.get(event.get("command").asString());
 
 		if (command == null) {
 			throw error("Command not found!");
@@ -90,7 +90,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 	}
 
 	private static void suggestCommands(ChatCommandSuggestionEvent event) {
-		for (CLICommand command : CLI.COMMANDS.values()) {
+		for (CLICommand command : CLICommands.COMMANDS.values()) {
 			if (command.trusted == 1 && !event.context.isTrusted()) {
 				continue;
 			} else if (command.trusted == 2 && !Config.get().owner.equals(event.context.sender.getId())) {

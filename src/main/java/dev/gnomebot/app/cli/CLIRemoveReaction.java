@@ -12,7 +12,7 @@ public class CLIRemoveReaction {
 
 	private static void run(CLIEvent event) {
 		var cm = event.reader.readChannelAndMessage().get();
-		var message = cm.a.getMessage(cm.b);
+		var message = cm.a().getMessage(cm.b());
 		var emoji = event.reader.readEmoji().get();
 		message.removeReactions(emoji).block();
 		event.respond("Done");

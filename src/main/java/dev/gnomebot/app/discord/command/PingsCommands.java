@@ -7,7 +7,7 @@ import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 
@@ -130,7 +130,7 @@ public class PingsCommands extends ApplicationCommands {
 	public static void edit(DeferrableInteractionEventWrapper<?> event) {
 		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
 		event.respondModal("pings", "Manage Pings", TextInput.paragraph("config", "Config")
-				.placeholder(Utils.trim("@ mentions\n+ /" + event.context.sender.getUsername() + "/i\n\nRun `/about pings` for info on how to set up pings", 100))
+				.placeholder(FormattingUtils.trim("@ mentions\n+ /" + event.context.sender.getUsername() + "/i\n\nRun `/about pings` for info on how to set up pings", 100))
 				.required(false)
 				.prefilled(pings == null ? "" : pings.getConfig())
 		);

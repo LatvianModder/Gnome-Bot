@@ -10,8 +10,8 @@ import com.mongodb.BasicDBObject;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerPathHandler;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.handler.Response;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.gson.GsonUtils;
+import dev.latvian.apps.webutils.net.Response;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ public interface JsonServerPathHandler extends ServerPathHandler {
 		String body = request.getMainBody().getText();
 
 		try {
-			JsonObject in = body.isEmpty() ? null : Utils.GSON.fromJson(body, JsonObject.class);
+			JsonObject in = body.isEmpty() ? null : GsonUtils.GSON.fromJson(body, JsonObject.class);
 			return handleJson(new JsonRequest(request, in));
 		} catch (JsonIOException | JsonSyntaxException e) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Expected JSON Object, got " + body);

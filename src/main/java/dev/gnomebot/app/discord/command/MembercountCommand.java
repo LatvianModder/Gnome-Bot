@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 
 import java.util.Optional;
 
@@ -27,7 +27,7 @@ public class MembercountCommand extends ApplicationCommands {
 					.count()
 					.block();
 
-			event.respond(Utils.format(count) + " members with role " + wr);
+			event.respond(FormattingUtils.format(count) + " members with role " + wr);
 		} else {
 			int max = event.context.gc.getGuild().getMaxMembers().orElse(0);
 
@@ -36,7 +36,7 @@ public class MembercountCommand extends ApplicationCommands {
 					.count()
 					.block();
 
-			event.respond(Utils.format(count) + " / " + (max == 0 ? "?" : Utils.format(max)) + " members");
+			event.respond(FormattingUtils.format(count) + " / " + (max == 0 ? "?" : FormattingUtils.format(max)) + " members");
 		}
 	}
 }

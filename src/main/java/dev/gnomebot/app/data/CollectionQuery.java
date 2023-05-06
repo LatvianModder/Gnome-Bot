@@ -9,7 +9,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.MiscUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Entity;
 import org.bson.BsonDocument;
@@ -184,7 +184,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 	}
 
 	public Stream<T> toStream() {
-		return Utils.toStream(this);
+		return MiscUtils.toStream(this);
 	}
 
 	@Nullable

@@ -1,4 +1,2 @@
-@NonnullByDefault
+@dev.latvian.apps.webutils.NonnullByDefault
 package dev.gnomebot.app.data;
-
-import dev.gnomebot.app.util.NonnullByDefault;

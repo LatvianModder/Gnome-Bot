@@ -7,6 +7,10 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
+import io.javalin.http.HttpStatus;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +30,7 @@ public class MiscHandlers {
 				Path path = AppPaths.ASSETS.resolve(a.filename);
 
 				if (Files.exists(path)) {
-					return FileResponse.of(HTTPResponseCode.OK, a.contentType, Files.readAllBytes(path));
+					return FileResponse.of(HttpStatus.OK, a.contentType, Files.readAllBytes(path));
 				} else {
 					App.warn("Asset " + path.toAbsolutePath() + " doesn't exist!");
 				}
@@ -43,7 +47,7 @@ public class MiscHandlers {
 
 	public static Response signOut(ServerRequest request) {
 		App.instance.db.invalidateToken(request.token.userId.asLong());
-		return Response.SUCCESS_JSON;
+		return JsonResponse.SUCCESS;
 	}
 
 	// To be moved somewhere else later lol
@@ -73,7 +77,8 @@ public class MiscHandlers {
 		var message = switch (map.get("Type")) {
 			case "killed" -> from + " was killed by " + user;
 			case "online" -> user + " is now online";
-			default -> "unknown event " + map.get("Type") + " from " + user;
+			case "smart_alarm" -> "Smart alarm '" + map.get("Title") + "' triggered: " + map.get("Body");
+			default -> "unknown event " + map.get("Type") + " from " + user + ": " + map;
 		};
 
 		Config.get().rust_plus_webhook.execute(MessageBuilder.create(message)

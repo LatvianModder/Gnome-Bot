@@ -6,7 +6,8 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import java.util.regex.Pattern;
 
 public interface Emojis {
-	Pattern CUSTOM_REGEX = Pattern.compile("<a?:\\w+:\\d+>");
+	Pattern GUILD_EMOJI_PATTERN = Pattern.compile("<a?:\\w+:\\d+>");
+	Pattern GUILD_EMOJI_PATTERN_GROUPS = Pattern.compile("<a?:(\\w+):(\\d+)>");
 
 	ReactionEmoji.Unicode POLICE_CAR = ReactionEmoji.unicode("🚓");
 	ReactionEmoji.Unicode NO_ENTRY = ReactionEmoji.unicode("🚫");
@@ -30,15 +31,15 @@ public interface Emojis {
 	ReactionEmoji.Unicode PENCIL = ReactionEmoji.unicode("\uD83D\uDCDD");
 
 	ReactionEmoji.Unicode[] NUMBERS = {
-			ReactionEmoji.unicode("1\uFE0F\u20E3"),
-			ReactionEmoji.unicode("2\uFE0F\u20E3"),
-			ReactionEmoji.unicode("3\uFE0F\u20E3"),
-			ReactionEmoji.unicode("4\uFE0F\u20E3"),
-			ReactionEmoji.unicode("5\uFE0F\u20E3"),
-			ReactionEmoji.unicode("6\uFE0F\u20E3"),
-			ReactionEmoji.unicode("7\uFE0F\u20E3"),
-			ReactionEmoji.unicode("8\uFE0F\u20E3"),
-			ReactionEmoji.unicode("9\uFE0F\u20E3"),
+			ReactionEmoji.unicode("1️⃣"),
+			ReactionEmoji.unicode("2️⃣"),
+			ReactionEmoji.unicode("3️⃣"),
+			ReactionEmoji.unicode("4️⃣"),
+			ReactionEmoji.unicode("5️⃣"),
+			ReactionEmoji.unicode("6️⃣"),
+			ReactionEmoji.unicode("7️⃣"),
+			ReactionEmoji.unicode("8️⃣"),
+			ReactionEmoji.unicode("9️⃣"),
 			ReactionEmoji.unicode("\uD83D\uDD1F"),
 	};
 
@@ -56,6 +57,6 @@ public interface Emojis {
 	};
 
 	static String stripEmojis(String content) {
-		return CUSTOM_REGEX.matcher(content).replaceAll("").trim();
+		return GUILD_EMOJI_PATTERN.matcher(content).replaceAll("").trim();
 	}
 }

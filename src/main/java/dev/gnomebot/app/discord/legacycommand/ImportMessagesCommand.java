@@ -6,15 +6,14 @@ import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AppTaskCancelledException;
-import dev.gnomebot.app.util.Pair;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 public class ImportMessagesCommand {
 	@LegacyDiscordCommand(name = "import_messages", help = "Imports messages from all channels into DB", arguments = "[channel|channel:message]", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		List<Pair<ChannelInfo, Snowflake>> messageChannels = new ArrayList<>();
+		var messageChannels = new ArrayList<Pair<ChannelInfo, Snowflake>>();
 
 		Optional<Pair<ChannelInfo, Snowflake>> c;
 
@@ -45,19 +44,19 @@ public class ImportMessagesCommand {
 		}
 
 		context.handler.app.queueBlockingTask(task -> {
-			String channelNames = messageChannels.stream().map(mc -> mc.a.getMention()).collect(Collectors.joining(" "));
-			App.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a.getName() + ":" + mc.b.asString()).collect(Collectors.joining(" ")));
+			String channelNames = messageChannels.stream().map(mc -> mc.a().getMention()).collect(Collectors.joining(" "));
+			App.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a().getName() + ":" + mc.b().asString()).collect(Collectors.joining(" ")));
 			context.reply("Importing messages from " + channelNames);
 
 			int mId = 0;
 			long now = System.currentTimeMillis();
 			MemberCache memberCache = context.gc.createMemberCache();
 
-			List<Pair<ChannelInfo, Snowflake>> channelsLeft = new ArrayList<>(messageChannels);
+			var channelsLeft = new ArrayList<>(messageChannels);
 
-			for (Pair<ChannelInfo, Snowflake> pair : messageChannels) {
-				ChannelInfo ch = pair.a;
-				Snowflake lastId = pair.b;
+			for (var pair : messageChannels) {
+				var ch = pair.a();
+				var lastId = pair.b();
 
 				long nowChannel = System.currentTimeMillis();
 
@@ -95,7 +94,7 @@ public class ImportMessagesCommand {
 			context.reply("Imported " + count + " messages from " + channelNames + " from " + memberCache.getCacheSize() + " members in " + Utils.prettyTimeString(totalTime) + " @ " + (int) (count / (double) totalTime) + " m/s");
 
 			if (task.cancelled) {
-				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a.id.asString() + ":" + ch.b.asString()).collect(Collectors.joining(" ")) + "```");
+				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a().id.asString() + ":" + ch.b().asString()).collect(Collectors.joining(" ")) + "```");
 			}
 		});
 	};

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.server;
 
-import dev.gnomebot.app.server.handler.Response;
+import dev.latvian.apps.webutils.net.Response;
 
 /**
  * @author LatvianModder

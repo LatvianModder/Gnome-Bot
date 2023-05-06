@@ -1,7 +1,6 @@
 package dev.gnomebot.app.data.config;
 
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.util.Ansi;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +24,7 @@ public class DBConfig {
 				try {
 					config.fromDB(document.get(config.id));
 				} catch (ClassCastException ex) {
-					App.error("Failed to read " + name + "/" + config.id + " :" + Ansi.RESET + ex);
+					Ansi.log(Ansi.of().append(Ansi.white("Failed to read " + name + "/" + config.id + " :").whiteBg()).append(ex));
 					save = true;
 				} catch (Exception ex) {
 					ex.printStackTrace();

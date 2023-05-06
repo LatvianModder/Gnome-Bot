@@ -1,16 +1,16 @@
 package dev.gnomebot.app.server.handler;
 
-import dev.gnomebot.app.server.HTTPResponseCode;
+import io.javalin.http.HttpStatus;
 
 /**
  * @author LatvianModder
  */
 public class HTTPCodeException extends Exception {
-	public final HTTPResponseCode responseCode;
+	public final HttpStatus responseCode;
 	public final String msg;
 
-	public HTTPCodeException(HTTPResponseCode c, String message) {
-		super(c.code + " " + c.message + ": " + message);
+	public HTTPCodeException(HttpStatus c, String message) {
+		super(c.getCode() + " " + c.getMessage() + ": " + message);
 		responseCode = c;
 		msg = message;
 	}

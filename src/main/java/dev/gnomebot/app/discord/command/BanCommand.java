@@ -1,14 +1,15 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
-import dev.gnomebot.app.discord.Confirm;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -64,7 +65,7 @@ public class BanCommand extends ApplicationCommands {
 			MemberHandler.ignoreNextBan = true;
 		}
 
-		App.LOGGER.memberBanned();
+		App.LOGGER.event(BrainEvents.MEMBER_BANNED);
 
 		event.context.gc.getGuild().ban(user.getId(), BanQuerySpec.builder()
 				.reason(reason)

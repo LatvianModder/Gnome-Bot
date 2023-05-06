@@ -5,6 +5,7 @@ import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.GuildProfileEditRequest;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.discordjson.possible.Possible;
 
 import java.util.Base64;
@@ -26,7 +27,7 @@ public class CLIChangeAvatar {
 			byte[] image = URLRequest.of(url).toBytes().block();
 			boolean gif = url.endsWith(".gif");
 			String s = (gif ? "data:image/gif;base64," : "data:image/png;base64,") + Base64.getEncoder().encodeToString(image);
-			App.info(Utils.trim(s, 1000));
+			App.info(FormattingUtils.trim(s, 1000));
 			request.avatar = Possible.of(s);
 		}
 

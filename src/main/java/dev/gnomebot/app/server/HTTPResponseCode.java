@@ -1,8 +1,9 @@
 package dev.gnomebot.app.server;
 
-import dev.gnomebot.app.server.handler.FileResponse;
 import dev.gnomebot.app.server.handler.HTTPCodeException;
-import dev.gnomebot.app.server.handler.Response;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
+import io.javalin.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
 
@@ -10,23 +11,23 @@ import java.nio.charset.StandardCharsets;
  * @author LatvianModder
  */
 public enum HTTPResponseCode {
-	UNKNOWN(0, "Unknown Error"),
-	OK(200, "OK"),
-	NO_CONTENT(204, "No Content"),
-	MOVED_PERMANENTLY(301, "Moved Permanently"),
-	MOVED_TEMPORARILY(302, "Moved Temporarily"),
-	UNAUTHORIZED(401, "Unauthorized"),
-	BAD_REQUEST(400, "Bad Request"),
-	FORBIDDEN(403, "Forbidden"),
-	NOT_FOUND(404, "Not Found"),
-	CONFLICT(409, "Conflict"),
-	INTERNAL_ERROR(500, "Internal Error");
+	UNKNOWN(HttpStatus.UNKNOWN),
+	OK(HttpStatus.OK),
+	NO_CONTENT(HttpStatus.NO_CONTENT),
+	MOVED_PERMANENTLY(HttpStatus.MOVED_PERMANENTLY),
+	FOUND(HttpStatus.FOUND),
+	UNAUTHORIZED(HttpStatus.UNAUTHORIZED),
+	BAD_REQUEST(HttpStatus.BAD_REQUEST),
+	FORBIDDEN(HttpStatus.FORBIDDEN),
+	NOT_FOUND(HttpStatus.NOT_FOUND),
+	CONFLICT(HttpStatus.CONFLICT),
+	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR);
 
 	public static final HTTPResponseCode[] VALUES = values();
 
 	public static HTTPResponseCode get(int code) {
 		for (HTTPResponseCode responseCode : VALUES) {
-			if (responseCode.code == code) {
+			if (responseCode.status.getCode() == code) {
 				return responseCode;
 			}
 		}
@@ -34,25 +35,23 @@ public enum HTTPResponseCode {
 		return UNKNOWN;
 	}
 
-	public final int code;
-	public final String message;
+	public final HttpStatus status;
 	public final Response response;
 
-	HTTPResponseCode(int c, String pm) {
-		code = c;
-		message = pm;
-		response = FileResponse.of(this, "text/plain; charset=utf-8", message.getBytes(StandardCharsets.UTF_8));
+	HTTPResponseCode(HttpStatus status) {
+		this.status = status;
+		this.response = FileResponse.of(status, "text/plain; charset=utf-8", status.getMessage().getBytes(StandardCharsets.UTF_8));
 	}
 
 	public boolean isOK() {
-		return code >= 200 && code < 300;
+		return status.getCode() / 100 == 2;
 	}
 
 	public HTTPCodeException error(String msg) {
-		return new HTTPCodeException(this, msg);
+		return new HTTPCodeException(status, msg);
 	}
 
 	public Response response(String customMessage) {
-		return FileResponse.of(this, "text/plain; charset=utf-8", customMessage.getBytes(StandardCharsets.UTF_8));
+		return FileResponse.of(status, "text/plain; charset=utf-8", customMessage.getBytes(StandardCharsets.UTF_8));
 	}
 }

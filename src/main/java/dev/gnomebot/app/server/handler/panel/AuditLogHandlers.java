@@ -5,18 +5,17 @@ import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
-import dev.gnomebot.app.server.HTTPResponseCode;
+import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.handler.Response;
-import dev.gnomebot.app.server.html.RootTag;
-import dev.gnomebot.app.server.html.Tag;
-import dev.gnomebot.app.util.Table;
+import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.PaginationUtil;
+import io.javalin.http.HttpStatus;
 import org.bson.conversions.Bson;
 import reactor.core.publisher.Flux;
 
@@ -30,19 +29,19 @@ import java.util.stream.Collectors;
  */
 public class AuditLogHandlers {
 	public static Response offenses(ServerRequest request) {
-		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
 		content.p().string("Uh... nothing for now...");
 		return content.asResponse();
 	}
 
 	public static Response offensesOf(ServerRequest request) {
-		Snowflake userId = Snowflake.of(request.variable("user"));
-		User user = request.app.discordHandler.getUser(userId);
-		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses of " + (user == null ? "Unknown User" : user.getUsername()));
+		var userId = Snowflake.of(request.variable("user"));
+		var user = request.app.discordHandler.getUser(userId);
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses of " + (user == null ? "Unknown User" : user.getUsername()));
 
 		if (user == null) {
-			content.p().addClass("red").string("User not found!");
-			return content.asResponse(HTTPResponseCode.NOT_FOUND);
+			content.p().classes("red").string("User not found!");
+			return content.asResponse(HttpStatus.NOT_FOUND);
 		}
 
 		content.p().string("Uh... nothing for now...");
@@ -59,7 +58,7 @@ public class AuditLogHandlers {
 		long message = request.query("message").asLong();
 		int level = request.query("level").asInt();
 
-		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Audit Log");
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Audit Log");
 
 		UserCache userCache = request.app.discordHandler.createUserCache();
 		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
@@ -95,7 +94,7 @@ public class AuditLogHandlers {
 			entryQuery.filter(Filters.gte("level", level));
 		}
 
-		Table table = new Table("Timestamp", "Type", "Channel", "User", "Old Content", "Content", "Source");
+		var table = new Table("Timestamp", "Type", "Channel", "User", "Old Content", "Content", "Source");
 
 		for (GnomeAuditLogEntry entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
 			GnomeAuditLogEntry.Type t = entry.getType();
@@ -136,7 +135,7 @@ public class AuditLogHandlers {
 			}
 		}
 
-		content.add(table.toTag().addClass("auditlogtable"));
+		content.add(table.toTag().classes("auditlogtable"));
 		return content.asResponse();
 	}
 
@@ -171,7 +170,7 @@ public class AuditLogHandlers {
 
 		list.sort((o1, o2) -> o1.displayName.compareToIgnoreCase(o2.displayName));
 
-		var content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
 		var table = new Table("#", "ID", "Name", "Reason");
 
 		String indexFormat = "%0" + String.valueOf(list.size()).length() + "d";
@@ -186,13 +185,13 @@ public class AuditLogHandlers {
 			if (entry.displayName.equals(entry.name)) {
 				cells[2].value(entry.displayName + "#" + entry.discriminator);
 			} else {
-				cells[2].tag().paired("span").attr("title", entry.name + "#" + entry.discriminator).string(entry.displayName);
+				cells[2].tag().span().title(entry.name + "#" + entry.discriminator).string(entry.displayName);
 			}
 
 			cells[3].value(entry.reason);
 		}
 
-		content.add(table.toTag().addClass("bantable"));
+		content.add(table.toTag().classes("bantable"));
 		return content.asResponse();
 	}
 }

@@ -13,6 +13,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -40,7 +41,7 @@ public class MuteCommand extends ApplicationCommands {
 			.description("Mutes a member")
 			.add(user("user").required())
 			.add(string("reason"))
-			.add(time("time", false))
+			.add(time("time", false, true))
 			.run(MuteCommand::run);
 
 	private static void run(ChatInputInteractionEventWrapper event) {
@@ -152,7 +153,7 @@ public class MuteCommand extends ApplicationCommands {
 				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
 			}
 		} else {
-			adminButtons.add(ActionRow.of(SelectMenu.of(Utils.trim("punish/" + m.getId().asString() + "/" + ComponentEventWrapper.encode(reason), 100),
+			adminButtons.add(ActionRow.of(SelectMenu.of(FormattingUtils.trim("punish/" + m.getId().asString() + "/" + ComponentEventWrapper.encode(reason), 100),
 					SelectMenu.Option.of("Ban", "ban").withEmoji(Emojis.NO_ENTRY),
 					SelectMenu.Option.of("Kick", "kick").withEmoji(Emojis.BOOT),
 					// SelectMenu.Option.of("Warn", "warn").withEmoji(Emojis.WARNING),

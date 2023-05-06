@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.config.BaseConfig;
 import dev.gnomebot.app.data.config.BooleanConfig;
@@ -24,12 +25,12 @@ import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.script.WrappedGuild;
 import dev.gnomebot.app.script.WrappedId;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.UnmuteTask;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
@@ -118,7 +119,6 @@ public class GuildCollections {
 	public final BooleanConfig adminsBypassAnonFeedback;
 	public final StringConfig font;
 	public final BooleanConfig forcePingableName;
-	public final IntConfig autoMuteEveryone;
 	public final IntConfig autoMuteUrlShortener;
 	public final IntConfig autoMuteScamUrl;
 	public final IntConfig feedbackNumber;
@@ -194,7 +194,6 @@ public class GuildCollections {
 		adminsBypassAnonFeedback = config.add(new BooleanConfig(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
 		font = config.add(new StringConfig(this, "font", "DejaVu Sans Light")).title("Font");
 		forcePingableName = config.add(new BooleanConfig(this, "force_pingable_name", false)).title("Force Pingable Name");
-		autoMuteEveryone = config.add(new IntConfig(this, "automute_everyone", 0, 0, 43800)).title("Auto-mute on @everyone mention (minutes)");
 		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
 		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
 		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0)).internal();
@@ -502,7 +501,7 @@ public class GuildCollections {
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
-		App.LOGGER.refreshedGuildCache();
+		App.LOGGER.event(BrainEvents.REFRESHED_GUILD_CACHE);
 		refreshCache();
 
 		if (g != null) {
@@ -530,7 +529,7 @@ public class GuildCollections {
 	}
 
 	public void channelUpdated(@Nullable CategorizableChannel old, TopLevelGuildMessageChannel channel, boolean deleted) {
-		App.LOGGER.refreshedChannelCache();
+		App.LOGGER.event(BrainEvents.REFRESHED_CHANNEL_CACHE);
 		refreshCache();
 
 		if (advancedLogging) {
@@ -559,7 +558,7 @@ public class GuildCollections {
 	}
 
 	public void roleUpdated(Snowflake roleId, boolean deleted) {
-		App.LOGGER.refreshedRoleCache();
+		App.LOGGER.event(BrainEvents.REFRESHED_ROLE_CACHE);
 		refreshCache();
 	}
 
@@ -651,7 +650,7 @@ public class GuildCollections {
 		try {
 			auditLog.insert(builder.build());
 		} catch (Exception ex) {
-			App.warn("Failed to write to audit log [" + builder.type.name + "]: " + Ansi.DARK_RED + ex);
+			Ansi.log(Ansi.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(Ansi.darkRed(ex)));
 		}
 	}
 

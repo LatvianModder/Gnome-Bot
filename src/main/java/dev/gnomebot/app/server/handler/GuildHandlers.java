@@ -20,14 +20,17 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.json.JsonRequest;
-import dev.gnomebot.app.server.json.JsonResponse;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.Table;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
+import io.javalin.http.HttpStatus;
 import org.bson.conversions.Bson;
 
 import java.awt.image.BufferedImage;
@@ -171,7 +174,7 @@ public class GuildHandlers {
 		}
 
 		setting.save();
-		return Response.SUCCESS_JSON;
+		return JsonResponse.SUCCESS;
 	}
 
 	public static Response icon(ServerRequest request) throws Exception {
@@ -281,7 +284,7 @@ public class GuildHandlers {
 	}
 
 	public static Response unpingableNames(ServerRequest request) throws Exception {
-		Table table = new Table("Order", "ID", "Original Name", "Pingable Name");
+		var table = new Table("Order", "ID", "Original Name", "Pingable Name");
 
 		for (Member m : request.gc.getGuild().getMembers().filter(m -> !CharMap.isPingable(m.getUsername()) && !CharMap.isPingable(m.getDisplayName())).sort((o1, o2) -> o1.getUsername().compareToIgnoreCase(o2.getUsername())).toIterable()) {
 			String s = m.getUsername();
@@ -391,7 +394,7 @@ public class GuildHandlers {
 			array.add(o);
 		}
 
-		return JsonResponse.array(array);
+		return JsonResponse.of(HttpStatus.OK, array);
 	}
 
 	public static Response slurRegex(ServerRequest request) {

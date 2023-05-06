@@ -1,5 +1,7 @@
 package dev.gnomebot.app.util;
 
+import dev.latvian.apps.webutils.math.MathUtils;
+
 public interface DiscordAnsi {
 	String RESET = "\u001B[0m";
 
@@ -44,7 +46,7 @@ public interface DiscordAnsi {
 		if (progress < 0F) {
 			sb.insert(0, ORANGE_BG);
 		} else if (progress > 0F) {
-			sb.insert(Utils.ceil(Math.min(progress * 41F, 41F)), DARK_CYAN_BG);
+			sb.insert(MathUtils.ceil(Math.min(progress * 41F, 41F)), DARK_CYAN_BG);
 			sb.insert(0, BLURPLE_BG);
 		} else {
 			sb.insert(0, DARK_CYAN_BG);

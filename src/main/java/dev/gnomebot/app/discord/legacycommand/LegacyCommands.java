@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.AnsiJava;
 import discord4j.rest.util.Permission;
 import io.github.classgraph.AnnotationEnumValue;
 import io.github.classgraph.AnnotationParameterValueList;
@@ -115,13 +115,13 @@ public final class LegacyCommands {
 
 	@Override
 	public String toString() {
-		LinkedHashMap<String, Object> string = new LinkedHashMap<>();
-		string.put("name", name);
-		string.put("help", help);
-		string.put("arguments", arguments);
-		string.put("aliases", Arrays.asList(aliases));
-		string.put("permissionLevel", permissionLevel.name());
-		return Utils.toAnsiString(string);
+		var map = new LinkedHashMap<String, Object>();
+		map.put("name", name);
+		map.put("help", help);
+		map.put("arguments", arguments);
+		map.put("aliases", Arrays.asList(aliases));
+		map.put("permissionLevel", permissionLevel.name());
+		return AnsiJava.of(map).toAnsiString();
 	}
 
 	public boolean hasPermission(CommandContext context) {

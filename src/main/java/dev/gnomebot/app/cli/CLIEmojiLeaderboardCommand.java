@@ -2,9 +2,10 @@ package dev.gnomebot.app.cli;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMessage;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 
 import javax.imageio.ImageIO;
@@ -20,12 +21,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CLIEmojiLeaderboardCommand {
-	public static final Pattern GUILD_EMOJI_PATTERN = Pattern.compile("<a?:\\w+:\\d+>");
-	public static final Pattern GUILD_EMOJI_PATTERN_GROUPS = Pattern.compile("<a?:(\\w+):(\\d+)>");
-
 	private static class EmojiEntry {
 		public final String name;
 		public Snowflake id;
@@ -51,8 +48,8 @@ public class CLIEmojiLeaderboardCommand {
 
 		var emojiMap = new HashMap<String, EmojiEntry>();
 
-		for (DiscordMessage message : event.gc.messages.query().filter(c == null ? Filters.regex("content", GUILD_EMOJI_PATTERN) : Filters.and(Filters.eq("channel", c.id.asLong()), Filters.regex("content", GUILD_EMOJI_PATTERN)))) {
-			Matcher matcher = GUILD_EMOJI_PATTERN_GROUPS.matcher(message.getContent());
+		for (var message : event.gc.messages.query().filter(c == null ? Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN) : Filters.and(Filters.eq("channel", c.id.asLong()), Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN)))) {
+			Matcher matcher = Emojis.GUILD_EMOJI_PATTERN_GROUPS.matcher(message.getContent());
 
 			while (matcher.find()) {
 				EmojiEntry entry = emojiMap.computeIfAbsent(matcher.group(1).toLowerCase(), EmojiEntry::new);
@@ -106,7 +103,7 @@ public class CLIEmojiLeaderboardCommand {
 			g.drawString(entry.name, 151, 36 + i * 45);
 			g.setColor(Color.WHITE);
 
-			String cs = Utils.format(entry.count);
+			String cs = FormattingUtils.format(entry.count);
 			g.drawString(cs, w - 6 - metrics.stringWidth(cs), 36 + i * 45);
 
 			try {

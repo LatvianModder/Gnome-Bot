@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
+import io.javalin.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
 
@@ -55,9 +56,9 @@ public class MathCommand extends ApplicationCommands {
 				event.respond("Unknown content type: " + contentType);
 			}
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
-			if (ex.code == 501 && ex.response.equals("Wolfram|Alpha did not understand your input")) {
+			if (ex.status == HttpStatus.NOT_IMPLEMENTED && ex.response.equals("Wolfram|Alpha did not understand your input")) {
 				event.respond("> " + equation + "\nI don't know what that means :/");
-			} else if (ex.code == 501 && ex.response.equals("No short answer available")) {
+			} else if (ex.status == HttpStatus.NOT_IMPLEMENTED && ex.response.equals("No short answer available")) {
 				respond(event, equation, true, loops + 1);
 			} else {
 				event.respond("> " + equation + "\n" + ex.getMessage());

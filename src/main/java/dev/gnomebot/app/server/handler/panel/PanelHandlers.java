@@ -3,12 +3,10 @@ package dev.gnomebot.app.server.handler.panel;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.handler.PanelGuildData;
-import dev.gnomebot.app.server.handler.Redirect;
-import dev.gnomebot.app.server.handler.Response;
-import dev.gnomebot.app.server.html.RootTag;
-import dev.gnomebot.app.server.html.Tag;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 
 import java.util.ArrayList;
@@ -33,11 +31,11 @@ public class PanelHandlers {
 
 		guilds.sort((o1, o2) -> o1.name().compareToIgnoreCase(o2.name()));
 
-		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel");
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel");
 
 		for (PanelGuildData data : guilds) {
-			Tag line = content.p().addClass("withicon");
-			line.unpaired("img").attr("src", "/api/guild/icon/" + data.id().asString() + "/128");
+			var line = content.p().classes("withicon");
+			line.img("/api/guild/icon/" + data.id().asString() + "/128");
 			line.a("/panel/" + data.id().asString()).string(data.name());
 		}
 
@@ -46,7 +44,7 @@ public class PanelHandlers {
 
 	public static Response login(ServerRequest request) {
 		if (!request.query("logintoken").isPresent()) {
-			Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel");
+			var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel");
 
 			if (request.token == null) {
 				content.p().string("What the heck? You shouldn't be here, shoo!");
@@ -59,11 +57,11 @@ public class PanelHandlers {
 			return content.asResponse();
 		}
 
-		return Redirect.temporarily(App.url("panel/login"));
+		return Response.redirect(App.url("panel/login"));
 	}
 
 	public static Response guild(ServerRequest request) {
-		Tag content = RootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc);
+		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc);
 		content.p().string("Uh... nothing for now...");
 		content.p().a("/guild/" + request.gc.guildId.asString()).string("For now you can go to old page.");
 		return content.asResponse();

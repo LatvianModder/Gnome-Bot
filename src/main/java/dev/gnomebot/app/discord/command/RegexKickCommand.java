@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentCallback;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;
@@ -39,7 +39,7 @@ public class RegexKickCommand extends ApplicationCommands {
 			throw error("Invalid regex!");
 		}
 
-		Pattern pattern = Utils.parseSafeRegEx(s, 0);
+		Pattern pattern = FormattingUtils.parseSafeRegEx(s, 0);
 
 		if (pattern == null) {
 			throw error("Invalid regex!");

@@ -2,6 +2,7 @@ package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.EmbedAuthorData;
@@ -222,11 +223,11 @@ public class EmbedBuilder {
 		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
 
 		if (this.title != null && !this.title.isEmpty()) {
-			builder.title(Utils.trim(this.title, 256));
+			builder.title(FormattingUtils.trim(this.title, 256));
 		}
 
 		if (this.description != null && !this.description.isEmpty()) {
-			builder.description(Utils.trim(this.description, 4096));
+			builder.description(FormattingUtils.trim(this.description, 4096));
 		}
 
 		if (this.url != null && !this.url.isEmpty()) {
@@ -240,7 +241,7 @@ public class EmbedBuilder {
 		builder.color(this.color == null ? this.defaultColor : this.color);
 
 		if (this.footerText != null) {
-			builder.footer(Utils.trim(this.footerText, 2048), this.footerIconUrl);
+			builder.footer(FormattingUtils.trim(this.footerText, 2048), this.footerIconUrl);
 		}
 
 		if (this.image != null) {
@@ -252,7 +253,7 @@ public class EmbedBuilder {
 		}
 
 		if (this.authorName != null) {
-			builder.author(Utils.trim(this.authorName, 256), this.authorUrl, this.authorIconUrl);
+			builder.author(FormattingUtils.trim(this.authorName, 256), this.authorUrl, this.authorIconUrl);
 		}
 
 		if (this.fields != null) {
@@ -266,11 +267,11 @@ public class EmbedBuilder {
 		ImmutableEmbedData.Builder builder = EmbedData.builder();
 
 		if (this.title != null && !this.title.isEmpty()) {
-			builder.title(Utils.trim(this.title, 256));
+			builder.title(FormattingUtils.trim(this.title, 256));
 		}
 
 		if (this.description != null && !this.description.isEmpty()) {
-			builder.description(Utils.trim(this.description, 4096));
+			builder.description(FormattingUtils.trim(this.description, 4096));
 		}
 
 		if (this.url != null && !this.url.isEmpty()) {
@@ -285,7 +286,7 @@ public class EmbedBuilder {
 
 		if (this.footerText != null) {
 			ImmutableEmbedFooterData.Builder footer = EmbedFooterData.builder();
-			footer.text(Utils.trim(this.footerText, 2048));
+			footer.text(FormattingUtils.trim(this.footerText, 2048));
 
 			if (this.footerIconUrl != null) {
 				footer.iconUrl(this.footerIconUrl);
@@ -304,7 +305,7 @@ public class EmbedBuilder {
 
 		if (this.authorName != null) {
 			ImmutableEmbedAuthorData.Builder author = EmbedAuthorData.builder();
-			author.name(Utils.trim(this.authorName, 256));
+			author.name(FormattingUtils.trim(this.authorName, 256));
 
 			if (this.authorUrl != null) {
 				author.url(this.authorUrl);

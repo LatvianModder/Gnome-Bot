@@ -1,6 +1,7 @@
 package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
@@ -95,7 +96,7 @@ public class PingHandler {
 			userPingInstances = list.toArray(new UserPingInstance[0]);
 			// App.info("Loaded " + list.size() + " user ping instances:");
 			// list.forEach(App::info);
-			App.LOGGER.refreshedPings();
+			App.LOGGER.event(BrainEvents.REFRESHED_PINGS);
 		}
 
 		return userPingInstances;

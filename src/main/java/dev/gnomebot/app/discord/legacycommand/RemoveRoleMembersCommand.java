@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.legacycommand;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.Ansi;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 
@@ -28,15 +28,15 @@ public class RemoveRoleMembersCommand {
 				DiscordMember m = context.gc.members.findFirst(member);
 
 				if (m != null) {
-					String n = member.getTag();
+					var n = Ansi.of(member.getTag());
 
 					if (member.getRoleIds().size() > 1) {
-						n = Ansi.CYAN + n + Ansi.RESET;
+						n.cyan();
 					}
 
 					if (member.getRoleIds().contains(role)) {
 						removed++;
-						App.info("- " + n);
+						App.info(Ansi.of("- ").append(n));
 
 						if (confirm) {
 							member.removeRole(role).block();

@@ -2,11 +2,10 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import io.javalin.http.HttpStatus;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -16,18 +15,10 @@ import java.io.ByteArrayOutputStream;
  * @author LatvianModder
  */
 public class LeaderboardCommand extends ApplicationCommands {
-	public static class LeaderboardCommandEntry {
-		public String name;
-		public Snowflake id;
-		public int rank;
-		public String xp;
-		public int color;
-	}
-
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("leaderboard")
 			.description("Leaderboard")
-			.add(time("timespan", true))
+			.add(time("timespan", true, false))
 			.add(integer("limit"))
 			.add(channel("channel"))
 			.add(role("role"))
@@ -63,7 +54,7 @@ public class LeaderboardCommand extends ApplicationCommands {
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
-			if (ex.code == HTTPResponseCode.BAD_REQUEST.code) {
+			if (ex.status == HttpStatus.BAD_REQUEST) {
 				event.respond("This leaderboard has no data!");
 			}
 		} catch (Exception ex) {

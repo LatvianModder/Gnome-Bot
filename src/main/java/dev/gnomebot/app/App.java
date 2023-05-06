@@ -10,6 +10,7 @@ import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.RequestHandler;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.server.WebServer;
@@ -22,16 +23,15 @@ import dev.gnomebot.app.server.handler.SpecialHandlers;
 import dev.gnomebot.app.server.handler.panel.AuditLogHandlers;
 import dev.gnomebot.app.server.handler.panel.PanelHandlers;
 import dev.gnomebot.app.server.handler.panel.ScamWebHandlers;
-import dev.gnomebot.app.util.Ansi;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.ScheduledTask;
 import dev.gnomebot.app.util.ScheduledTaskCallback;
-import dev.gnomebot.app.util.Table;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Guild;
+import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.webutils.html.RootTag;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.rest.http.client.ClientException;
 
@@ -40,7 +40,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 /**
  * @author LatvianModder
@@ -93,6 +92,7 @@ public class App implements Runnable {
 	public ArrayList<ScheduledTask> scheduledTasks = new ArrayList<>();
 	public final Object scheduledTaskLock = new Object();
 
+	public CLI cli;
 	public Databases db;
 	public WebServer webServer;
 	public DiscordHandler discordHandler;
@@ -107,6 +107,7 @@ public class App implements Runnable {
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
 		System.out.println("Log start: " + Instant.now());
+		RootTag.DEFAULT = GnomeRootTag.DEFAULT;
 
 		running = true;
 		blockingTasks = new ArrayList<>();
@@ -114,44 +115,10 @@ public class App implements Runnable {
 		App.info("Loading char map...");
 		CharMap.load();
 
-		App.info("Loading console commands...");
-		ConsoleCommandManager commands = new ConsoleCommandManager(this);
-
-		commands.add("restart", matcher -> restart());
-		commands.add("reload", matcher -> reload());
-		commands.add("debug", matcher -> {
-			debug = !debug;
-			success("Debug mode: " + (debug ? "enabled" : "disabled"));
-		});
-		commands.add("token", matcher -> info(Utils.createToken()));
-		commands.add(Pattern.compile("^leave_guild (\\d+)$"), matcher -> leaveGuild(Snowflake.of(matcher.group(1))));
-
-		commands.add(Pattern.compile("^remove_modifiers (.*)$"), matcher -> info(CharMap.MODIFIER_PATTERN.matcher(matcher.group(1)).replaceAll("")));
-
-		commands.add("colors", matcher -> {
-			StringBuilder line1 = new StringBuilder();
-			StringBuilder line2 = new StringBuilder();
-
-			for (int i = 0; i < 8; i++) {
-				line1.append("\u001B[0;3").append(i).append("m■ ");
-				line2.append("\u001B[1;3").append(i).append("m■ ");
-			}
-
-			info(line1);
-			info(line2);
-		});
-
-		commands.add(Pattern.compile("^echo_cli (.*)$"), matcher -> {
-			String message = matcher.group(1);
-			info("Sending to all CLI clients: " + message);
-			WSHandler.CLI.broadcast(message);
-		});
-
-		commands.add("guilds", matcher -> printGuilds());
-
+		cli = new CLI(this);
+		cli.start();
 		db = new Databases(this);
 
-		commands.startThread();
 		App.info("Loading discord handler...");
 
 		discordHandler = new DiscordHandler(this);
@@ -200,6 +167,8 @@ public class App implements Runnable {
 		webServer.add("api/guild/activity/rank/:guild/:member/:days", ActivityHandlers::rank).member().cacheHours(0); // 1
 		webServer.add("api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5);
 		webServer.add("api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5);
+		webServer.add("api/guild/activity/user-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::userMentionLeaderboardImage).admin().cacheHours(1);
+		webServer.add("api/guild/activity/role-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::roleMentionLeaderboardImage).admin().cacheHours(1);
 
 		webServer.add("api/rust-plus/:from", MiscHandlers::rustPlus).post().noAuth().log();
 
@@ -222,39 +191,38 @@ public class App implements Runnable {
 		info("API Endpoints:");
 		info("");
 
-		Table table = new Table("Method", "Path", "Auth Level", "Cache");
+		var table = new Table("Method", "Path", "Auth Level", "Cache");
 
 		for (RequestHandler wrapper : webServer.handlerList) {
-			Table.Cell[] cells = table.addRow();
+			var cells = table.addRow();
 
 			switch (wrapper.method) {
-				case GET -> cells[0].value(Ansi.GREEN + "GET");
-				case POST -> cells[0].value(Ansi.CYAN + "POST");
-				case PATCH -> cells[0].value(Ansi.TEAL + "PATCH");
-				case DELETE -> cells[0].value(Ansi.RED + "DELETE");
-				case PUT -> cells[0].value(Ansi.YELLOW + "PUT");
+				case GET -> cells[0].value(Ansi.green("GET"));
+				case POST -> cells[0].value(Ansi.cyan("POST"));
+				case PATCH -> cells[0].value(Ansi.teal("PATCH"));
+				case DELETE -> cells[0].value(Ansi.red("DELETE"));
+				case PUT -> cells[0].value(Ansi.yellow("PUT"));
 			}
 
-			StringBuilder psb = new StringBuilder();
+			var psb = Ansi.of();
 
-			for (String p : wrapper.path.split("/")) {
-				psb.append(Ansi.CYAN + '/');
+			for (var p : wrapper.path.split("/")) {
+				psb.append(Ansi.cyan('/'));
 
 				if (p.startsWith(":")) {
-					psb.append(Ansi.YELLOW);
-					psb.append(p.substring(1));
+					psb.append(Ansi.yellow(p.substring(1)));
 				} else {
 					psb.append(p);
 				}
 			}
 
 			cells[1].value(psb);
-			cells[2].value((wrapper.authLevel == AuthLevel.NO_AUTH ? Ansi.YELLOW : Ansi.GREEN) + wrapper.authLevel.name().toLowerCase());
+			cells[2].value(Ansi.of(wrapper.authLevel.name().toLowerCase()).color(wrapper.authLevel == AuthLevel.NO_AUTH ? 11 : 2));
 
 			if (wrapper.cacheSeconds == 0) {
-				cells[3].value(Ansi.YELLOW + "no-cache");
+				cells[3].value(Ansi.yellow("no-cache"));
 			} else {
-				cells[3].value(Ansi.GREEN + (wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + Utils.prettyTimeString(wrapper.cacheSeconds));
+				cells[3].value(Ansi.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + Utils.prettyTimeString(wrapper.cacheSeconds)));
 			}
 		}
 
@@ -276,17 +244,6 @@ public class App implements Runnable {
 		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));
 		// queueScheduledTask(System.currentTimeMillis() + 4000L, task -> info("Test 2!"));
 		// queueScheduledTask(System.currentTimeMillis() + 5000L, task -> info("Test 3!"));
-
-		for (int y = 0; y < 16; y++) {
-			var str = new StringBuilder();
-
-			for (int x = 0; x < 16; x++) {
-				str.append(Ansi.b256(x + y * 16));
-				str.append("  ");
-			}
-
-			info(str);
-		}
 
 		new WatchdogThread(this).start();
 
@@ -390,22 +347,5 @@ public class App implements Runnable {
 		for (GuildCollections gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);
 		}
-	}
-
-	public void leaveGuild(Snowflake id) {
-		discordHandler.client.getGuildById(id).flatMap(Guild::leave).subscribe();
-	}
-
-	public void printGuilds() {
-		Table table = new Table("Name", "Owner", "Members", "Messages", "Gnome Messages", "ID");
-
-		for (Guild g : discordHandler.getSelfGuilds()) {
-			info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
-			var gc = db.guild(g.getId());
-
-			table.addRow(Utils.trim(g.getName(), 70), gc.getMember(g.getOwnerId()).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", discordHandler.selfId.asLong()).count(), g.getId().asString());
-		}
-
-		table.print();
 	}
 }

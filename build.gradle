@@ -36,6 +36,13 @@ repositories {
 	}
 
 	maven {
+		url "https://maven.saps.dev/releases"
+		content {
+			includeGroup "dev.latvian.apps"
+		}
+	}
+
+	maven {
 		url 'https://oss.sonatype.org/content/repositories/snapshots'
 	}
 }
@@ -44,15 +51,16 @@ dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 	// https://github.com/Discord4J/Discord4J/commits/master
 
-	implementation("curse.maven:rhino-416294:3892335") { transitive = false }
+	implementation('dev.latvian.apps:webutils:1.0.6') { transitive = false }
+	implementation('curse.maven:rhino-416294:3892335') { transitive = false }
 	implementation('io.javalin:javalin:5.3.2')
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"
 	// implementation("com.discord4j:discord4j-core:3.2.2-SNAPSHOT") { changing = true }
-	implementation("com.discord4j:discord4j-core:3.3.0-SNAPSHOT") { changing = true }
+	implementation('com.discord4j:discord4j-core:3.3.0-SNAPSHOT') { changing = true }
 	// implementation("com.discord4j:discord-json:1.7.0-SNAPSHOT") { changing = true }
 	// implementation('com.github.Discord4J:Discord4J:feature~buttons-SNAPSHOT')
 	// implementation("org.mongodb:mongo-java-driver:3.12.8")
-	implementation('org.mongodb:mongodb-driver-sync:4.8.1')
+	implementation('org.mongodb:mongodb-driver-sync:4.9.0')
 	implementation('com.google.code.gson:gson:2.10.1')
 	implementation('org.slf4j:slf4j-simple:2.0.5')
 	// implementation ("com.fasterxml.jackson.core:jackson-databind:2.11.2")
@@ -60,7 +68,7 @@ dependencies {
 	// implementation ("org.mindrot:jbcrypt:0.4")
 	implementation('io.github.classgraph:classgraph:4.8.154')
 	// implementation ("com.kcthota:emoji4j:6.0")
-	implementation("com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1")
+	implementation('com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1')
 }
 
 jar {

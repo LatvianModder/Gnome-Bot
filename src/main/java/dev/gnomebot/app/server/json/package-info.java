@@ -1,4 +1,2 @@
-@NonnullByDefault
+@dev.latvian.apps.webutils.NonnullByDefault
 package dev.gnomebot.app.server.json;
-
-import dev.gnomebot.app.util.NonnullByDefault;

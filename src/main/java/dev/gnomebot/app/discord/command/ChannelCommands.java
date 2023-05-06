@@ -6,8 +6,8 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.MutableLong;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.service.ChannelService;
@@ -208,12 +208,12 @@ public class ChannelCommands extends ApplicationCommands {
 				key.channel = channelId;
 				key.user = m.getUserID();
 
-				totalCount.computeIfAbsent(key.user, MutableLong::new).add(1L);
-				dailyCount.computeIfAbsent(key, MutableLong::new).add(1L);
+				totalCount.computeIfAbsent(key.user, MutableLong.MAP_VALUE).add(1L);
+				dailyCount.computeIfAbsent(key, MutableLong.MAP_VALUE).add(1L);
 
 				if (channelInfo.xp > 0L) {
-					totalXp.computeIfAbsent(key.user, MutableLong::new).add(channelInfo.xp);
-					dailyXp.computeIfAbsent(key, MutableLong::new).add(channelInfo.xp);
+					totalXp.computeIfAbsent(key.user, MutableLong.MAP_VALUE).add(channelInfo.xp);
+					dailyXp.computeIfAbsent(key, MutableLong.MAP_VALUE).add(channelInfo.xp);
 				}
 			}
 		}
@@ -246,8 +246,8 @@ public class ChannelCommands extends ApplicationCommands {
 		event.edit().respond("4/4 Updating user data...");
 
 		for (DiscordMember member : event.context.gc.members.query()) {
-			long c = MutableLong.valueOf(totalCount.get(member.getUID()));
-			long xp = MutableLong.valueOf(totalXp.get(member.getUID()));
+			long c = MutableLong.valueOf(totalCount.get(member.getUID()), 0L);
+			long xp = MutableLong.valueOf(totalXp.get(member.getUID()), 0L);
 
 			if (c != member.getTotalMessages() && xp != member.getTotalXp()) {
 				member.update(Updates.combine(Updates.set("total_messages", c), Updates.set("total_xp", xp)));

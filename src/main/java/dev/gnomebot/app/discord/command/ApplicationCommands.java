@@ -267,19 +267,26 @@ public class ApplicationCommands {
 		return basic(ApplicationCommandOption.Type.ROLE, id);
 	}
 
-	public static ChatInputInteractionBuilder time(String id, boolean all) {
+	public static ChatInputInteractionBuilder mentionable(String id) {
+		return basic(ApplicationCommandOption.Type.MENTIONABLE, id);
+	}
+
+	public static ChatInputInteractionBuilder time(String id, boolean all, boolean shortTime) {
 		return basic(ApplicationCommandOption.Type.STRING, id).suggest(event -> {
 			if (all) {
 				event.suggest("all");
 			}
 
-			event.suggest("30 seconds");
-			event.suggest("1 minute");
-			event.suggest("10 minutes");
-			event.suggest("30 minutes");
-			event.suggest("1 hour");
-			event.suggest("3 hours");
-			event.suggest("6 hours");
+			if (shortTime) {
+				event.suggest("30 seconds");
+				event.suggest("1 minute");
+				event.suggest("10 minutes");
+				event.suggest("30 minutes");
+				event.suggest("1 hour");
+				event.suggest("3 hours");
+				event.suggest("6 hours");
+			}
+
 			event.suggest("1 day");
 			event.suggest("1 week");
 			event.suggest("1 month");

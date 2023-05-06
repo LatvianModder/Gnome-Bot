@@ -2,12 +2,16 @@ package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Paste;
+import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.html.RootTag;
-import dev.gnomebot.app.server.html.Tag;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.html.RootTag;
+import dev.latvian.apps.webutils.html.Tag;
+import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 
 import java.io.BufferedReader;
@@ -21,7 +25,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PasteHandlers {
-	public static final Pattern AT_PATTERN = Pattern.compile("([ \\t]+at )([\\w./$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 	public static final int MAX_LINES = 50_000;
 
 	public static final String[] JAVA_AND_JS_KEYWORDS = new String[]{
@@ -105,7 +108,7 @@ public class PasteHandlers {
 		Snowflake id = request.getSnowflake("id");
 		String filename = request.variable("filename");
 		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename, "");
-		return Redirect.permanently(App.url("paste/" + id.asString()));
+		return Response.permanentRedirect(App.url("paste/" + id.asString()));
 	}
 
 	public static Response pasteRaw(ServerRequest request) throws Exception {
@@ -174,15 +177,15 @@ public class PasteHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
 		}
 
-		RootTag root = RootTag.create();
-		root.setupHead(request.getPath(), filename);
+		var root = RootTag.create(null, null);
+		GnomeRootTag.setupHead(root, request.getPath(), filename);
 		Tag body = root.paired("body");
-		Tag content = body.div().addClass("content");
+		Tag content = body.div().classes("content");
 
 		content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
 		content.br();
 
-		Tag pasteText = content.div().addClass("pastetext");
+		Tag pasteText = content.div().classes("pastetext");
 
 		String[] lines = contents.split("\n");
 
@@ -198,27 +201,27 @@ public class PasteHandlers {
 		}
 
 		if (lines.length > MAX_LINES) {
-			pasteText.p().addClass("error").string("This paste is too large! Only part of it will have formatting!").end();
+			pasteText.p().classes("error").string("This paste is too large! Only part of it will have formatting!").end();
 			pasteText.br();
 		}
 
 		for (int i = 0; i < lines.length; i++) {
 			String lineId = "L" + (i + 1);
 			Tag line = pasteText.p();
-			line.attr("id", lineId);
+			line.id(lineId);
 
 			if (i >= MAX_LINES || fileType != TYPE_NONE) {
-				line.addClass("info");
+				line.classes("info");
 			} else if (lines[i].contains("ERR")) {
-				line.addClass("error");
+				line.classes("error");
 			} else if (lines[i].contains("WARN")) {
-				line.addClass("warn");
+				line.classes("warn");
 			} else if (lines[i].contains("DEBUG") || lines[i].contains("TRACE")) {
-				line.addClass("debug");
+				line.classes("debug");
 			} else if (lines[i].contains("Error:") || lines[i].contains("Exception:") || lines[i].contains("Caused by:") || lines[i].contains("Stacktrace:")) {
-				line.addClass("error");
+				line.classes("error");
 			} else {
-				line.addClass("info");
+				line.classes("info");
 			}
 
 			line.a("#" + lineId).string(String.format(lineFormat, i + 1));
@@ -263,7 +266,7 @@ public class PasteHandlers {
 				matcher.appendTail(sb);
 				line.string(sb.toString());
 			} else {
-				Matcher matcher = AT_PATTERN.matcher(lines[i]);
+				Matcher matcher = FormattingUtils.STACK_AT_PATTERN.matcher(lines[i]);
 
 				while (matcher.find()) {
 					sb.setLength(0);

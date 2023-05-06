@@ -12,7 +12,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -96,7 +96,7 @@ public class CommandContext {
 	public void adminLog(Color col, String text) {
 		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
 			spec.color(col);
-			spec.description(Utils.trim(text, 4096));
+			spec.description(FormattingUtils.trim(text, 4096));
 			spec.timestamp(Instant.now());
 			spec.footer(sender.getUsername(), sender.getAvatarUrl());
 		});

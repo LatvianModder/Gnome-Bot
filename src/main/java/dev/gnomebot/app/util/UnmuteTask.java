@@ -2,6 +2,7 @@ package dev.gnomebot.app.util;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.EmbedColor;
 import discord4j.common.util.Snowflake;
@@ -20,7 +21,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 		cancelled = false;
 
 		App.warn("Muting " + gc + "/" + user.asString() + "/" + seconds);
-		App.LOGGER.memberMuted();
+		App.LOGGER.event(BrainEvents.MEMBER_MUTED);
 	}
 
 	@Override

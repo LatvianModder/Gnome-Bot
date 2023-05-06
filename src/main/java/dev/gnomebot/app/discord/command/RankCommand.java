@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.entity.Member;
 
 /**
@@ -15,7 +16,7 @@ public class RankCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")
 			.description("Rank")
-			.add(time("timespan", true))
+			.add(time("timespan", true, false))
 			.add(user("member"))
 			.add(channel("channel"))
 			.run(RankCommand::run);
@@ -48,7 +49,7 @@ public class RankCommand extends ApplicationCommands {
 							embed.inlineField("Rank", "#" + o.get("rank").getAsInt());
 						}
 
-						embed.inlineField("XP", Utils.format(o.get("xp").getAsLong()));
+						embed.inlineField("XP", FormattingUtils.format(o.get("xp").getAsLong()));
 
 						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
 							long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();

@@ -6,7 +6,7 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -57,7 +57,7 @@ public class ModpackCommand extends ApplicationCommands {
 	}
 
 	public static Pack getRandomPack() {
-		return getPacks().get(Utils.RANDOM.nextInt(getPacks().size()));
+		return getPacks().get(MathUtils.RANDOM.nextInt(getPacks().size()));
 	}
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {

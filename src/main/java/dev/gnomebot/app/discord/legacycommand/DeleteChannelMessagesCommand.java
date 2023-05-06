@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.Pair;
+import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 
@@ -20,19 +20,19 @@ public class DeleteChannelMessagesCommand {
 		long m = Math.min(reader.readLong().orElse(0L), 1000L);
 
 		cm.ifPresent(pair -> context.handler.app.queueBlockingTask(task -> {
-			App.info("Deleting starting from " + pair.a.getMention() + "/" + pair.b.asString());
+			App.info("Deleting starting from " + pair.a().getMention() + "/" + pair.b().asString());
 			context.message.addReaction(Emojis.VOTENONE).block();
 
 			Iterable<Message> iterable;
 
 			if (m > 0L) {
-				iterable = pair.a.getMessagesBefore(pair.b).take(m, true).toIterable();
+				iterable = pair.a().getMessagesBefore(pair.b()).take(m, true).toIterable();
 			} else {
-				if (!pair.b.equals(context.message.getId())) {
-					pair.a.getMessage(pair.b).delete().block();
+				if (!pair.b().equals(context.message.getId())) {
+					pair.a().getMessage(pair.b()).delete().block();
 				}
 
-				iterable = pair.a.getMessagesAfter(pair.b).take(1000L, true).toIterable();
+				iterable = pair.a().getMessagesAfter(pair.b()).take(1000L, true).toIterable();
 			}
 
 			for (Message message : iterable) {

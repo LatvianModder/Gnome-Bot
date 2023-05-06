@@ -4,6 +4,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.CodingUtils;
+import dev.latvian.apps.webutils.data.Either;
+import dev.latvian.apps.webutils.gson.GsonUtils;
+import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -45,12 +49,12 @@ public class URLRequest<T> {
 	}
 
 	public static class UnsuccesfulRequestException extends IllegalStateException {
-		public final int code;
+		public final HttpStatus status;
 		public final String response;
 
-		public UnsuccesfulRequestException(int code, String response) {
-			super("Error " + code + ": " + response);
-			this.code = code;
+		public UnsuccesfulRequestException(HttpStatus status, String response) {
+			super("Error " + status.getCode() + ": " + response);
+			this.status = status;
 			this.response = response;
 		}
 	}
@@ -140,7 +144,7 @@ public class URLRequest<T> {
 
 				u.append(entry.getKey());
 				u.append('=');
-				u.append(Utils.encode(entry.getValue()));
+				u.append(CodingUtils.encodeURL(entry.getValue()));
 			}
 		}
 
@@ -189,7 +193,7 @@ public class URLRequest<T> {
 	}
 
 	public URLRequest<T> outForm(Map<String, String> map) {
-		return outString(map.entrySet().stream().map(entry -> entry.getKey() + "=" + Utils.encode(entry.getValue())).collect(Collectors.joining("&"))).contentType("application/x-www-form-urlencoded");
+		return outString(map.entrySet().stream().map(entry -> entry.getKey() + "=" + CodingUtils.encodeURL(entry.getValue())).collect(Collectors.joining("&"))).contentType("application/x-www-form-urlencoded");
 	}
 
 	public URLRequest<T> process(Consumer<HttpURLConnection> processor) {
@@ -254,15 +258,15 @@ public class URLRequest<T> {
 	}
 
 	public URLRequest<JsonElement> toJson() {
-		return map(stream -> Utils.GSON.fromJson(getReader(stream), JsonElement.class));
+		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonElement.class));
 	}
 
 	public URLRequest<JsonObject> toJsonObject() {
-		return map(stream -> Utils.GSON.fromJson(getReader(stream), JsonObject.class));
+		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonObject.class));
 	}
 
 	public URLRequest<JsonArray> toJsonArray() {
-		return map(stream -> Utils.GSON.fromJson(getReader(stream), JsonArray.class));
+		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonArray.class));
 	}
 
 	public URLRequest<List<String>> toStringList() {
@@ -309,7 +313,7 @@ public class URLRequest<T> {
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36");
 
 		if (!cookies.isEmpty()) {
-			connection.setRequestProperty("Cookie", Utils.encode(cookies, "; "));
+			connection.setRequestProperty("Cookie", CodingUtils.encodeURL(cookies, "; "));
 		}
 
 		for (SetCookie cookie : setCookies) {
@@ -336,7 +340,7 @@ public class URLRequest<T> {
 				map.put("HttpOnly", "");
 			}
 
-			connection.addRequestProperty("Set-Cookie", Utils.encode(map, "; "));
+			connection.addRequestProperty("Set-Cookie", CodingUtils.encodeURL(map, "; "));
 		}
 
 		connectionProcessor.accept(connection);
@@ -373,7 +377,7 @@ public class URLRequest<T> {
 			}
 
 			if (code == 429 && sb.charAt(0) == '{') {
-				JsonObject json = Utils.GSON.fromJson(sb.toString(), JsonObject.class);
+				JsonObject json = GsonUtils.GSON.fromJson(sb.toString(), JsonObject.class);
 
 				if (json.has("retry_after")) {
 					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.get("retry_after").getAsLong() + "ms");
@@ -382,7 +386,7 @@ public class URLRequest<T> {
 				}
 			}
 
-			throw new UnsuccesfulRequestException(code, sb.toString().trim());
+			throw new UnsuccesfulRequestException(HttpStatus.forStatus(code), sb.toString().trim());
 		}
 	}
 

@@ -6,7 +6,7 @@ import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -125,7 +125,7 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 			throw new GnomeException("Invalid custom modal ID: `" + customId + "`");
 		}
 
-		event.presentModal(Utils.trim(title, 45), customId, components).block();
+		event.presentModal(FormattingUtils.trim(title, 45), customId, components).block();
 	}
 
 	public void respondModal(String customId, String title, ActionComponent... textInputs) {

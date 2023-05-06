@@ -5,8 +5,8 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.util.Pair;
 import dev.gnomebot.app.util.SimpleStringReader;
+import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 

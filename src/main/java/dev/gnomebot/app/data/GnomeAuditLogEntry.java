@@ -49,7 +49,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		DISCORD_INVITE("discord_invite", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
 		FORCED_NAME_UPDATE("forced_name_update", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT),
 		IP_ADDRESS("ip_address", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		EVERYONE_PING("everyone_ping", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
 		URL_SHORTENER("url_shortener", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
 		SCAM("scam", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
 		BAD_WORD("bad_word", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),

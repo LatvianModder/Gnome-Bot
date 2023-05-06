@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 
 import java.util.regex.Pattern;
 
@@ -9,6 +9,6 @@ public record Ping(Pattern pattern, boolean allow) {
 
 	@Override
 	public String toString() {
-		return (allow ? "+" : "-") + Utils.toRegexString(pattern);
+		return (allow ? "+" : "-") + FormattingUtils.toRegexString(pattern);
 	}
 }

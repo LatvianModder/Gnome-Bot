@@ -120,8 +120,7 @@ public class WebHook implements PingDestination {
 			App.info("Ping for WebHook[" + id.asString() + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
 
 			execute(MessageBuilder.create()
-					// .content("[Ping ➤](" + pingData.url() + ") from **" + pingData.gc() + "** in " + pingData.channel().getMention() + "\n" + pingData.content())
-					.content("[Ping ➤](" + pingData.url() + ") from " + pingData.channel().getMention() + "\n" + pingData.content())
+					.content("[Ping ➤](" + pingData.url() + ") from " + pingData.url() + "\n" + pingData.content())
 					.webhookName(pingData.username())
 					.webhookAvatarUrl(pingData.avatar())
 			);

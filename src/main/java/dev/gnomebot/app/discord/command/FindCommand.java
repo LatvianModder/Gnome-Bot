@@ -10,7 +10,7 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Pair;
+import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -107,7 +107,7 @@ public class FindCommand extends ApplicationCommands {
 			list.add(Pair.of("404", ""));
 		}
 
-		event.respond(list.stream().sorted((o1, o2) -> o1.b.compareToIgnoreCase(o2.b)).map(Pair::getA).collect(Collectors.toList()));
+		event.respond(list.stream().sorted((o1, o2) -> o1.b().compareToIgnoreCase(o2.b())).map(Pair::a).collect(Collectors.toList()));
 	}
 
 	private static void messages(ChatInputInteractionEventWrapper event) {

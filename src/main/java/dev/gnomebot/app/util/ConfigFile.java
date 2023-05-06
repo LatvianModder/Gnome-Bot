@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import dev.latvian.apps.webutils.gson.GsonUtils;
 import discord4j.common.util.Snowflake;
 
 import java.nio.file.Files;
@@ -25,7 +26,7 @@ public class ConfigFile {
 
 		if (Files.exists(path)) {
 			try {
-				o = Utils.GSON_PRETTY.fromJson(Files.readString(path), JsonObject.class);
+				o = GsonUtils.GSON_PRETTY.fromJson(Files.readString(path), JsonObject.class);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -110,7 +111,7 @@ public class ConfigFile {
 	public void save() {
 		if (needsSaving) {
 			try {
-				Files.writeString(path, Utils.GSON_PRETTY.toJson(options));
+				Files.writeString(path, GsonUtils.GSON_PRETTY.toJson(options));
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

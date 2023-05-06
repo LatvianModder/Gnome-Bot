@@ -2,11 +2,11 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
-import dev.gnomebot.app.discord.Confirm;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;

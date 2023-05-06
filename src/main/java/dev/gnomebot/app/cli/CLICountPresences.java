@@ -1,7 +1,7 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.discord.command.RegisterCommand;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.FormattingUtils;
 
 public class CLICountPresences {
 	@RegisterCommand
@@ -20,6 +20,6 @@ public class CLICountPresences {
 				.block()
 				.intValue();
 
-		event.respond(Utils.format(count) + " / " + (max == 0 ? "?" : Utils.format(max)) + " presences");
+		event.respond(FormattingUtils.format(count) + " / " + (max == 0 ? "?" : FormattingUtils.format(max)) + " presences");
 	}
 }
