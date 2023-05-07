@@ -3,7 +3,7 @@ package dev.gnomebot.app;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.AnsiCode;
 import dev.latvian.apps.webutils.ansi.AnsiComponent;
-import discord4j.core.object.presence.ClientPresence;
+import dev.latvian.apps.webutils.ansi.AnsiContext;
 
 import java.io.BufferedOutputStream;
 import java.io.PrintStream;
@@ -15,12 +15,10 @@ public class Logger {
 
 	private final PrintStream out;
 	private int event;
-	private boolean firstEvent;
 
 	public Logger() {
 		out = System.out;
 		event = 0;
-		firstEvent = true;
 	}
 
 	public void replaceSystemOutLogger() {
@@ -70,17 +68,20 @@ public class Logger {
 
 			BRAIN.add(component);
 
-			if (event == 0 || event >= 40) {
+			if (event == 0) {
 				Ansi.log("");
-				event = 0;
 			}
 
 			event++;
-			out.print(component.toString() + " ");
 
-			if (firstEvent) {
-				App.instance.discordHandler.client.updatePresence(ClientPresence.online()).subscribe();
-				firstEvent = false;
+			var builder = new StringBuilder();
+			component.appendAnsi(builder, AnsiContext.NONE);
+			builder.append(' ');
+			out.print(builder);
+
+			if (event >= 40) {
+				out.println(AnsiCode.RESET);
+				event = 0;
 			}
 		}
 	}

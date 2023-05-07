@@ -68,6 +68,7 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.discordjson.json.UserData;
@@ -131,7 +132,7 @@ public class DiscordHandler {
 				.setDefaultAllowedMentions(AllowedMentions.builder().build())
 				.build()
 				.gateway()
-				.setInitialPresence(shardInfo -> ClientPresence.invisible())
+				.setInitialPresence(shardInfo -> ClientPresence.online(ClientActivity.watching("all of you")))
 				.setEnabledIntents(IntentSet.of(
 						Intent.GUILDS,
 						Intent.GUILD_MEMBERS,

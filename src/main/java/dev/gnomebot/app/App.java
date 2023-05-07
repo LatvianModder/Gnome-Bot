@@ -32,10 +32,8 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
 import dev.latvian.apps.webutils.html.RootTag;
-import discord4j.core.object.presence.ClientPresence;
 import discord4j.rest.http.client.ClientException;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -315,15 +313,6 @@ public class App implements Runnable {
 		}
 
 		App.info("Stopping server...");
-
-		if (discordHandler != null) {
-			try {
-				discordHandler.client.updatePresence(ClientPresence.invisible()).timeout(Duration.ofMillis(3000L)).block();
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-
 		ReactionHandler.shutdown();
 
 		for (BlockingTask task : blockingTasks) {
