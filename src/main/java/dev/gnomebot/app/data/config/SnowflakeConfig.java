@@ -1,7 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -27,13 +25,13 @@ public abstract class SnowflakeConfig extends BaseConfig<Snowflake> {
 	}
 
 	@Override
-	public JsonElement toJson() {
-		return new JsonPrimitive(get().asString());
+	public Object toJson() {
+		return get().asString();
 	}
 
 	@Override
-	public void fromJson(JsonElement json) {
-		set(Snowflake.of(json.getAsString()));
+	public void fromJson(Object json) {
+		set(Snowflake.of(String.valueOf(json)));
 	}
 
 	public boolean isSet() {

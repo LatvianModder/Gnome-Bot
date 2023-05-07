@@ -69,7 +69,7 @@ public class Logger {
 			BRAIN.add(component);
 
 			if (event == 0) {
-				Ansi.log("");
+				Ansi.log("", false);
 			}
 
 			event++;
@@ -80,7 +80,7 @@ public class Logger {
 			out.print(builder);
 
 			if (event >= 40) {
-				out.println(AnsiCode.RESET);
+				out.println();
 				event = 0;
 			}
 		}

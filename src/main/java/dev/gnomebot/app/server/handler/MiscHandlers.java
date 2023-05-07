@@ -7,7 +7,7 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import io.javalin.http.HttpStatus;
@@ -47,7 +47,7 @@ public class MiscHandlers {
 
 	public static Response signOut(ServerRequest request) {
 		App.instance.db.invalidateToken(request.token.userId.asLong());
-		return JsonResponse.SUCCESS;
+		return JSONResponse.SUCCESS;
 	}
 
 	// To be moved somewhere else later lol

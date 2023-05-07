@@ -1,7 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import dev.gnomebot.app.data.GuildCollections;
 
 import java.util.ArrayList;
@@ -26,13 +24,13 @@ public class StringListConfig extends BaseConfig<List<String>> {
 	}
 
 	@Override
-	public JsonElement toJson() {
-		return new JsonPrimitive(String.join(" | ", get()));
+	public String toJson() {
+		return String.join(" | ", get());
 	}
 
 	@Override
-	public void fromJson(JsonElement json) {
-		String s = json.getAsString().trim();
+	public void fromJson(Object json) {
+		String s = String.valueOf(json).trim();
 		set(s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(" \\| ")));
 	}
 

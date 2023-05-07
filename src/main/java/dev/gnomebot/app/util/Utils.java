@@ -1,11 +1,9 @@
 package dev.gnomebot.app.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
+import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.common.util.TimestampFormat;
@@ -148,12 +146,6 @@ public class Utils {
 		}
 	}
 
-	public static JsonObject singleJson(String key, JsonElement value) {
-		JsonObject json = new JsonObject();
-		json.add(key, value);
-		return json;
-	}
-
 	public static String createToken() {
 		byte[] bytes = new byte[30];
 
@@ -187,11 +179,11 @@ public class Utils {
 		return URLRequest.of(App.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
 	}
 
-	public static JsonElement readInternalJson(String path) {
+	public static JSONObject readInternalJson(String path) {
 		try {
-			return internalRequest(path).toJson().block();
+			return internalRequest(path).toJsonObject().block();
 		} catch (Exception ex) {
-			return JsonNull.INSTANCE;
+			return null;
 		}
 	}
 

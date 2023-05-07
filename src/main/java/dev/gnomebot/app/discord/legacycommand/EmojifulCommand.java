@@ -1,11 +1,10 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
-import discord4j.core.object.entity.GuildEmoji;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -23,30 +22,30 @@ import java.util.zip.ZipOutputStream;
 public class EmojifulCommand {
 	@LegacyDiscordCommand(name = "emojiful", help = "Creates Emojiful .json recipes from reactions", arguments = "[*] <category name>")
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		String cat = reader.readString().orElse(context.gc.toString());
+		var cat = reader.readString().orElse(context.gc.toString());
 
 		if (cat.equals("*")) {
-			String cat1 = reader.readString().orElse(context.gc.toString());
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			var cat1 = reader.readString().orElse(context.gc.toString());
+			var out = new ByteArrayOutputStream();
 
-			try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
+			try (var zipOutputStream = new ZipOutputStream(out)) {
 				zipOutputStream.putNextEntry(new ZipEntry("pack.mcmeta"));
 
-				JsonObject mcmeta = new JsonObject();
-				JsonObject mcmetaPack = new JsonObject();
-				mcmetaPack.addProperty("pack_format", 6);
-				mcmetaPack.addProperty("description", "Emojiful emojis!");
-				mcmeta.add("pack", mcmetaPack);
+				var mcmeta = new JSONObject();
+				var mcmetaPack = new JSONObject();
+				mcmetaPack.put("pack_format", 6);
+				mcmetaPack.put("description", "Emojiful emojis!");
+				mcmeta.put("pack", mcmetaPack);
 				zipOutputStream.write(mcmeta.toString().getBytes(StandardCharsets.UTF_8));
 				zipOutputStream.closeEntry();
 
-				for (GuildEmoji custom : context.gc.getGuild().getEmojis().toIterable()) {
+				for (var custom : context.gc.getGuild().getEmojis().toIterable()) {
 					zipOutputStream.putNextEntry(new ZipEntry("data/emojiful/recipes/" + custom.getName().toLowerCase() + ".json"));
-					JsonObject json = new JsonObject();
-					json.addProperty("type", "emojiful:emoji_recipe");
-					json.addProperty("category", cat1);
-					json.addProperty("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");
-					json.addProperty("name", custom.getName());
+					var json = new JSONObject();
+					json.put("type", "emojiful:emoji_recipe");
+					json.put("category", cat1);
+					json.put("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");
+					json.put("name", custom.getName());
 					zipOutputStream.write(json.toString().getBytes(StandardCharsets.UTF_8));
 					zipOutputStream.closeEntry();
 				}
@@ -93,21 +92,21 @@ public class EmojifulCommand {
 				try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
 					zipOutputStream.putNextEntry(new ZipEntry("pack.mcmeta"));
 
-					JsonObject mcmeta = new JsonObject();
-					JsonObject mcmetaPack = new JsonObject();
-					mcmetaPack.addProperty("pack_format", 6);
-					mcmetaPack.addProperty("description", "Emojiful emojis!");
-					mcmeta.add("pack", mcmetaPack);
+					var mcmeta = new JSONObject();
+					var mcmetaPack = new JSONObject();
+					mcmetaPack.put("pack_format", 6);
+					mcmetaPack.put("description", "Emojiful emojis!");
+					mcmeta.put("pack", mcmetaPack);
 					zipOutputStream.write(mcmeta.toString().getBytes(StandardCharsets.UTF_8));
 					zipOutputStream.closeEntry();
 
-					for (ReactionEmoji.Custom custom : reactions) {
+					for (var custom : reactions) {
 						zipOutputStream.putNextEntry(new ZipEntry("data/emojiful/recipes/" + custom.getName().toLowerCase() + ".json"));
-						JsonObject json = new JsonObject();
-						json.addProperty("type", "emojiful:emoji_recipe");
-						json.addProperty("category", cat);
-						json.addProperty("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");
-						json.addProperty("name", custom.getName());
+						var json = new JSONObject();
+						json.put("type", "emojiful:emoji_recipe");
+						json.put("category", cat);
+						json.put("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");
+						json.put("name", custom.getName());
 						zipOutputStream.write(json.toString().getBytes(StandardCharsets.UTF_8));
 						zipOutputStream.closeEntry();
 					}

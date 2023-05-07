@@ -1,7 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import dev.gnomebot.app.data.GuildCollections;
 
 public class IntConfig extends BaseConfig<Integer> {
@@ -29,12 +27,7 @@ public class IntConfig extends BaseConfig<Integer> {
 	}
 
 	@Override
-	public JsonElement toJson() {
-		return new JsonPrimitive(get());
-	}
-
-	@Override
-	public void fromJson(JsonElement json) {
-		set(json.getAsInt());
+	public void fromJson(Object json) {
+		set(((Number) json).intValue());
 	}
 }

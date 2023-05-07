@@ -1,7 +1,5 @@
 package dev.gnomebot.app.data;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
@@ -9,6 +7,8 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.latvian.apps.webutils.json.JSONArray;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -162,7 +162,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		return builder.build();
 	}
 
-	public void toJson(GuildCollections gc, JsonObject json, MemberCache memberCache, AuthLevel authLevel) {
+	public void toJson(GuildCollections gc, JSONObject json, MemberCache memberCache, AuthLevel authLevel) {
 		MapWrapper voteMap = getVotes();
 		int[] v = new int[2];
 
@@ -176,27 +176,27 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 
 		boolean canSee = !gc.anonymousFeedback.get() || authLevel.is(AuthLevel.OWNER) || (gc.adminsBypassAnonFeedback.get() && authLevel.is(AuthLevel.ADMIN));
 
-		json.addProperty("id", Snowflake.asString(getUID()));
-		json.addProperty("number", getNumber());
-		json.addProperty("content", getContent());
-		json.addProperty("author", canSee ? Snowflake.asString(getAuthor()) : "0");
-		json.addProperty("author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getAuthor())) : "Anonymous");
-		json.addProperty("status", getStatus().name.toLowerCase());
+		json.put("id", Snowflake.asString(getUID()));
+		json.put("number", getNumber());
+		json.put("content", getContent());
+		json.put("author", canSee ? Snowflake.asString(getAuthor()) : "0");
+		json.put("author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getAuthor())) : "Anonymous");
+		json.put("status", getStatus().name.toLowerCase());
 
 		if (getReasonAuthor() != 0L) {
-			json.addProperty("reason", getReason());
-			json.addProperty("reason_author", canSee ? Snowflake.asString(getReasonAuthor()) : "0");
-			json.addProperty("reason_author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getReasonAuthor())) : "Anonymous");
+			json.put("reason", getReason());
+			json.put("reason_author", canSee ? Snowflake.asString(getReasonAuthor()) : "0");
+			json.put("reason_author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getReasonAuthor())) : "Anonymous");
 		}
 
-		json.addProperty("created", getDate().toInstant().toString());
-		json.addProperty("upvotes", v[0]);
-		json.addProperty("downvotes", v[1]);
-		json.addProperty("deleted", isDeleted());
+		json.put("created", getDate().toInstant().toString());
+		json.put("upvotes", v[0]);
+		json.put("downvotes", v[1]);
+		json.put("deleted", isDeleted());
 
 		if (authLevel.is(AuthLevel.OWNER)) {
-			JsonArray upTags = new JsonArray();
-			JsonArray downTags = new JsonArray();
+			var upTags = new JSONArray();
+			var downTags = new JSONArray();
 
 			for (Map.Entry<String, Object> o : voteMap.map.entrySet()) {
 				if (Boolean.TRUE.equals(o.getValue())) {
@@ -206,8 +206,8 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 				}
 			}
 
-			json.add("upvoters", upTags);
-			json.add("downvoters", downTags);
+			json.put("upvoters", upTags);
+			json.put("downvoters", downTags);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord;
 
-import com.google.gson.JsonObject;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 
@@ -34,10 +34,10 @@ public class UserCache {
 		return get(id).map(User::getTag).orElse("Deleted User#0000");
 	}
 
-	public JsonObject getJson(final Snowflake id) {
-		JsonObject json = new JsonObject();
-		json.addProperty("id", id.asString());
-		json.addProperty("name", getUsername(id));
+	public JSONObject getJson(final Snowflake id) {
+		var json = new JSONObject();
+		json.put("id", id.asString());
+		json.put("name", getUsername(id));
 		return json;
 	}
 }

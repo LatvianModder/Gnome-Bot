@@ -1,12 +1,10 @@
 package dev.gnomebot.app.discord.command;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.entity.Member;
 
 /**
@@ -31,25 +29,25 @@ public class RankCommand extends ApplicationCommands {
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
-				JsonArray leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJson().block().getAsJsonArray();
+				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJsonArray().block();
 				String id = m.getId().asString();
 
-				for (JsonElement e : leaderboardJson) {
-					JsonObject o = e.getAsJsonObject();
+				for (var e : leaderboardJson) {
+					var o = (JSONObject) e;
 
-					if (o.get("id").getAsString().equals(id)) {
+					if (o.string("id").equals(id)) {
 						// event.response().createFollowupMessage("**Rank:**  #0   |   **XP:**  0").subscribe();
 
 						EmbedBuilder embed = EmbedBuilder.create();
 						embed.author(m.getDisplayName(), m.getAvatarUrl());
 
-						if (o.get("rank").getAsInt() == 69) {
+						if (o.number("rank").intValue() == 69) {
 							embed.inlineField("Rank", "#69, nice");
 						} else {
-							embed.inlineField("Rank", "#" + o.get("rank").getAsInt());
+							embed.inlineField("Rank", "#" + o.number("rank").intValue());
 						}
 
-						embed.inlineField("XP", FormattingUtils.format(o.get("xp").getAsLong()));
+						embed.inlineField("XP", FormattingUtils.format(o.number("xp").longValue()));
 
 						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
 							long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();

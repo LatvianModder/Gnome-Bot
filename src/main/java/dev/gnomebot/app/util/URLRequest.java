@@ -1,12 +1,11 @@
 package dev.gnomebot.app.util;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.data.Either;
-import dev.latvian.apps.webutils.gson.GsonUtils;
+import dev.latvian.apps.webutils.json.JSON;
+import dev.latvian.apps.webutils.json.JSONArray;
+import dev.latvian.apps.webutils.json.JSONObject;
 import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -257,16 +256,12 @@ public class URLRequest<T> {
 		return map(ImageIO::read);
 	}
 
-	public URLRequest<JsonElement> toJson() {
-		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonElement.class));
+	public URLRequest<JSONObject> toJsonObject() {
+		return map(stream -> JSON.DEFAULT.read(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).readObject());
 	}
 
-	public URLRequest<JsonObject> toJsonObject() {
-		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonObject.class));
-	}
-
-	public URLRequest<JsonArray> toJsonArray() {
-		return map(stream -> GsonUtils.GSON.fromJson(getReader(stream), JsonArray.class));
+	public URLRequest<JSONArray> toJsonArray() {
+		return map(stream -> JSON.DEFAULT.read(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).readArray());
 	}
 
 	public URLRequest<List<String>> toStringList() {
@@ -377,11 +372,11 @@ public class URLRequest<T> {
 			}
 
 			if (code == 429 && sb.charAt(0) == '{') {
-				JsonObject json = GsonUtils.GSON.fromJson(sb.toString(), JsonObject.class);
+				var json = JSON.DEFAULT.read(sb.toString()).readObject();
 
-				if (json.has("retry_after")) {
-					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.get("retry_after").getAsLong() + "ms");
-					Thread.sleep(json.get("retry_after").getAsLong() + 50L);
+				if (json.containsKey("retry_after")) {
+					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.number("retry_after").longValue() + "ms");
+					Thread.sleep(json.number("retry_after").longValue() + 50L);
 					return block();
 				}
 			}

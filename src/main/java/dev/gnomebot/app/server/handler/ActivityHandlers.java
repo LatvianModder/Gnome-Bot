@@ -1,7 +1,5 @@
 package dev.gnomebot.app.server.handler;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
@@ -13,7 +11,9 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
-import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.json.JSONArray;
+import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
@@ -94,31 +94,33 @@ public class ActivityHandlers {
 
 		leaderboardEntries.sort(null);
 
-		return JsonResponse.array(array -> {
-			for (LeaderboardEntry entry : leaderboardEntries) {
-				try {
-					Member member = memberMap.get(Snowflake.of(entry.userId));
+		var array = new JSONArray();
 
-					if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
-						continue;
-					}
+		for (LeaderboardEntry entry : leaderboardEntries) {
+			try {
+				Member member = memberMap.get(Snowflake.of(entry.userId));
 
-					JsonObject o = new JsonObject();
-					o.addProperty("id", member.getId().asString());
-					o.addProperty("name", member.getDisplayName());
-					o.addProperty("xp", entry.xp);
-					o.addProperty("rank", array.size() + 1);
-					int col = member.getColor().block().getRGB() & 0xFFFFFF;
-					o.addProperty("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
-					array.add(o);
-				} catch (Exception ex) {
+				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
+					continue;
 				}
 
-				if (limit > 0 && array.size() >= limit) {
-					break;
-				}
+				var o = new JSONObject();
+				o.put("id", member.getId().asString());
+				o.put("name", member.getDisplayName());
+				o.put("xp", entry.xp);
+				o.put("rank", array.size() + 1);
+				int col = member.getColor().block().getRGB() & 0xFFFFFF;
+				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
+				array.add(o);
+			} catch (Exception ex) {
 			}
-		});
+
+			if (limit > 0 && array.size() >= limit) {
+				break;
+			}
+		}
+
+		return JSONResponse.of(array);
 	}
 
 	public static Response leaderboardImage(ServerRequest request) throws Exception {
@@ -278,17 +280,18 @@ public class ActivityHandlers {
 		long member = Snowflake.of(request.variable("member")).asLong();
 		long channel = request.query("channel").asLong();
 
-		return JsonResponse.object(json -> {
-			json.addProperty("id", Snowflake.asString(member));
-			json.addProperty("name", "Unknown");
-			json.addProperty("xp", 0);
-			json.addProperty("rank", 0);
-			// int col = member.getColor().block().getRGB() & 0xFFFFFF;
-			// json.addProperty("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
-			json.addProperty("color", String.format("#%06X", 0xFFFFFF));
+		var json = new JSONObject();
 
-			JsonArray fields = new JsonArray();
-			json.add("fields", fields);
+		json.put("id", Snowflake.asString(member));
+		json.put("name", "Unknown");
+		json.put("xp", 0);
+		json.put("rank", 0);
+		// int col = member.getColor().block().getRGB() & 0xFFFFFF;
+		// json.addProperty("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
+		json.put("color", String.format("#%06X", 0xFFFFFF));
+
+		var fields = new JSONArray();
+		json.put("fields", fields);
 
 			/*
 			try {
@@ -339,7 +342,8 @@ public class ActivityHandlers {
 				event.respond("Failed to connect to API!");
 			}
 			 */
-		});
+
+		return JSONResponse.of(json);
 	}
 
 	private static class MessageInfo {
@@ -416,58 +420,58 @@ public class ActivityHandlers {
 
 		int w = weeks;
 
-		return JsonResponse.object(json -> {
-			json.addProperty("id", request.gc.guildId.asString());
-			json.addProperty("name", request.gc.name.get());
-			json.addProperty("weeks", w);
+		var json = new JSONObject();
+		json.put("id", request.gc.guildId.asString());
+		json.put("name", request.gc.name.get());
+		json.put("weeks", w);
 
-			JsonArray infos = new JsonArray();
+		var infos = new JSONArray();
 
-			for (MessageInfo mi : channelList) {
-				JsonObject o = new JsonObject();
-				o.addProperty("index", mi.index);
-				o.addProperty("id", mi.id);
-				o.addProperty("name", mi.name);
-				o.addProperty("color", String.format("#%06X", Utils.getChartColor(mi.index)));
-				o.addProperty("totalMessages", mi.totalMessages);
-				infos.add(o);
-			}
+		for (var mi : channelList) {
+			var o = new JSONObject();
+			o.put("index", mi.index);
+			o.put("id", mi.id);
+			o.put("name", mi.name);
+			o.put("color", String.format("#%06X", Utils.getChartColor(mi.index)));
+			o.put("totalMessages", mi.totalMessages);
+			infos.add(o);
+		}
 
-			json.add("channels", infos);
+		json.put("channels", infos);
 
-			JsonArray messages = new JsonArray();
+		var messages = new JSONArray();
 
-			for (int i = 0; i < w; i++) {
-				if (fast) {
-					int[] ai = new int[channelList.size()];
+		for (int i = 0; i < w; i++) {
+			if (fast) {
+				int[] ai = new int[channelList.size()];
 
-					for (MessageInfo mi : channelList) {
-						ai[mi.index] = mi.messages[i];
-					}
-
-					JsonArray a = new JsonArray();
-
-					for (int aii : ai) {
-						a.add(aii);
-					}
-
-					messages.add(a);
-				} else {
-					JsonObject o = new JsonObject();
-
-					for (MessageInfo mi : channelList) {
-						if (mi.messages[i] > 0) {
-							o.addProperty(mi.name, mi.messages[i]);
-						}
-					}
-
-					o.addProperty("_week_", i);
-					messages.add(o);
+				for (MessageInfo mi : channelList) {
+					ai[mi.index] = mi.messages[i];
 				}
-			}
 
-			json.add("messages", messages);
-		});
+				var a = new JSONArray();
+
+				for (int aii : ai) {
+					a.add(aii);
+				}
+
+				messages.add(a);
+			} else {
+				var o = new JSONObject();
+
+				for (MessageInfo mi : channelList) {
+					if (mi.messages[i] > 0) {
+						o.put(mi.name, mi.messages[i]);
+					}
+				}
+
+				o.put("_week_", i);
+				messages.add(o);
+			}
+		}
+
+		json.put("messages", messages);
+		return JSONResponse.of(json);
 	}
 
 	public static Response members(ServerRequest request) throws Exception {
@@ -535,58 +539,57 @@ public class ActivityHandlers {
 
 		int w = weeks;
 
-		return JsonResponse.object(json -> {
-			json.addProperty("id", request.gc.guildId.asString());
-			json.addProperty("name", request.gc.name.get());
-			json.addProperty("weeks", w);
+		var json = new JSONObject();
+		json.put("id", request.gc.guildId.asString());
+		json.put("name", request.gc.name.get());
+		json.put("weeks", w);
 
-			JsonArray infos = new JsonArray();
+		var infos = new JSONArray();
 
-			for (MessageInfo mi : memberList) {
-				JsonObject o = new JsonObject();
-				o.addProperty("index", mi.index);
-				o.addProperty("id", mi.id);
-				o.addProperty("name", mi.name);
-				o.addProperty("color", String.format("#%06X", Utils.getChartColor(mi.index)));
-				o.addProperty("totalMessages", mi.totalMessages);
-				infos.add(o);
-			}
+		for (var mi : memberList) {
+			var o = new JSONObject();
+			o.put("index", mi.index);
+			o.put("id", mi.id);
+			o.put("name", mi.name);
+			o.put("color", String.format("#%06X", Utils.getChartColor(mi.index)));
+			o.put("totalMessages", mi.totalMessages);
+			infos.add(o);
+		}
 
-			json.add("members", infos);
+		json.put("members", infos);
 
-			JsonArray messages = new JsonArray();
+		var messages = new JSONArray();
 
-			for (int i = 0; i < w; i++) {
-				if (fast) {
-					int[] ai = new int[memberList.size()];
+		for (int i = 0; i < w; i++) {
+			if (fast) {
+				int[] ai = new int[memberList.size()];
 
-					for (MessageInfo mi : memberList) {
-						ai[mi.index] = mi.messages[i];
-					}
-
-					JsonArray a = new JsonArray();
-
-					for (int aii : ai) {
-						a.add(aii);
-					}
-
-					messages.add(a);
-				} else {
-					JsonObject o = new JsonObject();
-
-					for (MessageInfo mi : memberList) {
-						if (mi.messages[i] > 0) {
-							o.addProperty(mi.name, mi.messages[i]);
-						}
-					}
-
-					o.addProperty("_week_", i);
-					messages.add(o);
+				for (MessageInfo mi : memberList) {
+					ai[mi.index] = mi.messages[i];
 				}
-			}
 
-			json.add("messages", messages);
-		});
+				var a = new JSONArray();
+				for (int aii : ai) {
+					a.add(aii);
+				}
+
+				messages.add(a);
+			} else {
+				var o = new JSONObject();
+
+				for (MessageInfo mi : memberList) {
+					if (mi.messages[i] > 0) {
+						o.put(mi.name, mi.messages[i]);
+					}
+				}
+
+				o.put("_week_", i);
+				messages.add(o);
+			}
+		}
+
+		json.put("messages", messages);
+		return JSONResponse.of(json);
 	}
 
 	public static Response userMentionLeaderboardImage(ServerRequest request) throws Exception {

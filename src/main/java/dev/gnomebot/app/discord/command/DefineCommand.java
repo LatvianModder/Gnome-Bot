@@ -1,14 +1,12 @@
 package dev.gnomebot.app.discord.command;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -31,50 +29,50 @@ public class DefineCommand extends ApplicationCommands {
 		event.acknowledge();
 
 		try {
-			JsonObject o = Utils.readInternalJson("api/info/define/" + CodingUtils.encodeURL(event.get("word").asString())).getAsJsonObject();
+			var o = Utils.readInternalJson("api/info/define/" + CodingUtils.encodeURL(event.get("word").asString()));
 
-			if (o.get("found").getAsBoolean()) {
+			if (o.bool("found")) {
 				MessageBuilder builder = MessageBuilder.create();
-				String word = o.get("word").getAsString();
+				String word = o.string("word");
 
 				EmbedBuilder embedBuilder = EmbedBuilder.create();
 				embedBuilder.color(EmbedColor.GRAY);
 				embedBuilder.title(word);
 
-				JsonArray meanings = o.get("meanings").getAsJsonArray();
+				var meanings = o.array("meanings");
 
 				for (int i = 0; i < Math.min(25, meanings.size()); i++) {
-					JsonObject o1 = meanings.get(i).getAsJsonObject();
+					var o1 = meanings.object(i);
 
 					StringBuilder b = new StringBuilder("*");
-					FormattingUtils.titleCase(b, o1.get("definition").getAsString());
+					FormattingUtils.titleCase(b, o1.string("definition"));
 					b.append('*');
 
-					if (!o1.get("example").getAsString().isEmpty()) {
+					if (!o1.string("example").isEmpty()) {
 						b.append("\n\n\"");
-						FormattingUtils.titleCase(b, o1.get("example").getAsString());
+						FormattingUtils.titleCase(b, o1.string("example"));
 						b.append('"');
 					}
 
-					embedBuilder.field((i + 1) + ". " + o1.get("type").getAsString(), FormattingUtils.trim(b.toString(), 1024));
+					embedBuilder.field((i + 1) + ". " + o1.string("type"), FormattingUtils.trim(b.toString(), 1024));
 				}
 
 				builder.addEmbed(embedBuilder);
 
 				List<ActionComponent> list = new ArrayList<>();
 
-				for (JsonElement e : o.get("phonetics").getAsJsonArray()) {
-					JsonObject o1 = e.getAsJsonObject();
+				for (var e : o.array("phonetics")) {
+					var o1 = (JSONObject) e;
 
-					if (!o1.get("audio_url").getAsString().isEmpty()) {
-						String url = o1.get("audio_url").getAsString();
+					if (!o1.string("audio_url").isEmpty()) {
+						String url = o1.string("audio_url");
 
 						if (url.endsWith(".mp3")) {
 							if (url.startsWith("https:https://")) {
 								url = url.substring(6);
 							}
 
-							list.add(Button.link(url, ReactionEmoji.unicode("\uD83C\uDFB5"), o1.get("text").getAsString()));
+							list.add(Button.link(url, ReactionEmoji.unicode("\uD83C\uDFB5"), o1.string("text")));
 						}
 					}
 				}

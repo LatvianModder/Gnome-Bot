@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord;
 
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ping.Ping;
@@ -89,13 +88,13 @@ public class WebHook implements PingDestination {
 					.query("wait", true)
 					.query("thread_id", threadId.isEmpty() ? null : threadId)
 					.contentType(request.getFiles().isEmpty() ? "application/json" : "multipart/form-data")
-					.toJson()
+					.toJsonObject()
 					.outString(body)
 					.hiddenUrlPart(token)
 					.block();
 
-			if (result instanceof JsonObject o && o.has("id")) {
-				return Snowflake.of(o.get("id").getAsString());
+			if (result.containsKey("id")) {
+				return Snowflake.of(result.string("id"));
 			}
 
 			return Utils.NO_SNOWFLAKE;

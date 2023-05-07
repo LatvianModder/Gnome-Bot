@@ -1,7 +1,6 @@
 package dev.gnomebot.app.util;
 
-import com.google.gson.JsonObject;
-import dev.latvian.apps.webutils.gson.GsonUtils;
+import dev.latvian.apps.webutils.json.JSONSerializable;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +13,7 @@ import java.util.Map;
 /**
  * @author LatvianModder
  */
-public class MapWrapper {
+public class MapWrapper implements JSONSerializable {
 	public static final MapWrapper EMPTY = new MapWrapper(Collections.emptyMap());
 
 	public final Map<String, Object> map;
@@ -124,14 +123,9 @@ public class MapWrapper {
 		return (Date) get(key, null);
 	}
 
-	public JsonObject toJson() {
-		var json = new JsonObject();
-
-		for (var entry : map.entrySet()) {
-			json.add(entry.getKey(), GsonUtils.toJson(entry.getValue()));
-		}
-
-		return json;
+	@Override
+	public Map<String, Object> toJSON() {
+		return map;
 	}
 
 	@Override

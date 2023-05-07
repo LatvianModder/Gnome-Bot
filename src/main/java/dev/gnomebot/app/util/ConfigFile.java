@@ -1,10 +1,8 @@
 package dev.gnomebot.app.util;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import dev.latvian.apps.webutils.gson.GsonUtils;
+import dev.latvian.apps.webutils.json.JSON;
+import dev.latvian.apps.webutils.json.JSONArray;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 
 import java.nio.file.Files;
@@ -16,17 +14,17 @@ import java.util.Set;
 
 public class ConfigFile {
 	public final Path path;
-	private final JsonObject options;
+	private final JSONObject options;
 	private boolean needsSaving;
 
 	public ConfigFile(Path p) {
 		path = p;
 		needsSaving = false;
-		JsonObject o = new JsonObject();
+		JSONObject o = new JSONObject();
 
 		if (Files.exists(path)) {
 			try {
-				o = GsonUtils.GSON_PRETTY.fromJson(Files.readString(path), JsonObject.class);
+				o = JSON.DEFAULT.read(Files.readString(path)).readObject();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -37,11 +35,11 @@ public class ConfigFile {
 		options = o;
 	}
 
-	public JsonElement get(String key, JsonElement def) {
-		JsonElement o = options.get(key);
+	public Object get(String key, Object def) {
+		var o = options.get(key);
 
-		if (o == null || o.isJsonNull()) {
-			options.add(key, def);
+		if (o == null) {
+			options.put(key, def);
 			needsSaving = true;
 			return def;
 		}
@@ -50,7 +48,7 @@ public class ConfigFile {
 	}
 
 	public String getString(String key, String def) {
-		return get(key, new JsonPrimitive(def)).getAsString();
+		return String.valueOf(get(key, def));
 	}
 
 	public Snowflake getSnowflake(String key) {
@@ -59,29 +57,29 @@ public class ConfigFile {
 	}
 
 	public int getInt(String key, int def) {
-		return get(key, new JsonPrimitive(def)).getAsInt();
+		return ((Number) get(key, def)).intValue();
 	}
 
 	public long getLong(String key, long def) {
-		return get(key, new JsonPrimitive(def)).getAsLong();
+		return ((Number) get(key, def)).longValue();
 	}
 
 	public double getDouble(String key, double def) {
-		return get(key, new JsonPrimitive(def)).getAsDouble();
+		return ((Number) get(key, def)).doubleValue();
 	}
 
 	public boolean getBoolean(String key, boolean def) {
-		return get(key, new JsonPrimitive(def)).getAsBoolean();
+		return (Boolean) get(key, def);
 	}
 
 	public List<String> getStringList(String key) {
-		JsonElement e = get(key, new JsonArray());
+		var e = get(key, new JSONArray());
 
-		if (e.isJsonArray()) {
+		if (e instanceof List<?> list) {
 			List<String> s = new ArrayList<>();
 
-			for (JsonElement e1 : e.getAsJsonArray()) {
-				s.add(e1.getAsString());
+			for (var e1 : list) {
+				s.add(String.valueOf(e1));
 			}
 
 			return s;
@@ -91,7 +89,7 @@ public class ConfigFile {
 	}
 
 	public boolean has(String key) {
-		return options.has(key);
+		return options.containsKey(key);
 	}
 
 	public void remove(String key) {
@@ -111,7 +109,7 @@ public class ConfigFile {
 	public void save() {
 		if (needsSaving) {
 			try {
-				Files.writeString(path, GsonUtils.GSON_PRETTY.toJson(options));
+				Files.writeString(path, JSON.DEFAULT.writePretty(options));
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

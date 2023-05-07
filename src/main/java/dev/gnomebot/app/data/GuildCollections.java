@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data;
 
-import com.google.gson.JsonObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
@@ -31,6 +30,7 @@ import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.UnmuteTask;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
@@ -411,10 +411,10 @@ public class GuildCollections {
 		return c == null ? channel.asString() : c.getName();
 	}
 
-	public JsonObject getChannelJson(Snowflake channel) {
-		JsonObject json = new JsonObject();
-		json.addProperty("id", channel.asString());
-		json.addProperty("name", getChannelName(channel));
+	public JSONObject getChannelJson(Snowflake channel) {
+		var json = new JSONObject();
+		json.put("id", channel.asString());
+		json.put("name", getChannelName(channel));
 		return json;
 	}
 

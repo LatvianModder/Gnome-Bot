@@ -1,8 +1,7 @@
 package dev.gnomebot.app.server.json;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.server.ServerRequest;
+import dev.latvian.apps.webutils.json.JSONObject;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -10,21 +9,21 @@ import org.jetbrains.annotations.Nullable;
  */
 public class JsonRequest {
 	public final ServerRequest request;
-	public final JsonObject json;
+	public final JSONObject json;
 
-	public JsonRequest(ServerRequest d, @Nullable JsonObject in) {
+	public JsonRequest(ServerRequest d, @Nullable JSONObject in) {
 		request = d;
 		json = in;
 	}
 
 	public boolean has(String key) {
-		return json != null && json.has(key);
+		return json != null && json.containsKey(key);
 	}
 
-	public JsonElement get(String key) {
-		JsonElement e = json == null ? null : json.get(key);
+	public Object get(String key) {
+		var e = json == null ? null : json.get(key);
 
-		if (e != null && !e.isJsonNull()) {
+		if (e != null) {
 			return e;
 		}
 
@@ -32,20 +31,20 @@ public class JsonRequest {
 	}
 
 	public String getString(String key) throws NotJsonNumberException {
-		JsonElement e = get(key);
+		var e = get(key);
 
-		if (e.isJsonPrimitive()) {
-			return e.getAsString();
+		if (e instanceof String || e instanceof Number || e instanceof Boolean) {
+			return String.valueOf(e);
 		}
 
 		throw new NotJsonStringException();
 	}
 
 	public Number getNumber(String key) throws NotJsonNumberException {
-		JsonElement e = get(key);
+		var e = get(key);
 
-		if (e.isJsonPrimitive()) {
-			return e.getAsNumber();
+		if (e instanceof Number n) {
+			return n;
 		}
 
 		throw new NotJsonNumberException();

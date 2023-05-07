@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord;
 
-import com.google.gson.JsonElement;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.GuildCollections;
@@ -85,10 +84,10 @@ public class ScamHandler {
 
 	public static void fetchDomains(Runnable done) {
 		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribeContent(content -> {
-			Set<String> set = new HashSet<>();
+			var set = new HashSet<String>();
 
-			for (JsonElement e : content) {
-				String domain = e.getAsString().trim().toLowerCase();
+			for (var e : content) {
+				var domain = String.valueOf(e).trim().toLowerCase();
 
 				if (domain.startsWith("www.")) {
 					domain = domain.substring(4);

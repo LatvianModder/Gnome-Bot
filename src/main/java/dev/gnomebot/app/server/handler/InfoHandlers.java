@@ -1,14 +1,13 @@
 package dev.gnomebot.app.server.handler;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.gson.JsonResponse;
+import dev.latvian.apps.webutils.json.JSONArray;
+import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
@@ -29,7 +28,7 @@ public class InfoHandlers {
 	public static final int[] VALID_SIZES = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
 	public static Response ping(ServerRequest request) {
-		return JsonResponse.SUCCESS;
+		return JSONResponse.SUCCESS;
 	}
 
 	public static Response user(ServerRequest request) {
@@ -38,22 +37,23 @@ public class InfoHandlers {
 
 		// App.info("Getting info for " + id.asString());
 
-		return JsonResponse.object(json -> {
-			json.addProperty("id", id.asString());
-			UserData userData = request.app.discordHandler.getUserData(id);
+		var json = new JSONObject();
+		json.put("id", id.asString());
+		UserData userData = request.app.discordHandler.getUserData(id);
 
-			if (userData != null) {
-				json.addProperty("name", userData.username());
-				json.addProperty("discriminator", userData.discriminator());
-				json.addProperty("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
-				json.addProperty("bot", userData.bot().toOptional().orElse(false));
-			} else {
-				json.addProperty("name", "Deleted User");
-				json.addProperty("discriminator", "0000");
-				json.addProperty("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
-				json.addProperty("bot", false);
-			}
-		});
+		if (userData != null) {
+			json.put("name", userData.username());
+			json.put("discriminator", userData.discriminator());
+			json.put("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
+			json.put("bot", userData.bot().toOptional().orElse(false));
+		} else {
+			json.put("name", "Deleted User");
+			json.put("discriminator", "0000");
+			json.put("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
+			json.put("bot", false);
+		}
+
+		return JSONResponse.of(json);
 	}
 
 	public static Response avatar(ServerRequest request) throws Exception {
@@ -140,64 +140,65 @@ public class InfoHandlers {
 	public static Response define(ServerRequest request) throws Exception {
 		String word = request.variable("word");
 
-		return JsonResponse.object(json -> {
-			json.addProperty("found", false);
-			json.addProperty("word", word);
+		var json = new JSONObject();
+		json.put("found", false);
+		json.put("word", word);
 
-			try {
-				var data0 = URLRequest.of("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).toJson().blockEither();
+		try {
+			var data0 = URLRequest.of("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).toJsonArray().blockEither();
 
-				if (data0.isRight() && data0.right().getMessage().startsWith("Error 404") || !data0.left().isJsonArray()) {
-					return;
-				}
+			if (data0.isRight() && data0.right().getMessage().startsWith("Error 404")) {
+				return JSONResponse.of(json);
+			}
 
-				var firstWord = data0.left().getAsJsonArray().get(0).getAsJsonObject().get("word").getAsString();
-				json.addProperty("word", firstWord);
-				var phonetics = new JsonArray();
-				var meanings = new JsonArray();
-				var phoneticsSet = new HashSet<String>();
+			var firstWord = data0.left().object(0).string("word");
+			json.put("word", firstWord);
+			var phonetics = new JSONArray();
+			var meanings = new JSONArray();
+			var phoneticsSet = new HashSet<String>();
 
-				for (JsonElement data1 : data0.left().getAsJsonArray()) {
-					JsonObject data = data1.getAsJsonObject();
+			for (var data1 : data0.left()) {
+				var data = (JSONObject) data1;
 
-					if (data.get("word").getAsString().equals(firstWord)) {
-						for (JsonElement e : data.get("phonetics").getAsJsonArray()) {
-							JsonObject o0 = e.getAsJsonObject();
-							String text = o0.get("text").getAsString().trim();
+				if (data.string("word").equals(firstWord)) {
+					for (var e : data.array("phonetics")) {
+						var o0 = (JSONObject) e;
+						String text = o0.string("text").trim();
 
-							if (!phoneticsSet.contains(text)) {
-								phoneticsSet.add(text);
-								JsonObject o = new JsonObject();
-								o.addProperty("text", text);
-								o.addProperty("audio_url", o0.has("audio") ? ("https:" + o0.get("audio").getAsString().trim()) : "");
-								phonetics.add(o);
-							}
+						if (!phoneticsSet.contains(text)) {
+							phoneticsSet.add(text);
+							var o = new JSONObject();
+							o.put("text", text);
+							o.put("audio_url", o0.containsKey("audio") ? ("https:" + o0.string("audio").trim()) : "");
+							phonetics.add(o);
 						}
+					}
 
-						for (JsonElement e : data.get("meanings").getAsJsonArray()) {
-							JsonObject o0 = e.getAsJsonObject();
-							String type = o0.get("partOfSpeech").getAsString().trim();
+					for (var e : data.array("meanings")) {
+						var o0 = (JSONObject) e;
+						String type = o0.string("partOfSpeech").trim();
 
-							for (JsonElement e1 : o0.get("definitions").getAsJsonArray()) {
-								JsonObject o1 = e1.getAsJsonObject();
-								JsonObject o = new JsonObject();
-								o.addProperty("type", type);
-								o.addProperty("definition", o1.get("definition").getAsString().trim());
-								o.addProperty("example", o1.has("example") ? o1.get("example").getAsString().trim() : "");
-								o.add("synonyms", o1.has("synonyms") ? o1.get("synonyms") : new JsonArray());
-								o.add("antonyms", o1.has("antonyms") ? o1.get("antonyms") : new JsonArray());
-								meanings.add(o);
-							}
+						for (var e1 : o0.array("definitions")) {
+							var o1 = (JSONObject) e1;
+							var o = new JSONObject();
+							o.put("type", type);
+							o.put("definition", o1.string("definition").trim());
+							o.put("example", o1.containsKey("example") ? o1.string("example").trim() : "");
+							o.put("synonyms", o1.containsKey("synonyms") ? o1.get("synonyms") : new JSONArray());
+							o.put("antonyms", o1.containsKey("antonyms") ? o1.get("antonyms") : new JSONArray());
+							meanings.add(o);
 						}
 					}
 				}
-
-				json.add("phonetics", phonetics);
-				json.add("meanings", meanings);
-				json.addProperty("found", true);
-			} catch (Exception ex) {
-				ex.printStackTrace();
 			}
-		});
+
+			json.put("phonetics", phonetics);
+			json.put("meanings", meanings);
+			json.put("found", true);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return JSONResponse.of(json);
 	}
 }

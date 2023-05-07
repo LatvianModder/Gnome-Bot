@@ -1,9 +1,8 @@
 package dev.gnomebot.app.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.webutils.json.JSONObject;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,11 +28,11 @@ public class Currency {
 		Map<String, Currency> map = new LinkedHashMap<>();
 
 		try {
-			JsonObject json = URLRequest.of("https://www.floatrates.com/daily/usd.json").toJsonObject().block();
+			var json = URLRequest.of("https://www.floatrates.com/daily/usd.json").toJsonObject().block();
 
-			for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-				JsonObject o = entry.getValue().getAsJsonObject();
-				Currency currency = new Currency(o.get("code").getAsString().toUpperCase(), o.get("name").getAsString(), o.get("rate").getAsDouble());
+			for (var entry : json.entrySet()) {
+				var o = (JSONObject) entry.getValue();
+				Currency currency = new Currency(o.string("code").toUpperCase(), o.string("name"), o.number("rate").doubleValue());
 				map.put(currency.id, currency);
 			}
 		} catch (Exception ex) {

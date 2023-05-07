@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import com.google.gson.JsonElement;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.GuildCollections;
 
@@ -55,9 +54,13 @@ public abstract class BaseConfig<T> {
 
 	public abstract String getType();
 
-	public abstract JsonElement toJson();
+	public Object toJson() {
+		return get();
+	}
 
-	public abstract void fromJson(JsonElement json);
+	public void fromJson(Object json) {
+		set((T) json);
+	}
 
 	@Override
 	public String toString() {
