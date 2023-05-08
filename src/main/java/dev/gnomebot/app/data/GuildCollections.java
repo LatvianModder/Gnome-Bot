@@ -27,8 +27,10 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.UnmuteTask;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
@@ -39,10 +41,15 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
 import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
+import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.spec.MessageEditSpec;
+import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MemberData;
+import discord4j.discordjson.json.UserData;
+import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Image;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -86,6 +93,7 @@ public class GuildCollections {
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
 	public final WrappedCollection<Macro> macros;
 	public final WrappedCollection<ScheduledTask> scheduledTasks;
+	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final DBConfig config;
 	public final StringConfig name;
@@ -108,6 +116,7 @@ public class GuildCollections {
 	public final ChannelConfig logLeavingChannel;
 	public final ChannelConfig reportChannel;
 	public final ChannelConfig logIpAddressesChannel;
+	public final ChannelConfig appealChannel;
 	public final StringConfig legacyPrefix;
 	public final StringConfig macroPrefix;
 	public final StringConfig inviteCode;
@@ -137,6 +146,8 @@ public class GuildCollections {
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
 	private Map<String, Macro> macroMap;
+	private final Map<Long, Snowflake> memberLogThreadCache;
+	private final Map<Long, Snowflake> appealThreadCache;
 
 	public boolean advancedLogging = false;
 
@@ -160,6 +171,7 @@ public class GuildCollections {
 		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires"); // GDPR
 		macros = create("macros_" + dbid, (c, doc) -> new Macro(this, c, doc));
 		scheduledTasks = create("scheduled_tasks_" + dbid, (c, doc) -> new ScheduledTask(this, c, doc));
+		memberLogThreads = create("member_log_threads_" + dbid, ThreadLocation::new);
 
 		config = new DBConfig();
 
@@ -183,6 +195,7 @@ public class GuildCollections {
 		logLeavingChannel = config.add(new ChannelConfig(this, "log_leaving")).title("Log Leaving Channel");
 		reportChannel = config.add(new ChannelConfig(this, "report_channel")).title("Report Channel");
 		logIpAddressesChannel = config.add(new ChannelConfig(this, "log_ip_addresses_channel")).title("Log IP Addresses Channel");
+		appealChannel = config.add(new ChannelConfig(this, "appeal_channel")).title("Appeal Channel");
 		legacyPrefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
 		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
 		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
@@ -204,8 +217,10 @@ public class GuildCollections {
 
 		unmuteMap = new HashMap<>();
 		recentUsers = new ArrayList<>();
+		memberLogThreadCache = new HashMap<>();
+		appealThreadCache = new HashMap<>();
 
-		Document settingsDoc = db.guildData.query(guildId.asLong()).firstDocument();
+		var settingsDoc = db.guildData.query(guildId.asLong()).firstDocument();
 
 		if (settingsDoc == null || settingsDoc.isEmpty()) {
 			settingsDoc = config.write();
@@ -214,9 +229,9 @@ public class GuildCollections {
 		}
 
 		if (config.read(dbid, settingsDoc)) {
-			List<Bson> updates = new ArrayList<>();
+			var updates = new ArrayList<Bson>();
 
-			for (BaseConfig<?> setting : config.map.values()) {
+			for (var setting : config.map.values()) {
 				updates.add(Updates.set(setting.id, setting.toDB()));
 			}
 
@@ -225,9 +240,9 @@ public class GuildCollections {
 
 		readSettings();
 
-		ConfigFile file = new ConfigFile(paths.config);
+		var file = new ConfigFile(paths.config);
 
-		for (BaseConfig<?> setting : config.map.values()) {
+		for (var setting : config.map.values()) {
 			file.get(setting.id, setting.toJson());
 		}
 
@@ -289,7 +304,7 @@ public class GuildCollections {
 		//
 		//settingsTable.print();
 
-		List<String> badWords1 = badWords.get().stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+		var badWords1 = badWords.get().stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
 
 		if (!badWords1.isEmpty()) {
 			StringBuilder sb = new StringBuilder("\\b(?:");
@@ -343,15 +358,15 @@ public class GuildCollections {
 			return Optional.empty();
 		}
 
-		List<ChannelInfo> c = getChannelList();
+		var c = getChannelList();
 
 		if (priority != null) {
 			c.remove(priority);
 			c.add(0, priority);
 		}
 
-		for (ChannelInfo channel : c) {
-			Message m = channel.getMessage(id);
+		for (var channel : c) {
+			var m = channel.getMessage(id);
 
 			if (m != null) {
 				return Optional.of(m);
@@ -361,24 +376,32 @@ public class GuildCollections {
 		return Optional.empty();
 	}
 
-	public void adminLogChannelEmbed(ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
-		channelConfig.messageChannel().ifPresent(c -> {
-					EmbedBuilder builder = EmbedBuilder.create();
-					builder.color(EmbedColor.RED);
-					builder.timestamp(Instant.now());
-					embed.accept(builder);
-					c.createMessage(builder).subscribe();
-				}
-		);
+	public void adminLogChannelEmbed(@Nullable UserData user, ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
+		var builder = EmbedBuilder.create();
+		builder.color(EmbedColor.RED);
+		builder.timestamp(Instant.now());
+		embed.accept(builder);
+		var message = MessageBuilder.create(builder);
+
+		if (user != null) {
+			var id = memberAuditLogThread(user);
+
+			if (id.asLong() != 0L) {
+				db.app.discordHandler.client.getRestClient().getChannelService().createMessage(id.asLong(), message.toMultipartMessageCreateRequest()).block();
+				return;
+			}
+		}
+
+		channelConfig.messageChannel().ifPresent(c -> c.createMessage(message).subscribe());
 	}
 
 	public long getUserID(String tag) {
-		Member member = getGuild().getMembers().cache().filter(m1 -> m1.getTag().equals(tag)).blockFirst();
+		var member = getGuild().getMembers().cache().filter(m1 -> m1.getTag().equals(tag)).blockFirst();
 		return member == null ? 0L : member.getId().asLong();
 	}
 
 	public void unmute(Snowflake user, long seconds) {
-		UnmuteTask task = unmuteMap.get(user);
+		var task = unmuteMap.get(user);
 
 		if (task != null) {
 			task.cancelled = true;
@@ -742,5 +765,77 @@ public class GuildCollections {
 
 	public void updateMacroMap() {
 		macroMap = null;
+	}
+
+	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfig config) {
+		if (user == null) {
+			return Utils.NO_SNOWFLAKE;
+		}
+
+		var id = cache.get(user.id().asLong());
+
+		exit:
+		if (id == null) {
+			var ci = config.messageChannel().orElse(null);
+			var topLevelChannel = ci == null ? null : ci.getTopLevelChannel();
+
+			if (topLevelChannel != null) {
+				try {
+					var doc = memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id.asLong()).projectionFields("thread").first();
+
+					if (doc != null) {
+						var thread = db.app.discordHandler.client.getChannelById(doc.thread).cast(ThreadChannel.class).block();
+
+						if (thread != null) {
+							id = thread.getId();
+							break exit;
+						}
+					}
+				} catch (Exception ignore) {
+				}
+
+				var thread = topLevelChannel.startThread(StartThreadWithoutMessageSpec.builder()
+						.type(type == 0 ? ThreadChannel.Type.GUILD_PUBLIC_THREAD : ThreadChannel.Type.GUILD_PRIVATE_THREAD)
+						.invitable(false)
+						.reason(user.username() + " Member Channel")
+						.name(user.username() + " - " + user.id().asString())
+						.autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION2)
+						.build()
+				).block();
+
+				memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id.asLong()).upsert(List.of(Updates.set("thread", thread.getId().asLong())));
+
+				if (adminRole.isSet()) {
+					thread.createMessage("...").withAllowedMentions(AllowedMentions.builder()
+							.allowRole(adminRole.get())
+							.build()
+					).flatMap(m -> m.edit(MessageEditSpec.builder()
+							.allowedMentionsOrNull(AllowedMentions.builder()
+									.allowRole(adminRole.get())
+									.build()
+							)
+							.contentOrNull("Adding <@&" + adminRole.get().asString() + ">...")
+							.build()
+					)).flatMap(Message::delete).subscribe();
+				}
+
+				id = thread.getId();
+			}
+		}
+
+		if (id == null) {
+			id = Utils.NO_SNOWFLAKE;
+		}
+
+		cache.put(user.id().asLong(), id);
+		return id;
+	}
+
+	public Snowflake memberAuditLogThread(@Nullable UserData user) {
+		return memberLogThread(0, memberLogThreadCache, user, adminLogChannel);
+	}
+
+	public Snowflake memberAppealThread(@Nullable UserData user) {
+		return memberLogThread(1, appealThreadCache, user, appealChannel);
 	}
 }

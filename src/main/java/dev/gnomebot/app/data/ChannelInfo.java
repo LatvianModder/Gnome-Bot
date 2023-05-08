@@ -31,7 +31,7 @@ import java.util.function.Function;
 /**
  * @author LatvianModder
  */
-public class ChannelInfo extends WrappedDocument<ChannelInfo> {
+public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	public final GuildCollections gc;
 	public final Snowflake id;
 	public String name;

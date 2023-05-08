@@ -68,7 +68,7 @@ public class Paste extends WrappedDocument<Paste> {
 	}
 
 	public static void createPaste(Databases db, long channelId, long attachmentId, String filename, String user) {
-		List<Bson> updates = new ArrayList<>();
+		var updates = new ArrayList<Bson>();
 		updates.add(Updates.set("channel", channelId));
 		updates.add(Updates.set("filename", filename));
 

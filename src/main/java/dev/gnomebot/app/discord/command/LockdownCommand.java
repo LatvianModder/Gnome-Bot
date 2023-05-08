@@ -51,7 +51,7 @@ public class LockdownCommand extends ApplicationCommands {
 			);
 
 			if (event.context.channelInfo == null || !event.context.gc.adminLogChannel.is(event.context.channelInfo.id)) {
-				event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+				event.context.gc.adminLogChannelEmbed(null, event.context.gc.adminLogChannel, spec -> {
 					spec.title("Lockdown mode enabled!");
 					spec.description(Emojis.ALERT.asFormat());
 					spec.thumbnail(Assets.EMERGENCY.getPath());
@@ -102,7 +102,7 @@ public class LockdownCommand extends ApplicationCommands {
 			);
 
 			if (event.context.channelInfo == null || !event.context.gc.adminLogChannel.is(event.context.channelInfo.id)) {
-				event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+				event.context.gc.adminLogChannelEmbed(null, event.context.gc.adminLogChannel, spec -> {
 					spec.title("Lockdown mode disabled!");
 					spec.color(EmbedColor.GREEN);
 					spec.description(Emojis.ALERT.asFormat());

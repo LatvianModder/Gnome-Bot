@@ -30,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 /**
  * @author LatvianModder
@@ -58,17 +57,6 @@ public class MemberHandler {
 						.build()
 				).block();
 
-				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-					spec.footer(member.getTag() + " / " + member.getId().asString(), member.getAvatarUrl());
-					StringBuilder sb = new StringBuilder("Forced pingable name: `");
-					sb.append(newName);
-					sb.append("` | [Context](");
-					discordMessage.appendMessageURL(sb);
-					sb.append(")");
-					spec.description(sb.toString());
-					spec.timestamp(Instant.now());
-				});
-
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.FORCED_NAME_UPDATE)
 						.channel(Snowflake.of(discordMessage.getChannelID()))
 						.message(Snowflake.of(discordMessage.getUID()))
@@ -80,7 +68,7 @@ public class MemberHandler {
 			}
 		}
 
-		List<Bson> memberUpdates = new ArrayList<>();
+		var memberUpdates = new ArrayList<Bson>();
 		memberUpdates.add(Updates.set("name", user.getUsername()));
 		memberUpdates.add(Updates.set("avatar", user.getAvatarUrl()));
 		memberUpdates.add(Updates.set("discriminator", user.getDiscriminator()));
@@ -267,7 +255,7 @@ public class MemberHandler {
 			if (responsible != null && responsible.isBot()) {
 				gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(event.getUser().getMention() + " (" + event.getUser().getTag() + ") was banned by " + responsible.getMention() + ": " + reason).subscribe());
 			} else {
-				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
+				gc.adminLogChannelEmbed(event.getUser().getUserData(), gc.adminLogChannel, spec -> {
 					spec.description("Bye " + event.getUser().getMention());
 					spec.timestamp(Instant.now());
 					spec.author(event.getUser().getTag() + " was banned", event.getUser().getAvatarUrl());
@@ -303,8 +291,8 @@ public class MemberHandler {
 		GuildCollections gc = handler.app.db.guild(event.getGuildId());
 		updateMember(gc, event.getUser(), null, ACTION_UNBANNED, gc.members.findFirst(event.getUser()), null);
 
-		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-			spec.color(EmbedColor.RED);
+		gc.adminLogChannelEmbed(event.getUser().getUserData(), gc.adminLogChannel, spec -> {
+			spec.color(EmbedColor.GREEN);
 			spec.description("Welcome back " + event.getUser().getMention());
 			spec.timestamp(Instant.now());
 			spec.author(event.getUser().getTag() + " was unbanned", event.getUser().getAvatarUrl());

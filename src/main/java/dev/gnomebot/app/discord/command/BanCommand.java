@@ -73,7 +73,7 @@ public class BanCommand extends ApplicationCommands {
 				.build()
 		).subscribe();
 
-		event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bye " + user.getMention());
 			spec.author(user.getTag() + " was banned", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);

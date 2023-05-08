@@ -606,19 +606,19 @@ public class MessageHandler {
 			message.delete().subscribe();
 			return;
 		} else if (handleQuotes == 0 && gc.adminLogChannel.isSet() && !member.isBot() && gc.adminRole.isMentioned(message)) {
-			gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-				StringBuilder builder = new StringBuilder("[Admin ping:](");
-				QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId());
-				builder.append(")\n\n");
-				builder.append(content);
+			var builder = new StringBuilder("[Admin ping:](");
+			QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId());
+			builder.append(")\n\n");
+			builder.append(content);
 
-				if (referenceMessage != null && referenceMessage.getAuthor().isPresent()) {
-					builder.append('\n');
-					builder.append(referenceMessage.getAuthor().get().getMention());
-					builder.append(": ");
-					builder.append(referenceMessage.getContent());
-				}
+			if (referenceMessage != null && referenceMessage.getAuthor().isPresent()) {
+				builder.append('\n');
+				builder.append(referenceMessage.getAuthor().get().getMention());
+				builder.append(": ");
+				builder.append(referenceMessage.getContent());
+			}
 
+			gc.adminLogChannelEmbed(member.getUserData(), gc.adminLogChannel, spec -> {
 				spec.description(builder.toString());
 				spec.timestamp(message.getTimestamp());
 				spec.author(member.getTag(), member.getAvatarUrl());
@@ -626,7 +626,6 @@ public class MessageHandler {
 				if (!images.isEmpty()) {
 					spec.thumbnail(images.get(0).toString());
 				}
-
 			});
 		}
 

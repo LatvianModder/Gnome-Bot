@@ -46,8 +46,8 @@ public class MuteCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkBotPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkSenderPerms(Permission.MODERATE_MEMBERS);
 
 		if (!event.context.gc.mutedRole.isSet()) {
 			throw error("Mute role not set!");
@@ -85,7 +85,7 @@ public class MuteCommand extends ApplicationCommands {
 		event.context.gc.mutedRole.add(user.getId(), "Muted");
 		event.context.gc.unmute(user.getId(), seconds);
 
-		event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bad " + user.getMention());
 			spec.author(user.getTag() + " was warned", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);

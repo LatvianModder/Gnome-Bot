@@ -560,7 +560,7 @@ public class DiscordHandler {
 		sb1.append("> from ").append(u.getMention()).append("\n\n");
 		sb1.append(content.apply(message.getContent()));
 
-		gc.adminLogChannelEmbed(channelConfig, spec -> {
+		gc.adminLogChannelEmbed(u.getUserData(), channelConfig, spec -> {
 			spec.description(sb1.toString());
 			spec.timestamp(message.getDate().toInstant());
 			spec.author(u.getTag(), u.getAvatarUrl());

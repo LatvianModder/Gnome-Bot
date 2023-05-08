@@ -61,6 +61,7 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		KICK("kick", 3, Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
 		WARN("warn", 3, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
 		MUTE("mute", 3, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
+		NOTE("note", 2, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT),
 		LOCKDOWN_ENABLED("lockdown_enabled", 3, Flags.SOURCE | Flags.CONTENT),
 		LOCKDOWN_DISABLED("lockdown_disabled", 3, Flags.SOURCE),
 

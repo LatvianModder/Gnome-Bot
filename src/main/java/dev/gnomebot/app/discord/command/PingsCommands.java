@@ -11,7 +11,7 @@ import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 
-import java.util.Collections;
+import java.util.List;
 
 /**
  * @author LatvianModder
@@ -145,7 +145,7 @@ public class PingsCommands extends ApplicationCommands {
 		String config = event.get("config").asString().trim();
 
 		try {
-			event.context.gc.db.userPings.query(event.context.sender).upsert(Collections.singletonList(Updates.set("config", config)));
+			event.context.gc.db.userPings.query(event.context.sender).upsert(List.of(Updates.set("config", config)));
 
 			if (config.isEmpty()) {
 				event.context.gc.db.app.pingHandler.update();

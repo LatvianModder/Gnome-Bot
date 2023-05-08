@@ -59,7 +59,7 @@ public class KickCommand extends ApplicationCommands {
 
 		event.context.gc.getGuild().kick(user.getId(), reason).subscribe();
 
-		event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bye " + user.getMention());
 			spec.author(user.getTag() + " was kicked", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);

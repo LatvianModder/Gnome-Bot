@@ -30,8 +30,8 @@ public class WarnCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkBotPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkSenderPerms(Permission.MODERATE_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 		Member member = null;
@@ -63,7 +63,7 @@ public class WarnCommand extends ApplicationCommands {
 
 		// event.gc.getGuild().kick(user.getId(), reason).subscribe();
 
-		event.context.gc.adminLogChannelEmbed(event.context.gc.adminLogChannel, spec -> {
+		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bad " + user.getMention());
 			spec.author(user.getTag() + " was warned", user.getAvatarUrl());
 			spec.inlineField("Reason", reason);

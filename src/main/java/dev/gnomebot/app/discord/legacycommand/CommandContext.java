@@ -12,17 +12,14 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
-import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.rest.util.AllowedMentions;
-import discord4j.rest.util.Color;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,15 +88,6 @@ public class CommandContext {
 		if (!isAdmin()) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "Wait a minute, you're not an admin! Only admins can do this");
 		}
-	}
-
-	public void adminLog(Color col, String text) {
-		gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
-			spec.color(col);
-			spec.description(FormattingUtils.trim(text, 4096));
-			spec.timestamp(Instant.now());
-			spec.footer(sender.getUsername(), sender.getAvatarUrl());
-		});
 	}
 
 	public Message reply(MessageBuilder msg) {

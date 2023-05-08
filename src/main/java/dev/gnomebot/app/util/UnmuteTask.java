@@ -40,7 +40,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 			UserData data = gc.db.app.discordHandler.getUserData(user);
 
 			if (data != null) {
-				gc.adminLogChannelEmbed(gc.adminLogChannel, spec -> {
+				gc.adminLogChannelEmbed(data, gc.adminLogChannel, spec -> {
 					spec.color(EmbedColor.GREEN);
 					spec.author(data.username() + "#" + data.discriminator() + " has been unmuted!", Utils.getAvatarUrl(data));
 				});

@@ -8,6 +8,7 @@ import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.channel.ThreadChannel;
 
 import java.util.Scanner;
 
@@ -42,6 +43,8 @@ public class CLI extends Thread {
 					case "colors" -> colors();
 					case "echo_cli" -> echoCli(nonInput);
 					case "guilds" -> printGuilds();
+					case "tt1" -> testThread1(Snowflake.of(input[1]));
+					case "tt2" -> testThread2(nonInput);
 					default -> Ansi.log("Unknown command: " + input[0]);
 				}
 			} catch (IllegalArgumentException ex) {
@@ -152,5 +155,18 @@ public class CLI extends Thread {
 	private void echoCli(String message) {
 		App.info("Sending to all CLI clients: " + message);
 		WSHandler.CLI.broadcast(message);
+	}
+
+	private ThreadChannel threadChannel = null;
+
+	private void testThread1(Snowflake id) {
+		var gc = app.db.guild(Snowflake.of(166630061217153024L));
+		var userData = app.discordHandler.getUserData(id);
+		threadChannel = app.discordHandler.client.getChannelById(gc.memberAuditLogThread(userData)).cast(ThreadChannel.class).block();
+		App.info(threadChannel.getName());
+	}
+
+	private void testThread2(String msg) {
+		threadChannel.createMessage(msg).subscribe();
 	}
 }
