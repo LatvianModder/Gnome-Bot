@@ -17,6 +17,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import io.javalin.http.BadRequestResponse;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,20 +37,26 @@ public class MinecraftHandlers {
 			.followRedirects(HttpClient.Redirect.NORMAL)
 			.build();
 
-	private static final class VerifyData {
+	private static final class VerifyData implements Runnable {
 		private final String token;
 		private final User user;
 		private final Instant expires;
 		private Message message;
 		private ComponentEventWrapper event;
+		private int stage;
 
-		public VerifyData(String token, User user, Instant expires) {
+		public VerifyData(String token, User user) {
 			this.token = token;
 			this.user = user;
-			this.expires = expires;
+			this.expires = Instant.now().plusSeconds(900);
+			this.stage = 0;
 		}
 
 		public EmbedBuilder waiting() {
+			var thread = new Thread(this);
+			thread.setDaemon(true);
+			thread.start();
+
 			return EmbedBuilder.create("Verify Minecraft", "Waiting for " + user.getMention() + " to start verification...")
 					.color(EmbedColor.RED)
 					.field("User", user.getMention())
@@ -57,6 +64,8 @@ public class MinecraftHandlers {
 		}
 
 		public void started() {
+			stage = 1;
+
 			if (event != null) {
 				event.event.deleteReply().subscribe();
 				event = null;
@@ -74,6 +83,8 @@ public class MinecraftHandlers {
 		}
 
 		public void success(UUID uuid, String name) {
+			stage = 2;
+
 			App.success(user.getUsername() + " completed mc verification as " + name);
 
 			message.edit().withEmbedsOrNull(List.of(
@@ -86,6 +97,8 @@ public class MinecraftHandlers {
 		}
 
 		public void fail(String error) {
+			stage = 3;
+
 			App.error(user.getUsername() + " failed mc verification: " + error);
 
 			message.edit().withEmbedsOrNull(List.of(
@@ -95,12 +108,37 @@ public class MinecraftHandlers {
 							.toEmbedCreateSpec()
 			)).subscribe();
 		}
+
+		@Override
+		public void run() {
+			try {
+				Thread.sleep(expires.toEpochMilli() - System.currentTimeMillis());
+			} catch (Exception ex) {
+			}
+
+			if (stage < 2) {
+				fail("Link Expired");
+			}
+
+			MAP.remove(token);
+		}
 	}
 
 	private record BaseMinecraftProfile(UUID uuid, String name) {
 	}
 
 	public static final Map<String, VerifyData> MAP = new HashMap<>();
+
+	@Nullable
+	private static VerifyData checkButton(long user) {
+		for (var t : MAP.values()) {
+			if (t.user.getId().asLong() == user && t.stage < 3) {
+				return t;
+			}
+		}
+
+		return null;
+	}
 
 	public static final URI TOKEN_URI = URI.create("https://login.microsoftonline.com/consumers/oauth2/v2.0/token");
 	public static final URI XBOX_AUTH_URI = URI.create("https://user.auth.xboxlive.com/user/authenticate");
@@ -112,9 +150,16 @@ public class MinecraftHandlers {
 		if (!event.context.sender.getId().equals(userId)) {
 			event.respond("You can't verify account of someone else!");
 			return;
+		} else {
+			var prev = checkButton(userId.asLong());
+
+			if (prev != null) {
+				event.respond("Finish verifying the [previously opened page](https://gnomebot.dev/minecraft/verify?state=" + prev.token + ")!");
+				return;
+			}
 		}
 
-		var data = new VerifyData(Utils.createShortToken(), event.context.sender, Instant.now().plusSeconds(900));
+		var data = new VerifyData(Utils.createShortToken(), event.context.sender);
 		data.message = event.context.channelInfo.createMessage(data.waiting()).block();
 		data.event = event;
 

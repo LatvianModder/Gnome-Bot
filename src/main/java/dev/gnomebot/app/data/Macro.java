@@ -159,6 +159,34 @@ public class Macro extends WrappedDocument<Macro> {
 		return builder;
 	}
 
+	public void rename(String rename) {
+		long l = setSlashCommand(false);
+
+		document.map.put("name", rename);
+		update("name", rename);
+
+		if (l != 0L) {
+			setSlashCommand(true);
+		}
+	}
+
+	public void updateContent(String content, List<String> extra) {
+		if (!content.equals(getContent())) {
+			document.map.put("content", content);
+			update("content", content);
+		}
+
+		if (!extra.isEmpty() && !extra.equals(getExtra())) {
+			if (extra.contains("clear")) {
+				document.map.remove("extra");
+				update(Updates.unset("extra"));
+			} else {
+				document.map.put("extra", extra);
+				update("extra", extra);
+			}
+		}
+	}
+
 	public long setSlashCommand(boolean b) {
 		var gc = collection.gc;
 
@@ -174,6 +202,7 @@ public class Macro extends WrappedDocument<Macro> {
 			long id = data == null ? 0L : Snowflake.of(data.id()).asLong();
 
 			if (data != null) {
+				document.map.put("slash_command", id);
 				update("slash_command", id);
 			}
 
@@ -183,6 +212,7 @@ public class Macro extends WrappedDocument<Macro> {
 
 			if (id != 0L) {
 				gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), id).block();
+				document.map.remove("slash_command");
 				update(Updates.unset("slash_command"));
 			}
 

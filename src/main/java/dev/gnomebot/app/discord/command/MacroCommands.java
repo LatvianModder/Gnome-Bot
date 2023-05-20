@@ -12,7 +12,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.User;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -218,9 +217,6 @@ public class MacroCommands extends ApplicationCommands {
 
 		String rename = event.get("rename").asString(macro.getName());
 
-		List<Bson> updates = new ArrayList<>();
-		long slashId = 0L;
-
 		if (!rename.equals(macro.getName())) {
 			if (rename.length() > 50) {
 				throw new GnomeException("Macro name too long! Max 50 characters.");
@@ -230,34 +226,26 @@ public class MacroCommands extends ApplicationCommands {
 				throw new GnomeException("Macro with that name already exists!");
 			}
 
-			slashId = macro.setSlashCommand(false);
-			updates.add(Updates.set("name", rename));
+			macro.rename(rename);
 		}
 
-		String content = event.get("content").asString(macro.getContent());
+		var content = event.get("content").asString(macro.getContent());
+		var extra = Arrays.stream(event.get("extra").asString().trim().split("\n")).map(String::trim).filter(s -> !s.isEmpty()).toList();
 
-		if (!content.equals(macro.getContent())) {
-			updates.add(Updates.set("content", content));
-		}
-
-		List<String> extra = Arrays.stream(event.get("extra").asString().trim().split("\n")).map(String::trim).filter(s -> !s.isEmpty()).toList();
-
-		if (!extra.isEmpty()) {
-			if (extra.contains("clear")) {
-				updates.add(Updates.unset("extra"));
-			} else {
-				updates.add(Updates.set("extra", extra));
-			}
-		}
-
-		macro.update(updates);
-
-		if (slashId != 0L) {
-			macro.setSlashCommand(true);
-		}
+		macro.updateContent(content, extra);
 
 		event.context.gc.updateMacroMap();
-		event.respond(MessageBuilder.create("Macro '" + rename + "' updated!").ephemeral(false));
+
+		if (macro.getSlashCommand() != 0L) {
+			event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro </" + macro.getName() + ":" + Long.toUnsignedString(macro.getSlashCommand()) + ">!").block();
+		} else {
+			event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro `" + macro.getName() + "`!").block();
+		}
+
+		var preview = Macro.createMessage(content, extra, event.context.sender.getId(), false);
+		preview.content("Preview:\n\n" + preview.getContent());
+		preview.ephemeral(true);
+		event.respond(preview);
 	}
 
 	private static void remove(ChatInputInteractionEventWrapper event) {
