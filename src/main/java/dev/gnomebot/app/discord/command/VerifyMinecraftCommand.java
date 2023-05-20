@@ -16,10 +16,10 @@ public class VerifyMinecraftCommand extends ApplicationCommands {
 			.run(VerifyMinecraftCommand::run);
 
 	private static void run(ChatInputInteractionEventWrapper event) {
-		event.acknowledge();
 		event.context.checkBotPerms(Permission.MODERATE_MEMBERS);
 		event.context.checkSenderPerms(Permission.MODERATE_MEMBERS);
 
+		event.acknowledge();
 		var user = event.get("user").asUser().get();
 		event.respond(message(user));
 	}
