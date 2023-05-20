@@ -57,7 +57,7 @@ public class Databases {
 
 		collections = new LinkedHashMap<>();
 
-		webLog = create("web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp");
+		webLog = create("web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
 		webTokens = create("web_tokens", WebToken::new);
 		guildData = create("guild_data", BasicDocument::new);
 		guildCollections = new HashMap<>();

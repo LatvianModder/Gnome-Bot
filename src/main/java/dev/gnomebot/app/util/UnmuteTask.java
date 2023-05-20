@@ -20,7 +20,7 @@ public class UnmuteTask implements ScheduledTaskCallback {
 		seconds = s;
 		cancelled = false;
 
-		App.warn("Muting " + gc + "/" + user.asString() + "/" + seconds);
+		// App.warn("Muting " + gc + "/" + user.asString() + "/" + seconds);
 		App.LOGGER.event(BrainEvents.MEMBER_MUTED);
 	}
 

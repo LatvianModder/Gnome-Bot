@@ -6,7 +6,7 @@ import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AppTaskCancelledException;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
@@ -76,10 +76,10 @@ public class ImportMessagesCommand {
 						}
 					}
 
-					context.reply("Imported " + ch.getMention() + " in " + Utils.prettyTimeString((System.currentTimeMillis() - nowChannel) / 1000L));
+					context.reply("Imported " + ch.getMention() + " in " + TimeUtils.prettyTimeString((System.currentTimeMillis() - nowChannel) / 1000L));
 					channelsLeft.remove(pair);
 				} catch (AppTaskCancelledException ex) {
-					context.reply("Imported " + ch.getMention() + " in " + Utils.prettyTimeString((System.currentTimeMillis() - nowChannel) / 1000L));
+					context.reply("Imported " + ch.getMention() + " in " + TimeUtils.prettyTimeString((System.currentTimeMillis() - nowChannel) / 1000L));
 					channelsLeft.remove(pair);
 					channelsLeft.add(0, Pair.of(ch, lastId));
 					break;
@@ -91,7 +91,7 @@ public class ImportMessagesCommand {
 
 			int count = mId;
 			long totalTime = (System.currentTimeMillis() - now) / 1000L;
-			context.reply("Imported " + count + " messages from " + channelNames + " from " + memberCache.getCacheSize() + " members in " + Utils.prettyTimeString(totalTime) + " @ " + (int) (count / (double) totalTime) + " m/s");
+			context.reply("Imported " + count + " messages from " + channelNames + " from " + memberCache.getCacheSize() + " members in " + TimeUtils.prettyTimeString(totalTime) + " @ " + (int) (count / (double) totalTime) + " m/s");
 
 			if (task.cancelled) {
 				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a().id.asString() + ":" + ch.b().asString()).collect(Collectors.joining(" ")) + "```");

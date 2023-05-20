@@ -51,7 +51,7 @@ dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 	// https://github.com/Discord4J/Discord4J/commits/master
 
-	implementation('dev.latvian.apps:webutils:1.0.10') { transitive = false }
+	implementation('dev.latvian.apps:webutils:1.0.31') { transitive = false }
 	implementation('curse.maven:rhino-416294:3892335') { transitive = false }
 	implementation('io.javalin:javalin:5.3.2')
 	// implementation "com.discord4j:discord4j-core:3.2.0-GH.935-SNAPSHOT"

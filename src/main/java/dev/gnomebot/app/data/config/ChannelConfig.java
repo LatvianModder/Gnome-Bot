@@ -4,11 +4,24 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.common.util.Snowflake;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class ChannelConfig extends SnowflakeConfig {
 	public ChannelConfig(GuildCollections gc, String name) {
 		super(gc, name);
+		enumValues(this::getEnumValues);
+	}
+
+	private List<EnumValue> getEnumValues() {
+		var list = new ArrayList<EnumValue>();
+
+		for (var c : gc.getChannelList()) {
+			list.add(new EnumValue(c.id.asString(), "#" + c.getName()));
+		}
+
+		return list;
 	}
 
 	@Override

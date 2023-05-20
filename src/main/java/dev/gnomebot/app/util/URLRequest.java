@@ -375,8 +375,8 @@ public class URLRequest<T> {
 				var json = JSON.DEFAULT.read(sb.toString()).readObject();
 
 				if (json.containsKey("retry_after")) {
-					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.number("retry_after").longValue() + "ms");
-					Thread.sleep(json.number("retry_after").longValue() + 50L);
+					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.asLong("retry_after") + "ms");
+					Thread.sleep(json.asLong("retry_after") + 50L);
 					return block();
 				}
 			}

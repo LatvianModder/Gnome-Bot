@@ -11,4 +11,14 @@ public class BooleanConfig extends BaseConfig<Boolean> {
 	public String getType() {
 		return "boolean";
 	}
+
+	@Override
+	public String serialize() {
+		return get().toString();
+	}
+
+	@Override
+	public void deserialize(String value) {
+		set(Boolean.parseBoolean(value));
+	}
 }

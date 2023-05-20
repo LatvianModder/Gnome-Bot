@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.URLRequest;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ImageUtils;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
@@ -37,7 +37,7 @@ public class InfoHandlers {
 
 		// App.info("Getting info for " + id.asString());
 
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("id", id.asString());
 		UserData userData = request.app.discordHandler.getUserData(id);
 
@@ -88,7 +88,7 @@ public class InfoHandlers {
 		BufferedImage img;
 
 		try {
-			img = Utils.resize(URLRequest.of(url).toImage().block(), size, size);
+			img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
 		} catch (Exception ex) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
@@ -99,7 +99,7 @@ public class InfoHandlers {
 			}
 		}
 
-		return FileResponse.image(img);
+		return FileResponse.png(img);
 	}
 
 	public static Response emoji(ServerRequest request) throws Exception {
@@ -123,7 +123,7 @@ public class InfoHandlers {
 		BufferedImage img;
 
 		try {
-			img = Utils.resize(URLRequest.of(url).toImage().block(), size, size);
+			img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
 		} catch (Exception ex) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
@@ -134,13 +134,13 @@ public class InfoHandlers {
 			}
 		}
 
-		return FileResponse.image(img);
+		return FileResponse.png(img);
 	}
 
 	public static Response define(ServerRequest request) throws Exception {
 		String word = request.variable("word");
 
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("found", false);
 		json.put("word", word);
 
@@ -151,49 +151,42 @@ public class InfoHandlers {
 				return JSONResponse.of(json);
 			}
 
-			var firstWord = data0.left().object(0).string("word");
+			var firstWord = data0.left().asObject(0).asString("word");
 			json.put("word", firstWord);
-			var phonetics = new JSONArray();
-			var meanings = new JSONArray();
+			var phonetics = json.addArray("phonetics");
+			var meanings = json.addArray("meanings");
 			var phoneticsSet = new HashSet<String>();
 
 			for (var data1 : data0.left()) {
 				var data = (JSONObject) data1;
 
-				if (data.string("word").equals(firstWord)) {
-					for (var e : data.array("phonetics")) {
-						var o0 = (JSONObject) e;
-						String text = o0.string("text").trim();
+				if (data.asString("word").equals(firstWord)) {
+					for (var o0 : data.asArray("phonetics").ofObjects()) {
+						String text = o0.asString("text").trim();
 
 						if (!phoneticsSet.contains(text)) {
 							phoneticsSet.add(text);
-							var o = new JSONObject();
+							var o = phonetics.addObject();
 							o.put("text", text);
-							o.put("audio_url", o0.containsKey("audio") ? ("https:" + o0.string("audio").trim()) : "");
-							phonetics.add(o);
+							o.put("audio_url", o0.containsKey("audio") ? ("https:" + o0.asString("audio").trim()) : "");
 						}
 					}
 
-					for (var e : data.array("meanings")) {
-						var o0 = (JSONObject) e;
-						String type = o0.string("partOfSpeech").trim();
+					for (var o0 : data.asArray("meanings").ofObjects()) {
+						String type = o0.asString("partOfSpeech").trim();
 
-						for (var e1 : o0.array("definitions")) {
-							var o1 = (JSONObject) e1;
-							var o = new JSONObject();
+						for (var o1 : o0.asArray("definitions").ofObjects()) {
+							var o = meanings.addObject();
 							o.put("type", type);
-							o.put("definition", o1.string("definition").trim());
-							o.put("example", o1.containsKey("example") ? o1.string("example").trim() : "");
-							o.put("synonyms", o1.containsKey("synonyms") ? o1.get("synonyms") : new JSONArray());
-							o.put("antonyms", o1.containsKey("antonyms") ? o1.get("antonyms") : new JSONArray());
-							meanings.add(o);
+							o.put("definition", o1.asString("definition").trim());
+							o.put("example", o1.asString("example").trim());
+							o.put("synonyms", o1.containsKey("synonyms") ? o1.get("synonyms") : JSONArray.of());
+							o.put("antonyms", o1.containsKey("antonyms") ? o1.get("antonyms") : JSONArray.of());
 						}
 					}
 				}
 			}
 
-			json.put("phonetics", phonetics);
-			json.put("meanings", meanings);
 			json.put("found", true);
 		} catch (Exception ex) {
 			ex.printStackTrace();

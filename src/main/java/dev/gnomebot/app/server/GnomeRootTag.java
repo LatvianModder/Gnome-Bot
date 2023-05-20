@@ -18,7 +18,7 @@ public class GnomeRootTag {
 		Tag content = body.div().classes("content");
 		content.h2().string(title);
 		content.br();
-		return root;
+		return content;
 	}
 
 	public static void setupHead(RootTag root, String path, String title, String description) {

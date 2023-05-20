@@ -1,10 +1,13 @@
 package dev.gnomebot.app.data.config;
 
-import dev.latvian.apps.webutils.ansi.Ansi;
+import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * @author LatvianModder
@@ -12,44 +15,42 @@ import java.util.LinkedHashMap;
 public class DBConfig {
 	public final LinkedHashMap<String, BaseConfig<?>> map = new LinkedHashMap<>();
 
-	public boolean read(String name, @Nullable Document document) {
-		if (document == null || document.isEmpty()) {
-			return true;
+	public void read(String name, @Nullable Document document, List<Bson> updates) {
+		if (document == null) {
+			for (var config : map.values()) {
+				if (config.isSet()) {
+					updates.add(Updates.set(config.id, config.write()));
+				}
+			}
+
+			return;
 		}
 
-		boolean save = false;
-
-		for (BaseConfig<?> config : map.values()) {
+		for (var config : map.values()) {
 			if (document.containsKey(config.id)) {
 				try {
-					config.fromDB(document.get(config.id));
+					config.read(document);
 				} catch (ClassCastException ex) {
-					Ansi.log(Ansi.of().append(Ansi.white("Failed to read " + name + "/" + config.id + " :").whiteBg()).append(ex));
-					save = true;
+					App.error("Failed to read " + name + "/" + config.id + " :" + ex);
+
+					if (config.isSet()) {
+						updates.add(Updates.set(config.id, config.write()));
+					}
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
-			} else {
-				save = true;
 			}
 		}
 
-		return save;
-	}
-
-	public Document write() {
-		Document document = new Document();
-
-		for (BaseConfig<?> setting : map.values()) {
-			document.put(setting.id, setting.toDB());
+		for (var key : document.keySet()) {
+			if (!key.equals("_id") && !map.containsKey(key)) {
+				updates.add(Updates.unset(key));
+			}
 		}
-
-		return document;
 	}
 
-	@SuppressWarnings("unchecked")
-	public <T extends BaseConfig<?>> T add(BaseConfig<?> config) {
+	public <T extends BaseConfig<?>> T add(T config) {
 		map.put(config.id, config);
-		return (T) config;
+		return config;
 	}
 }

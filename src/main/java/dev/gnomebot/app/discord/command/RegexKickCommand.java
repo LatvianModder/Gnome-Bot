@@ -68,7 +68,6 @@ public class RegexKickCommand extends ApplicationCommands {
 						.user(member)
 						.source(event.context.sender)
 						.content(reason)
-						.extra("dm", false)
 				);
 			}
 
@@ -80,15 +79,14 @@ public class RegexKickCommand extends ApplicationCommands {
 			event1.context.checkSenderPerms(Permission.BAN_MEMBERS);
 			event1.edit().respond("**Banned " + members.size() + " members**");
 
-			for (Member member : members) {
+			for (var member : members) {
 				member.ban(BanQuerySpec.builder().reason(reason).deleteMessageDays(1).build()).subscribe();
 
 				event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAN)
 						.user(member)
 						.source(event.context.sender)
 						.content(reason)
-						.extra("dm", false)
-						.extra("delete_messages", 1)
+						.flags(GnomeAuditLogEntry.Flags.DM)
 				);
 			}
 

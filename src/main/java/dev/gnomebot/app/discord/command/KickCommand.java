@@ -71,7 +71,7 @@ public class KickCommand extends ApplicationCommands {
 				.user(user)
 				.source(event.context.sender)
 				.content(reason)
-				.extra("dm", dm)
+				.flags(GnomeAuditLogEntry.Flags.DM, dm)
 		);
 
 		// m.addReaction(DiscordHandler.EMOJI_COMMAND_ERROR).block();

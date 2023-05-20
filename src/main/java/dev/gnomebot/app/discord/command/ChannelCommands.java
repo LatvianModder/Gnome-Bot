@@ -7,6 +7,7 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.json.MessageData;
@@ -259,7 +260,7 @@ public class ChannelCommands extends ApplicationCommands {
 		}
 
 		long time = (System.currentTimeMillis() - start) / 1000L;
-		event.edit().respond("XP refreshed from " + total + " messages in " + Utils.prettyTimeString(time) + "!");
+		event.edit().respond("XP refreshed from " + total + " messages in " + TimeUtils.prettyTimeString(time) + "!");
 	}
 
 	private static void autoThreads(ChatInputInteractionEventWrapper event) throws Exception {

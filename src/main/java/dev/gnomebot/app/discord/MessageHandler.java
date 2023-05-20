@@ -54,7 +54,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -353,10 +352,6 @@ public class MessageHandler {
 			flags |= DiscordMessage.FLAG_TTS;
 		}
 
-		if (gc.badWordRegex != null && gc.badWordRegex.matcher(contentNoEmojis).find()) {
-			flags |= DiscordMessage.FLAG_BAD_WORD;
-		}
-
 		if (contentNoEmojis.indexOf('\n') != -1) {
 			flags |= DiscordMessage.FLAG_MULTILINE;
 		}
@@ -502,18 +497,7 @@ public class MessageHandler {
 		}
 
 		if (!member.isBot() && !authLevel.is(AuthLevel.ADMIN)) {
-			if (gc.badWordRegex != null && (flags & DiscordMessage.FLAG_BAD_WORD) != 0L) {
-				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Bad Word", s -> gc.badWordRegex.matcher(s).replaceAll(" **__ $0 __** "));
-
-				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAD_WORD)
-						.channel(channelInfo.id)
-						.message(message)
-						.user(member)
-						.content(content)
-				);
-			}
-
-			ScamHandler.Scam scam = ScamHandler.checkScam(contentNoEmojis);
+			var scam = ScamHandler.checkScam(contentNoEmojis);
 
 			if (scam != null) {
 				App.info("Potential scam URL detected in " + gc + ": " + scam);
@@ -537,7 +521,7 @@ public class MessageHandler {
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
-						.channel(channelInfo.id)
+						.channel(channelInfo.id.asLong())
 						.message(message)
 						.user(member)
 						.content(content)
@@ -564,7 +548,7 @@ public class MessageHandler {
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.URL_SHORTENER)
-						.channel(channelInfo.id)
+						.channel(channelInfo.id.asLong())
 						.message(message)
 						.user(member)
 						.content(content)
@@ -575,7 +559,7 @@ public class MessageHandler {
 				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Suspicious Invite", s -> s);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.DISCORD_INVITE)
-						.channel(channelInfo.id)
+						.channel(channelInfo.id.asLong())
 						.message(message)
 						.user(member)
 						.content(content)
@@ -586,7 +570,7 @@ public class MessageHandler {
 				handler.suspiciousMessageModLog(gc, gc.logIpAddressesChannel, discordMessage, member, "IP Address", s -> s);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.IP_ADDRESS)
-						.channel(channelInfo.id)
+						.channel(channelInfo.id.asLong())
 						.message(message)
 						.user(member)
 						.content(content)
@@ -611,47 +595,58 @@ public class MessageHandler {
 			builder.append(")\n\n");
 			builder.append(content);
 
-			if (referenceMessage != null && referenceMessage.getAuthor().isPresent()) {
-				builder.append('\n');
-				builder.append(referenceMessage.getAuthor().get().getMention());
-				builder.append(": ");
+			if (referenceMessage != null) {
+				builder.append("\n<@");
+				builder.append(referenceMessage.getUserData().id().asString());
+				builder.append(">: ");
 				builder.append(referenceMessage.getContent());
+
+				gc.adminLogChannelEmbed(referenceMessage.getUserData(), gc.adminLogChannel, spec -> {
+					spec.description(builder.toString());
+					spec.timestamp(message.getTimestamp());
+					spec.author(member.getTag(), member.getAvatarUrl());
+
+					if (!images.isEmpty()) {
+						spec.thumbnail(images.get(0).toString());
+					}
+				});
+			} else {
+				gc.adminLogChannelEmbed(null, gc.adminLogChannel, spec -> {
+					spec.description(builder.toString());
+					spec.timestamp(message.getTimestamp());
+					spec.author(member.getTag(), member.getAvatarUrl());
+
+					if (!images.isEmpty()) {
+						spec.thumbnail(images.get(0).toString());
+					}
+				});
 			}
-
-			gc.adminLogChannelEmbed(member.getUserData(), gc.adminLogChannel, spec -> {
-				spec.description(builder.toString());
-				spec.timestamp(message.getTimestamp());
-				spec.author(member.getTag(), member.getAvatarUrl());
-
-				if (!images.isEmpty()) {
-					spec.thumbnail(images.get(0).toString());
-				}
-			});
 		}
 
 		if (gc.adminRole.isMentioned(message)) {
-			StringBuilder c = new StringBuilder(content);
+			var c = new StringBuilder(content);
 
-			if (message.getReferencedMessage().isPresent()) {
-				c.append("\nReferencing: ").append(message.getReferencedMessage().get().getContent());
+			if (referenceMessage != null) {
+				c.append("\nReferencing: ").append(referenceMessage.getContent());
 			}
 
 			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.ADMIN_PING)
-					.channel(channelInfo.id)
+					.channel(channelInfo.id.asLong())
 					.message(message)
-					.user(member)
+					.user(referenceMessage != null ? referenceMessage.getUserData().id().asLong() : 0L)
+					.source(member)
 					.content(c.toString().trim())
 			);
 		}
 
-		String macroPrefix = context.gc.macroPrefix.get();
+		var macroPrefix = context.gc.macroPrefix.get();
 
 		if (gc.discordJS.onMessage.hasListeners() || !gc.discordJS.customMacros.isEmpty()) {
-			MessageEventJS messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp);
+			var messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp);
 
 			if (content.length() > macroPrefix.length() && content.startsWith(macroPrefix)) {
-				CommandReader reader = new CommandReader(context.gc, content.substring(macroPrefix.length()));
-				Consumer<MessageEventJS> consumer = gc.discordJS.customMacros.get(reader.readString().orElse(""));
+				var reader = new CommandReader(context.gc, content.substring(macroPrefix.length()));
+				var consumer = gc.discordJS.customMacros.get(reader.readString().orElse(""));
 
 				if (consumer != null) {
 					messageEventJS.reader = reader;

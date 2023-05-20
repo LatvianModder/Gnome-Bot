@@ -2,29 +2,17 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEvents;
-import dev.gnomebot.app.data.BasicDocument;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
-import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.rest.entity.RestChannel;
-import discord4j.rest.util.Permission;
-import org.bson.Document;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author LatvianModder
@@ -95,42 +83,47 @@ public class ReactionHandler {
 	}
 
 	public static void added(DiscordHandler handler, ReactionAddEvent event) {
-		Member member = event.getMember().orElse(null);
+		var member = event.getMember().orElse(null);
 
-		if (member == null || member.isBot()) {
+		if (member == null || member.isBot() || event.getGuildId().isEmpty()) {
 			return;
 		}
 
-		event.getGuildId().ifPresent(guildId -> {
-			App.LOGGER.event(BrainEvents.REACTION_ADDED);
+		var guildId = event.getGuildId().get();
 
-			GuildCollections gc = handler.app.db.guild(guildId);
-			ReactionEmoji emoji = event.getEmoji();
+		App.LOGGER.event(BrainEvents.REACTION_ADDED);
 
-			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_ADDED)
-					.channel(event.getChannelId())
-					.message(event.getMessageId())
-					.user(member)
-					.content(Utils.reactionToString(emoji))
-			);
+		var gc = handler.app.db.guild(guildId);
+		var emoji = event.getEmoji();
 
-			Callback callback = TEMP_REACTION_HANDLERS.get(event.getMessageId());
+		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_ADDED)
+				.channel(event.getChannelId().asLong())
+				.message(event.getMessageId().asLong())
+				.user(member)
+				.content(Utils.reactionToString(emoji))
+		);
 
-			if (callback != null) {
-				event.getMessage().subscribe(m -> {
-					callback.gc = gc;
-					callback.message = m;
+		var callback = TEMP_REACTION_HANDLERS.get(event.getMessageId());
 
-					try {
-						if (callback.onReaction(member, emoji)) {
-							m.removeReaction(emoji, event.getUserId()).subscribe();
-						}
-					} catch (Exception ex) {
-						ex.printStackTrace();
+		if (callback != null) {
+			event.getMessage().subscribe(m -> {
+				callback.gc = gc;
+				callback.message = m;
+
+				try {
+					if (callback.onReaction(member, emoji)) {
+						m.removeReaction(emoji, event.getUserId()).subscribe();
 					}
-				});
-			}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			});
+		}
 
+		if (event.getChannelId().asLong() == 0L && Emojis.VOTEUP.equals(emoji)) {
+		}
+
+			/*
 			// TODO: Some fine hardcoded bullshit right here
 			if (event.getChannelId().asLong() == 255122566438453249L) {
 				if (Emojis.VOTEUP.equals(emoji)) {
@@ -207,7 +200,7 @@ public class ReactionHandler {
 					event.getMessage().flatMap(m -> m.removeReaction(emoji, event.getUserId())).subscribe();
 				}
 			}
-		});
+			 */
 	}
 
 	public static void removed(DiscordHandler handler, ReactionRemoveEvent event) {
@@ -222,8 +215,8 @@ public class ReactionHandler {
 				GuildCollections gc = handler.app.db.guild(guildId);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_REMOVED)
-						.channel(event.getChannelId())
-						.message(event.getMessageId())
+						.channel(event.getChannelId().asLong())
+						.message(event.getMessageId().asLong())
 						.user(u)
 						.content(Utils.reactionToString(event.getEmoji()))
 				);

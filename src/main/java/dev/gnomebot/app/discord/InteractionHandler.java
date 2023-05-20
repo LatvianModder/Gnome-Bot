@@ -26,6 +26,7 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.discord.legacycommand.PollCommand;
 import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
+import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.OngoingAction;
 import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.common.util.Snowflake;
@@ -319,6 +320,7 @@ public class InteractionHandler {
 			case "pings" -> PingsCommands.edit(event);
 			case "pings_help" -> PingsCommands.help(event);
 			case "regex_help" -> PingsCommands.regexHelp(event);
+			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, Snowflake.of(event.path[1]));
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));

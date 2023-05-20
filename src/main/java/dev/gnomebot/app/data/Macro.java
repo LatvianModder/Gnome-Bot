@@ -27,12 +27,10 @@ import java.util.regex.Pattern;
 public class Macro extends WrappedDocument<Macro> {
 	public static final Pattern REMOVE_MD_LINKS = Pattern.compile("\\[.+?]\\((.+?)\\)");
 
-	public final GuildCollections gc;
 	private ChatCommandSuggestion chatCommandSuggestion;
 
-	public Macro(GuildCollections g, WrappedCollection<Macro> c, MapWrapper d) {
+	public Macro(WrappedCollection<Macro> c, MapWrapper d) {
 		super(c, d);
-		gc = g;
 	}
 
 	public long getAuthor() {
@@ -162,6 +160,8 @@ public class Macro extends WrappedDocument<Macro> {
 	}
 
 	public long setSlashCommand(boolean b) {
+		var gc = collection.gc;
+
 		if (b) {
 			String author = gc.db.app.discordHandler.getUserName(Snowflake.of(getAuthor())).orElse("Deleted User");
 

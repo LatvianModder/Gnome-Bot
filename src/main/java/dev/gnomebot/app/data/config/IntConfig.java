@@ -22,12 +22,17 @@ public class IntConfig extends BaseConfig<Integer> {
 	}
 
 	@Override
-	public void set(Integer i) {
-		super.set(Math.min(Math.max(minValue, i), maxValue));
+	public String serialize() {
+		return get().toString();
 	}
 
 	@Override
-	public void fromJson(Object json) {
-		set(((Number) json).intValue());
+	public void deserialize(String value) {
+		set(Integer.parseInt(value));
+	}
+
+	@Override
+	public void set(Integer i) {
+		super.set(Math.min(Math.max(minValue, i), maxValue));
 	}
 }

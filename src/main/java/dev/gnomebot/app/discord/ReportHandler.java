@@ -52,8 +52,8 @@ public class ReportHandler {
 		}
 
 		event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MESSAGE_REPORT)
-				.channel(m.getChannelId())
-				.message(m.getId())
+				.channel(m.getChannelId().asLong())
+				.message(m.getId().asLong())
 				.user(author)
 				.content(m.getContent())
 				.source(event.context.sender)

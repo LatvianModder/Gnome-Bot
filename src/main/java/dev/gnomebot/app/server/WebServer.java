@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
@@ -14,17 +15,21 @@ import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.http.Header;
 import io.javalin.http.HttpStatus;
 import org.bson.Document;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -37,11 +42,36 @@ public class WebServer implements Consumer<JavalinConfig> {
 	public List<RequestHandler> handlerList;
 	public List<Pair<String, WSHandler>> webSocketHandlerList;
 	private Javalin javalin;
+	private final Set<String> staticFilesSet;
+	private final Set<String> staticFilesSetNoCache;
 
 	public WebServer(App m) {
 		app = m;
 		handlerList = new ArrayList<>();
 		webSocketHandlerList = new ArrayList<>();
+
+		this.staticFilesSet = new HashSet<>();
+
+		this.staticFilesSet.add("/apple-touch-icon.png");
+		this.staticFilesSet.add("/apple-touch-icon-precomposed.png");
+		this.staticFilesSet.add("/apple-touch-icon-152x152.png");
+		this.staticFilesSet.add("/apple-touch-icon-152x152-precomposed.png");
+		this.staticFilesSet.add("/apple-touch-icon-120x120.png");
+		this.staticFilesSet.add("/apple-touch-icon-120x120-precomposed.png");
+
+		try (var stream = Files.walk(AppPaths.RESOURCES)) {
+			stream.filter(Files::isRegularFile)
+					.map(AppPaths.RESOURCES::relativize)
+					.map(path -> "/" + path.toString().replace('\\', '/'))
+					.forEach(this.staticFilesSet::add);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		this.staticFilesSetNoCache = Set.of(
+				"/assets/script.js",
+				"/assets/style.css"
+		);
 	}
 
 	public void start(int port) {
@@ -51,11 +81,11 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 		javalin = Javalin.create(this);
 
-		for (HandlerType method : METHODS) {
-			MethodHandler w = new MethodHandler(this, method);
+		for (var method : METHODS) {
+			var w = new MethodHandler(this, method);
 			int maxPathSize = 0;
 
-			for (RequestHandler handler : handlerList) {
+			for (var handler : handlerList) {
 				if (handler.method == null) {
 					throw new RuntimeException("Method for " + handler.path + " hasn't been set!");
 				} else if (handler.method == method) {
@@ -68,7 +98,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 					w.handlers.add(new ArrayList<>());
 				}
 
-				for (RequestHandler handler : handlerList) {
+				for (var handler : handlerList) {
 					if (handler.method == method) {
 						if (handler.path.indexOf(':') == -1) {
 							w.staticHandlers.put(handler.path, handler);
@@ -140,11 +170,29 @@ public class WebServer implements Consumer<JavalinConfig> {
 		}
 
 		@Override
-		public void handle(Context ctx) throws Exception {
-			ctx.header("Access-Control-Allow-Origin", "*");
-			ctx.header("Cache-Control", "max-age=0, private, no-cache");
+		public void handle(Context ctx) {
+			ctx.header(Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+			ctx.header(Header.CACHE_CONTROL, "max-age=0, private, no-cache");
 
-			String p = ctx.path();
+			if (ctx.method() == HandlerType.GET && webServer.staticFilesSet.contains(ctx.path())) {
+				try {
+					var path = AppPaths.RESOURCES.resolve(ctx.path().substring(1));
+					ctx.result(Files.readAllBytes(path));
+					ctx.contentType(Files.probeContentType(path));
+					ctx.status(HttpStatus.OK);
+
+					if (!webServer.staticFilesSetNoCache.contains(ctx.path())) {
+						ctx.header(Header.CACHE_CONTROL, "public, max-age=3600");
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					ctx.status(HttpStatus.NOT_FOUND);
+				}
+
+				return;
+			}
+
+			var p = ctx.path();
 
 			while (p.startsWith("/")) {
 				p = p.substring(1);
@@ -154,12 +202,13 @@ public class WebServer implements Consumer<JavalinConfig> {
 				p = p.substring(0, p.length() - 1);
 			}
 
-			String ip = ctx.header("CF-Connecting-IP");
-			String country = ctx.header("CF-IPCountry");
+			var ip = ctx.header("CF-Connecting-IP");
 
 			if (ip == null || ip.isEmpty()) {
 				ip = "0.0.0.0";
 			}
+
+			var country = ctx.header("CF-IPCountry");
 
 			if (country == null || country.isEmpty()) {
 				country = "xx";
@@ -189,25 +238,25 @@ public class WebServer implements Consumer<JavalinConfig> {
 				throw HTTPResponseCode.BAD_REQUEST.error("Missing required headers");
 			}
 
-			WebToken token = webServer.app.db.getToken(ctx);
+			var token = webServer.app.db.getToken(ctx);
 			tokenCallback[0] = token;
 
-			RequestHandler sh = staticHandlers.get(p);
+			var sh = staticHandlers.get(p);
 
 			if (sh != null) {
-				ServerRequest serverRequest = new ServerRequest(webServer.app, ctx, ip, country, Collections.emptyMap());
+				var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, Collections.emptyMap());
 				serverRequest.token = token;
 				handle1(ctx, sh, p, serverRequest).result(ctx);
 				return;
 			}
 
-			String[] pa = p.split("/");
-			StringBuilder p1 = new StringBuilder(p);
+			var pa = p.split("/");
+			var p1 = new StringBuilder(p);
 
 			if (!ctx.queryParamMap().isEmpty()) {
 				boolean first = true;
 
-				for (Map.Entry<String, List<String>> qp : ctx.queryParamMap().entrySet()) {
+				for (var qp : ctx.queryParamMap().entrySet()) {
 					if (first) {
 						p1.append('?');
 						first = false;
@@ -222,9 +271,9 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			if (pa.length <= handlers.size()) {
-				Map<String, String> vars = new HashMap<>();
+				var vars = new HashMap<String, String>();
 
-				for (RequestHandler dh : handlers.get(pa.length - 1)) {
+				for (var dh : handlers.get(pa.length - 1)) {
 					vars.clear();
 
 					if (dh.matches(pa, vars)) {
@@ -282,7 +331,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			var r = handler.handler.handle(req);
 
 			if (handler.cacheSeconds != 0 && r.getStatus().getCode() / 100 == 2) {
-				ctx.header("Cache-Control", (handler.authLevel == AuthLevel.NO_AUTH ? "public" : "private") + ", max-age=" + Math.abs(handler.cacheSeconds));
+				ctx.header(Header.CACHE_CONTROL, (handler.authLevel == AuthLevel.NO_AUTH ? "public" : "private") + ", max-age=" + Math.abs(handler.cacheSeconds));
 			}
 
 			if (handler.log) {

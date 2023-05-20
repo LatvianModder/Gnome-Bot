@@ -46,12 +46,12 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 		return this;
 	}
 
-	public WrappedCollection<T> expires(String indexId, String key, long time, TimeUnit timeUnit) {
-		return index(new IndexWrapper(indexId, Indexes.ascending(key), new IndexOptions().expireAfter(time, timeUnit)));
+	public WrappedCollection<T> expires(String indexId, String key, long time, TimeUnit timeUnit, @Nullable Bson filter) {
+		return index(new IndexWrapper(indexId, Indexes.ascending(key), new IndexOptions().partialFilterExpression(filter).expireAfter(time, timeUnit)));
 	}
 
-	public WrappedCollection<T> expiresAfterMonth(String indexId, String key) {
-		return expires(indexId, key, 28L, TimeUnit.DAYS);
+	public WrappedCollection<T> expiresAfterMonth(String indexId, String key, @Nullable Bson filter) {
+		return expires(indexId, key, 28L, TimeUnit.DAYS, filter);
 	}
 
 	public synchronized MongoCollection<Document> getCollection() {
@@ -61,7 +61,7 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 			collection = db.database.getCollection(id);
 
 			if (indexes != null) {
-				for (IndexWrapper iw : indexes) {
+				for (var iw : indexes) {
 					try {
 						collection.dropIndex(iw.indexId);
 					} catch (Exception ex) {

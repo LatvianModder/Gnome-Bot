@@ -35,7 +35,7 @@ public class UserCache {
 	}
 
 	public JSONObject getJson(final Snowflake id) {
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("id", id.asString());
 		json.put("name", getUsername(id));
 		return json;

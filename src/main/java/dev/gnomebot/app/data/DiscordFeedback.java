@@ -7,7 +7,6 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.spec.EmbedCreateFields;
@@ -195,8 +194,8 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		json.put("deleted", isDeleted());
 
 		if (authLevel.is(AuthLevel.OWNER)) {
-			var upTags = new JSONArray();
-			var downTags = new JSONArray();
+			var upTags = json.addArray("upvoters");
+			var downTags = json.addArray("downvoters");
 
 			for (Map.Entry<String, Object> o : voteMap.map.entrySet()) {
 				if (Boolean.TRUE.equals(o.getValue())) {
@@ -205,9 +204,6 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 					downTags.add(memberCache.getDisplayName(Snowflake.of(o.getKey())));
 				}
 			}
-
-			json.put("upvoters", upTags);
-			json.put("downvoters", downTags);
 		}
 	}
 }

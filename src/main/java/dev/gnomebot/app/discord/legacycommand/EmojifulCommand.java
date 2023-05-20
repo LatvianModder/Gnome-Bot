@@ -31,17 +31,16 @@ public class EmojifulCommand {
 			try (var zipOutputStream = new ZipOutputStream(out)) {
 				zipOutputStream.putNextEntry(new ZipEntry("pack.mcmeta"));
 
-				var mcmeta = new JSONObject();
-				var mcmetaPack = new JSONObject();
+				var mcmeta = JSONObject.of();
+				var mcmetaPack = mcmeta.addObject("pack");
 				mcmetaPack.put("pack_format", 6);
 				mcmetaPack.put("description", "Emojiful emojis!");
-				mcmeta.put("pack", mcmetaPack);
 				zipOutputStream.write(mcmeta.toString().getBytes(StandardCharsets.UTF_8));
 				zipOutputStream.closeEntry();
 
 				for (var custom : context.gc.getGuild().getEmojis().toIterable()) {
 					zipOutputStream.putNextEntry(new ZipEntry("data/emojiful/recipes/" + custom.getName().toLowerCase() + ".json"));
-					var json = new JSONObject();
+					var json = JSONObject.of();
 					json.put("type", "emojiful:emoji_recipe");
 					json.put("category", cat1);
 					json.put("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");
@@ -92,17 +91,16 @@ public class EmojifulCommand {
 				try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
 					zipOutputStream.putNextEntry(new ZipEntry("pack.mcmeta"));
 
-					var mcmeta = new JSONObject();
-					var mcmetaPack = new JSONObject();
+					var mcmeta = JSONObject.of();
+					var mcmetaPack = mcmeta.addObject("pack");
 					mcmetaPack.put("pack_format", 6);
 					mcmetaPack.put("description", "Emojiful emojis!");
-					mcmeta.put("pack", mcmetaPack);
 					zipOutputStream.write(mcmeta.toString().getBytes(StandardCharsets.UTF_8));
 					zipOutputStream.closeEntry();
 
 					for (var custom : reactions) {
 						zipOutputStream.putNextEntry(new ZipEntry("data/emojiful/recipes/" + custom.getName().toLowerCase() + ".json"));
-						var json = new JSONObject();
+						var json = JSONObject.of();
 						json.put("type", "emojiful:emoji_recipe");
 						json.put("category", cat);
 						json.put("url", "https://cdn.discordapp.com/emojis/" + custom.getId().asString() + ".png");

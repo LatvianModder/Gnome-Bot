@@ -3,10 +3,21 @@ package dev.gnomebot.app.data.config;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
+import org.bson.Document;
 
 public abstract class SnowflakeConfig extends BaseConfig<Snowflake> {
 	public SnowflakeConfig(GuildCollections g, String n) {
 		super(g, n, Utils.NO_SNOWFLAKE);
+	}
+
+	@Override
+	public String serialize() {
+		return get().asString();
+	}
+
+	@Override
+	public void deserialize(String value) {
+		set(Snowflake.of(value));
 	}
 
 	@Override
@@ -15,26 +26,12 @@ public abstract class SnowflakeConfig extends BaseConfig<Snowflake> {
 	}
 
 	@Override
-	public Object toDB() {
+	public Object write() {
 		return get().asLong();
 	}
 
 	@Override
-	public void fromDB(Object o) {
-		set(Snowflake.of(((Number) o).longValue()));
-	}
-
-	@Override
-	public Object toJson() {
-		return get().asString();
-	}
-
-	@Override
-	public void fromJson(Object json) {
-		set(Snowflake.of(String.valueOf(json)));
-	}
-
-	public boolean isSet() {
-		return get().asLong() != 0L;
+	public void read(Document document) {
+		set(Snowflake.of(document.getLong(id)));
 	}
 }

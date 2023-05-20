@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data;
 
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
@@ -13,18 +14,15 @@ import dev.gnomebot.app.data.config.IntConfig;
 import dev.gnomebot.app.data.config.MemberConfig;
 import dev.gnomebot.app.data.config.RoleConfig;
 import dev.gnomebot.app.data.config.StringConfig;
-import dev.gnomebot.app.data.config.StringListConfig;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
-import dev.gnomebot.app.discord.MessageFilter;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.script.WrappedGuild;
 import dev.gnomebot.app.script.WrappedId;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
@@ -57,7 +55,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -68,7 +65,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,7 +95,6 @@ public class GuildCollections {
 	public final StringConfig name;
 	public final StringConfig iconUrl;
 	public final MemberConfig ownerId;
-	public final StringListConfig badWords;
 	public final IntConfig regularMessages;
 	public final IntConfig regularXP;
 	public final RoleConfig regularRole;
@@ -120,10 +115,8 @@ public class GuildCollections {
 	public final StringConfig legacyPrefix;
 	public final StringConfig macroPrefix;
 	public final StringConfig inviteCode;
-	public List<MessageFilter> messageFilters = new ArrayList<>(); // TODO: Implement
 	public final BooleanConfig lockdownMode;
 	public final IntConfig kickNewAccounts;
-	public final StringConfig lockdownModeText;
 	public final BooleanConfig anonymousFeedback;
 	public final BooleanConfig adminsBypassAnonFeedback;
 	public final StringConfig font;
@@ -136,7 +129,6 @@ public class GuildCollections {
 	public final StringConfig reportOptions;
 	public final BooleanConfig autoMuteEmbed;
 
-	public Pattern badWordRegex;
 	private WrappedGuild wrappedGuild;
 	private Map<Snowflake, ChannelInfo> channelMap;
 	private List<ChannelInfo> channelList;
@@ -162,15 +154,15 @@ public class GuildCollections {
 		members = create("members_" + dbid, DiscordMember::new);
 		// TODO: Move messages to edited when channel is deleted
 		messages = create("messages_" + dbid, DiscordMessage::new);
-		editedMessages = create("edited_messages_" + dbid, DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp"); // GDPR
+		editedMessages = create("edited_messages_" + dbid, DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp", null); // GDPR
 		feedback = create("feedback_" + dbid, DiscordFeedback::new);
 		polls = create("polls_" + dbid, DiscordPoll::new);
 		messageCount = create("message_count_" + dbid, DiscordMessageCount::new);
 		messageXp = create("message_xp_" + dbid, DiscordMessageXP::new);
 		channelInfo = create("channel_settings_" + dbid, (c, doc) -> new ChannelInfo(this, c, doc, null));
-		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires"); // GDPR
-		macros = create("macros_" + dbid, (c, doc) -> new Macro(this, c, doc));
-		scheduledTasks = create("scheduled_tasks_" + dbid, (c, doc) -> new ScheduledTask(this, c, doc));
+		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
+		macros = create("macros_" + dbid, Macro::new);
+		scheduledTasks = create("scheduled_tasks_" + dbid, ScheduledTask::new);
 		memberLogThreads = create("member_log_threads_" + dbid, ThreadLocation::new);
 
 		config = new DBConfig();
@@ -178,7 +170,6 @@ public class GuildCollections {
 		name = config.add(new StringConfig(this, "name", guildId.asString())).internal();
 		iconUrl = config.add(new StringConfig(this, "icon_url", "")).internal();
 		ownerId = config.add(new MemberConfig(this, "owner_id")).internal();
-		badWords = config.add(new StringListConfig(this, "bad_words", Arrays.asList("reallybadword", "reallybadword2"))).title("Bad Words (separated by ' | ')");
 		regularMessages = config.add(new IntConfig(this, "regular_messages", 0)).title("Regular Messages");
 		regularXP = config.add(new IntConfig(this, "regular_xp", 3000)).title("Regular XP");
 		regularRole = config.add(new RoleConfig(this, "regular_role")).title("Regular Role");
@@ -199,13 +190,11 @@ public class GuildCollections {
 		legacyPrefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
 		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
 		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
-		//settings.add("message_filters", () -> messageFilters, v -> messageFilters = v, messageFilters, (ListTransformer<Document, MessageFilter>) MessageFilter::new, (ListTransformer<MessageFilter, Document>) value -> value == null ? new Document() : value.toDocument());
 		lockdownMode = config.add(new BooleanConfig(this, "lockdown_mode", false)).title("Lockdown Mode");
 		kickNewAccounts = config.add(new IntConfig(this, "kick_new_accounts", 0)).title("Kick New Accounts (in seconds since account created, e.g 604800 == 1 week)");
-		lockdownModeText = config.add(new StringConfig(this, "lockdown_mode_text", "Sorry! The server is currently getting attacked by spammers and is in lockdown mode! If you are not a spammer, please return later! If you are a spammer, eat the most rotten and sour lemon to ever exist.")).title("Lockdown Mode Text");
 		anonymousFeedback = config.add(new BooleanConfig(this, "anonymous_feedback", false)).title("Anonymous Feedback");
 		adminsBypassAnonFeedback = config.add(new BooleanConfig(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
-		font = config.add(new StringConfig(this, "font", "DejaVu Sans Light")).title("Font");
+		font = config.add(new StringConfig(this, "font", "DejaVu Sans Light").enumValues(App::listFonts)).title("Font");
 		forcePingableName = config.add(new BooleanConfig(this, "force_pingable_name", false)).title("Force Pingable Name");
 		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
 		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
@@ -220,36 +209,14 @@ public class GuildCollections {
 		memberLogThreadCache = new HashMap<>();
 		appealThreadCache = new HashMap<>();
 
-		var settingsDoc = db.guildData.query(guildId.asLong()).firstDocument();
+		var updates = new ArrayList<Bson>();
+		config.read(dbid, db.guildData.query(guildId.asLong()).firstDocument(), updates);
 
-		if (settingsDoc == null || settingsDoc.isEmpty()) {
-			settingsDoc = config.write();
-			settingsDoc.put("_id", guildId.asLong());
-			db.guildData.insert(settingsDoc);
+		if (!updates.isEmpty()) {
+			db.guildData.query(guildId.asLong()).upsert(updates);
 		}
 
-		if (config.read(dbid, settingsDoc)) {
-			var updates = new ArrayList<Bson>();
-
-			for (var setting : config.map.values()) {
-				updates.add(Updates.set(setting.id, setting.toDB()));
-			}
-
-			db.guildData.query(guildId.asLong()).update(updates);
-		}
-
-		readSettings();
-
-		var file = new ConfigFile(paths.config);
-
-		for (var setting : config.map.values()) {
-			file.get(setting.id, setting.toJson());
-		}
-
-		// TODO: Implement this?
-		file.needsSaving();
-		file.save();
-
+		postReadSettings();
 		discordJS = new DiscordJS(this, false);
 	}
 
@@ -292,7 +259,7 @@ public class GuildCollections {
 		return db.app.discordHandler.client;
 	}
 
-	public void readSettings() {
+	public void postReadSettings() {
 		// App.info("Loading settings for " + this + "...");
 
 		//Table settingsTable = new Table("Setting", "Value");
@@ -303,44 +270,6 @@ public class GuildCollections {
 		//}
 		//
 		//settingsTable.print();
-
-		var badWords1 = badWords.get().stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
-
-		if (!badWords1.isEmpty()) {
-			StringBuilder sb = new StringBuilder("\\b(?:");
-
-			for (int i = 0; i < badWords1.size(); i++) {
-				if (i > 0) {
-					sb.append("|");
-				}
-
-				sb.append("(?:");
-
-				String w = badWords1.get(i);
-
-				for (int j = 0; j < w.length(); j++) {
-					char c = Character.toLowerCase(w.charAt(j));
-
-					if (j > 0) {
-						sb.append("[\\s\\W]*");
-					}
-
-					MessageFilter.alias(sb, c);
-				}
-
-				sb.append(')');
-			}
-
-			sb.append(')');
-
-			badWordRegex = Pattern.compile(sb.toString(), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-		} else {
-			badWordRegex = null;
-		}
-
-		for (MessageFilter filter : messageFilters) {
-			filter.compile();
-		}
 
 		updateMacroMap();
 	}
@@ -435,7 +364,7 @@ public class GuildCollections {
 	}
 
 	public JSONObject getChannelJson(Snowflake channel) {
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("id", channel.asString());
 		json.put("name", getChannelName(channel));
 		return json;
@@ -799,7 +728,7 @@ public class GuildCollections {
 						.invitable(false)
 						.reason(user.username() + " Member Channel")
 						.name(user.username() + " - " + user.id().asString())
-						.autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION2)
+						.autoArchiveDuration(type == 0 ? ThreadChannel.AutoArchiveDuration.DURATION1 : ThreadChannel.AutoArchiveDuration.DURATION2)
 						.build()
 				).block();
 

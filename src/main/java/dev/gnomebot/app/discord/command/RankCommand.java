@@ -35,19 +35,19 @@ public class RankCommand extends ApplicationCommands {
 				for (var e : leaderboardJson) {
 					var o = (JSONObject) e;
 
-					if (o.string("id").equals(id)) {
+					if (o.asString("id").equals(id)) {
 						// event.response().createFollowupMessage("**Rank:**  #0   |   **XP:**  0").subscribe();
 
 						EmbedBuilder embed = EmbedBuilder.create();
 						embed.author(m.getDisplayName(), m.getAvatarUrl());
 
-						if (o.number("rank").intValue() == 69) {
+						if (o.asInt("rank") == 69) {
 							embed.inlineField("Rank", "#69, nice");
 						} else {
-							embed.inlineField("Rank", "#" + o.number("rank").intValue());
+							embed.inlineField("Rank", "#" + o.asInt("rank"));
 						}
 
-						embed.inlineField("XP", FormattingUtils.format(o.number("xp").longValue()));
+						embed.inlineField("XP", FormattingUtils.format(o.asLong("xp")));
 
 						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
 							long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();

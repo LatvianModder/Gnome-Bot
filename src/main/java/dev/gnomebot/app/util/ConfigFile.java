@@ -20,7 +20,7 @@ public class ConfigFile {
 	public ConfigFile(Path p) {
 		path = p;
 		needsSaving = false;
-		JSONObject o = new JSONObject();
+		var o = JSONObject.of();
 
 		if (Files.exists(path)) {
 			try {
@@ -73,7 +73,7 @@ public class ConfigFile {
 	}
 
 	public List<String> getStringList(String key) {
-		var e = get(key, new JSONArray());
+		var e = get(key, JSONArray.of());
 
 		if (e instanceof List<?> list) {
 			List<String> s = new ArrayList<>();

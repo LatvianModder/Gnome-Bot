@@ -97,7 +97,7 @@ public class MuteCommand extends ApplicationCommands {
 				.user(user)
 				.source(event.context.sender)
 				.content(reason)
-				.extra("dm", dm)
+				.flags(GnomeAuditLogEntry.Flags.DM, dm)
 		);
 
 		// m.addReaction(DiscordHandler.EMOJI_COMMAND_ERROR).block();
@@ -207,9 +207,9 @@ public class MuteCommand extends ApplicationCommands {
 
 		context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MUTE)
 				.user(m)
-				.source(context.handler.selfId)
+				.source(context.handler.selfId.asLong())
 				.content(reason)
-				.extra("dm", dm)
+				.flags(GnomeAuditLogEntry.Flags.DM, dm)
 		);
 	}
 }

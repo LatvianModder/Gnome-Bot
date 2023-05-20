@@ -2,6 +2,7 @@ package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.config.EnumValue;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
@@ -17,6 +18,7 @@ import dev.gnomebot.app.server.WebServer;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
 import dev.gnomebot.app.server.handler.GuildHandlers;
 import dev.gnomebot.app.server.handler.InfoHandlers;
+import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.server.handler.MiscHandlers;
 import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.server.handler.SpecialHandlers;
@@ -28,15 +30,17 @@ import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.ScheduledTask;
 import dev.gnomebot.app.util.ScheduledTaskCallback;
-import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
 import dev.latvian.apps.webutils.html.RootTag;
 import discord4j.rest.http.client.ClientException;
 
+import java.awt.GraphicsEnvironment;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -130,8 +134,6 @@ public class App implements Runnable {
 		App.info("Loading web server...");
 		webServer = new WebServer(this);
 
-		webServer.add("assets/:filename", MiscHandlers::assets).noAuth().cacheHours(1);
-		webServer.add("api/account/sign-in", MiscHandlers::signIn).noAuth().log();
 		webServer.add("api/account/sign-out", MiscHandlers::signOut).post().log();
 
 		webServer.add("api/info/ping", InfoHandlers::ping).noAuth();
@@ -157,7 +159,6 @@ public class App implements Runnable {
 		webServer.add("api/guild/member/:guild/:member", GuildHandlers::member).member().cacheMinutes(5);
 		webServer.add("api/guild/unpingable-names/:guild", GuildHandlers::unpingableNames).admin();
 		webServer.add("api/guild/audit-log/:guild", GuildHandlers::auditLog).admin().log();
-		webServer.add("api/guild/slur-regex/:guild", GuildHandlers::slurRegex).member().log();
 		webServer.add("api/guild/export-messages/:guild/:member", GuildHandlers::exportMessages).admin().log();
 
 		webServer.add("api/guild/activity/leaderboard/:guild/:days", ActivityHandlers::leaderboard).member().cacheHours(1);
@@ -180,6 +181,8 @@ public class App implements Runnable {
 		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
 		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
 		webServer.add("panel/:guild/scams", ScamWebHandlers::scams).admin();
+
+		webServer.add("minecraft/verify", MinecraftHandlers::verify).noAuth().log();
 
 		webServer.addWS("api/cli", WSHandler.CLI);
 
@@ -220,7 +223,7 @@ public class App implements Runnable {
 			if (wrapper.cacheSeconds == 0) {
 				cells[3].value(Ansi.yellow("no-cache"));
 			} else {
-				cells[3].value(Ansi.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + Utils.prettyTimeString(wrapper.cacheSeconds)));
+				cells[3].value(Ansi.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + TimeUtils.prettyTimeString(wrapper.cacheSeconds)));
 			}
 		}
 
@@ -336,5 +339,16 @@ public class App implements Runnable {
 		for (GuildCollections gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);
 		}
+	}
+
+	public static List<EnumValue> listFonts() {
+		var fonts = new ArrayList<EnumValue>();
+
+		for (var font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
+			fonts.add(new EnumValue(font.getName(), font.getName()));
+		}
+
+		fonts.sort(null);
+		return fonts;
 	}
 }

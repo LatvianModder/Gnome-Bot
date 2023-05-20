@@ -259,6 +259,10 @@ public class ApplicationCommands {
 		return basic(ApplicationCommandOption.Type.STRING, id).suggest(event -> event.context.gc.usernameSuggestions(event));
 	}
 
+	public static ChatInputInteractionBuilder realUser(String id) {
+		return basic(ApplicationCommandOption.Type.USER, id);
+	}
+
 	public static ChatInputInteractionBuilder channel(String id) {
 		return basic(ApplicationCommandOption.Type.CHANNEL, id);
 	}

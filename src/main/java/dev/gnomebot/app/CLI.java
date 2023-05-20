@@ -33,11 +33,12 @@ public class CLI extends Thread {
 					case "restart" -> app.restart();
 					case "reload" -> app.reload();
 					case "threads" -> printThreads();
-					case "port" -> port();
+					case "port" -> port(nonInput);
 					case "stats" -> stats();
 					case "flags" -> flags(input);
 					case "debug" -> debug();
 					case "token" -> App.info(Utils.createToken());
+					case "short_token" -> App.info(Utils.createShortToken());
 					case "leave_guild" -> leaveGuild(Snowflake.of(input[1]));
 					case "remove_modifiers" -> App.info(CharMap.MODIFIER_PATTERN.matcher(nonInput).replaceAll(""));
 					case "colors" -> colors();
@@ -61,20 +62,20 @@ public class CLI extends Thread {
 		}
 	}
 
-	private void port() {
-		// app.userDB.updateMany(Filters.not(Filters.exists("avatar_url")), Updates.set("avatar_url", ""));
-		//app.userDB.updateMany(Filters.empty(), Updates.unset("online"));
-		//app.userDB.updateMany(Filters.ne("name", ""), Updates.rename("name", "custom_name"));
-		// app.logDB.collection().renameCollection(new MongoNamespace("hub_beast_dev", "log"));
+	private void port(String input) throws Exception {
+		for (var doc : app.db.guildData.query()) {
+			var gc = app.db.guild(Snowflake.of(doc.document.getLong("_id")));
+			Ansi.log(gc.guildId.asString() + " " + gc);
 
-		/*
-		for (var role : app.rolesById.values()) {
-			role.flags = RoleFlag.DISCORD.flag;
-			app.roleDB.update(role.filter(), Updates.set("flags", role.flags));
+			for (var config : gc.config.map.values()) {
+				if (config.defaultValue.equals(config.get())) {
+					config.unset();
+					config.save();
+				}
+			}
 		}
-		 */
 
-		Ansi.log("Done");
+		Ansi.log("+ Done");
 	}
 
 	private void stats() {

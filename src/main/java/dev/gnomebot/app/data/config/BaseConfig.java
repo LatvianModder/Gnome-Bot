@@ -2,64 +2,84 @@ package dev.gnomebot.app.data.config;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.latvian.apps.webutils.data.Possible;
+import org.bson.Document;
 
-public abstract class BaseConfig<T> {
+import java.util.List;
+import java.util.function.Supplier;
+
+@SuppressWarnings("unchecked")
+public abstract class BaseConfig<T> implements Supplier<T> {
 	public final GuildCollections gc;
 	public final String id;
 	public final T defaultValue;
-	private T value;
+	private Possible<T> value;
 	public String title;
 	public boolean internal;
+	public Supplier<List<EnumValue>> enumValues;
 
 	public BaseConfig(GuildCollections g, String n, T def) {
 		gc = g;
 		id = n;
 		defaultValue = def;
-		value = defaultValue;
+		value = Possible.absent();
 		title = id.replace("_", " ");
+		internal = false;
 	}
 
-	@SuppressWarnings("unchecked")
 	public <C> C internal() {
 		internal = true;
 		return (C) this;
 	}
 
-	@SuppressWarnings("unchecked")
+
 	public <C> C title(String t) {
 		title = t;
 		return (C) this;
 	}
 
-	public void set(T t) {
-		value = t;
+	public <C> C enumValues(Supplier<List<EnumValue>> e) {
+		enumValues = e;
+		return (C) this;
 	}
 
+	public boolean isSet() {
+		return value.isSet();
+	}
+
+	public void set(T t) {
+		value = Possible.of(t);
+	}
+
+	public void unset() {
+		value = Possible.absent();
+	}
+
+	@Override
 	public T get() {
-		return value;
+		return value.isAbsent() ? defaultValue : value.value();
 	}
 
 	public void save() {
-		gc.db.guildData.query(gc.guildId.asLong()).update(Updates.set(id, toDB()));
-	}
-
-	public Object toDB() {
-		return get();
-	}
-
-	@SuppressWarnings("unchecked")
-	public void fromDB(Object o) {
-		set((T) o);
+		if (isSet()) {
+			gc.db.guildData.query(gc.guildId.asLong()).update(Updates.set(id, write()));
+		} else {
+			gc.db.guildData.query(gc.guildId.asLong()).update(Updates.unset(id));
+		}
 	}
 
 	public abstract String getType();
 
-	public Object toJson() {
+	public abstract String serialize();
+
+	public abstract void deserialize(String value);
+
+	public Object write() {
 		return get();
 	}
 
-	public void fromJson(Object json) {
-		set((T) json);
+	public void read(Document document) {
+		set(document.get(id, defaultValue));
 	}
 
 	@Override

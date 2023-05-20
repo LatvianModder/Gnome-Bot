@@ -99,7 +99,7 @@ public class AuditLogHandlers {
 		for (GnomeAuditLogEntry entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
 			GnomeAuditLogEntry.Type t = entry.getType();
 
-			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && t.has(GnomeAuditLogEntry.Flags.USER) && userCache.get(Snowflake.of(entry.getUser())).map(User::isBot).orElse(false)) {
+			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(Snowflake.of(entry.getUser())).map(User::isBot).orElse(false)) {
 				continue;
 			}
 
@@ -108,7 +108,7 @@ public class AuditLogHandlers {
 			cells[0].value(entry.getDate().toInstant().toString());
 			cells[1].value(t.name);
 
-			if (t.has(GnomeAuditLogEntry.Flags.CHANNEL)) {
+			if (entry.getChannel() != 0L) {
 				Snowflake channelId = Snowflake.of(entry.getChannel());
 
 				if (!availableChannels.contains(channelId)) {
@@ -118,7 +118,7 @@ public class AuditLogHandlers {
 				cells[2].value("#" + request.gc.getChannelName(channelId));
 			}
 
-			if (t.has(GnomeAuditLogEntry.Flags.USER)) {
+			if (entry.getUser() != 0L) {
 				cells[3].value(userCache.getUsername(Snowflake.of(entry.getUser())));
 			}
 
@@ -130,7 +130,7 @@ public class AuditLogHandlers {
 				cells[5].value(entry.getContent());
 			}
 
-			if (t.has(GnomeAuditLogEntry.Flags.SOURCE)) {
+			if (entry.getSource() != 0L) {
 				cells[6].value(userCache.getUsername(Snowflake.of(entry.getSource())));
 			}
 		}

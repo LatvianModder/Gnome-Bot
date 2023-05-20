@@ -86,8 +86,8 @@ public class BanCommand extends ApplicationCommands {
 				.user(user)
 				.source(event.context.sender)
 				.content(reason)
-				.extra("dm", dm)
-				.extra("delete_messages", deleteMessages)
+				.flags(GnomeAuditLogEntry.Flags.DM, dm)
+				.flags(GnomeAuditLogEntry.Flags.DELETED_MESSAGES, deleteMessages)
 		);
 
 		// m.addReaction(DiscordHandler.EMOJI_COMMAND_ERROR).block();

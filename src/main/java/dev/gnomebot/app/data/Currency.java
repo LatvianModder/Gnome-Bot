@@ -32,7 +32,7 @@ public class Currency {
 
 			for (var entry : json.entrySet()) {
 				var o = (JSONObject) entry.getValue();
-				Currency currency = new Currency(o.string("code").toUpperCase(), o.string("name"), o.number("rate").doubleValue());
+				Currency currency = new Currency(o.asString("code").toUpperCase(), o.asString("name"), o.asDouble("rate"));
 				map.put(currency.id, currency);
 			}
 		} catch (Exception ex) {

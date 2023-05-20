@@ -7,6 +7,7 @@ import java.util.List;
 public interface EmbedColor {
 	Color GRAY = Color.of(0x2F3136);
 	Color RED = Color.of(0xF04848);
+	Color YELLOW = Color.of(0xEFC047);
 	Color GREEN = Color.of(0x48F048);
 	Color TEAL = Color.of(0x47EFC8);
 	Color BLUE = Color.of(0x0094FF);

@@ -11,6 +11,7 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
+import dev.latvian.apps.webutils.data.Color4f;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
@@ -94,7 +95,7 @@ public class ActivityHandlers {
 
 		leaderboardEntries.sort(null);
 
-		var array = new JSONArray();
+		var array = JSONArray.of();
 
 		for (LeaderboardEntry entry : leaderboardEntries) {
 			try {
@@ -104,14 +105,13 @@ public class ActivityHandlers {
 					continue;
 				}
 
-				var o = new JSONObject();
+				var o = array.addObject();
 				o.put("id", member.getId().asString());
 				o.put("name", member.getDisplayName());
 				o.put("xp", entry.xp);
 				o.put("rank", array.size() + 1);
 				int col = member.getColor().block().getRGB() & 0xFFFFFF;
 				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
-				array.add(o);
 			} catch (Exception ex) {
 			}
 
@@ -267,7 +267,7 @@ public class ActivityHandlers {
 			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
 		}
 
-		return FileResponse.image(canvas.createImage());
+		return FileResponse.png(canvas.createImage());
 	}
 
 	public static Response rank(ServerRequest request) throws Exception {
@@ -280,7 +280,7 @@ public class ActivityHandlers {
 		long member = Snowflake.of(request.variable("member")).asLong();
 		long channel = request.query("channel").asLong();
 
-		var json = new JSONObject();
+		var json = JSONObject.of();
 
 		json.put("id", Snowflake.asString(member));
 		json.put("name", "Unknown");
@@ -290,8 +290,7 @@ public class ActivityHandlers {
 		// json.addProperty("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 		json.put("color", String.format("#%06X", 0xFFFFFF));
 
-		var fields = new JSONArray();
-		json.put("fields", fields);
+		var fields = json.addArray("fields");
 
 			/*
 			try {
@@ -420,57 +419,50 @@ public class ActivityHandlers {
 
 		int w = weeks;
 
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
 		json.put("name", request.gc.name.get());
 		json.put("weeks", w);
 
-		var infos = new JSONArray();
+		var infos = json.addArray("channels");
 
 		for (var mi : channelList) {
-			var o = new JSONObject();
+			var o = infos.addObject();
 			o.put("index", mi.index);
 			o.put("id", mi.id);
 			o.put("name", mi.name);
-			o.put("color", String.format("#%06X", Utils.getChartColor(mi.index)));
+			o.put("color", String.format("#%06X", Color4f.getChartColor(mi.index).rgb()));
 			o.put("totalMessages", mi.totalMessages);
-			infos.add(o);
 		}
 
-		json.put("channels", infos);
-
-		var messages = new JSONArray();
+		var messages = json.addArray("messages");
 
 		for (int i = 0; i < w; i++) {
 			if (fast) {
-				int[] ai = new int[channelList.size()];
+				var ai = new int[channelList.size()];
 
 				for (MessageInfo mi : channelList) {
 					ai[mi.index] = mi.messages[i];
 				}
 
-				var a = new JSONArray();
+				var a = messages.addArray();
 
 				for (int aii : ai) {
 					a.add(aii);
 				}
-
-				messages.add(a);
 			} else {
-				var o = new JSONObject();
+				var o = messages.addObject();
 
-				for (MessageInfo mi : channelList) {
+				for (var mi : channelList) {
 					if (mi.messages[i] > 0) {
 						o.put(mi.name, mi.messages[i]);
 					}
 				}
 
 				o.put("_week_", i);
-				messages.add(o);
 			}
 		}
 
-		json.put("messages", messages);
 		return JSONResponse.of(json);
 	}
 
@@ -539,26 +531,23 @@ public class ActivityHandlers {
 
 		int w = weeks;
 
-		var json = new JSONObject();
+		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
 		json.put("name", request.gc.name.get());
 		json.put("weeks", w);
 
-		var infos = new JSONArray();
+		var infos = json.addArray("members");
 
 		for (var mi : memberList) {
-			var o = new JSONObject();
+			var o = infos.addObject();
 			o.put("index", mi.index);
 			o.put("id", mi.id);
 			o.put("name", mi.name);
-			o.put("color", String.format("#%06X", Utils.getChartColor(mi.index)));
+			o.put("color", String.format("#%06X", Color4f.getChartColor(mi.index).rgb()));
 			o.put("totalMessages", mi.totalMessages);
-			infos.add(o);
 		}
 
-		json.put("members", infos);
-
-		var messages = new JSONArray();
+		var messages = json.addArray("messages");
 
 		for (int i = 0; i < w; i++) {
 			if (fast) {
@@ -568,14 +557,12 @@ public class ActivityHandlers {
 					ai[mi.index] = mi.messages[i];
 				}
 
-				var a = new JSONArray();
+				var a = messages.addArray();
 				for (int aii : ai) {
 					a.add(aii);
 				}
-
-				messages.add(a);
 			} else {
-				var o = new JSONObject();
+				var o = messages.addObject();
 
 				for (MessageInfo mi : memberList) {
 					if (mi.messages[i] > 0) {
@@ -584,11 +571,9 @@ public class ActivityHandlers {
 				}
 
 				o.put("_week_", i);
-				messages.add(o);
 			}
 		}
 
-		json.put("messages", messages);
 		return JSONResponse.of(json);
 	}
 
@@ -746,6 +731,6 @@ public class ActivityHandlers {
 			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
 		}
 
-		return FileResponse.image(canvas.createImage());
+		return FileResponse.png(canvas.createImage());
 	}
 }

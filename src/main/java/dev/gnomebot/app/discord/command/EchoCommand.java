@@ -25,7 +25,7 @@ public class EchoCommand extends ApplicationCommands {
 		event.context.reply(message);
 
 		event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.ECHO)
-				.channel(event.context.channelInfo.id)
+				.channel(event.context.channelInfo.id.asLong())
 				.user(event.context.sender)
 				.content(message)
 		);

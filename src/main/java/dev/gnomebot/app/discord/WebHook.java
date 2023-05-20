@@ -94,7 +94,7 @@ public class WebHook implements PingDestination {
 					.block();
 
 			if (result.containsKey("id")) {
-				return Snowflake.of(result.string("id"));
+				return Snowflake.of(result.asString("id"));
 			}
 
 			return Utils.NO_SNOWFLAKE;

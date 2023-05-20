@@ -7,9 +7,25 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RoleConfig extends SnowflakeConfig {
 	public RoleConfig(GuildCollections gc, String name) {
 		super(gc, name);
+		enumValues(this::getEnumValues);
+	}
+
+	private List<EnumValue> getEnumValues() {
+		var list = new ArrayList<EnumValue>();
+
+		for (var role : gc.getGuild().getRoles().toIterable()) {
+			if (!role.isEveryone()) {
+				list.add(new EnumValue(role.getId().asString(), "@" + role.getName()));
+			}
+		}
+
+		return list;
 	}
 
 	@Override

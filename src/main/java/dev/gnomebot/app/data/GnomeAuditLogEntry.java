@@ -1,14 +1,13 @@
 package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.util.MapWrapper;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.Channel;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,75 +17,75 @@ import java.util.Map;
  */
 public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	public interface Flags {
-		int EXPIRES = 1;
-		int CHANNEL = 2;
-		int MESSAGE = 4;
-		int USER = 8;
-		int SOURCE = 16;
-		int CONTENT = 32;
-		int OLD_CONTENT = 64;
-		int EXTRA = 128;
-		int REVOCABLE = 256;
-		int BOT_USER_IGNORED = 512;
-
-		int CHANNEL_MESSAGE_USER = CHANNEL | MESSAGE | USER;
-		int CHANNEL_MESSAGE_USER_CONTENT = CHANNEL_MESSAGE_USER | CONTENT;
+		int LEVEL_01 = 1 << 0;
+		int LEVEL_23 = 1 << 1;
+		int EXPIRES = 1 << 2;
+		int CONTENT = 1 << 3;
+		int OLD_CONTENT = 1 << 4;
+		int EXTRA = 1 << 5;
+		int REVOCABLE = 1 << 6;
+		int BOT_USER_IGNORED = 1 << 7;
+		int DM = 1 << 8;
+		int LOCKDOWN = 1 << 9;
+		int DELETED_MESSAGES = 1 << 10;
 	}
 
 	public enum Type {
-		MESSAGE_DELETED("message_deleted", 0, Flags.CHANNEL_MESSAGE_USER | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
-		MESSAGE_EDITED("message_edited", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
-		REACTION_ADDED("reaction_added", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.BOT_USER_IGNORED),
-		REACTION_REMOVED("reaction_removed", 0, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.BOT_USER_IGNORED),
-		JOIN_VOICE("join_voice", 0, Flags.CHANNEL | Flags.USER),
-		LEAVE_VOICE("leave_voice", 0, Flags.CHANNEL | Flags.USER),
+		MESSAGE_DELETED("message_deleted", 0, Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
+		MESSAGE_EDITED("message_edited", 0, Flags.CONTENT | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
+		REACTION_ADDED("reaction_added", 0, Flags.CONTENT | Flags.BOT_USER_IGNORED),
+		REACTION_REMOVED("reaction_removed", 0, Flags.CONTENT | Flags.BOT_USER_IGNORED),
+		JOIN_VOICE("join_voice", 0, 0),
+		LEAVE_VOICE("leave_voice", 0, 0),
 
-		JOIN("join", 1, Flags.USER | Flags.EXTRA),
-		LEAVE("leave", 1, Flags.USER | Flags.CONTENT | Flags.EXTRA),
-		COMMAND("command", 1, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT),
-		ECHO("echo", 1, Flags.CHANNEL | Flags.USER | Flags.CONTENT),
+		JOIN("join", 1, Flags.EXTRA),
+		LEAVE("leave", 1, Flags.CONTENT | Flags.EXTRA),
+		COMMAND("command", 1, Flags.OLD_CONTENT),
+		ECHO("echo", 1, Flags.CONTENT),
 
-		DISCORD_INVITE("discord_invite", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		FORCED_NAME_UPDATE("forced_name_update", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT),
-		IP_ADDRESS("ip_address", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		URL_SHORTENER("url_shortener", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		SCAM("scam", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		BAD_WORD("bad_word", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT),
-		ADMIN_PING("admin_ping", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.OLD_CONTENT),
-		MESSAGE_REPORT("message_report", 2, Flags.CHANNEL_MESSAGE_USER_CONTENT | Flags.SOURCE),
+		FORCED_NAME_UPDATE("forced_name_update", 1, Flags.OLD_CONTENT),
+		ADMIN_PING("admin_ping", 2, 0),
+		DISCORD_INVITE("discord_invite", 2, Flags.REVOCABLE),
+		IP_ADDRESS("ip_address", 2, 0),
+		URL_SHORTENER("url_shortener", 2, 0),
+		SCAM("scam", 2, 0),
+		// BAD_WORD("bad_word", 2, 0),
+		MESSAGE_REPORT("message_report", 2, 0),
 
-		CUSTOM("custom", 3, Flags.SOURCE | Flags.CONTENT),
-		BAN("ban", 3, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
-		UNBAN("unban", 3, Flags.USER),
-		KICK("kick", 3, Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
-		WARN("warn", 3, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
-		MUTE("mute", 3, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT | Flags.EXTRA),
-		NOTE("note", 2, Flags.REVOCABLE | Flags.USER | Flags.SOURCE | Flags.CONTENT),
-		LOCKDOWN_ENABLED("lockdown_enabled", 3, Flags.SOURCE | Flags.CONTENT),
-		LOCKDOWN_DISABLED("lockdown_disabled", 3, Flags.SOURCE),
+		CUSTOM("custom", 3, Flags.CONTENT),
+		BAN("ban", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		UNBAN("unban", 3, 0),
+		KICK("kick", 3, Flags.CONTENT | Flags.EXTRA),
+		WARN("warn", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		MUTE("mute", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		NOTE("note", 2, Flags.REVOCABLE | Flags.CONTENT),
+		LOCKDOWN_ENABLED("lockdown_enabled", 3, Flags.CONTENT),
+		LOCKDOWN_DISABLED("lockdown_disabled", 3, 0),
 
 		;
 
 		public static final Map<String, Type> NAME_MAP = new HashMap<>();
 
 		static {
-			for (Type type : values()) {
+			for (var type : values()) {
 				NAME_MAP.put(type.name, type);
 			}
 		}
 
 		public final String name;
-		public final int level;
 		public final int flags;
 
 		Type(String n, int l, int f) {
 			name = n;
-			level = l;
-			flags = f | (level == 0 ? Flags.EXPIRES : 0);
+			flags = l | f | (l == 0 ? Flags.EXPIRES : 0);
 		}
 
 		public boolean has(int f) {
 			return (flags & f) != 0;
+		}
+
+		public int level() {
+			return flags & 3;
 		}
 	}
 
@@ -95,8 +94,8 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	}
 
 	public static class Builder {
-		private Instant timestamp;
 		public final Type type;
+		private int flags;
 		private long channel = 0L;
 		private long message = 0L;
 		private long user = 0L;
@@ -107,47 +106,38 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 
 		public Builder(Type t) {
 			type = t;
+			flags = type.flags;
 		}
 
-		public Builder timestamp(Instant in) {
-			timestamp = in;
-			return this;
-		}
-
-		public Builder channel(Snowflake l) {
-			channel = l.asLong();
+		public Builder channel(long l) {
+			channel = l;
 			return this;
 		}
 
 		public Builder channel(Channel channel) {
-			return channel(channel.getId());
+			return channel(channel.getId().asLong());
 		}
 
-		public Builder message(Snowflake l) {
-			message = l.asLong();
-
-			if (timestamp == null) {
-				timestamp = l.getTimestamp();
-			}
-
+		public Builder message(long l) {
+			message = l;
 			return this;
 		}
 
 		public Builder message(Message message) {
-			return message(message.getId());
+			return message(message.getId().asLong());
 		}
 
-		public Builder user(Snowflake l) {
-			user = l.asLong();
+		public Builder user(long l) {
+			user = l;
 			return this;
 		}
 
 		public Builder user(User user) {
-			return user(user.getId());
+			return user(user.getId().asLong());
 		}
 
-		public Builder source(Snowflake l) {
-			source = l.asLong();
+		public Builder source(long l) {
+			source = l;
 			return this;
 		}
 
@@ -174,18 +164,23 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 			return this;
 		}
 
-		public Document build() {
-			if (timestamp == null) {
-				timestamp = Instant.now();
-			}
+		public Builder flags(int f) {
+			flags |= f;
+			return this;
+		}
 
-			Document doc = new Document();
+		public Builder flags(int flags, boolean predicate) {
+			return predicate ? flags(flags) : this;
+		}
+
+		public Document build() {
+			var id = new ObjectId();
+			var doc = new Document("_id", id);
 			doc.put("type", type.name);
-			doc.put("timestamp", Date.from(timestamp));
-			doc.put("level", type.level);
+			doc.put("flags", flags);
 
 			if (type.has(Flags.EXPIRES)) {
-				doc.put("expires", Date.from(timestamp));
+				doc.put("expires", id.getDate());
 			}
 
 			if (channel != 0L) {
@@ -224,13 +219,12 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		super(c, d);
 	}
 
-	@Override
-	public Date getDate() {
-		return document.getDate("timestamp");
-	}
-
 	public Type getType() {
 		return Type.NAME_MAP.getOrDefault(document.getString("type"), Type.CUSTOM);
+	}
+
+	public int getFlags() {
+		return document.getInt("flags");
 	}
 
 	@Nullable

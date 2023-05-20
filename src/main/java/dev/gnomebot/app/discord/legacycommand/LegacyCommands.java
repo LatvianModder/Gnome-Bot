@@ -82,7 +82,7 @@ public final class LegacyCommands {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to use this command!").reaction(Emojis.POLICE_CAR);
 		} else {
 			context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.COMMAND)
-					.channel(context.channelInfo.id)
+					.channel(context.channelInfo.id.asLong())
 					.message(context.message)
 					.user(context.sender)
 					.oldContent(command.name)

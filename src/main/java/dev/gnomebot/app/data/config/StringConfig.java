@@ -12,6 +12,16 @@ public class StringConfig extends BaseConfig<String> {
 		return "string";
 	}
 
+	@Override
+	public String serialize() {
+		return get();
+	}
+
+	@Override
+	public void deserialize(String value) {
+		set(value);
+	}
+
 	public boolean isEmpty() {
 		return get().isEmpty();
 	}

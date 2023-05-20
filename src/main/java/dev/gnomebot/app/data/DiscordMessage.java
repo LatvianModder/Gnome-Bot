@@ -27,7 +27,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	public static final long FLAG_MENTIONS_BOT = 1L << 8L;
 	public static final long FLAG_EDITED = 1L << 9L;
 	//public static final long FLAG_DELETED = 1L << 10L;
-	public static final long FLAG_BAD_WORD = 1L << 11L;
+	// public static final long FLAG_BAD_WORD = 1L << 11L;
 	public static final long FLAG_TTS = 1L << 19L;
 	public static final long FLAG_MULTILINE = 1L << 20L;
 	public static final long FLAG_IP = 1L << 21L;
@@ -108,9 +108,9 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 		if (auditLog) {
 			gc.auditLog(GnomeAuditLogEntry.builder(deleted ? GnomeAuditLogEntry.Type.MESSAGE_DELETED : GnomeAuditLogEntry.Type.MESSAGE_EDITED)
-					.channel(Snowflake.of(getChannelID()))
-					.message(Snowflake.of(getUID()))
-					.user(Snowflake.of(getUserID()))
+					.channel(getChannelID())
+					.message(getUID())
+					.user(getUserID())
 					.oldContent(getContent())
 					.content(newContent)
 					.extra("flags", flags1 == 0L ? null : flags1)

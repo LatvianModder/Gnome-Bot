@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberHandler;
@@ -66,10 +65,6 @@ public class LockdownCommand extends ApplicationCommands {
 				list.forEach(m -> {
 					if (event.context.gc.logLeavingChannel.isSet()) {
 						MemberHandler.lockdownKicks.add(m.getId());
-					}
-
-					if (!event.context.gc.lockdownModeText.isEmpty()) {
-						DM.send(event.context.handler, m, event.context.gc.lockdownModeText.get(), false);
 					}
 
 					m.kick("Lockdown Mode").subscribe();

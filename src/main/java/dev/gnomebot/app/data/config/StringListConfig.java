@@ -1,10 +1,9 @@
 package dev.gnomebot.app.data.config;
 
 import dev.gnomebot.app.data.GuildCollections;
+import org.bson.Document;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -19,19 +18,18 @@ public class StringListConfig extends BaseConfig<List<String>> {
 	}
 
 	@Override
-	public void fromDB(Object o) {
-		set(new ArrayList<>((Collection<String>) o));
+	public String serialize() {
+		return get().isEmpty() ? "" : String.join("\n", get());
 	}
 
 	@Override
-	public String toJson() {
-		return String.join(" | ", get());
+	public void deserialize(String value) {
+		set(value.isEmpty() ? List.of() : Arrays.asList(value.split("\n")));
 	}
 
 	@Override
-	public void fromJson(Object json) {
-		String s = String.valueOf(json).trim();
-		set(s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(" \\| ")));
+	public void read(Document document) {
+		set(document.getList(id, String.class, Collections.emptyList()));
 	}
 
 	public boolean isEmpty() {

@@ -21,16 +21,14 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		}
 	}
 
-	public final GuildCollections gc;
 	public final Type type;
 	public final long time;
 	public final long channel;
 	public final long user;
 	public final String content;
 
-	public ScheduledTask(GuildCollections g, WrappedCollection<ScheduledTask> c, MapWrapper d) {
+	public ScheduledTask(WrappedCollection<ScheduledTask> c, MapWrapper d) {
 		super(c, d);
-		gc = g;
 		type = Type.MAP.getOrDefault(d.getString("type"), Type.UNKNOWN);
 		time = d.getLong("time");
 		channel = d.getLong("channel");

@@ -11,6 +11,7 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.TimeUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.guild.BanEvent;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
@@ -58,8 +59,8 @@ public class MemberHandler {
 				).block();
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.FORCED_NAME_UPDATE)
-						.channel(Snowflake.of(discordMessage.getChannelID()))
-						.message(Snowflake.of(discordMessage.getUID()))
+						.channel(discordMessage.getChannelID())
+						.message(discordMessage.getUID())
 						.user(member)
 						.oldContent(oldName)
 						.content(newName)
@@ -123,17 +124,13 @@ public class MemberHandler {
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.JOIN)
 				.user(member)
-				.extra("lockdown_active", gc.lockdownMode.get() ? true : null)
+				.flags(GnomeAuditLogEntry.Flags.LOCKDOWN, gc.lockdownMode.get())
 				.extra("account_age", accountAge)
 		);
 
 		if (gc.lockdownMode.get()) {
 			if (gc.logLeavingChannel.isSet()) {
 				lockdownKicks.add(member.getId());
-			}
-
-			if (!gc.lockdownModeText.isEmpty()) {
-				DM.send(handler, member, gc.lockdownModeText.get(), false);
 			}
 
 			member.kick("Lockdown Mode").subscribe();
@@ -188,8 +185,8 @@ public class MemberHandler {
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LEAVE)
 				.user(event.getUser())
-				.content(Utils.prettyTimeString(mems))
-				.extra("lockdown_active", gc.lockdownMode.get() ? true : null)
+				.content(TimeUtils.prettyTimeString(mems))
+				.flags(GnomeAuditLogEntry.Flags.LOCKDOWN, gc.lockdownMode.get())
 				.extra("member_for", mems)
 		);
 
@@ -213,7 +210,7 @@ public class MemberHandler {
 				sb.append(") has left the server after ");
 			}
 
-			sb.append(Utils.prettyTimeString(mems));
+			sb.append(TimeUtils.prettyTimeString(mems));
 			sb.append(" of membership");
 
 			gc.logLeavingChannel.messageChannel().ifPresent(c -> c.createMessage(sb.toString()).subscribe());
