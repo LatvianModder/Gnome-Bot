@@ -10,6 +10,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.ThreadChannel;
 
+import java.time.Duration;
 import java.util.Scanner;
 
 public class CLI extends Thread {
@@ -46,6 +47,9 @@ public class CLI extends Thread {
 					case "guilds" -> printGuilds();
 					case "tt1" -> testThread1(Snowflake.of(input[1]));
 					case "tt2" -> testThread2(nonInput);
+					case "scheduled" -> app.printScheduled();
+					case "close_thread" -> closeThread(Snowflake.of(input[1]), Integer.parseInt(input[2]));
+					case "guild_config" -> guildConfig(Snowflake.of(input[1]), input[2], input[3]);
 					default -> Ansi.log("Unknown command: " + input[0]);
 				}
 			} catch (IllegalArgumentException ex) {
@@ -63,18 +67,6 @@ public class CLI extends Thread {
 	}
 
 	private void port(String input) throws Exception {
-		for (var doc : app.db.guildData.query()) {
-			var gc = app.db.guild(Snowflake.of(doc.document.getLong("_id")));
-			Ansi.log(gc.guildId.asString() + " " + gc);
-
-			for (var config : gc.config.map.values()) {
-				if (config.defaultValue.equals(config.get())) {
-					config.unset();
-					config.save();
-				}
-			}
-		}
-
 		Ansi.log("+ Done");
 	}
 
@@ -169,5 +161,20 @@ public class CLI extends Thread {
 
 	private void testThread2(String msg) {
 		threadChannel.createMessage(msg).subscribe();
+	}
+
+	private void closeThread(Snowflake threadId, int seconds) {
+		// close_thread 1111610188584198145 60
+
+		var channel = app.discordHandler.client.getChannelById(threadId).cast(ThreadChannel.class).block();
+		var gc = app.db.guild(channel.getGuildId());
+		gc.closeThread(threadId, Duration.ofSeconds(seconds));
+	}
+
+	private void guildConfig(Snowflake guildId, String config, String value) {
+		// guild_config 719235642579746827 global_xp 10
+		var c = app.db.guild(guildId).config.map.get(config);
+		c.deserialize(value);
+		c.save();
 	}
 }

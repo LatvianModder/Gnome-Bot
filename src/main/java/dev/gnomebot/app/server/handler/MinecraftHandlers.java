@@ -2,6 +2,7 @@ package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
+import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.server.ServerRequest;
@@ -38,6 +39,7 @@ public class MinecraftHandlers {
 			.build();
 
 	private static final class VerifyData implements Runnable {
+		private final GuildCollections gc;
 		private final String token;
 		private final User user;
 		private final Instant expires;
@@ -45,7 +47,8 @@ public class MinecraftHandlers {
 		private ComponentEventWrapper event;
 		private int stage;
 
-		public VerifyData(String token, User user) {
+		public VerifyData(GuildCollections gc, String token, User user) {
+			this.gc = gc;
 			this.token = token;
 			this.user = user;
 			this.expires = Instant.now().plusSeconds(900);
@@ -94,6 +97,8 @@ public class MinecraftHandlers {
 							.thumbnail("https://crafatar.com/renders/head/" + uuid + "?overlay=true")
 							.toEmbedCreateSpec()
 			)).subscribe();
+
+			gc.unmute(user.getId(), 0L, "Verified Minecraft");
 		}
 
 		public void fail(String error) {
@@ -159,7 +164,7 @@ public class MinecraftHandlers {
 			}
 		}
 
-		var data = new VerifyData(Utils.createShortToken(), event.context.sender);
+		var data = new VerifyData(event.context.gc, Utils.createShortToken(), event.context.sender);
 		data.message = event.context.channelInfo.createMessage(data.waiting()).block();
 		data.event = event;
 

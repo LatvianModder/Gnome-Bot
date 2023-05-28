@@ -1,6 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.latvian.apps.webutils.json.JSONSerializable;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;
 
@@ -131,5 +132,19 @@ public class MapWrapper implements JSONSerializable {
 	@Override
 	public String toString() {
 		return map.toString();
+	}
+
+	public Document toDocument() {
+		if (map instanceof Document d) {
+			return d;
+		}
+
+		var doc = new Document();
+
+		for (var entry : map.entrySet()) {
+			doc.append(entry.getKey(), entry.getValue());
+		}
+
+		return doc;
 	}
 }

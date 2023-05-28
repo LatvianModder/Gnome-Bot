@@ -2,7 +2,6 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.EmbedBuilder;
-import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -31,17 +30,12 @@ import java.util.function.Function;
 /**
  * @author LatvianModder
  */
-public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
+public final class ChannelInfo {
 	public final GuildCollections gc;
 	public final Snowflake id;
-	public String name;
+	public final ChannelSettings settings;
+	public String threadName;
 	public ChannelInfo threadParent;
-
-	public long xp;
-	public long totalMessages;
-	public long totalXp;
-	public boolean autoThread;
-	public boolean autoUpvote;
 
 	private final LazyOptional<RestChannel> rest;
 	private final LazyOptional<ChannelData> channelData;
@@ -49,17 +43,12 @@ public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	private final LazyOptional<WebHook> webHook;
 	private Map<Snowflake, PermissionSet> cachedPermissions;
 
-	public ChannelInfo(GuildCollections g, WrappedCollection<ChannelInfo> c, MapWrapper d, @Nullable Snowflake _id) {
-		super(c, d);
+	public ChannelInfo(GuildCollections g, Snowflake _id, ChannelSettings s) {
 		gc = g;
-		id = _id == null ? Snowflake.of(document.getLong("_id")) : _id;
-		name = "";
+		id = _id;
+		settings = s;
+		threadName = null;
 		threadParent = null;
-		xp = document.getLong("xp");
-		totalMessages = document.getLong("total_messages");
-		totalXp = document.getLong("total_xp");
-		autoThread = document.getBoolean("auto_thread");
-		autoUpvote = document.getBoolean("auto_upvote");
 
 		rest = LazyOptional.of(() -> RestChannel.create(gc.getClient().getRestClient(), id));
 		channelData = LazyOptional.of(() -> gc.getClient().getRestClient().getChannelService().getChannel(id.asLong()).block());
@@ -99,14 +88,9 @@ public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	}
 
 	public ChannelInfo thread(Snowflake threadId, String name) {
-		ChannelInfo ci = new ChannelInfo(gc, collection, MapWrapper.EMPTY, threadId);
+		ChannelInfo ci = new ChannelInfo(gc, threadId, settings);
 		ci.threadParent = this;
-		ci.name = name;
-		ci.xp = xp; // TODO: Add config for thread xp but for now just re-use parent channel xp
-		ci.totalMessages = 0L;
-		ci.totalXp = 0L;
-		ci.autoThread = false;
-		ci.autoUpvote = false;
+		ci.threadName = name;
 		return ci;
 	}
 
@@ -114,11 +98,11 @@ public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		return threadParent == null ? id : threadParent.getTopId();
 	}
 
-	public void updateFrom(GuildChannel ch) {
-		name = ch.getName();
-
-		if (!document.getString("name", "").equals(name)) {
-			update("name", name);
+	public int getXp() {
+		if (threadParent != null) {
+			return settings.threadXp >= 0 ? settings.threadXp : threadParent.getXp();
+		} else {
+			return settings.xp >= 0 ? settings.xp : gc.globalXp.get();
 		}
 	}
 
@@ -171,23 +155,8 @@ public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 		return createMessage(MessageBuilder.create(embed));
 	}
 
-	@Override
 	public String getName() {
-		if (name.isEmpty()) {
-			name = document.getString("name", "");
-
-			if (name.isEmpty()) {
-				ChannelData data = getChannelData();
-
-				if (data != null) {
-					name = data.name().toOptional().orElse("deleted-channel");
-				} else {
-					name = "deleted-channel";
-				}
-			}
-		}
-
-		return name;
+		return threadName == null ? settings.getName() : threadName;
 	}
 
 	@Override
@@ -206,7 +175,6 @@ public final class ChannelInfo extends WrappedDocument<ChannelInfo> {
 	}
 
 	public void refreshCache() {
-		name = "";
 		rest.invalidate();
 		channelData.invalidate();
 		topLevelChannel.invalidate();

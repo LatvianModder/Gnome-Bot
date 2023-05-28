@@ -5,7 +5,6 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.config.ChannelConfig;
@@ -85,7 +84,6 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -239,14 +237,6 @@ public class DiscordHandler {
 		gc.guildUpdated(event.getGuild());
 
 		// App.info("Guild created: " + event.getGuild().getName());
-
-		for (DiscordMember member : gc.members.query().exists("muted").projectionFields("_id", "muted")) {
-			Date muted = member.getMuted();
-
-			if (muted != null) {
-				gc.unmute(Snowflake.of(member.getUID()), (muted.getTime() - System.currentTimeMillis()) / 1000L);
-			}
-		}
 	}
 
 	private void guildUpdated(GuildUpdateEvent event) {

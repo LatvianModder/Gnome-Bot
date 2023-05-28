@@ -14,8 +14,27 @@ public class DecideCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
-		String s = event.get("text").asString().toLowerCase();
-		long l = (s.isEmpty() ? System.currentTimeMillis() : s.replaceAll("\\W", "").hashCode()) & 1L;
-		event.respond(l == 1L ? Emojis.GNOME_HAHA_YES.asFormat() : Emojis.GNOME_HAHA_NO.asFormat());
+		var s = event.get("text").asString().replaceAll("\\W", "").toLowerCase();
+		var l = (s.isEmpty() ? System.currentTimeMillis() : s.replaceAll("\\W", "").hashCode()) & 1L;
+
+		var sb = new StringBuilder();
+
+		if (!s.isEmpty()) {
+			sb.append("### ");
+			sb.append(event.get("text").asString());
+			sb.append('\n');
+		}
+
+		sb.append("# ");
+
+		if (l == 1L) {
+			sb.append("Yes ");
+			sb.append(Emojis.GNOME_HAHA_YES.asFormat());
+		} else {
+			sb.append("No ");
+			sb.append(Emojis.GNOME_HAHA_NO.asFormat());
+		}
+
+		event.respond(sb.toString());
 	}
 }

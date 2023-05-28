@@ -2,6 +2,7 @@ package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.data.config.EnumValue;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
@@ -28,20 +29,22 @@ import dev.gnomebot.app.server.handler.panel.ScamWebHandlers;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
-import dev.gnomebot.app.util.ScheduledTask;
-import dev.gnomebot.app.util.ScheduledTaskCallback;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
 import dev.latvian.apps.webutils.html.RootTag;
+import discord4j.common.util.Snowflake;
 import discord4j.rest.http.client.ClientException;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.GraphicsEnvironment;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Predicate;
 
 /**
  * @author LatvianModder
@@ -89,10 +92,8 @@ public class App implements Runnable {
 	}
 
 	public boolean running = true;
-	public ArrayList<BlockingTask> blockingTasks = new ArrayList<>();
-	public final Object blockingTaskLock = new Object();
-	public ArrayList<ScheduledTask> scheduledTasks = new ArrayList<>();
-	public final Object scheduledTaskLock = new Object();
+	public ConcurrentLinkedDeque<BlockingTask> blockingTasks = new ConcurrentLinkedDeque<>();
+	public ConcurrentLinkedDeque<ScheduledTask> scheduledTasks = new ConcurrentLinkedDeque<>();
 
 	public CLI cli;
 	public Databases db;
@@ -112,7 +113,6 @@ public class App implements Runnable {
 		RootTag.DEFAULT = GnomeRootTag.DEFAULT;
 
 		running = true;
-		blockingTasks = new ArrayList<>();
 
 		App.info("Loading char map...");
 		CharMap.load();
@@ -241,36 +241,33 @@ public class App implements Runnable {
 			ex.printStackTrace();
 		}
 
-		success("Server restarted!");
-		// queueScheduledTask(System.currentTimeMillis() + 3000L, task -> info("Test 1!"));
-		// queueScheduledTask(System.currentTimeMillis() + 4000L, task -> info("Test 2!"));
-		// queueScheduledTask(System.currentTimeMillis() + 5000L, task -> info("Test 3!"));
+		printScheduled();
 
+		success("Server restarted!");
 		new WatchdogThread(this).start();
 
 		try {
 			while (running) {
-				synchronized (blockingTaskLock) {
-					if (!blockingTasks.isEmpty()) {
-						BlockingTask task = blockingTasks.get(0);
-						task.callback.run(task);
-						blockingTasks.remove(0);
-					}
+				if (!blockingTasks.isEmpty()) {
+					var task = blockingTasks.removeFirst();
+					task.callback.run(task);
 				}
 
-				synchronized (scheduledTaskLock) {
-					if (!scheduledTasks.isEmpty()) {
-						long now = System.currentTimeMillis();
+				if (!scheduledTasks.isEmpty()) {
+					long now = System.currentTimeMillis();
 
-						Iterator<ScheduledTask> itr = scheduledTasks.iterator();
+					var itr = scheduledTasks.iterator();
 
-						while (itr.hasNext()) {
-							ScheduledTask t = itr.next();
+					while (itr.hasNext()) {
+						var t = itr.next();
 
-							if (now >= t.end) {
-								t.callback.run(t);
+						try {
+							if (t.run(now)) {
 								itr.remove();
 							}
+						} catch (Exception ex) {
+							ex.printStackTrace();
+							itr.remove();
 						}
 					}
 				}
@@ -291,20 +288,31 @@ public class App implements Runnable {
 
 	public void queueBlockingTask(BlockingTaskCallback task) {
 		if (running) {
-			synchronized (blockingTaskLock) {
-				blockingTasks.add(new BlockingTask(task));
-				task.afterAddedBlocking();
-			}
+			blockingTasks.add(new BlockingTask(task));
+			task.afterAddedBlocking();
 		}
 	}
 
-	public void queueScheduledTask(long end, ScheduledTaskCallback task) {
-		if (running) {
-			synchronized (scheduledTaskLock) {
-				scheduledTasks.add(new ScheduledTask(task, end));
-				task.afterAddedScheduled();
+	@Nullable
+	public ScheduledTask findScheduledTask(Predicate<ScheduledTask> predicate) {
+		for (var task : scheduledTasks) {
+			if (predicate.test(task)) {
+				return task;
 			}
 		}
+
+		return null;
+	}
+
+	@Nullable
+	public ScheduledTask findScheduledGuildTask(Snowflake guildId, Predicate<ScheduledTask> predicate) {
+		for (var task : scheduledTasks) {
+			if (task.guildId.asLong() == guildId.asLong() && predicate.test(task)) {
+				return task;
+			}
+		}
+
+		return null;
 	}
 
 	public void restart() {
@@ -318,7 +326,7 @@ public class App implements Runnable {
 		App.info("Stopping server...");
 		ReactionHandler.shutdown();
 
-		for (BlockingTask task : blockingTasks) {
+		for (var task : blockingTasks) {
 			task.cancelled = true;
 		}
 
@@ -350,5 +358,26 @@ public class App implements Runnable {
 
 		fonts.sort(null);
 		return fonts;
+	}
+
+	public void schedule(Duration timer, String type, long guild, long channel, long user, String content) {
+		schedule(System.currentTimeMillis() + timer.toMillis(), type, guild, channel, user, content);
+	}
+
+	public void schedule(long end, String type, long guild, long channel, long user, String content) {
+		var task = new ScheduledTask(db.scheduledTasks, type, end, guild, channel, user, content);
+		db.scheduledTasks.insert(task.document.toDocument());
+
+		if (running) {
+			scheduledTasks.add(task);
+		}
+	}
+
+	public void printScheduled() {
+		App.info("Scheduled tasks [" + scheduledTasks.size() + "]");
+
+		for (var task : scheduledTasks) {
+			App.info(Ansi.of("- ").append(task.toAnsi()));
+		}
 	}
 }

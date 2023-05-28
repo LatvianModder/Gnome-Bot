@@ -46,6 +46,9 @@ public class Databases {
 	public final WrappedCollection<Paste> pastes;
 	public final WrappedCollection<InteractionDocument> interactions;
 	public final WrappedCollection<WebhookExecuteExtra> webhookExecuteExtra;
+	public final WrappedCollection<ScheduledTask> scheduledTasks;
+	public final WrappedCollection<DiscordPoll> polls;
+	public final WrappedCollection<ChannelSettings> channelSettings;
 
 	public WebToken selfToken;
 
@@ -67,6 +70,13 @@ public class Databases {
 		pastes = create("pastes", Paste::new);
 		interactions = create("interactions", InteractionDocument::new);
 		webhookExecuteExtra = create("webhook_execute_info", WebhookExecuteExtra::new);
+		scheduledTasks = create("scheduled_tasks", ScheduledTask::new);
+		polls = create("polls", DiscordPoll::new);
+		channelSettings = create("channel_settings", ChannelSettings::new);
+
+		for (var task : scheduledTasks.query()) {
+			app.scheduledTasks.add(task);
+		}
 	}
 
 	@Nullable

@@ -410,7 +410,7 @@ public class InteractionHandler {
 				event.respond("Banned <@" + userId.asString() + ">");
 			}
 			case "unmute" -> {
-				event.context.gc.unmute(userId, 0L);
+				event.context.gc.unmute(userId, 0L, "");
 				event.respond("Unmuted <@" + userId.asString() + ">");
 			}
 			default -> event.respond("This action cannot be undone!");

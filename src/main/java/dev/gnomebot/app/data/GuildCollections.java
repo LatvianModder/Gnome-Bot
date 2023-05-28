@@ -27,7 +27,6 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.RecentUser;
-import dev.gnomebot.app.util.UnmuteTask;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.json.JSONObject;
@@ -53,6 +52,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -85,16 +85,18 @@ public class GuildCollections {
 	public final WrappedCollection<DiscordPoll> polls;
 	public final WrappedCollection<DiscordMessageCount> messageCount;
 	public final WrappedCollection<DiscordMessageXP> messageXp;
-	public final WrappedCollection<ChannelInfo> channelInfo;
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
 	public final WrappedCollection<Macro> macros;
-	public final WrappedCollection<ScheduledTask> scheduledTasks;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final DBConfig config;
 	public final StringConfig name;
 	public final StringConfig iconUrl;
 	public final MemberConfig ownerId;
+	public final IntConfig feedbackNumber;
+	public final IntConfig pollNumber;
+
+	public final IntConfig globalXp;
 	public final IntConfig regularMessages;
 	public final IntConfig regularXP;
 	public final RoleConfig regularRole;
@@ -123,8 +125,6 @@ public class GuildCollections {
 	public final BooleanConfig forcePingableName;
 	public final IntConfig autoMuteUrlShortener;
 	public final IntConfig autoMuteScamUrl;
-	public final IntConfig feedbackNumber;
-	public final IntConfig pollNumber;
 	public final BooleanConfig autoPaste;
 	public final StringConfig reportOptions;
 	public final BooleanConfig autoMuteEmbed;
@@ -134,7 +134,6 @@ public class GuildCollections {
 	private List<ChannelInfo> channelList;
 	private Map<Snowflake, CachedRole> roleMap;
 	private List<CachedRole> roleList;
-	public final Map<Snowflake, UnmuteTask> unmuteMap;
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
 	private Map<String, Macro> macroMap;
@@ -159,17 +158,19 @@ public class GuildCollections {
 		polls = create("polls_" + dbid, DiscordPoll::new);
 		messageCount = create("message_count_" + dbid, DiscordMessageCount::new);
 		messageXp = create("message_xp_" + dbid, DiscordMessageXP::new);
-		channelInfo = create("channel_settings_" + dbid, (c, doc) -> new ChannelInfo(this, c, doc, null));
 		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
 		macros = create("macros_" + dbid, Macro::new);
-		scheduledTasks = create("scheduled_tasks_" + dbid, ScheduledTask::new);
 		memberLogThreads = create("member_log_threads_" + dbid, ThreadLocation::new);
 
 		config = new DBConfig();
 
-		name = config.add(new StringConfig(this, "name", guildId.asString())).internal();
-		iconUrl = config.add(new StringConfig(this, "icon_url", "")).internal();
-		ownerId = config.add(new MemberConfig(this, "owner_id")).internal();
+		name = config.add(new StringConfig(this, "name", guildId.asString()));
+		iconUrl = config.add(new StringConfig(this, "icon_url", ""));
+		ownerId = config.add(new MemberConfig(this, "owner_id"));
+		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0));
+		pollNumber = config.add(new IntConfig(this, "poll_number", 0));
+
+		globalXp = config.add(new IntConfig(this, "global_xp", 0)).title("Global XP");
 		regularMessages = config.add(new IntConfig(this, "regular_messages", 0)).title("Regular Messages");
 		regularXP = config.add(new IntConfig(this, "regular_xp", 3000)).title("Regular XP");
 		regularRole = config.add(new RoleConfig(this, "regular_role")).title("Regular Role");
@@ -198,13 +199,10 @@ public class GuildCollections {
 		forcePingableName = config.add(new BooleanConfig(this, "force_pingable_name", false)).title("Force Pingable Name");
 		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
 		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
-		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0)).internal();
-		pollNumber = config.add(new IntConfig(this, "poll_number", 0)).internal();
 		autoPaste = config.add(new BooleanConfig(this, "auto_paste", true)).title("Auto-paste text files");
 		reportOptions = config.add(new StringConfig(this, "report_options", "Scam | Spam | NSFW | Hacks")).title("Report Options (separated by ' | ')");
 		autoMuteEmbed = config.add(new BooleanConfig(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
 
-		unmuteMap = new HashMap<>();
 		recentUsers = new ArrayList<>();
 		memberLogThreadCache = new HashMap<>();
 		appealThreadCache = new HashMap<>();
@@ -317,6 +315,7 @@ public class GuildCollections {
 
 			if (id.asLong() != 0L) {
 				db.app.discordHandler.client.getRestClient().getChannelService().createMessage(id.asLong(), message.toMultipartMessageCreateRequest()).block();
+				closeThread(id, Duration.ofMinutes(5L));
 				return;
 			}
 		}
@@ -329,20 +328,11 @@ public class GuildCollections {
 		return member == null ? 0L : member.getId().asLong();
 	}
 
-	public void unmute(Snowflake user, long seconds) {
-		var task = unmuteMap.get(user);
-
-		if (task != null) {
-			task.cancelled = true;
-		}
-
-		task = new UnmuteTask(this, user, Math.max(0L, seconds));
-
-		if (seconds > 0L) {
-			unmuteMap.put(user, task);
-			db.app.queueScheduledTask(System.currentTimeMillis() + task.seconds * 1000L, task);
+	public void unmute(Snowflake user, long seconds, String reason) {
+		if (seconds <= 0L) {
+			ScheduledTask.unmuteNow(this, user, reason);
 		} else {
-			task.unmute();
+			db.app.schedule(Duration.ofSeconds(seconds), ScheduledTask.UNMUTE, guildId.asLong(), 0L, user.asLong(), reason);
 		}
 	}
 
@@ -502,7 +492,7 @@ public class GuildCollections {
 			ChannelInfo ci = getChannelMap().get(channel.getId());
 
 			if (ci != null) {
-				ci.updateFrom(channel);
+				ci.settings.updateFrom(channel);
 			} else {
 				App.error("Unknown channel " + channel.getId().asString() + "/" + channel.getName() + " updated!");
 			}
@@ -532,21 +522,14 @@ public class GuildCollections {
 			channelMap = new LinkedHashMap<>();
 
 			try {
-				for (TopLevelGuildMessageChannel ch : getGuild().getChannels()
+				for (var ch : getGuild().getChannels()
 						.filter(c -> c instanceof TopLevelGuildMessageChannel)
 						.cast(TopLevelGuildMessageChannel.class)
 						.sort(Comparator.comparing(TopLevelGuildMessageChannel::getRawPosition).thenComparing(TopLevelGuildMessageChannel::getId))
 						.toIterable()) {
-					ChannelInfo c = channelInfo.findFirst(ch.getId());
-
-					if (c == null) {
-						Document document = new Document();
-						document.put("_id", ch.getId().asLong());
-						channelInfo.insert(document);
-						c = new ChannelInfo(this, channelInfo, MapWrapper.wrap(document), ch.getId());
-					}
-
-					c.updateFrom(ch);
+					var settings = getChannelSettings(ch.getId());
+					settings.updateFrom(ch);
+					var c = new ChannelInfo(this, ch.getId(), settings);
 					channelMap.put(ch.getId(), c);
 				}
 			} catch (Exception ex) {
@@ -622,11 +605,22 @@ public class GuildCollections {
 		return getMemberStream().toList();
 	}
 
+	private ChannelSettings getChannelSettings(Snowflake id) {
+		var settings = db.channelSettings.findFirst(id);
+
+		if (settings == null) {
+			settings = new ChannelSettings(db.channelSettings, MapWrapper.wrap(new Document("_id", id.asLong())));
+			db.channelSettings.insert(settings.document.toDocument());
+		}
+
+		return settings;
+	}
+
 	public ChannelInfo getOrMakeChannelInfo(Snowflake id) {
 		ChannelInfo ci = getChannelMap().get(id);
 
 		if (ci == null) {
-			ci = new ChannelInfo(this, channelInfo, MapWrapper.EMPTY, id);
+			ci = new ChannelInfo(this, id, getChannelSettings(id));
 			ChannelData data = ci.getChannelData();
 			Id parentId = data == null ? null : data.parentId().toOptional().orElse(Optional.empty()).orElse(null);
 
@@ -766,5 +760,15 @@ public class GuildCollections {
 
 	public Snowflake memberAppealThread(@Nullable UserData user) {
 		return memberLogThread(1, appealThreadCache, user, appealChannel);
+	}
+
+	public void closeThread(Snowflake threadId, Duration duration) {
+		var task = db.app.findScheduledGuildTask(guildId, t -> t.type.equals(ScheduledTask.CLOSE_THREAD) && t.channelId.asLong() == threadId.asLong());
+
+		if (task != null) {
+			task.changeEnd(Math.min(task.end, System.currentTimeMillis() + duration.toMillis()));
+		} else {
+			db.app.schedule(duration, ScheduledTask.CLOSE_THREAD, guildId.asLong(), threadId.asLong(), 0L, "");
+		}
 	}
 }

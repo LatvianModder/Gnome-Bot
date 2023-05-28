@@ -75,13 +75,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 	}
 
 	public boolean equals(Object o) {
-		if (o == this) {
-			return true;
-		} else if (o instanceof WrappedDocument) {
-			return getUID() == ((WrappedDocument<?>) o).getUID();
-		}
-
-		return false;
+		return o == this || o instanceof WrappedDocument<?> d && getUID() == d.getUID();
 	}
 
 	@Override

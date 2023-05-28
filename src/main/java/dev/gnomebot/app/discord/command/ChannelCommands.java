@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author LatvianModder
@@ -104,14 +103,14 @@ public class ChannelCommands extends ApplicationCommands {
 	private static void listXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 
-		List<ChannelInfo> channelsWithXp = event.context.gc.getChannelList().stream().filter(s -> s.xp > 0L).collect(Collectors.toList());
+		List<ChannelInfo> channelsWithXp = event.context.gc.getChannelList().stream().filter(s -> s.getXp() > 0L).toList();
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Channel XP:");
 
 		for (ChannelInfo ch : channelsWithXp) {
 			if (ch.canViewChannel(event.context.sender.getId())) {
-				sb.append("\n<#").append(Snowflake.asString(ch.getUID())).append(">: ").append(ch.xp);
+				sb.append("\n<#").append(ch.id.asString()).append(">: ").append(ch.getXp());
 			}
 		}
 
@@ -126,7 +125,7 @@ public class ChannelCommands extends ApplicationCommands {
 			throw new GnomeException("Invalid channel!");
 		}
 
-		event.respond(info.getMention() + " XP: " + info.xp);
+		event.respond(info.getMention() + " XP: " + info.settings.xp + " (Actual: " + info.getXp() + ")");
 	}
 
 	private static void setXp(ChatInputInteractionEventWrapper event) throws Exception {
@@ -139,25 +138,20 @@ public class ChannelCommands extends ApplicationCommands {
 			throw new GnomeException("Invalid channel!");
 		}
 
-		long xp = Math.max(0L, event.get("xp").asLong());
+		int xp = Math.max(-1, event.get("xp").asInt());
 
-		info.xp = xp;
-		info.update("xp", xp);
+		info.settings.xp = xp;
+		info.settings.update("xp", xp);
 
-		event.respond(info.getMention() + " XP set to " + info.xp);
+		event.respond(info.getMention() + " XP set to " + info.settings.xp + " (Actual: " + info.getXp() + ")");
 	}
 
 	private static void setAllXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-
-		long xp = Math.max(0L, event.get("xp").asLong());
-
-		for (ChannelInfo info : event.context.gc.getChannelList()) {
-			info.xp = xp;
-			info.update("xp", xp);
-		}
-
+		int xp = Math.max(0, event.get("xp").asInt());
+		event.context.gc.globalXp.set(xp);
+		event.context.gc.globalXp.save();
 		event.respond("All channel XP set to " + xp);
 	}
 
@@ -212,9 +206,11 @@ public class ChannelCommands extends ApplicationCommands {
 				totalCount.computeIfAbsent(key.user, MutableLong.MAP_VALUE).add(1L);
 				dailyCount.computeIfAbsent(key, MutableLong.MAP_VALUE).add(1L);
 
-				if (channelInfo.xp > 0L) {
-					totalXp.computeIfAbsent(key.user, MutableLong.MAP_VALUE).add(channelInfo.xp);
-					dailyXp.computeIfAbsent(key, MutableLong.MAP_VALUE).add(channelInfo.xp);
+				var xp = channelInfo.getXp();
+
+				if (xp > 0L) {
+					totalXp.computeIfAbsent(key.user, MutableLong.MAP_VALUE).add(xp);
+					dailyXp.computeIfAbsent(key, MutableLong.MAP_VALUE).add(xp);
 				}
 			}
 		}
@@ -267,15 +263,15 @@ public class ChannelCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		ChannelInfo settings = event.get("channel").asChannelInfoOrCurrent();
-		Boolean enabled = event.get("enabled").asBoolean().orElse(null);
+		var ci = event.get("channel").asChannelInfoOrCurrent();
+		var enabled = event.get("enabled").asBoolean().orElse(null);
 
 		if (enabled == null) {
-			event.respond("Auto-threading in " + settings.getMention() + " is " + (settings.autoThread ? "enabled" : "disabled"));
+			event.respond("Auto-threading in " + ci.getMention() + " is " + (ci.settings.autoThread ? "enabled" : "disabled"));
 		} else {
-			settings.autoThread = enabled;
-			settings.update("auto_thread", settings.autoThread);
-			event.respond("Auto-threading in " + settings.getMention() + " has been " + (settings.autoThread ? "enabled" : "disabled"));
+			ci.settings.autoThread = enabled;
+			ci.settings.update("auto_thread", ci.settings.autoThread);
+			event.respond("Auto-threading in " + ci.getMention() + " has been " + (ci.settings.autoThread ? "enabled" : "disabled"));
 		}
 	}
 
@@ -283,15 +279,15 @@ public class ChannelCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		ChannelInfo settings = event.get("channel").asChannelInfoOrCurrent();
-		Boolean enabled = event.get("enabled").asBoolean().orElse(null);
+		var ci = event.get("channel").asChannelInfoOrCurrent();
+		var enabled = event.get("enabled").asBoolean().orElse(null);
 
 		if (enabled == null) {
-			event.respond("Auto-upvoting in " + settings.getMention() + " is " + (settings.autoUpvote ? "enabled" : "disabled"));
+			event.respond("Auto-upvoting in " + ci.getMention() + " is " + (ci.settings.autoUpvote ? "enabled" : "disabled"));
 		} else {
-			settings.autoUpvote = enabled;
-			settings.update("auto_upvote", settings.autoUpvote);
-			event.respond("Auto-upvoting in " + settings.getMention() + " has been " + (settings.autoUpvote ? "enabled" : "disabled"));
+			ci.settings.autoUpvote = enabled;
+			ci.settings.update("auto_upvote", ci.settings.autoUpvote);
+			event.respond("Auto-upvoting in " + ci.getMention() + " has been " + (ci.settings.autoUpvote ? "enabled" : "disabled"));
 		}
 	}
 

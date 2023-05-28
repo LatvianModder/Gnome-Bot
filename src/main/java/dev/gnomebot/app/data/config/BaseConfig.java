@@ -24,17 +24,12 @@ public abstract class BaseConfig<T> implements Supplier<T> {
 		defaultValue = def;
 		value = Possible.absent();
 		title = id.replace("_", " ");
-		internal = false;
-	}
-
-	public <C> C internal() {
 		internal = true;
-		return (C) this;
 	}
-
 
 	public <C> C title(String t) {
 		title = t;
+		internal = false;
 		return (C) this;
 	}
 

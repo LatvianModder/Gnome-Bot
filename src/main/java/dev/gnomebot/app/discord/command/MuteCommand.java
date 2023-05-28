@@ -80,10 +80,8 @@ public class MuteCommand extends ApplicationCommands {
 			throw error("User not found!");
 		}
 
-		discordMember.update(Updates.set("muted", new Date(System.currentTimeMillis() + seconds * 1000L)));
-
 		event.context.gc.mutedRole.add(user.getId(), "Muted");
-		event.context.gc.unmute(user.getId(), seconds);
+		event.context.gc.unmute(user.getId(), seconds, reason);
 
 		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bad " + user.getMention());
@@ -93,7 +91,7 @@ public class MuteCommand extends ApplicationCommands {
 			spec.footer(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 		});
 
-		event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.WARN)
+		event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MUTE)
 				.user(user)
 				.source(event.context.sender)
 				.content(reason)
@@ -115,7 +113,7 @@ public class MuteCommand extends ApplicationCommands {
 			discordMember.update(Updates.set("muted", expires));
 		}
 
-		context.gc.unmute(m.getId(), seconds);
+		context.gc.unmute(m.getId(), seconds, reason);
 
 		Message contextMessage;
 

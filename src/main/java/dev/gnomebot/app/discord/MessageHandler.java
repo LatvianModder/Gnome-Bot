@@ -7,12 +7,14 @@ import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.ChannelSettings;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Paste;
+import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.discord.command.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
@@ -47,6 +49,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
@@ -171,7 +174,7 @@ public class MessageHandler {
 
 				// Temp fix until D4J supports forum channels
 				if (channelInfo == null && threadChannel != null) {
-					channelInfo = new ChannelInfo(gc, gc.channelInfo, MapWrapper.EMPTY, threadChannel.getParentId().get());
+					channelInfo = new ChannelInfo(gc, threadChannel.getParentId().get(), new ChannelSettings(gc.db.channelSettings, MapWrapper.wrap(new Document("_id", threadChannel.getParentId().get()))));
 					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
 				}
 
@@ -432,7 +435,9 @@ public class MessageHandler {
 				App.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
 			}
 
-			if (channelInfo.xp > 0L) {
+			var xp = channelInfo.getXp();
+
+			if (xp > 0) {
 				try {
 					Document xpDoc = gc.messageXp.query()
 							.eq("date", d)
@@ -441,17 +446,17 @@ public class MessageHandler {
 							.firstDocument();
 
 					if (xpDoc != null) {
-						gc.messageXp.query(xpDoc.getObjectId("_id")).update(Updates.inc("xp", channelInfo.xp));
+						gc.messageXp.query(xpDoc.getObjectId("_id")).update(Updates.inc("xp", xp));
 					} else {
 						xpDoc = new Document();
 						xpDoc.put("date", d);
 						xpDoc.put("channel", channelInfo.id.asLong());
 						xpDoc.put("user", user.getId().asLong());
-						xpDoc.put("xp", channelInfo.xp);
+						xpDoc.put("xp", xp);
 						gc.messageXp.insert(xpDoc);
 					}
 
-					gc.members.query(user.getId().asLong()).update(Updates.inc("total_xp", channelInfo.xp));
+					gc.members.query(user.getId().asLong()).update(Updates.inc("total_xp", xp));
 				} catch (Exception ex) {
 					App.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
 				}
@@ -660,11 +665,11 @@ public class MessageHandler {
 			}
 		}
 
-		if (channelInfo.autoUpvote) {
+		if (channelInfo.settings.autoUpvote) {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
 
-		if (channelInfo.autoThread && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
+		if (channelInfo.settings.autoThread && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
 			try {
 				String u = member.getDisplayName();
 				String c = contentNoEmojis.replace('\n', ' ');
@@ -718,7 +723,7 @@ public class MessageHandler {
 			}
 
 			if (!attachments.isEmpty()) {
-				if (channelInfo.autoThread) {
+				if (channelInfo.settings.autoThread) {
 					Paste.pasteMessage(gc.db, RestChannel.create(gc.getClient().getRestClient(), message.getId()), message, attachments);
 				} else {
 					Paste.pasteMessage(gc.db, channelInfo.getRest(), message, attachments);
@@ -758,6 +763,13 @@ public class MessageHandler {
 			}
 
 			gc.db.app.pingHandler.handle(gc, channelInfo, user, contentNoEmojis, content, discordMessage.getURL(gc));
+		}
+
+		var task = gc.db.app.findScheduledGuildTask(gc.guildId, t -> t.type.equals(ScheduledTask.CLOSE_THREAD) && t.channelId.asLong() == channelInfo.id.asLong());
+
+		if (task != null) {
+			task.changeEnd(System.currentTimeMillis() + Duration.ofHours(1L).toMillis());
+			App.info("Extended " + channelInfo.getName() + " expiration");
 		}
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {

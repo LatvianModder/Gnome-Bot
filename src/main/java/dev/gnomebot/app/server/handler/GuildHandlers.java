@@ -121,7 +121,7 @@ public class GuildHandlers {
 			o.put("id", channelInfo.id.asString());
 			o.put("name", channelInfo.getName());
 			o.put("visible", channelInfo.canViewChannel(request.token.userId));
-			o.put("xp", channelInfo.xp);
+			o.put("xp", channelInfo.getXp());
 		}
 
 		var r = json.addArray("roles");
