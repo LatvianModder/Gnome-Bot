@@ -65,6 +65,7 @@ public class ScamHandler {
 		OVERRIDES.put("cdn.discordapp.com", Type.ALLOW);
 		OVERRIDES.put("media.discordapp.net", Type.ALLOW);
 		OVERRIDES.put("canary.discord.com", Type.ALLOW);
+		OVERRIDES.put("gist.github.com", Type.ALLOW);
 	}
 
 	public static Set<String> URL_SHORTENERS = new HashSet<>();
@@ -208,6 +209,11 @@ public class ScamHandler {
 
 	@Nullable
 	public static Scam checkScam(String content) {
+		// Discord now has pretty much eliminated need for manual checks
+		if (true) {
+			return null;
+		}
+
 		Matcher urlMatcher = MessageHandler.URL_PATTERN.matcher(content);
 
 		while (urlMatcher.find()) {

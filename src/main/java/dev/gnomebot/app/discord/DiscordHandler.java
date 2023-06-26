@@ -311,26 +311,31 @@ public class DiscordHandler {
 	}
 
 	private void memberUpdated(MemberUpdateEvent event) {
-		Member member = event.getMember().block();
+		try {
+			Member member = event.getMember().block();
 
-		if (event.getOld().isPresent() && member != null) {
-			Member old = event.getOld().get();
-			GuildCollections gc = app.db.guild(event.getGuildId());
+			if (event.getOld().isPresent() && member != null) {
+				Member old = event.getOld().get();
+				GuildCollections gc = app.db.guild(event.getGuildId());
 
-			MutableLong b = new MutableLong(0L);
-			checkDifference(gc, b, old, member, Member::getDiscriminator, "Discriminator");
-			checkDifference(gc, b, old, member, Member::getUsername, "Username");
-			//checkDifference(gc, b, old, member, Member::getAvatarUrl, "Avatar");
-			//checkDifference(gc, b, old, member, Member::getPublicFlags, "Public Flags");
-			checkDifference(gc, b, old, member, Member::getRoleIds, "Roles");
-			checkDifference(gc, b, old, member, Member::getNickname, "Nickname");
-			checkDifference(gc, b, old, member, Member::getPremiumTime, "Boost");
-			checkDifference(gc, b, old, member, Member::isPending, "Pending");
+				MutableLong b = new MutableLong(0L);
+				//checkDifference(gc, b, old, member, Member::getDiscriminator, "Discriminator");
+				checkDifference(gc, b, old, member, Member::getUsername, "Username");
+				//checkDifference(gc, b, old, member, Member::getAvatarUrl, "Avatar");
+				//checkDifference(gc, b, old, member, Member::getPublicFlags, "Public Flags");
+				checkDifference(gc, b, old, member, Member::getRoleIds, "Roles");
+				checkDifference(gc, b, old, member, Member::getNickname, "Nickname");
+				checkDifference(gc, b, old, member, Member::getPremiumTime, "Boost");
+				checkDifference(gc, b, old, member, Member::isPending, "Pending");
 
-			if (b.value > 0L) {
-				gc.memberUpdated(member.getId(), 0);
-				gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
+				if (b.value > 0L) {
+					gc.memberUpdated(member.getId(), 0);
+					gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
+				}
 			}
+		} catch (Exception ex) {
+			// ex.printStackTrace();
+			App.error("Failed to update member " + event.getMemberId().asString() + ": " + ex);
 		}
 	}
 

@@ -331,7 +331,7 @@ public class GuildCollections {
 	public void unmute(Snowflake user, long seconds, String reason) {
 		if (seconds <= 0L) {
 			ScheduledTask.unmuteNow(this, user, reason);
-		} else {
+		} else if (seconds < Integer.MAX_VALUE) {
 			db.app.schedule(Duration.ofSeconds(seconds), ScheduledTask.UNMUTE, guildId.asLong(), 0L, user.asLong(), reason);
 		}
 	}
@@ -657,6 +657,12 @@ public class GuildCollections {
 	public void pushRecentUser(Snowflake userId, String tag) {
 		if (!recentUsers.isEmpty() && recentUsers.get(0).id().equals(userId)) {
 			return;
+		}
+
+		if (tag.endsWith("#0")) {
+			tag = tag.substring(0, tag.length() - 2);
+		} else if (tag.endsWith("#null")) {
+			tag = tag.substring(0, tag.length() - 5);
 		}
 
 		recentUserSuggestions = null;

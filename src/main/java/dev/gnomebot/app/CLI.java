@@ -1,5 +1,6 @@
 package dev.gnomebot.app;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
@@ -10,6 +11,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.ThreadChannel;
 
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.Scanner;
 
@@ -34,6 +36,7 @@ public class CLI extends Thread {
 					case "restart" -> app.restart();
 					case "reload" -> app.reload();
 					case "threads" -> printThreads();
+					case "dump" -> dump();
 					case "port" -> port(nonInput);
 					case "stats" -> stats();
 					case "flags" -> flags(input);
@@ -64,6 +67,12 @@ public class CLI extends Thread {
 		for (var t : Thread.getAllStackTraces().keySet()) {
 			Ansi.log("- " + t.getName() + ": " + t.getClass().getName());
 		}
+	}
+
+	private void dump() throws Exception {
+		var server = ManagementFactory.getPlatformMBeanServer();
+		HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
+		mxBean.dumpHeap("heapdump.hprof", false);
 	}
 
 	private void port(String input) throws Exception {

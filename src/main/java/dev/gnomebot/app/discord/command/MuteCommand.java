@@ -54,7 +54,7 @@ public class MuteCommand extends ApplicationCommands {
 		}
 
 		User user = event.get("user").asUser().orElse(null);
-		long seconds = event.get("time").asSeconds().orElse(21600L);
+		long seconds = event.get("time").asSeconds().orElse(Integer.MAX_VALUE);
 
 		String reason0 = event.get("reason").asString();
 		String reason = reason0.isEmpty() ? "Not specified" : reason0;

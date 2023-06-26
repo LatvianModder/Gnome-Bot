@@ -665,11 +665,11 @@ public class MessageHandler {
 			}
 		}
 
-		if (channelInfo.settings.autoUpvote) {
+		if (channelInfo.settings.autoUpvote && channelInfo.threadParent == null) {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
 
-		if (channelInfo.settings.autoThread && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
+		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
 			try {
 				String u = member.getDisplayName();
 				String c = contentNoEmojis.replace('\n', ' ');

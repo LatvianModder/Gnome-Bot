@@ -98,7 +98,15 @@ public class MinecraftHandlers {
 							.toEmbedCreateSpec()
 			)).subscribe();
 
-			gc.unmute(user.getId(), 0L, "Verified Minecraft");
+			gc.unmute(user.getId(), 0L, user.getMention() + " Verified Minecraft");
+
+			if (gc.isMM()) {
+				var role = gc.getRoleMap().get(Snowflake.of(1119549049717149808L));
+
+				if (role != null) {
+					role.add(user.getId(), "Verified Minecraft");
+				}
+			}
 		}
 
 		public void fail(String error) {
@@ -107,7 +115,7 @@ public class MinecraftHandlers {
 			App.error(user.getUsername() + " failed mc verification: " + error);
 
 			message.edit().withEmbedsOrNull(List.of(
-					EmbedBuilder.create("Verify Minecraft", "Error!\n\n" + error)
+					EmbedBuilder.create("Verify Minecraft", error.startsWith("com.fasterxml.jackson") ? "Internal Error" : ("Error!\n\n" + error))
 							.color(EmbedColor.RED)
 							.field("User", user.getMention())
 							.toEmbedCreateSpec()
@@ -168,7 +176,7 @@ public class MinecraftHandlers {
 		data.message = event.context.channelInfo.createMessage(data.waiting()).block();
 		data.event = event;
 
-		event.respond("[Click this link](https://gnomebot.dev/minecraft/verify?state=" + data.token + ") to verify your Minecraft profile!" +
+		event.respond("[Click this link](<https://gnomebot.dev/minecraft/verify?state=" + data.token + ">) to verify your Minecraft profile!" +
 				"\nYou will have to log in with your Microsoft Account");
 
 		MAP.put(data.token, data);
