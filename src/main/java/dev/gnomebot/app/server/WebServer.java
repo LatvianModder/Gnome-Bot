@@ -221,15 +221,15 @@ public class WebServer implements Consumer<JavalinConfig> {
 				handle0(ctx, p, ip, country, tokenCallback);
 			} catch (HTTPCodeException ex) {
 				log(p, ip, country, ex.responseCode, tokenCallback[0]);
-				var content = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
-				content.p().span("red").string(ex.msg);
-				content.asResponse(ex.responseCode).result(ctx);
+				var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
+				root.content.p().span("red").string(ex.msg);
+				root.asResponse(ex.responseCode, true).result(ctx);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				log(p, ip, country, HttpStatus.INTERNAL_SERVER_ERROR, tokenCallback[0]);
-				var content = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
-				content.p().span("red").string("Internal Error: " + ex);
-				content.asResponse(HttpStatus.INTERNAL_SERVER_ERROR).result(ctx);
+				var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
+				root.content.p().span("red").string("Internal Error: " + ex);
+				root.asResponse(HttpStatus.INTERNAL_SERVER_ERROR, true).result(ctx);
 			}
 		}
 
@@ -285,27 +285,29 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 			}
 
-			GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel").p().span("red").string("Page not found!").result(ctx, HttpStatus.NOT_FOUND);
+			var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
+			root.content.p().span("red").string("Page not found!");
+			root.asResponse(HttpStatus.NOT_FOUND, true).result(ctx);
 		}
 
 		private Response handle1(Context ctx, RequestHandler handler, String p, ServerRequest req) throws Exception {
 			if (handler.authLevel != AuthLevel.NO_AUTH && req.token == null) {
-				var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
-				content.p().span("red").string("You must be logged in to view this page!");
-				content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
-				content.p().string("You can refresh this page once you've logged in.");
-				return content.asResponse(HttpStatus.UNAUTHORIZED);
+				var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+				root.content.p().span("red").string("You must be logged in to view this page!");
+				root.content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
+				root.content.p().string("You can refresh this page once you've logged in.");
+				return root.asResponse(HttpStatus.UNAUTHORIZED, true);
 			} else if (handler.trusted && (req.token == null || !Config.get().isTrusted(req.token.userId))) {
-				var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
-				content.p().span("red").string("You're not cool enough to view this page!");
-				content.p().string("This page can only be viewed by bot owners!");
+				var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+				root.content.p().span("red").string("You're not cool enough to view this page!");
+				root.content.p().string("This page can only be viewed by bot owners!");
 
 				if (req.token == null) {
-					content.p().string("If you are one of the bot owners, type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
-					content.p().string("You can refresh this page once you've logged in.");
+					root.content.p().string("If you are one of the bot owners, type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
+					root.content.p().string("You can refresh this page once you've logged in.");
 				}
 
-				return content.asResponse(HttpStatus.UNAUTHORIZED);
+				return root.asResponse(HttpStatus.UNAUTHORIZED, true);
 			}
 
 			if (!req.variable("guild").isEmpty()) {
@@ -320,11 +322,11 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 
 				if (!req.getAuthLevel().is(handler.authLevel)) {
-					var content = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
-					content.p().span("red").string("You're not cool enough to view this page!");
-					content.p().string("Required auth level is ").span("red").string(handler.authLevel.name.toLowerCase());
-					content.p().string("Your auth level is ").span("red").string(req.getAuthLevel().name.toLowerCase());
-					return content.asResponse(HttpStatus.UNAUTHORIZED);
+					var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+					root.content.p().span("red").string("You're not cool enough to view this page!");
+					root.content.p().string("Required auth level is ").span("red").string(handler.authLevel.name.toLowerCase());
+					root.content.p().string("Your auth level is ").span("red").string(req.getAuthLevel().name.toLowerCase());
+					return root.asResponse(HttpStatus.UNAUTHORIZED, true);
 				}
 			}
 

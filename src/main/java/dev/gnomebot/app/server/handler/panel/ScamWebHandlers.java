@@ -9,8 +9,8 @@ import dev.latvian.apps.webutils.net.Response;
  */
 public class ScamWebHandlers {
 	public static Response scams(ServerRequest request) {
-		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Scams");
-		content.p().string("Uh... nothing for now...");
-		return content.asResponse();
+		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Scams");
+		root.content.p().string("Uh... nothing for now...");
+		return root.asResponse();
 	}
 }

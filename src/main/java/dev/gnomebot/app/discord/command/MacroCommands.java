@@ -264,10 +264,19 @@ public class MacroCommands extends ApplicationCommands {
 		}
 
 		event.acknowledge();
-		macro.setSlashCommand(false);
+
+		String s = "Macro '" + macro.getName() + "' removed!";
+
+		try {
+			macro.setSlashCommand(false);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			s += "\nWith error: " + ex;
+		}
+
 		macro.delete();
 		event.context.gc.updateMacroMap();
-		event.respond("Macro '" + macro.getName() + "' removed!");
+		event.respond(s);
 	}
 
 	private static void list(ChatInputInteractionEventWrapper event) {

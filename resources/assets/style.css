@@ -393,3 +393,9 @@ table.auditlogtable td {
 table.bantable {
     /*table-layout: fixed;*/
 }
+
+.divborder > div {
+    border: 1px solid var(--border-color);
+    margin: 1em 0;
+    padding: 1em;
+}

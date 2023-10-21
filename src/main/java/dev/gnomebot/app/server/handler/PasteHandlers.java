@@ -8,7 +8,6 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.html.RootTag;
 import dev.latvian.apps.webutils.html.Tag;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
@@ -158,6 +157,15 @@ public class PasteHandlers {
 				;
 	}
 
+	public static Response pasteDirect(ServerRequest request) throws Exception {
+		var channel = request.getSnowflake("channel");
+		var id = request.getSnowflake("id");
+		var name = request.variable("name");
+		var author = request.variable("author");
+		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), name, author);
+		return Response.redirect("/paste/" + id.asString());
+	}
+
 	public static Response paste(ServerRequest request) throws Exception {
 		Snowflake id = request.getSnowflake("id");
 		String contents;
@@ -166,7 +174,7 @@ public class PasteHandlers {
 
 		try {
 			URLRequest<String> req = Utils.internalRequest("paste/" + id.asString() + "/raw").toJoinedString();
-			contents = req.block().trim();
+			contents = req.block();
 			filename = req.getHeader("Gnome-Paste-Filename");
 			user = req.getHeader("Gnome-Paste-User");
 		} catch (Exception ex) {
@@ -177,15 +185,12 @@ public class PasteHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
 		}
 
-		var root = RootTag.create(null, null);
-		GnomeRootTag.setupHead(root, request.getPath(), filename);
-		Tag body = root.paired("body");
-		Tag content = body.div().classes("content");
+		var root = GnomeRootTag.createSimple("/paste/" + id.asString(), filename);
 
-		content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
-		content.br();
+		root.content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
+		root.content.br();
 
-		Tag pasteText = content.div().classes("pastetext");
+		Tag pasteText = root.content.div().classes("pastetext");
 
 		String[] lines = contents.split("\n");
 

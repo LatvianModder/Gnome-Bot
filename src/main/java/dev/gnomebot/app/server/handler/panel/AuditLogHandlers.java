@@ -29,23 +29,23 @@ import java.util.stream.Collectors;
  */
 public class AuditLogHandlers {
 	public static Response offenses(ServerRequest request) {
-		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
-		content.p().string("Uh... nothing for now...");
-		return content.asResponse();
+		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
+		root.content.p().string("Uh... nothing for now...");
+		return root.asResponse();
 	}
 
 	public static Response offensesOf(ServerRequest request) {
 		var userId = Snowflake.of(request.variable("user"));
 		var user = request.app.discordHandler.getUser(userId);
-		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses of " + (user == null ? "Unknown User" : user.getUsername()));
+		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses of " + (user == null ? "Unknown User" : user.getUsername()));
 
 		if (user == null) {
-			content.p().classes("red").string("User not found!");
-			return content.asResponse(HttpStatus.NOT_FOUND);
+			root.content.p().classes("red").string("User not found!");
+			return root.asResponse(HttpStatus.NOT_FOUND, true);
 		}
 
-		content.p().string("Uh... nothing for now...");
-		return content.asResponse();
+		root.content.p().string("Uh... nothing for now...");
+		return root.asResponse();
 	}
 
 	public static Response auditLog(ServerRequest request) {
@@ -58,7 +58,7 @@ public class AuditLogHandlers {
 		long message = request.query("message").asLong();
 		int level = request.query("level").asInt();
 
-		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Audit Log");
+		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Audit Log");
 
 		UserCache userCache = request.app.discordHandler.createUserCache();
 		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
@@ -135,8 +135,8 @@ public class AuditLogHandlers {
 			}
 		}
 
-		content.add(table.toTag().classes("auditlogtable"));
-		return content.asResponse();
+		root.content.add(table.toTag().classes("auditlogtable"));
+		return root.asResponse();
 	}
 
 	private record BanEntry(String id, String name, String displayName, String discriminator, String reason) {
@@ -170,7 +170,7 @@ public class AuditLogHandlers {
 
 		list.sort((o1, o2) -> o1.displayName.compareToIgnoreCase(o2.displayName));
 
-		var content = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
+		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
 		var table = new Table("#", "ID", "Name", "Reason");
 
 		String indexFormat = "%0" + String.valueOf(list.size()).length() + "d";
@@ -191,7 +191,7 @@ public class AuditLogHandlers {
 			cells[3].value(entry.reason);
 		}
 
-		content.add(table.toTag().classes("bantable"));
-		return content.asResponse();
+		root.content.add(table.toTag().classes("bantable"));
+		return root.asResponse();
 	}
 }

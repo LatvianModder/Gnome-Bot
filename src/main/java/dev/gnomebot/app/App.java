@@ -12,7 +12,6 @@ import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.RequestHandler;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.server.WebServer;
@@ -32,7 +31,6 @@ import dev.gnomebot.app.util.CharMap;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
-import dev.latvian.apps.webutils.html.RootTag;
 import discord4j.common.util.Snowflake;
 import discord4j.rest.http.client.ClientException;
 import org.jetbrains.annotations.Nullable;
@@ -110,7 +108,6 @@ public class App implements Runnable {
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
 		System.out.println("Log start: " + Instant.now());
-		RootTag.DEFAULT = GnomeRootTag.DEFAULT;
 
 		running = true;
 
@@ -151,6 +148,7 @@ public class App implements Runnable {
 		webServer.add("api/guild/file/:channel/:id/:filename", PasteHandlers::file).noAuth().cacheMinutes(5);
 		webServer.add("paste/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
 		webServer.add("paste/:id", PasteHandlers::paste).noAuth().cacheMinutes(5);
+		webServer.add("paste/:channel/:id/:name/:author", PasteHandlers::pasteDirect).noAuth().cacheMinutes(5);
 		webServer.add("api/guild/feedback/:guild/:id", GuildHandlers::feedback).member();
 		webServer.add("api/guild/feedback/:guild", GuildHandlers::feedbackList).member().cacheMinutes(1);
 		webServer.add("api/guild/polls/:guild/:id", GuildHandlers::poll).member();
@@ -181,6 +179,7 @@ public class App implements Runnable {
 		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
 		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
 		webServer.add("panel/:guild/scams", ScamWebHandlers::scams).admin();
+		webServer.add("panel/:guild/macros", PanelHandlers::macros).admin();
 
 		webServer.add("minecraft/verify", MinecraftHandlers::verify).noAuth().log();
 
