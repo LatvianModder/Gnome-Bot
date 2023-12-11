@@ -90,9 +90,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/**
- * @author LatvianModder
- */
 public class DiscordHandler {
 	public final App app;
 	public final GatewayDiscordClient client;

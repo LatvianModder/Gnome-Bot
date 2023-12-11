@@ -3,6 +3,7 @@ package dev.gnomebot.app.data.ping;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.TimeLimitedCharSequence;
 import discord4j.common.util.Snowflake;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -50,6 +51,26 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 				new ThreadRelayPing(destination, pingData, ping).start();
 			}
 		}
+	}
+
+	@Nullable
+	public Ping test(PingData pingData) {
+		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
+			long start = System.nanoTime();
+			var ping = match(pingData.content());
+
+			if (ping != null) {
+				long time = System.nanoTime() - start;
+
+				if (time >= 100_000L) { // 0.100 ms
+					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
+				}
+
+				return ping;
+			}
+		}
+
+		return null;
 	}
 
 	public Ping match(String content) {

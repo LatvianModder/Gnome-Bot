@@ -1,26 +1,18 @@
-package dev.gnomebot.app.discord.command;
+package dev.gnomebot.app.discord.command.admin;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.discord.command.ApplicationCommands;
+import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
-/**
- * @author LatvianModder
- */
 public class NoteCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("note")
-			.description("Adds note to member")
-			.add(user("user").required())
-			.add(string("note").required())
-			.run(NoteCommand::run);
-
-	private static void run(ChatInputInteractionEventWrapper event) {
+	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkBotPerms(Permission.MODERATE_MEMBERS);
-		event.context.checkSenderPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalBotPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalSenderPerms(Permission.MODERATE_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 		Member member = null;

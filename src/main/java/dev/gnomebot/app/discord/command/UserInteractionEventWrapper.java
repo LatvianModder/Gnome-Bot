@@ -6,9 +6,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @author LatvianModder
- */
 public class UserInteractionEventWrapper extends ApplicationCommandInteractionEventWrapper<UserInteractionEvent> {
 	public final User user;
 

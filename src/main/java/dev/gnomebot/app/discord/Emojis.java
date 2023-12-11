@@ -9,6 +9,9 @@ public interface Emojis {
 	Pattern GUILD_EMOJI_PATTERN = Pattern.compile("<a?:\\w+:\\d+>");
 	Pattern GUILD_EMOJI_PATTERN_GROUPS = Pattern.compile("<a?:(\\w+):(\\d+)>");
 
+	ReactionEmoji.Custom YES = ReactionEmoji.custom(Snowflake.of(1183755303079125002L), "yes", false);
+	ReactionEmoji.Custom NO = ReactionEmoji.custom(Snowflake.of(1183755305037869157L), "no", false);
+
 	ReactionEmoji.Unicode POLICE_CAR = ReactionEmoji.unicode("🚓");
 	ReactionEmoji.Unicode NO_ENTRY = ReactionEmoji.unicode("🚫");
 	ReactionEmoji.Unicode STAR = ReactionEmoji.unicode("⭐");

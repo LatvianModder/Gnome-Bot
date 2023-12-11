@@ -4,6 +4,7 @@ import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Webhook;
@@ -27,9 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * @author LatvianModder
- */
 public final class ChannelInfo {
 	public final GuildCollections gc;
 	public final Snowflake id;
@@ -75,7 +73,10 @@ public final class ChannelInfo {
 				Webhook webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
 
 				if (webhook == null) {
+					Ansi.log("Webhook for " + this + " not found, creating");
 					webhook = tlc.createWebhook(WebhookCreateSpec.builder().name("Gnome").reason("Gnome Bot webhook").build()).block();
+				} else {
+					Ansi.log("Loaded webhook " + webhook.getId().asString() + " '" + webhook.getName().orElse("Unnamed") + "'");
 				}
 
 				if (webhook != null) {

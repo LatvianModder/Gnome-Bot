@@ -25,9 +25,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author LatvianModder
- */
 public class DownloadAllImagesCommand {
 	private static class ImageFile {
 		public String originalFilename;

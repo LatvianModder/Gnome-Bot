@@ -2,9 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import java.util.Random;
 
-/**
- * @author LatvianModder
- */
 public class RandomGibberishCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("random_gibberish")

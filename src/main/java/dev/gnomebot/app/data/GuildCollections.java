@@ -48,6 +48,8 @@ import discord4j.discordjson.json.MemberData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Image;
+import discord4j.rest.util.Permission;
+import discord4j.rest.util.PermissionSet;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
@@ -68,9 +70,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * @author LatvianModder
- */
 public class GuildCollections {
 	public final Databases db;
 	public final Snowflake guildId;
@@ -122,7 +121,6 @@ public class GuildCollections {
 	public final BooleanConfig anonymousFeedback;
 	public final BooleanConfig adminsBypassAnonFeedback;
 	public final StringConfig font;
-	public final BooleanConfig forcePingableName;
 	public final IntConfig autoMuteUrlShortener;
 	public final IntConfig autoMuteScamUrl;
 	public final BooleanConfig autoPaste;
@@ -196,7 +194,6 @@ public class GuildCollections {
 		anonymousFeedback = config.add(new BooleanConfig(this, "anonymous_feedback", false)).title("Anonymous Feedback");
 		adminsBypassAnonFeedback = config.add(new BooleanConfig(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
 		font = config.add(new StringConfig(this, "font", "DejaVu Sans Light").enumValues(App::listFonts)).title("Font");
-		forcePingableName = config.add(new BooleanConfig(this, "force_pingable_name", false)).title("Force Pingable Name");
 		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
 		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
 		autoPaste = config.add(new BooleanConfig(this, "auto_paste", true)).title("Auto-paste text files");
@@ -244,6 +241,22 @@ public class GuildCollections {
 		}
 	}
 
+	public PermissionSet getEffectiveGlobalPermissions(Snowflake member) {
+		try {
+			var set = getMember(member).getBasePermissions().block();
+
+			if (set == null) {
+				return PermissionSet.none();
+			} else if (set.contains(Permission.ADMINISTRATOR)) {
+				return PermissionSet.all();
+			} else {
+				return set;
+			}
+		} catch (Exception ignored) {
+			return PermissionSet.none();
+		}
+	}
+
 	@Override
 	public String toString() {
 		return name.get();
@@ -251,6 +264,10 @@ public class GuildCollections {
 
 	public boolean isMM() {
 		return guildId.asLong() == 166630061217153024L;
+	}
+
+	public boolean isTest() {
+		return guildId.asLong() == 720671115336220693L;
 	}
 
 	public GatewayDiscordClient getClient() {

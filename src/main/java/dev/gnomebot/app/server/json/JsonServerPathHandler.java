@@ -6,9 +6,6 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.net.Response;
 
-/**
- * @author LatvianModder
- */
 @FunctionalInterface
 public interface JsonServerPathHandler extends ServerPathHandler {
 	Response handleJson(JsonRequest request) throws Exception;

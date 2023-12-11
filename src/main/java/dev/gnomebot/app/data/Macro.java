@@ -21,9 +21,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class Macro extends WrappedDocument<Macro> {
 	public static final Pattern REMOVE_MD_LINKS = Pattern.compile("\\[.+?]\\((.+?)\\)");
 

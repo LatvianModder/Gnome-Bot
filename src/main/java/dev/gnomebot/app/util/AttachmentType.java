@@ -8,6 +8,8 @@ import java.util.regex.Pattern;
 public enum AttachmentType {
 	FILE,
 	TEXT,
+	ZIP,
+	JAR,
 	IMAGE,
 	VIDEO;
 
@@ -24,7 +26,11 @@ public enum AttachmentType {
 
 	public static AttachmentType get(String filename, String contentType) {
 		if (!contentType.isEmpty()) {
-			if (contentType.startsWith("image/")) {
+			if (contentType.equals("application/zip") || contentType.equals("application/x-zip-compressed")) {
+				return ZIP;
+			} else if (contentType.equals("application/java-archive")) {
+				return JAR;
+			} else if (contentType.startsWith("image/")) {
 				return IMAGE;
 			} else if (contentType.startsWith("video/")) {
 				return VIDEO;
@@ -33,7 +39,11 @@ public enum AttachmentType {
 			}
 		}
 
-		if (TEXT_REGEX.matcher(filename).find()) {
+		if (filename.endsWith(".zip")) {
+			return ZIP;
+		} else if (filename.endsWith(".jar")) {
+			return JAR;
+		} else if (TEXT_REGEX.matcher(filename).find()) {
 			return TEXT;
 		} else if (IMAGE_REGEX.matcher(filename).find()) {
 			return IMAGE;

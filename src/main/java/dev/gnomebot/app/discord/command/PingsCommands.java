@@ -2,20 +2,24 @@ package dev.gnomebot.app.discord.command;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.ping.PingData;
 import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ModalEventWrapper;
+import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
+import discord4j.core.object.entity.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class PingsCommands extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
@@ -38,6 +42,8 @@ public class PingsCommands extends ApplicationCommands {
 			)
 			.add(sub("test")
 					.description("Test your pings in bulk")
+					.add(string("test-text"))
+					.add(user("from"))
 					.run(PingsCommands::test)
 			);
 
@@ -203,7 +209,71 @@ public class PingsCommands extends ApplicationCommands {
 		event.respond(HELP_REGEX);
 	}
 
-	public static void test(DeferrableInteractionEventWrapper<?> event) {
-		event.respond("WIP!");
+	public static void test(ChatInputInteractionEventWrapper event) {
+		var s = event.get("test-text").asString().trim();
+		var from = event.get("from").asUser().map(User::getId).orElse(Utils.NO_SNOWFLAKE);
+
+		if (s.isEmpty()) {
+			event.respondModal("ping-test/" + from.asString(), "Test Pings", TextInput.paragraph("text", "Text to Test", 1, 2000).placeholder("Write your test text here. Each line will be treated as its own check."));
+		} else {
+			event.acknowledgeEphemeral();
+			event.respond(testResponse(event.context, from, s.split("\n")));
+		}
+	}
+
+	private static String testResponse(CommandContext ctx, Snowflake from, String[] input) {
+		var lines = new ArrayList<String>();
+
+		loop:
+		for (var content : input) {
+			var match = Emojis.stripEmojis(content);
+
+			if (match.isEmpty()) {
+				continue;
+			}
+
+			PingData pingData;
+
+			if (from.asLong() == 0L) {
+				var user = ctx.gc.db.app.discordHandler.getUser(ctx.gc.db.app.discordHandler.selfId);
+
+				Snowflake userId = user.getId();
+				String username = user.getGlobalName().orElse(user.getUsername());
+				String avatar = user.getAvatarUrl();
+				boolean bot = false;
+				pingData = new PingData(ctx.gc, ctx.channelInfo, user, userId, username, avatar, bot, match, content, "");
+			} else {
+				var user = ctx.gc.db.app.discordHandler.getUser(from);
+
+				if (user == null) {
+					throw new GnomeException("User not found!");
+				}
+
+				Snowflake userId = user.getId();
+				String username = user.getGlobalName().orElse(user.getUsername());
+				String avatar = user.getAvatarUrl();
+				boolean bot = user.isBot();
+				pingData = new PingData(ctx.gc, ctx.channelInfo, user, userId, username, avatar, bot, match, content, "");
+			}
+
+			for (var data : ctx.gc.db.app.pingHandler.getPings()) {
+				if (data.user().equals(ctx.sender.getId())) {
+					var ping = data.test(pingData);
+
+					if (ping != null) {
+						lines.add("1. " + Emojis.YES.asFormat() + " `" + match + "`: `" + ping.pattern() + "`");
+						continue loop;
+					}
+				}
+			}
+
+			lines.add("1. " + Emojis.NO.asFormat() + " `" + match + "`");
+		}
+
+		return String.join("\n", lines);
+	}
+
+	public static void testCallback(ModalEventWrapper event, Snowflake from) {
+		event.respond(testResponse(event.context, from, event.get("text").asString().split("\n")));
 	}
 }

@@ -16,9 +16,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * @author LatvianModder
- */
 public class EmojifulCommand {
 	@LegacyDiscordCommand(name = "emojiful", help = "Creates Emojiful .json recipes from reactions", arguments = "[*] <category name>")
 	public static final CommandCallback COMMAND = (context, reader) -> {

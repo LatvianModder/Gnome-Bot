@@ -12,6 +12,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -20,14 +21,9 @@ import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class CommandContext {
 	public DiscordHandler handler;
 	public GuildCollections gc;
@@ -49,27 +45,43 @@ public class CommandContext {
 	}
 
 	public void checkBotPerms(@Nullable ChannelInfo channelInfo, Permission... perms) {
-		if (channelInfo != null && channelInfo.getSelfPermissions().containsAll(PermissionSet.of(perms))) {
-			return;
+		if (channelInfo == null) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nChannel info can't be loaded").reaction(Emojis.RAGE).ephemeral();
 		}
 
-		throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :(\nPermissions required: " + Arrays.stream(perms).map(Enum::name).collect(Collectors.joining(", "))).reaction(Emojis.RAGE).ephemeral();
+		if (!channelInfo.getSelfPermissions().containsAll(PermissionSet.of(perms))) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
+		}
 	}
 
 	public void checkBotPerms(Permission... perms) {
 		checkBotPerms(channelInfo, perms);
 	}
 
+	public void checkGlobalBotPerms(Permission... perms) {
+		if (!gc.getEffectiveGlobalPermissions(gc.db.app.discordHandler.selfId).containsAll(PermissionSet.of(perms))) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
+		}
+	}
+
 	public void checkSenderPerms(@Nullable ChannelInfo channelInfo, Permission... perms) {
-		if (channelInfo != null && channelInfo.checkPermissions(sender.getId(), perms)) {
-			return;
+		if (channelInfo == null) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nChannel info can't be loaded").reaction(Emojis.RAGE).ephemeral();
 		}
 
-		throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :(\nPermissions required: " + Arrays.stream(perms).map(Enum::name).collect(Collectors.joining(", "))).reaction(Emojis.RAGE).ephemeral();
+		if (!channelInfo.checkPermissions(sender.getId(), perms)) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
+		}
 	}
 
 	public void checkSenderPerms(Permission... perms) {
 		checkSenderPerms(channelInfo, perms);
+	}
+
+	public void checkGlobalSenderPerms(Permission... perms) {
+		if (!gc.getEffectiveGlobalPermissions(sender.getId()).containsAll(PermissionSet.of(perms))) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
+		}
 	}
 
 	public void checkSenderTrusted() {

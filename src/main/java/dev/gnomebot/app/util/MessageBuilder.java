@@ -7,6 +7,8 @@ import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.MessageComponent;
+import discord4j.core.object.component.SelectMenu;
+import discord4j.core.object.component.TextInput;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateSpec;
@@ -168,6 +170,27 @@ public class MessageBuilder {
 
 	public MessageBuilder addComponentRow(ActionComponent... components) {
 		return addComponent(ActionRow.of(components));
+	}
+
+	public MessageBuilder dynamicComponents(Iterable<ActionComponent> components) {
+		ActionComponent last = null;
+		var row = new ArrayList<ActionComponent>();
+
+		for (var component : components) {
+			if (!row.isEmpty() && (row.size() >= 5 || last instanceof SelectMenu || last instanceof TextInput)) {
+				addComponent(ActionRow.of(row));
+				row = new ArrayList<>();
+			}
+
+			row.add(component);
+			last = component;
+		}
+
+		if (!row.isEmpty()) {
+			addComponent(ActionRow.of(row));
+		}
+
+		return this;
 	}
 
 	public MessageBuilder addFile(String name, InputStream file) {

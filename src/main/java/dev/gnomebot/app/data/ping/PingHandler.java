@@ -109,7 +109,7 @@ public class PingHandler {
 		boolean bot = user.isBot();
 		PingData pingData = new PingData(gc, channel, user, userId, username, avatar, bot, match, content, url);
 
-		for (UserPingInstance instance : getPings()) {
+		for (var instance : getPings()) {
 			instance.handle(pingData);
 		}
 	}

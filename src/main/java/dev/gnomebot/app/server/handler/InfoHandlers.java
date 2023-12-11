@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.URLRequest;
@@ -9,21 +10,26 @@ import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.util.ImageUtil;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.Image;
+import io.javalin.http.HttpStatus;
+import io.javalin.http.NotFoundResponse;
 
+import javax.imageio.ImageIO;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
 import java.util.HashSet;
 
 import static discord4j.rest.util.Image.Format.GIF;
 import static discord4j.rest.util.Image.Format.PNG;
 
-/**
- * @author LatvianModder
- */
 public class InfoHandlers {
 	public static final int[] VALID_SIZES = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
@@ -193,5 +199,29 @@ public class InfoHandlers {
 		}
 
 		return JSONResponse.of(json);
+	}
+
+	public static Response videoThumbnail(ServerRequest request) throws Exception {
+		var message = request.app.discordHandler.client.getMessageById(request.getSnowflake("channel"), request.getSnowflake("message")).block();
+		var attachmentId = request.getSnowflake("attachment");
+
+		for (var a : message.getAttachments()) {
+			if (a.getId().equals(attachmentId)) {
+				var img = URLRequest.of(a.getProxyUrl() + "?format=jpeg").toImage().block();
+				var img1 = ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(Assets.VIDEO.getFilePath())));
+				var g = img.createGraphics();
+				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				int tsize = Math.min(img.getWidth(), img.getHeight()) / 4;
+				// draw img1 at center of img, scaled 0.25x the height of img
+				g.drawImage(img1, (img.getWidth() - tsize) / 2, (img.getHeight() - tsize) / 2, tsize, tsize, null);
+				g.dispose();
+
+				var out = new ByteArrayOutputStream();
+				ImageIO.write(img, "jpeg", out);
+				return FileResponse.of(HttpStatus.OK, MimeType.JPEG, out.toByteArray());
+			}
+		}
+
+		throw new NotFoundResponse("Attachment not found");
 	}
 }

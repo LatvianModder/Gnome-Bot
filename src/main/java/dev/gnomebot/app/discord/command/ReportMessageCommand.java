@@ -9,9 +9,6 @@ import discord4j.core.object.entity.User;
 
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public class ReportMessageCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final MessageInteractionBuilder COMMAND = messageInteraction("Report Message")

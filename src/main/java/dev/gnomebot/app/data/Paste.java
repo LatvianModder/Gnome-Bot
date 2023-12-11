@@ -18,9 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class Paste extends WrappedDocument<Paste> {
 	public Paste(WrappedCollection<Paste> c, MapWrapper d) {
 		super(c, d);

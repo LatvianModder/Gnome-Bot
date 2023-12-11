@@ -9,9 +9,6 @@ import discord4j.core.object.entity.User;
 import java.util.HashMap;
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public class MemberCache {
 	private final GuildCollections gc;
 	private final HashMap<Snowflake, Optional<Member>> map = new HashMap<>();

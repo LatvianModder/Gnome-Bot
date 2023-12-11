@@ -11,9 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public class MapWrapper implements JSONSerializable {
 	public static final MapWrapper EMPTY = new MapWrapper(Collections.emptyMap());
 

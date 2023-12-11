@@ -14,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class ModalEventWrapper extends ComponentEventWrapper {
 	public final Map<String, CommandOption> options;
 	public final Map<String, List<String>> selectMenuOptions;

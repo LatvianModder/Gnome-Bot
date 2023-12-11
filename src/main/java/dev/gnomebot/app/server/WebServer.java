@@ -32,9 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-/**
- * @author LatvianModder
- */
 public class WebServer implements Consumer<JavalinConfig> {
 	public static final HandlerType[] METHODS = {HandlerType.GET, HandlerType.POST, HandlerType.DELETE, HandlerType.PUT, HandlerType.PATCH};
 

@@ -15,9 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class CharMap {
 	public static final CharMap EMPTY = new CharMap('\0');
 	public static final HashMap<Character, CharMap> MAP = new HashMap<>();

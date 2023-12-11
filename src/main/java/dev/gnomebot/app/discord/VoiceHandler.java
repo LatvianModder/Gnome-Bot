@@ -7,9 +7,6 @@ import dev.gnomebot.app.data.GuildCollections;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
 
-/**
- * @author LatvianModder
- */
 public class VoiceHandler {
 	public static void stateUpdate(DiscordHandler handler, VoiceStateUpdateEvent event) {
 		VoiceState oldState = event.getOld().orElse(null);

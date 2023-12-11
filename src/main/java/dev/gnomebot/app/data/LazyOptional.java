@@ -5,9 +5,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public class LazyOptional<T> {
 	@FunctionalInterface
 	public interface LazySupplier<T> {

@@ -5,9 +5,6 @@ import dev.latvian.apps.webutils.ansi.Table;
 import java.time.Instant;
 import java.util.Comparator;
 
-/**
- * @author LatvianModder
- */
 public class ExportedMessage implements Comparable<ExportedMessage> {
 	public static final Comparator<ExportedMessage> COMPARATOR = ExportedMessage::compareTo;
 

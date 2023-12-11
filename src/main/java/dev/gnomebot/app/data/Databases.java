@@ -25,9 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-/**
- * @author LatvianModder
- */
 public class Databases {
 	public static final UpdateOptions UPSERT = new UpdateOptions().upsert(true);
 

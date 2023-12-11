@@ -5,16 +5,17 @@ import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
+import discord4j.core.object.entity.Message;
 import discord4j.rest.util.AllowedMentions;
 import org.bson.conversions.Bson;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	public static final long FLAG_BOT = 1L << 0L;
 	public static final long FLAG_EMBEDS = 1L << 1L;
@@ -133,5 +134,49 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 	public void appendMessageURL(StringBuilder sb) {
 		QuoteHandler.getMessageURL(sb, collection.gc.guildId, Snowflake.of(getChannelID()), Snowflake.of(getUID()));
+	}
+
+	public static String textFromComponents(@Nullable Message message) {
+		if (message == null) {
+			return "";
+		}
+
+		var lines = new ArrayList<String>();
+
+		for (var row : message.getComponents()) {
+			var children = row.getChildren();
+
+			if (children.isEmpty()) {
+				continue;
+			}
+
+			if (!lines.isEmpty()) {
+				lines.add("---");
+			}
+
+			for (var c : children) {
+				if (c instanceof Button b) {
+					var sb = new StringBuilder("button");
+
+					if (b.getCustomId().isPresent()) {
+						sb.append(" #").append(b.getCustomId().get());
+					} else {
+						sb.append(' ').append(b.getUrl().orElse("error"));
+					}
+
+					lines.add(sb.toString());
+				}
+			}
+		}
+
+		return lines.isEmpty() ? "" : String.join("\n", lines);
+	}
+
+	public static List<ActionRow> componentsFromText(String text) {
+		if (text.isEmpty()) {
+			return List.of();
+		}
+
+		return List.of();
 	}
 }

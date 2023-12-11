@@ -11,9 +11,6 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class CLIApplicationCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("cli")

@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class EmojiMap {
 	public static final Pattern UNICODE_EMOJI_PATTERN = Pattern.compile("\\u00a9|\\u00ae|[\\u2000-\\u3300]|[\\ud83c-\\ud83e][\\ud000-\\udfff]", Pattern.UNICODE_CHARACTER_CLASS);
 	public static final Pattern RAW_UNICODE_EMOJI_PATTERN = Pattern.compile("\u00a9|\u00ae|[\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff]", Pattern.UNICODE_CHARACTER_CLASS);

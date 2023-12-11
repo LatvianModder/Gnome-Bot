@@ -10,9 +10,6 @@ import org.bson.conversions.Bson;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 	public final WrappedCollection<T> collection;
 	public final MapWrapper document;

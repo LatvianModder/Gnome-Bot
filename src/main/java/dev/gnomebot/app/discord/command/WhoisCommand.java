@@ -9,9 +9,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class WhoisCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("whois")

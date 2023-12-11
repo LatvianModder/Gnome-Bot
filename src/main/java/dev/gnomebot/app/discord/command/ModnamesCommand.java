@@ -6,9 +6,6 @@ import dev.gnomebot.app.util.URLRequest;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class ModnamesCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modnames")

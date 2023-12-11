@@ -15,7 +15,7 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.data.ScheduledTask;
-import dev.gnomebot.app.discord.command.MuteCommand;
+import dev.gnomebot.app.discord.command.admin.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
@@ -60,9 +60,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class MessageHandler {
 	public static final Pattern MESSAGE_URL_PATTERN = Pattern.compile("<?https?://(?:(?:canary|ptb)\\.)?(?:discordapp|discord)\\.(?:com|net)/channels/(\\d+)/(\\d+)/(\\d+)>?", Pattern.MULTILINE);
 	public static final Pattern INVITE_PATTERN = Pattern.compile("(?:discord\\.com/invite|discord\\.gg)/(\\w+)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
@@ -714,10 +711,11 @@ public class MessageHandler {
 		}
 
 		if (gc.autoPaste.get()) {
-			List<Attachment> attachments = new ArrayList<>();
+			var attachments = new ArrayList<Attachment>();
 
-			for (Attachment attachment : message.getAttachments()) {
-				if (AttachmentType.get(attachment) == AttachmentType.TEXT) {
+			for (var attachment : message.getAttachments()) {
+				var type = AttachmentType.get(attachment);
+				if (type == AttachmentType.TEXT || type == AttachmentType.ZIP) {
 					attachments.add(attachment);
 				}
 			}
@@ -817,7 +815,7 @@ public class MessageHandler {
 
 				return true;
 			} catch (Exception ex) {
-				context.message.addReaction(Emojis.NO_ENTRY).subscribe();
+				context.message.addReaction(Emojis.NO).subscribe();
 				App.info("Failed to run command: " + ex + " / " + context);
 				ex.printStackTrace();
 				return true;
@@ -867,7 +865,7 @@ public class MessageHandler {
 
 				return true;
 			} catch (Exception ex) {
-				context.message.addReaction(Emojis.NO_ENTRY).subscribe();
+				context.message.addReaction(Emojis.NO).subscribe();
 				App.info("Failed to run command: " + ex + " / " + context);
 				ex.printStackTrace();
 				return true;

@@ -14,6 +14,10 @@
     --background-hover-color: #FFFFFF0D;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     background-color: var(--background-color);
     /*background-image: url(background.png);
@@ -320,6 +324,10 @@ div.pastetext {
     font-family: monospace, monospace;
     white-space: pre;
     font-size: 0.85em;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--text-color);
 }
 
 div.pastetext :target {
@@ -330,47 +338,43 @@ div.pastetext a {
     user-select: none;
 }
 
-.info {
-    color: var(--text-color);
-}
-
-.debug {
+.c-e {
     color: #6D6772;
 }
 
-.warn {
+.c-w {
     color: #DBBB80;
 }
 
-.error {
+.c-e {
     color: #D15C5C;
 }
 
-.red {
+.f-r {
     color: #D15C5C;
 }
 
-.magenta {
+.f-m {
     color: #F95E92;
 }
 
-.green {
+.f-g {
     color: #7EB581;
 }
 
-.orange {
+.f-o {
     color: #B98B6F;
 }
 
-.yellow {
+.f-y {
     color: #DBBB80;
 }
 
-.blue {
+.f-b {
     color: #7EA3B5;
 }
 
-.purple {
+.f-p {
     color: #B16C99;
 }
 
@@ -380,6 +384,7 @@ p.withicon {
 }
 
 p.withicon img {
+    width: 1.5em;
     height: 1.5em;
     vertical-align: middle;
     margin-right: 0.5em;

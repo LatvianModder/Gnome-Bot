@@ -2,14 +2,18 @@ package dev.gnomebot.app.discord.command;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.UserWebhook;
 import dev.gnomebot.app.data.WebhookExecuteExtra;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
+import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Message;
@@ -18,13 +22,9 @@ import org.bson.Document;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class WebhookCommands extends ApplicationCommands {
 	public static final Pattern WEBHOOK_PATTERN = Pattern.compile("https://.*discord(?:app)?.com/api/(?:v\\d+/)?webhooks/(\\d+)/([\\w-]+)");
 
@@ -112,7 +112,14 @@ public class WebhookCommands extends ApplicationCommands {
 		Snowflake editId = event.get("edit_id").asSnowflake();
 
 		if (editId.asLong() != 0L) {
-			Message message = Objects.requireNonNull(ci.getMessage(editId));
+			Ansi.log("Editing " + editId.asString() + " in " + ci + "... [1]");
+
+			Message message = ci.getMessage(editId);
+
+			if (message == null) {
+				throw new GnomeException("Message #" + editId.asString() + " " + QuoteHandler.getMessageURL(event.context.gc.guildId, ci.id, editId) + " not found!");
+			}
+
 			WebhookExecuteExtra info = event.context.gc.db.webhookExecuteExtra.findFirst(editId.asLong());
 
 			event.respondModal("webhook/" + ci.id.asString() + "/" + editId.asString(), "Execute Webhook",
@@ -127,6 +134,16 @@ public class WebhookCommands extends ApplicationCommands {
 					TextInput.small("avatar_url", "Avatar URL").required(false).placeholder("Override avatar")
 			);
 		}
+	}
+
+	public static void editButton(ComponentEventWrapper event, Snowflake editId) {
+		var message = event.context.channelInfo.getMessage(editId);
+		var extra = DiscordMessage.textFromComponents(message);
+
+		event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + editId.asString(), "Execute Webhook",
+				TextInput.paragraph("content", "Content", 0, 2000).required(false).prefilled(message.getContent()),
+				TextInput.paragraph("extra", "Extra").required(false).prefilled(extra).placeholder(MacroCommands.EXTRA_PLACEHOLDER)
+		);
 	}
 
 	public static void executeCallback(ModalEventWrapper event, Snowflake channelId, Snowflake editId) {
@@ -147,7 +164,13 @@ public class WebhookCommands extends ApplicationCommands {
 		Snowflake id = editId.asLong() == 0L ? webHook.execute(message) : editId;
 
 		if (editId.asLong() != 0L) {
-			webHook.edit(editId.asString(), message).block();
+			Ansi.log("Editing " + editId.asString() + " in " + ci + " with " + webHook.token + "... [2]");
+
+			try {
+				webHook.edit(editId.asString(), message).block();
+			} catch (Exception ex) {
+				throw new GnomeException("Failed to edit the message!");
+			}
 
 			WebhookExecuteExtra info = event.context.gc.db.webhookExecuteExtra.findFirst(editId.asLong());
 
@@ -156,7 +179,7 @@ public class WebhookCommands extends ApplicationCommands {
 			}
 
 			event.respond("Done!");
-		} else if (id != Utils.NO_SNOWFLAKE) {
+		} else if (id.asLong() != 0L) {
 			Document doc = new Document();
 			doc.put("_id", id.asLong());
 			doc.put("extra", String.join("\n", extra));

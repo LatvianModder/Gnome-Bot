@@ -2,9 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.discord.Emojis;
 
-/**
- * @author LatvianModder
- */
 public class DecideCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("decide")

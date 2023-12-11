@@ -6,9 +6,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 
-/**
- * @author LatvianModder
- */
 public class AvatarCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("avatar")

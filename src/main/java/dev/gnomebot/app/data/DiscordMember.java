@@ -6,9 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class DiscordMember extends WrappedDocument<DiscordMember> {
 	public static final long FLAG_BOT = 1L << 0L;
 	public static final long FLAG_NICKNAME = 1L << 1L;

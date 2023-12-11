@@ -4,9 +4,6 @@ import dev.gnomebot.app.data.GuildCollections;
 import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.object.entity.Message;
 
-/**
- * @author LatvianModder
- */
 public class MessageInteractionEventWrapper extends ApplicationCommandInteractionEventWrapper<MessageInteractionEvent> {
 	public final Message message;
 

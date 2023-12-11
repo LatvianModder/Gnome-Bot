@@ -13,32 +13,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 
-/**
- * @author LatvianModder
- */
 public class MentionLeaderboardCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("mention_leaderboard")
-			.description("Mention Leaderboard")
-			.add(sub("user")
-					.description("User Mention Leaderboard")
-					.add(user("mention").required())
-					.add(time("timespan", true, false))
-					.add(integer("limit"))
-					.add(channel("channel"))
-					.run(event -> run(event, true))
-			)
-			.add(sub("role")
-					.description("Role Mention Leaderboard")
-					.add(role("mention").required())
-					.add(time("timespan", true, false))
-					.add(integer("limit"))
-					.add(channel("channel"))
-					.run(event -> run(event, false))
-			);
-
-
-	private static void run(ChatInputInteractionEventWrapper event, boolean isUser) throws Exception {
+	public static void run(ChatInputInteractionEventWrapper event, boolean isUser) throws Exception {
 		event.acknowledge();
 		event.context.checkSenderAdmin();
 

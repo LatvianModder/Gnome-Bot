@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.AttachmentType;
@@ -9,8 +10,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.discordjson.json.AttachmentData;
-import discord4j.discordjson.json.EmbedData;
 import discord4j.discordjson.json.MessageData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.service.ChannelService;
@@ -19,9 +18,6 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 
-/**
- * @author LatvianModder
- */
 public class QuoteHandler {
 	public static void getMessageURL(StringBuilder builder, Snowflake guild, Snowflake channel, Snowflake message) {
 		builder.append("https://discord.com/channels/").append(guild.asString()).append('/').append(channel.asString()).append('/').append(message.asString());
@@ -78,39 +74,52 @@ public class QuoteHandler {
 				continue;
 			}
 
-			String content = AttachmentType.FULL_IMAGE_PATTERN.matcher(AttachmentType.FULL_VIDEO_PATTERN.matcher(m.content()).replaceAll("")).replaceAll("").trim();
-			String imageUrl = "";
+			var content = AttachmentType.FULL_IMAGE_PATTERN.matcher(AttachmentType.FULL_VIDEO_PATTERN.matcher(m.content()).replaceAll("")).replaceAll("").trim();
+			var thumbnailUrl = "";
 
-			for (AttachmentData a : m.attachments()) {
-				if (!a.filename().startsWith(Attachment.SPOILER_PREFIX)) {
-					switch (AttachmentType.get(a.filename(), a.contentType().toOptional().orElse(""))) {
-						case IMAGE -> imageUrl = a.proxyUrl();
-						case VIDEO -> imageUrl = "https://media.discordapp.net/attachments/" + qchannelId.asString() + "/" + a.id().asString() + "/" + a.filename() + "?format=jpeg";
+			for (var a : m.attachments()) {
+				if (!a.filename().startsWith(Attachment.SPOILER_PREFIX) && AttachmentType.get(a.filename(), a.contentType().toOptional().orElse("")) == AttachmentType.VIDEO) {
+					thumbnailUrl = "https://gnomebot.dev/api/info/video-thumbnail/" + qchannelId.asString() + "/" + qmessageId.asString() + "/" + a.id().asString();
+					break;
+				}
+			}
+
+			if (!thumbnailUrl.isEmpty()) {
+				for (var a : m.attachments()) {
+					if (!a.filename().startsWith(Attachment.SPOILER_PREFIX) && AttachmentType.get(a.filename(), a.contentType().toOptional().orElse("")) == AttachmentType.IMAGE) {
+						thumbnailUrl = a.proxyUrl();
+						break;
 					}
 				}
 			}
 
-			if (imageUrl.isEmpty()) {
-				for (EmbedData embed : m.embeds()) {
+			if (thumbnailUrl.isEmpty()) {
+				for (var embed : m.embeds()) {
 					if (!embed.image().isAbsent()) {
-						imageUrl = embed.image().get().proxyUrl().toOptional().orElse("");
-						break;
-					} else if (!embed.video().isAbsent()) {
-						imageUrl = embed.video().get().proxyUrl().toOptional().orElse(embed.video().get().url().get()) + "?format=jpeg";
+						thumbnailUrl = embed.image().get().proxyUrl().toOptional().orElse("");
 						break;
 					}
 				}
 			}
 
-			if (content.isEmpty() && imageUrl.isEmpty()) {
+			if (thumbnailUrl.isEmpty()) {
+				for (var embed : m.embeds()) {
+					if (!embed.video().isAbsent()) {
+						thumbnailUrl = Assets.VIDEO.getPath();
+						break;
+					}
+				}
+			}
+
+			if (content.isEmpty() && thumbnailUrl.isEmpty()) {
 				continue;
 			}
 
 			EmbedBuilder quoteEmbed = EmbedBuilder.create();
 			String quoteURL = getMessageURL(qguildId, qchannelId, qmessageId);
 
-			if (!imageUrl.isEmpty()) {
-				quoteEmbed.thumbnail(imageUrl);
+			if (!thumbnailUrl.isEmpty()) {
+				quoteEmbed.thumbnail(thumbnailUrl);
 			}
 
 			UserData author = m.author();

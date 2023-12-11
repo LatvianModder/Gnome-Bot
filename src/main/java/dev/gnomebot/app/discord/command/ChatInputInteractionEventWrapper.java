@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public class ChatInputInteractionEventWrapper extends ApplicationCommandInteractionEventWrapper<ChatInputInteractionEvent> {
 	public final Map<String, CommandOption> options;
 

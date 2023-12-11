@@ -8,9 +8,6 @@ import discord4j.common.util.Snowflake;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class WebToken extends WrappedDocument<WebToken> {
 	public final String token;
 	public final Snowflake userId;

@@ -13,9 +13,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class MessageFilter {
 	public static void alias(StringBuilder sb, char c) {
 		CharMap a = CharMap.get(c);

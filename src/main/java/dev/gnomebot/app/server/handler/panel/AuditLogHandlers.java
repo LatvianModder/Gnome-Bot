@@ -4,7 +4,6 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.UserCache;
-import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.ansi.Table;
@@ -24,9 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class AuditLogHandlers {
 	public static Response offenses(ServerRequest request) {
 		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
@@ -139,7 +135,7 @@ public class AuditLogHandlers {
 		return root.asResponse();
 	}
 
-	private record BanEntry(String id, String name, String displayName, String discriminator, String reason) {
+	private record BanEntry(String id, String name, String displayName, String reason) {
 	}
 
 	public static Response bans(ServerRequest request) {
@@ -161,8 +157,7 @@ public class AuditLogHandlers {
 			list.add(new BanEntry(
 							u.id().asString(),
 							u.username(),
-							ForcePingableNameCommand.makePingable(u.username(), u.id().asLong()),
-							u.discriminator(),
+					u.globalName().orElse(u.username()),
 							entry.reason().orElse("")
 					)
 			);
@@ -183,9 +178,9 @@ public class AuditLogHandlers {
 			cells[1].value(entry.id);
 
 			if (entry.displayName.equals(entry.name)) {
-				cells[2].value(entry.displayName + "#" + entry.discriminator);
+				cells[2].value(entry.displayName);
 			} else {
-				cells[2].tag().span().title(entry.name + "#" + entry.discriminator).string(entry.displayName);
+				cells[2].tag().span().title(entry.name).string(entry.displayName);
 			}
 
 			cells[3].value(entry.reason);

@@ -14,9 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class DeleteUserMessagesCommand {
 	@LegacyDiscordCommand(name = "delete_user_messages", help = "Deletes user messages", arguments = "<user> [time of how far back]", permissionLevel = AuthLevel.ADMIN)
 	public static final CommandCallback COMMAND = (context, reader) -> {

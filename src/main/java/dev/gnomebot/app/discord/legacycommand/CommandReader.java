@@ -14,9 +14,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class CommandReader extends SimpleStringReader {
 	private final GuildCollections gc;
 

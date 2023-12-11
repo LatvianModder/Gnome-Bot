@@ -4,9 +4,6 @@ import dev.gnomebot.app.util.MapWrapper;
 
 import java.util.Date;
 
-/**
- * @author LatvianModder
- */
 public class WebLogEntry extends WrappedDocument<WebLogEntry> {
 	public WebLogEntry(WrappedCollection<WebLogEntry> c, MapWrapper d) {
 		super(c, d);

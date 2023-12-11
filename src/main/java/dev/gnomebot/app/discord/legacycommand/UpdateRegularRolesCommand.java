@@ -10,9 +10,6 @@ import discord4j.core.object.entity.Member;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class UpdateRegularRolesCommand {
 	@LegacyDiscordCommand(name = "update_regular_roles", help = "Adds or removes regular role. Use in case requirements are changed", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> {

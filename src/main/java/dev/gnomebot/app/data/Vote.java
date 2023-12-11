@@ -7,9 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public enum Vote {
 	NONE(null, Emojis.VOTENONE),
 	UP(Boolean.TRUE, Emojis.VOTEUP),

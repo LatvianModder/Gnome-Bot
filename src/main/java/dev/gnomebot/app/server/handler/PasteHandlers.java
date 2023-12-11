@@ -7,21 +7,30 @@ import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.html.Tag;
 import dev.latvian.apps.webutils.net.FileResponse;
+import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
+import io.javalin.http.HttpStatus;
 
 import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class PasteHandlers {
 	public static final int MAX_LINES = 50_000;
@@ -111,7 +120,8 @@ public class PasteHandlers {
 	}
 
 	public static Response pasteRaw(ServerRequest request) throws Exception {
-		Snowflake id = request.getSnowflake("id");
+		var id0 = request.variable("id").split("!", 2);
+		var id = Snowflake.of(id0[0]);
 
 		Paste paste = request.app.db.pastes.query(id.asLong()).first();
 
@@ -122,39 +132,42 @@ public class PasteHandlers {
 		Snowflake channel = Snowflake.of(paste.getChannelID());
 		String filename = paste.getFilename();
 
-		String contents;
+		byte[] contents;
 
 		try {
-			contents = URLRequest.of(Paste.getOriginalUrl(channel.asString(), id.asString(), filename)).toJoinedString().block().trim();
+			contents = URLRequest.of(Paste.getOriginalUrl(channel.asString(), id.asString(), filename)).toBytes().block();
 		} catch (Exception ex) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
 
-		if (contents.isEmpty()) {
+		if (contents == null || contents.length == 0) {
 			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
 		}
 
-		BufferedReader reader = new BufferedReader(new StringReader(contents));
+		var type = MimeType.TEXT;
+		boolean download = false;
 
-		StringBuilder sb = new StringBuilder();
-
-		List<String> lines = new ArrayList<>();
-		String line;
-
-		while ((line = reader.readLine()) != null) {
-			lines.add(line);
+		if (filename.endsWith(".pdf")) {
+			type = "application/pdf";
+		} else if (filename.endsWith(".zip")) {
+			type = "application/zip";
+			download = true;
+		} else if (filename.endsWith(".jar")) {
+			type = "application/java-archive";
+			download = true;
 		}
 
-		for (String s : lines) {
-			sb.append(s);
-			sb.append('\n');
-		}
-
-		return FileResponse.plainText(sb.toString())
+		var response = FileResponse.of(HttpStatus.OK, type, contents)
+				.withHeader("Gnome-Paste-Bytes", String.valueOf(contents.length))
 				.withHeader("Gnome-Paste-Filename", filename)
 				.withHeader("Gnome-Paste-Channel", channel.asString())
-				.withHeader("Gnome-Paste-User", paste.getUser())
-				;
+				.withHeader("Gnome-Paste-User", paste.getUser());
+
+		if (download) {
+			response = response.withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+		}
+
+		return response;
 	}
 
 	public static Response pasteDirect(ServerRequest request) throws Exception {
@@ -167,13 +180,15 @@ public class PasteHandlers {
 	}
 
 	public static Response paste(ServerRequest request) throws Exception {
-		Snowflake id = request.getSnowflake("id");
-		String contents;
+		var id0 = request.variable("id").split("!", 2);
+		var id = Snowflake.of(id0[0]);
+		String subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
+		byte[] contents;
 		String filename;
 		String user;
 
 		try {
-			URLRequest<String> req = Utils.internalRequest("paste/" + id.asString() + "/raw").toJoinedString();
+			URLRequest<byte[]> req = Utils.internalRequest("paste/" + id.asString() + "/raw").toBytes();
 			contents = req.block();
 			filename = req.getHeader("Gnome-Paste-Filename");
 			user = req.getHeader("Gnome-Paste-User");
@@ -181,139 +196,208 @@ public class PasteHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
 
-		if (contents.isEmpty()) {
+		if (contents == null || contents.length == 0) {
 			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
+		}
+
+		boolean archive = filename.endsWith(".zip") || filename.endsWith(".jar");
+
+		zipExit:
+		if (archive && !subfile.isEmpty()) {
+			var stream = (filename.endsWith(".jar") ? new JarInputStream(new ByteArrayInputStream(contents)) : new ZipInputStream(new ByteArrayInputStream(contents)));
+			ZipEntry zipEntry;
+
+			while ((zipEntry = stream.getNextEntry()) != null) {
+				if (zipEntry.getName().equals(subfile)) {
+					filename = zipEntry.getName();
+
+					if (filename.indexOf('/') != -1) {
+						filename = filename.substring(filename.lastIndexOf('/') + 1);
+					}
+
+					contents = stream.readAllBytes();
+					break zipExit;
+				}
+			}
+
+			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+		}
+
+		if (filename.endsWith(".pdf")) {
+			return FileResponse.of(HttpStatus.OK, "application/pdf", contents);
 		}
 
 		var root = GnomeRootTag.createSimple("/paste/" + id.asString(), filename);
 
-		root.content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(" [Raw]").end();
+		root.content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(archive ? " [Download]" : " [Raw]").end();
 		root.content.br();
 
-		Tag pasteText = root.content.div().classes("pastetext");
+		var pasteText = root.content.div().classes("pastetext");
 
-		String[] lines = contents.split("\n");
+		if (archive && subfile.isEmpty()) {
+			var zipList = new ArrayList<Pair<String, String>>();
 
-		String lineFormat = "%0" + String.valueOf(lines.length).length() + "d";
-		StringBuilder sb = new StringBuilder();
+			var stream = (filename.endsWith(".jar") ? new JarInputStream(new ByteArrayInputStream(contents)) : new ZipInputStream(new ByteArrayInputStream(contents)));
+			ZipEntry zipEntry;
 
-		int fileType;
+			while ((zipEntry = stream.getNextEntry()) != null) {
+				if (zipEntry.isDirectory() || zipEntry.getName().endsWith(".zip") || zipEntry.getName().endsWith(".jar")) {
+					zipList.add(Pair.of(zipEntry.getName(), ""));
+				} else {
+					zipList.add(Pair.of(zipEntry.getName(), "/paste/" + id.asString() + "!" + CodingUtils.encodeURL(zipEntry.getName())));
+				}
+			}
 
-		if (filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".ts") || filename.endsWith(".zs") || filename.endsWith(".json")) {
-			fileType = TYPE_JAVA_AND_JS;
+			zipList.sort((o1, o2) -> o1.a().compareToIgnoreCase(o2.a()));
+
+			for (var pair : zipList) {
+				if (pair.b().isEmpty()) {
+					pasteText.span().string(pair.a());
+				} else {
+					pasteText.span().a(pair.b(), pair.a());
+				}
+			}
+
+			return root.asResponse();
+		}
+
+		if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".gif") || filename.endsWith(".webp")) {
+			// return pasteText.img("data:image/" + filename.substring(filename.lastIndexOf('.') + 1) + ";base64," + Base64.getEncoder().encodeToString(contents));
+			return FileResponse.of(HttpStatus.OK, "image/" + filename.substring(filename.lastIndexOf('.') + 1), contents);
+		} else if (filename.endsWith(".mp4") || filename.endsWith(".avi") || filename.endsWith(".webm")) {
+			// return pasteText.img("data:image/" + filename.substring(filename.lastIndexOf('.') + 1) + ";base64," + Base64.getEncoder().encodeToString(contents));
+			return FileResponse.of(HttpStatus.OK, "video/" + filename.substring(filename.lastIndexOf('.') + 1), contents);
+		} else if (filename.endsWith(".html")) {
+			pasteText.span().raw(new String(contents, StandardCharsets.UTF_8));
 		} else {
-			fileType = TYPE_NONE;
-		}
+			List<String> lines = new ArrayList<>();
+			var reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(contents), StandardCharsets.UTF_8));
+			String readerLine;
 
-		if (lines.length > MAX_LINES) {
-			pasteText.p().classes("error").string("This paste is too large! Only part of it will have formatting!").end();
-			pasteText.br();
-		}
+			while ((readerLine = reader.readLine()) != null) {
+				if (lines.size() >= MAX_LINES) {
+					lines.add("This paste is too large! Only part of it will have formatting!");
+					break;
+				} else {
+					lines.add(readerLine);
+				}
+			}
 
-		for (int i = 0; i < lines.length; i++) {
-			String lineId = "L" + (i + 1);
-			Tag line = pasteText.p();
-			line.id(lineId);
+			String lineFormat = "%0" + String.valueOf(lines.size()).length() + "d";
+			StringBuilder sb = new StringBuilder();
 
-			if (i >= MAX_LINES || fileType != TYPE_NONE) {
-				line.classes("info");
-			} else if (lines[i].contains("ERR")) {
-				line.classes("error");
-			} else if (lines[i].contains("WARN")) {
-				line.classes("warn");
-			} else if (lines[i].contains("DEBUG") || lines[i].contains("TRACE")) {
-				line.classes("debug");
-			} else if (lines[i].contains("Error:") || lines[i].contains("Exception:") || lines[i].contains("Caused by:") || lines[i].contains("Stacktrace:")) {
-				line.classes("error");
+			int fileType;
+
+			if (filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".ts") || filename.endsWith(".zs") || filename.endsWith(".json")) {
+				fileType = TYPE_JAVA_AND_JS;
 			} else {
-				line.classes("info");
+				fileType = TYPE_NONE;
 			}
 
-			line.a("#" + lineId).string(String.format(lineFormat, i + 1));
-			line.a("").string("    ");
+			for (int i = 0; i < lines.size(); i++) {
+				var s = lines.get(i);
+				String lineId = "L" + (i + 1);
+				Tag line = pasteText.span();
+				line.id(lineId);
 
-			if (i >= MAX_LINES) {
-				line.string(lines[i]);
-				continue;
-			}
-
-			if (fileType == TYPE_JAVA_AND_JS) {
-				Matcher matcher = JAVA_AND_JS_PATTERN.matcher(lines[i]);
-
-				while (matcher.find()) {
-					sb.setLength(0);
-					matcher.appendReplacement(sb, "");
-					line.string(sb.toString());
-
-					String string = matcher.group(1);
-					String number = matcher.group(3);
-					String keyword = matcher.group(4);
-					String symbol = matcher.group(5);
-					String bracketOpen = matcher.group(6);
-					String bracketClose = matcher.group(7);
-
-					if (string != null) {
-						line.span("green").string(string);
-					} else if (number != null) {
-						line.span("orange").string(number);
-					} else if (keyword != null) {
-						line.span("magenta").string(keyword);
-					} else if (symbol != null) {
-						line.span("blue").string(symbol);
-					} else if (bracketOpen != null) {
-						line.span("blue").string(bracketOpen);
-					} else if (bracketClose != null) {
-						line.span("blue").string(bracketClose);
+				if (i < MAX_LINES && fileType == TYPE_NONE) {
+					if (s.contains("ERR")) {
+						line.classes("c-e");
+					} else if (s.contains("WARN")) {
+						line.classes("c-w");
+					} else if (s.contains("DEBUG") || s.contains("TRACE")) {
+						line.classes("c-d");
+					} else if (s.contains("Error:") || s.contains("Exception:") || s.contains("Caused by:") || s.contains("Stacktrace:")) {
+						line.classes("c-e");
 					}
 				}
 
-				sb.setLength(0);
-				matcher.appendTail(sb);
-				line.string(sb.toString());
-			} else {
-				Matcher matcher = FormattingUtils.STACK_AT_PATTERN.matcher(lines[i]);
+				line.a("#" + lineId).string(String.format(lineFormat, i + 1));
+				line.a("").string("    ");
 
-				while (matcher.find()) {
-					sb.setLength(0);
-					matcher.appendReplacement(sb, "");
-					line.string(sb.toString());
-
-					String at = matcher.group(1);
-					String packagePath = matcher.group(2);
-					String className = matcher.group(3);
-					String methodName = matcher.group(4);
-					String source = matcher.group(5);
-
-					line.string(at);
-					line.span("orange").string(packagePath);
-					line.string(".");
-					line.span("yellow").string(className);
-					line.string(".");
-					line.span("blue").string(methodName);
-					line.string(":");
-
-					Set<String> sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
-
-					String[] sourceS = source.split(":", 2);
-
-					if (sourceS[0].equals("Native Method")) {
-						line.span("purple").string("native");
-					} else if (sourceS[0].equals("Unknown Source")) {
-						line.span("purple").string("unknown");
-					} else if (sourceS[0].equals(".dynamic")) {
-						line.span("purple").string("dynamic");
-					} else if (sourceS[0].equals("SourceFile")) {
-						line.span("purple").string("SourceFile");
-					} else if (sourceS.length == 2 && sourceSet.contains(sourceS[0].replace(".java", ""))) {
-						line.span("purple").string("L" + sourceS[1]);
-					} else {
-						line.span("purple").string(source.replace(".java", ""));
-					}
+				if (i >= MAX_LINES) {
+					line.string(s);
+					continue;
 				}
 
-				sb.setLength(0);
-				matcher.appendTail(sb);
-				line.string(sb.toString());
+				if (fileType == TYPE_JAVA_AND_JS) {
+					Matcher matcher = JAVA_AND_JS_PATTERN.matcher(s);
+
+					while (matcher.find()) {
+						sb.setLength(0);
+						matcher.appendReplacement(sb, "");
+						line.string(sb.toString());
+
+						String string = matcher.group(1);
+						String number = matcher.group(3);
+						String keyword = matcher.group(4);
+						String symbol = matcher.group(5);
+						String bracketOpen = matcher.group(6);
+						String bracketClose = matcher.group(7);
+
+						if (string != null) {
+							line.span("f-g").string(string);
+						} else if (number != null) {
+							line.span("f-o").string(number);
+						} else if (keyword != null) {
+							line.span("f-m").string(keyword);
+						} else if (symbol != null) {
+							line.span("f-b").string(symbol);
+						} else if (bracketOpen != null) {
+							line.span("f-b").string(bracketOpen);
+						} else if (bracketClose != null) {
+							line.span("f-b").string(bracketClose);
+						}
+					}
+
+					sb.setLength(0);
+					matcher.appendTail(sb);
+					line.string(sb.toString());
+				} else {
+					Matcher matcher = FormattingUtils.STACK_AT_PATTERN.matcher(s);
+
+					while (matcher.find()) {
+						sb.setLength(0);
+						matcher.appendReplacement(sb, "");
+						line.string(sb.toString());
+
+						String at = matcher.group(1);
+						String packagePath = matcher.group(2);
+						String className = matcher.group(3);
+						String methodName = matcher.group(4);
+						String source = matcher.group(5);
+
+						line.string(at);
+						line.span("f-o").string(packagePath);
+						line.string(".");
+						line.span("f-y").string(className);
+						line.string(".");
+						line.span("f-b").string(methodName);
+						line.string(":");
+
+						Set<String> sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
+
+						String[] sourceS = source.split(":", 2);
+
+						if (sourceS[0].equals("Native Method")) {
+							line.span("f-p").string("native");
+						} else if (sourceS[0].equals("Unknown Source")) {
+							line.span("f-p").string("unknown");
+						} else if (sourceS[0].equals(".dynamic")) {
+							line.span("f-p").string("dynamic");
+						} else if (sourceS[0].equals("SourceFile")) {
+							line.span("f-p").string("SourceFile");
+						} else if (sourceS.length == 2 && sourceSet.contains(sourceS[0].replace(".java", ""))) {
+							line.span("f-p").string("L" + sourceS[1]);
+						} else {
+							line.span("f-p").string(source.replace(".java", ""));
+						}
+					}
+
+					sb.setLength(0);
+					matcher.appendTail(sb);
+					line.string(sb.toString());
+				}
 			}
 		}
 

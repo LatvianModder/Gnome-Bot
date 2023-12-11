@@ -16,9 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class CreateLobbyCommand {
 	public static class Lobby extends ReactionHandler.Callback {
 		public final Snowflake owner;

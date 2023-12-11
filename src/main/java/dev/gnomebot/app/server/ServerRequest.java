@@ -24,9 +24,6 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class ServerRequest {
 	public final App app;
 	private final Context context;

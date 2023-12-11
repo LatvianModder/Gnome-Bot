@@ -3,9 +3,6 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.reaction.ReactionEmoji;
 
-/**
- * @author LatvianModder
- */
 public class BigEmojiCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("bigemoji")

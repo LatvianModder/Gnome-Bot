@@ -3,6 +3,7 @@ package dev.gnomebot.app.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
+import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.Snowflake;
@@ -34,15 +35,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static discord4j.rest.util.Image.Format.GIF;
 import static discord4j.rest.util.Image.Format.PNG;
 
-/**
- * @author LatvianModder
- */
 public class Utils {
 	public static final Snowflake NO_SNOWFLAKE = Snowflake.of(0L);
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
@@ -216,5 +216,15 @@ public class Utils {
 		} catch (JsonProcessingException e) {
 			throw Exceptions.propagate(e);
 		}
+	}
+
+	public static String permName(Permission permission) {
+		var sb = new StringBuilder();
+		FormattingUtils.titleCase(sb, permission.name().toLowerCase().replace('_', ' '));
+		return sb.toString();
+	}
+
+	public static String permsToString(Permission[] perms) {
+		return Arrays.stream(perms).map(Utils::permName).collect(Collectors.joining(", "));
 	}
 }

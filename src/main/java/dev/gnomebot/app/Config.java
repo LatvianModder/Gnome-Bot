@@ -9,9 +9,6 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author LatvianModder
- */
 public class Config {
 	private static Config inst;
 

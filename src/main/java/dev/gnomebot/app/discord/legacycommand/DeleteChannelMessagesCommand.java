@@ -10,9 +10,6 @@ import discord4j.core.object.entity.Message;
 
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public class DeleteChannelMessagesCommand {
 	@LegacyDiscordCommand(name = "delete_channel_messages", help = "Deletes messages", arguments = "<channel/message_after> | (<channel[/message_before]> <number of messages>)", permissionLevel = AuthLevel.ADMIN)
 	public static final CommandCallback COMMAND = (context, reader) -> {

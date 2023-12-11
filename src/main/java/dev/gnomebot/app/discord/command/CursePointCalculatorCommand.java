@@ -3,9 +3,6 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.data.Currency;
 import dev.latvian.apps.webutils.ansi.Table;
 
-/**
- * @author LatvianModder
- */
 public class CursePointCalculatorCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("curse_point_calculator")

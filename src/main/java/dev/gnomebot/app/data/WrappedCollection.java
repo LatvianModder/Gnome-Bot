@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-/**
- * @author LatvianModder
- */
 public class WrappedCollection<T extends WrappedDocument<T>> {
 	public final Databases db;
 	public final String id;

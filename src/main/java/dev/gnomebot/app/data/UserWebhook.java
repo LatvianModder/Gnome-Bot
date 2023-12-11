@@ -3,9 +3,6 @@ package dev.gnomebot.app.data;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.MapWrapper;
 
-/**
- * @author LatvianModder
- */
 public class UserWebhook extends WrappedDocument<UserWebhook> {
 	public UserWebhook(WrappedCollection<UserWebhook> c, MapWrapper d) {
 		super(c, d);

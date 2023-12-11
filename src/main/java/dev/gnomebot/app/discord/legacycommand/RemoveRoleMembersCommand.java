@@ -7,9 +7,6 @@ import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 
-/**
- * @author LatvianModder
- */
 public class RemoveRoleMembersCommand {
 	@LegacyDiscordCommand(name = "remove_role_members", help = "Removes members from role", arguments = "<role>", permissionLevel = AuthLevel.ADMIN)
 	public static final CommandCallback COMMAND = (context, reader) -> {

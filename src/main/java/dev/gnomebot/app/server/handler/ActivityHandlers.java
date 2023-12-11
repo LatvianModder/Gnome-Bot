@@ -34,9 +34,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class ActivityHandlers {
 	public static final long MS_IN_DAY = 86400000L;
 

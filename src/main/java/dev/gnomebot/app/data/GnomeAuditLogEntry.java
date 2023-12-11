@@ -12,9 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	public interface Flags {
 		int LEVEL_01 = 1 << 0;
@@ -43,7 +40,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		COMMAND("command", 1, Flags.OLD_CONTENT),
 		ECHO("echo", 1, Flags.CONTENT),
 
-		FORCED_NAME_UPDATE("forced_name_update", 1, Flags.OLD_CONTENT),
 		ADMIN_PING("admin_ping", 2, 0),
 		DISCORD_INVITE("discord_invite", 2, Flags.REVOCABLE),
 		IP_ADDRESS("ip_address", 2, 0),

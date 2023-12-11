@@ -5,9 +5,6 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.TextInput;
 
-/**
- * @author LatvianModder
- */
 public class ModmailCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modmail")

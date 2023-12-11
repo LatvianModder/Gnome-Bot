@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public enum AuthLevel {
 	NO_AUTH("no_auth"),
 	LOGGED_IN("logged_in"),

@@ -7,9 +7,6 @@ import io.javalin.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author LatvianModder
- */
 public enum HTTPResponseCode {
 	UNKNOWN(HttpStatus.UNKNOWN),
 	OK(HttpStatus.OK),

@@ -5,6 +5,7 @@ import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
+import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
@@ -33,6 +34,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 	public ApplicationCommandCallback<E, W> callback;
 	public AutoCompleteSuggestionCallback suggestions;
 	public boolean supportsDM;
+	public PermissionSet defaultMemberPermissions;
 
 	public ApplicationCommandInteractionBuilder(InteractionType<Self> it, ApplicationCommandOption.Type t, String n) {
 		interactionType = it;
@@ -50,6 +52,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		options = null;
 		suggestions = null;
 		supportsDM = false;
+		defaultMemberPermissions = null;
 	}
 
 	@Override
@@ -114,6 +117,11 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		return self();
 	}
 
+	public Self defaultMemberPermissions(PermissionSet p) {
+		defaultMemberPermissions = p;
+		return self();
+	}
+
 	public List<ApplicationCommandOptionData> createOptions() {
 		if (options == null) {
 			return Collections.emptyList();
@@ -152,6 +160,10 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		var b = ApplicationCommandRequest.builder();
 		b.type(interactionType.type);
 		b.name(name);
+
+		if (defaultMemberPermissions != null) {
+			b.defaultMemberPermissions(Long.toUnsignedString(defaultMemberPermissions.getRawValue()));
+		}
 
 		if (interactionType.hasDescription) {
 			b.description(description);

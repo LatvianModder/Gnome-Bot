@@ -1,8 +1,5 @@
 package dev.gnomebot.app.server.json;
 
-/**
- * @author LatvianModder
- */
 public class MissingValueException extends IllegalArgumentException {
 	public final String key;
 

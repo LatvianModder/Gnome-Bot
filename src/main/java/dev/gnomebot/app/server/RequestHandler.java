@@ -5,9 +5,6 @@ import io.javalin.http.HandlerType;
 
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public class RequestHandler {
 	public final App app;
 	public final String path;

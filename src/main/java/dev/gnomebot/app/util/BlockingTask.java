@@ -1,8 +1,5 @@
 package dev.gnomebot.app.util;
 
-/**
- * @author LatvianModder
- */
 public class BlockingTask {
 	public final BlockingTaskCallback callback;
 	public boolean cancelled;

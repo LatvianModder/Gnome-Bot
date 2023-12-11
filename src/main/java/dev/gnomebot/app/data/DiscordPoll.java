@@ -12,9 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 	public DiscordPoll(WrappedCollection<DiscordPoll> c, MapWrapper d) {
 		super(c, d);

@@ -4,9 +4,6 @@ import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.json.JSONObject;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @author LatvianModder
- */
 public class JsonRequest {
 	public final ServerRequest request;
 	public final JSONObject json;

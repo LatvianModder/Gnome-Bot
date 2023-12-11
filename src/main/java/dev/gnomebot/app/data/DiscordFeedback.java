@@ -18,9 +18,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * @author LatvianModder
- */
 public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	public enum Status {
 		NONE(0, "None", EmbedColor.BLUE, ""),

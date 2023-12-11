@@ -5,9 +5,6 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
-/**
- * @author LatvianModder
- */
 public class VerifyMinecraftCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("verify-minecraft")
@@ -16,8 +13,8 @@ public class VerifyMinecraftCommand extends ApplicationCommands {
 			.run(VerifyMinecraftCommand::run);
 
 	private static void run(ChatInputInteractionEventWrapper event) {
-		event.context.checkBotPerms(Permission.MODERATE_MEMBERS);
-		event.context.checkSenderPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalBotPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalSenderPerms(Permission.MODERATE_MEMBERS);
 
 		event.acknowledge();
 		var user = event.get("user").asUser().get();

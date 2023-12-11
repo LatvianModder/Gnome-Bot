@@ -9,9 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class DBConfig {
 	public final LinkedHashMap<String, BaseConfig<?>> map = new LinkedHashMap<>();
 

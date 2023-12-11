@@ -7,9 +7,6 @@ import discord4j.core.object.entity.User;
 import java.util.HashMap;
 import java.util.Optional;
 
-/**
- * @author LatvianModder
- */
 public class UserCache {
 	private final DiscordHandler handler;
 	private final HashMap<Snowflake, Optional<User>> map = new HashMap<>();

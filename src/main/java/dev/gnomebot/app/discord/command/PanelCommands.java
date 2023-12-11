@@ -2,9 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.App;
 
-/**
- * @author LatvianModder
- */
 public class PanelCommands extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("panel")
@@ -16,10 +13,6 @@ public class PanelCommands extends ApplicationCommands {
 			.add(sub("logout")
 					.description("Log out of the panel (Invalidates all your tokens)")
 					.run(PanelCommands::logout)
-			)
-			.add(sub("logout-everyone")
-					.description("Log everyone out of the panel (Invalidates everyone's tokens)")
-					.run(PanelCommands::logoutEveryone)
 			);
 
 	private static void login(ChatInputInteractionEventWrapper event) throws Exception {
@@ -34,7 +27,7 @@ public class PanelCommands extends ApplicationCommands {
 		event.respond("Your Gnome Panel login tokens have been invalidated!");
 	}
 
-	private static void logoutEveryone(ChatInputInteractionEventWrapper event) throws Exception {
+	public static void logoutEveryone(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderTrusted();
 		App.instance.db.invalidateAllTokens();

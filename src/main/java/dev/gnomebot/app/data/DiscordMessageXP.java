@@ -4,9 +4,6 @@ import dev.gnomebot.app.util.MapWrapper;
 
 import java.util.Date;
 
-/**
- * @author LatvianModder
- */
 public class DiscordMessageXP extends WrappedDocument<DiscordMessageXP> {
 	public DiscordMessageXP(WrappedCollection<DiscordMessageXP> c, MapWrapper d) {
 		super(c, d);

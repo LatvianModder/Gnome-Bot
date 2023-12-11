@@ -14,9 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class UserPings extends WrappedDocument<UserPings> {
 	public UserPings(WrappedCollection<UserPings> c, MapWrapper d) {
 		super(c, d);

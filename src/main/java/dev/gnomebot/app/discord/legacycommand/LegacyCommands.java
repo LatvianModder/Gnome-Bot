@@ -20,9 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public final class LegacyCommands {
 	public static final Map<String, LegacyCommands> COMMAND_MAP = new LinkedHashMap<>();
 	public static final List<LegacyCommands> COMMAND_LIST = new ArrayList<>();

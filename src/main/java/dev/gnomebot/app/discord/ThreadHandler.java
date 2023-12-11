@@ -8,9 +8,6 @@ import discord4j.core.event.domain.thread.ThreadListSyncEvent;
 import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
 import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
 
-/**
- * @author LatvianModder
- */
 public class ThreadHandler {
 	public static void channelCreate(DiscordHandler handler, ThreadChannelCreateEvent event) {
 		var gc = handler.app.db.guild(event.getChannel().getGuildId());

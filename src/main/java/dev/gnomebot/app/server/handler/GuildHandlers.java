@@ -11,16 +11,13 @@ import dev.gnomebot.app.data.config.BaseConfig;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.UserCache;
-import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.json.JsonRequest;
-import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.webutils.ImageUtils;
-import dev.latvian.apps.webutils.ansi.Table;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
@@ -37,9 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class GuildHandlers {
 	public static Response guilds(ServerRequest request) throws Exception {
 		List<PanelGuildData> guilds = new ArrayList<>();
@@ -260,21 +254,6 @@ public class GuildHandlers {
 		}
 
 		return JSONResponse.of(json);
-	}
-
-	public static Response unpingableNames(ServerRequest request) throws Exception {
-		var table = new Table("Order", "ID", "Original Name", "Pingable Name");
-
-		for (var m : request.gc.getGuild().getMembers().filter(m -> !CharMap.isPingable(m.getUsername()) && !CharMap.isPingable(m.getDisplayName())).sort((o1, o2) -> o1.getUsername().compareToIgnoreCase(o2.getUsername())).toIterable()) {
-			String s = m.getUsername();
-			String n = ForcePingableNameCommand.makePingable(s, m.getId().asLong());
-
-			if (!s.equals(n)) {
-				table.addRow(table.rows.size() + 1, m.getId().asString(), m.getTag(), n);
-			}
-		}
-
-		return FileResponse.plainText(String.join("\n", table.getCSVLines(false)));
 	}
 
 	public static Response auditLog(ServerRequest request) {

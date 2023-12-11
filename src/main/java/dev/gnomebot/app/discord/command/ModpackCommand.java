@@ -15,9 +15,6 @@ import discord4j.discordjson.json.WebhookMessageEditRequest;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author LatvianModder
- */
 public class ModpackCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modpack")

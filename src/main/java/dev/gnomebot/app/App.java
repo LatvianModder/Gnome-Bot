@@ -44,9 +44,6 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Predicate;
 
-/**
- * @author LatvianModder
- */
 public class App implements Runnable {
 	public static final Instant START_INSTANT = Instant.now();
 	public static final Logger LOGGER = new Logger();
@@ -138,6 +135,7 @@ public class App implements Runnable {
 		webServer.add("api/info/avatar/:user/:size", InfoHandlers::avatar).noAuth().cacheDays(1);
 		webServer.add("api/info/emoji/:emoji/:size", InfoHandlers::emoji).noAuth().cacheDays(1);
 		webServer.add("api/info/define/:word", InfoHandlers::define).noAuth().cacheMinutes(1);
+		webServer.add("api/info/video-thumbnail/:channel/:message/:attachment", InfoHandlers::videoThumbnail).noAuth().cacheDays(1);
 
 		webServer.add("api/guilds", GuildHandlers::guilds).cacheMinutes(1).log();
 		webServer.add("api/guild/info/:guild", GuildHandlers::info).member().cacheHours(1);
@@ -155,7 +153,6 @@ public class App implements Runnable {
 		webServer.add("api/guild/polls/:guild", GuildHandlers::pollList).member();
 		webServer.add("api/guild/members/:guild", GuildHandlers::members).member().cacheMinutes(5);
 		webServer.add("api/guild/member/:guild/:member", GuildHandlers::member).member().cacheMinutes(5);
-		webServer.add("api/guild/unpingable-names/:guild", GuildHandlers::unpingableNames).admin();
 		webServer.add("api/guild/audit-log/:guild", GuildHandlers::auditLog).admin().log();
 		webServer.add("api/guild/export-messages/:guild/:member", GuildHandlers::exportMessages).admin().log();
 

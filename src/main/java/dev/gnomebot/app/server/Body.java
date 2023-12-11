@@ -6,9 +6,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * @author LatvianModder
- */
 public class Body {
 	public byte[] bytes = new byte[0];
 	public Map<String, String> properties = new LinkedHashMap<>();

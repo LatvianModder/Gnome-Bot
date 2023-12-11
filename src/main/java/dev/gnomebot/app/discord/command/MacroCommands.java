@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class MacroCommands extends ApplicationCommands {
 	public static final String EXTRA_PLACEHOLDER = "For info about Extras run /about macro";
 	public static final String HELP = """

@@ -3,9 +3,6 @@ package dev.gnomebot.app.discord.legacycommand;
 import dev.gnomebot.app.discord.Emojis;
 import discord4j.core.object.reaction.ReactionEmoji;
 
-/**
- * @author LatvianModder
- */
 public class GnomeException extends RuntimeException {
 	public enum Type {
 		ERROR,
@@ -25,7 +22,7 @@ public class GnomeException extends RuntimeException {
 		ephemeral = false;
 		deleteMessage = false;
 		position = -1;
-		reaction = Emojis.NO_ENTRY;
+		reaction = Emojis.NO;
 	}
 
 	public GnomeException(String s) {

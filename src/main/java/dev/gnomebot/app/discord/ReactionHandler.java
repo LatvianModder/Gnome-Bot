@@ -14,9 +14,6 @@ import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.util.HashMap;
 
-/**
- * @author LatvianModder
- */
 public class ReactionHandler {
 	public static abstract class Callback {
 		public GuildCollections gc;

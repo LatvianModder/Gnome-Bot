@@ -13,9 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * @author LatvianModder
- */
 public class PanelHandlers {
 	public static Response root(ServerRequest request) {
 		List<PanelGuildData> guilds = new ArrayList<>();
@@ -36,7 +33,7 @@ public class PanelHandlers {
 
 		for (PanelGuildData data : guilds) {
 			var line = root.content.p().classes("withicon");
-			line.img("/api/guild/icon/" + data.id().asString() + "/128");
+			line.img("/api/guild/icon/" + data.id().asString() + "/128").lazyLoading();
 			line.a("/panel/" + data.id().asString()).string(data.name());
 		}
 

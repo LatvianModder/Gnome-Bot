@@ -9,9 +9,6 @@ import dev.latvian.apps.webutils.net.Response;
 
 import java.util.HashMap;
 
-/**
- * @author LatvianModder
- */
 public class MiscHandlers {
 	public static Response signOut(ServerRequest request) {
 		App.instance.db.invalidateToken(request.token.userId.asLong());

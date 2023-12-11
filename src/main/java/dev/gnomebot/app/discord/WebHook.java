@@ -16,9 +16,6 @@ import discord4j.rest.service.WebhookService;
 import discord4j.rest.util.MultipartRequest;
 import reactor.core.publisher.Mono;
 
-/**
- * @author LatvianModder
- */
 public class WebHook implements PingDestination {
 	public static final String BASE_URL = "https://discord.com/api/webhooks/";
 

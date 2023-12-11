@@ -10,9 +10,6 @@ import io.javalin.http.HttpStatus;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * @author LatvianModder
- */
 public class SpecialHandlers {
 	public static Response publicfile(ServerRequest request) throws Exception {
 		String filename = request.variable("file");

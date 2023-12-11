@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class ImportMessagesCommand {
 	@LegacyDiscordCommand(name = "import_messages", help = "Imports messages from all channels into DB", arguments = "[channel|channel:message]", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> {

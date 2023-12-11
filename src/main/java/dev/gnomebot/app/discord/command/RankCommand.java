@@ -7,9 +7,6 @@ import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.entity.Member;
 
-/**
- * @author LatvianModder
- */
 public class RankCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")

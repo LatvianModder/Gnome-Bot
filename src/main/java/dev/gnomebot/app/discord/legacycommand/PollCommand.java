@@ -23,9 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class PollCommand {
 	@LegacyDiscordCommand(name = "poll", help = "Create a poll", arguments = "<title> [options each in new line]")
 	public static final CommandCallback COMMAND = (context, reader) -> {

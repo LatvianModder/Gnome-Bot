@@ -1,7 +1,9 @@
-package dev.gnomebot.app.discord.command;
+package dev.gnomebot.app.discord.command.admin;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentCallback;
+import dev.gnomebot.app.discord.command.ApplicationCommands;
+import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.Button;
@@ -17,21 +19,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * @author LatvianModder
- */
 public class RegexKickCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("regex_kick")
-			.description("Kicks multiple members at once based on their username")
-			.add(string("regex").required())
-			.add(string("reason"))
-			.run(RegexKickCommand::run);
-
-	private static void run(ChatInputInteractionEventWrapper event) {
+	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkBotPerms(Permission.KICK_MEMBERS);
-		event.context.checkSenderPerms(Permission.KICK_MEMBERS);
+		event.context.checkGlobalBotPerms(Permission.KICK_MEMBERS);
+		event.context.checkGlobalSenderPerms(Permission.KICK_MEMBERS);
 
 		String s = event.get("regex").asString();
 
@@ -57,8 +49,8 @@ public class RegexKickCommand extends ApplicationCommands {
 		Set<String> actionsToRemove = new HashSet<>();
 
 		String idKick = ComponentCallback.id(event1 -> {
-			event1.context.checkBotPerms(Permission.KICK_MEMBERS);
-			event1.context.checkSenderPerms(Permission.KICK_MEMBERS);
+			event1.context.checkGlobalBotPerms(Permission.KICK_MEMBERS);
+			event1.context.checkGlobalSenderPerms(Permission.KICK_MEMBERS);
 			event1.edit().respond("**Kicked " + members.size() + " members**");
 
 			for (Member member : members) {
@@ -75,8 +67,8 @@ public class RegexKickCommand extends ApplicationCommands {
 		});
 
 		String idBan = ComponentCallback.id(event1 -> {
-			event1.context.checkBotPerms(Permission.BAN_MEMBERS);
-			event1.context.checkSenderPerms(Permission.BAN_MEMBERS);
+			event1.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
+			event1.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
 			event1.edit().respond("**Banned " + members.size() + " members**");
 
 			for (var member : members) {

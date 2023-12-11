@@ -4,9 +4,6 @@ import dev.gnomebot.app.util.MapWrapper;
 
 import java.util.Date;
 
-/**
- * @author LatvianModder
- */
 public class DiscordMessageCount extends WrappedDocument<DiscordMessageCount> {
 	public DiscordMessageCount(WrappedCollection<DiscordMessageCount> c, MapWrapper d) {
 		super(c, d);

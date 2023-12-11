@@ -1,8 +1,10 @@
-package dev.gnomebot.app.discord.command;
+package dev.gnomebot.app.discord.command.admin;
 
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
+import dev.gnomebot.app.discord.command.ApplicationCommands;
+import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -15,23 +17,14 @@ import discord4j.rest.util.Permission;
 
 import java.util.Collections;
 
-/**
- * @author LatvianModder
- */
 public class UnmuteCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("unmute")
-			.description("Unmutes a member")
-			.add(user("user").required())
-			.run(UnmuteCommand::run);
-
-	private static void run(ChatInputInteractionEventWrapper event) {
+	public static void run(ChatInputInteractionEventWrapper event) {
 		if (!event.context.gc.mutedRole.isSet()) {
 			throw new GnomeException("Muted role not set!");
 		}
 
-		event.context.checkBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
+		event.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 

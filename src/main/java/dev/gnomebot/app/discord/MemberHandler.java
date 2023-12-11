@@ -8,8 +8,6 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.discord.command.ForcePingableNameCommand;
-import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
 import discord4j.common.util.Snowflake;
@@ -23,7 +21,6 @@ import discord4j.core.object.audit.AuditLogPart;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.AuditLogQuerySpec;
-import discord4j.core.spec.GuildMemberEditSpec;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
@@ -32,9 +29,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-/**
- * @author LatvianModder
- */
 public class MemberHandler {
 	public static final int ACTION_JOINED = 1;
 	public static final int ACTION_LEFT = 2;
@@ -48,27 +42,6 @@ public class MemberHandler {
 	public static final HashSet<Snowflake> lockdownKicks = new HashSet<>();
 
 	public static void updateMember(GuildCollections gc, User user, @Nullable Member member, int action, @Nullable DiscordMember discordMember, @Nullable DiscordMessage discordMessage) {
-		String oldName = member == null ? "" : member.getUsername();
-
-		if (action == ACTION_MESSAGE && member != null && discordMessage != null && gc.forcePingableName.get() && !CharMap.isPingable(oldName) && (member.getNickname().isEmpty() || !CharMap.isPingable(member.getNickname().get()))) {
-			try {
-				String newName = ForcePingableNameCommand.makePingable(oldName, member.getId().asLong());
-				member.edit(GuildMemberEditSpec.builder()
-						.nicknameOrNull(newName)
-						.build()
-				).block();
-
-				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.FORCED_NAME_UPDATE)
-						.channel(discordMessage.getChannelID())
-						.message(discordMessage.getUID())
-						.user(member)
-						.oldContent(oldName)
-						.content(newName)
-				);
-			} catch (Exception ex) {
-			}
-		}
-
 		var memberUpdates = new ArrayList<Bson>();
 		memberUpdates.add(Updates.set("name", user.getUsername()));
 		memberUpdates.add(Updates.set("avatar", user.getAvatarUrl()));

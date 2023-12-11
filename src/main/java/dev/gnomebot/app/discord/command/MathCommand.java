@@ -7,9 +7,6 @@ import io.javalin.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author LatvianModder
- */
 public class MathCommand extends ApplicationCommands {
 	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("math")
