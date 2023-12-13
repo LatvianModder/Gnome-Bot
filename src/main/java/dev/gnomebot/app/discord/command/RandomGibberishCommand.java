@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord.command;
 import java.util.Random;
 
 public class RandomGibberishCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("random_gibberish")
 			.description("Just generates random gibberish text. You can use it as 'alien language' or something")
 			.run(RandomGibberishCommand::run);

@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DefineCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("define")
 			.description("Prints dictionary definition of a word")
 			.add(string("word").required())

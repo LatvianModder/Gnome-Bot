@@ -55,4 +55,8 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 	public InteractionResponse getResponse() {
 		throw new IllegalStateException("Response not supported in this type of interaction!");
 	}
+
+	public void delete() {
+		getResponse().deleteInitialResponse().subscribe();
+	}
 }

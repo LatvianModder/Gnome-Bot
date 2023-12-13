@@ -1,14 +1,12 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.rest.util.Image;
 
 public class CLIGuildIcon {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("guild_icon")
 			.description("Guild Icon")
 			.noAdmin()

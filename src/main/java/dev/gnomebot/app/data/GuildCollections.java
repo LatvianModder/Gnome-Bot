@@ -40,6 +40,7 @@ import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.Id;
@@ -744,12 +745,44 @@ public class GuildCollections {
 						.type(type == 0 ? ThreadChannel.Type.GUILD_PUBLIC_THREAD : ThreadChannel.Type.GUILD_PRIVATE_THREAD)
 						.invitable(false)
 						.reason(user.username() + " Member Channel")
-						.name(user.username() + " - " + user.id().asString())
+						.name(user.username())
 						.autoArchiveDuration(type == 0 ? ThreadChannel.AutoArchiveDuration.DURATION1 : ThreadChannel.AutoArchiveDuration.DURATION2)
 						.build()
 				).block();
 
 				memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id.asLong()).upsert(List.of(Updates.set("thread", thread.getId().asLong())));
+
+				if (type == 0) {
+					var list = new ArrayList<String>();
+					list.add("# <@" + user.id().asString() + ">");
+					list.add("### ID");
+					list.add(user.id().asString());
+					list.add("### Username");
+					list.add(user.username());
+					list.add("### Global Name");
+					list.add(user.globalName().orElse(user.username()));
+					list.add("### Account Created");
+					list.add(Utils.formatRelativeDate(Snowflake.of(user.id().asLong()).getTimestamp()));
+
+					try {
+						var member = getMember(Snowflake.of(user.id().asLong()));
+
+						if (member != null && member.getJoinTime().isPresent()) {
+							list.add("### Joined");
+							list.add(Utils.formatRelativeDate(member.getJoinTime().get()));
+						}
+					} catch (Exception ignored) {
+					}
+
+					thread.createMessage(MessageCreateSpec.builder()
+							.content(String.join("\n", list))
+							.allowedMentions(AllowedMentions.builder()
+									.allowUser(Snowflake.of(user.id().asLong()))
+									.build()
+							)
+							.build()
+					).subscribe();
+				}
 
 				if (adminRole.isSet()) {
 					thread.createMessage("...").withAllowedMentions(AllowedMentions.builder()

@@ -6,15 +6,8 @@ import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
 public class VerifyMinecraftCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("verify-minecraft")
-			.description("Verify Minecraft")
-			.add(realUser("user").required())
-			.run(VerifyMinecraftCommand::run);
-
-	private static void run(ChatInputInteractionEventWrapper event) {
-		event.context.checkGlobalBotPerms(Permission.MODERATE_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.MODERATE_MEMBERS);
+	public static void run(ChatInputInteractionEventWrapper event) {
+		event.context.checkGlobalPerms(Permission.MODERATE_MEMBERS);
 
 		event.acknowledge();
 		var user = event.get("user").asUser().get();

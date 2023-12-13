@@ -1,34 +1,49 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
+import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 public class ReportCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("report")
 			.description("Report a user to the admins")
-			.add(user("user").required())
+			.add(realUser("user").required())
 			.run(ReportCommand::run);
 
+	public static final MessageInteractionBuilder MESSAGE_INTERACTION = messageInteraction("Report Message")
+			.run(ReportCommand::messageInteraction);
+
+	public static final UserInteractionBuilder USER_INTERACTION = userInteraction("Report Member")
+			.run(ReportCommand::memberInteraction);
+
 	private static void run(ChatInputInteractionEventWrapper event) {
-		if (!event.context.gc.reportChannel.isSet()) {
-			throw new GnomeException("Report channel is not set up!");
+		presentModal(event, event.get("user").asMember().orElse(null), Utils.NO_SNOWFLAKE);
+	}
+
+	private static void memberInteraction(UserInteractionEventWrapper event) {
+		presentModal(event, event.getMember(), Utils.NO_SNOWFLAKE);
+	}
+
+	private static void messageInteraction(MessageInteractionEventWrapper event) {
+		try {
+			presentModal(event, event.message.getAuthorAsMember().block(), event.message.getId());
+		} catch (Exception ex) {
+			throw new GnomeException("Can't report non-members!");
 		}
+	}
 
-		Member member = event.get("user").asMember().orElse(null);
-
+	private static void presentModal(DeferrableInteractionEventWrapper<?> event, @Nullable Member member, Snowflake message) {
 		if (member == null) {
 			throw new GnomeException("Can't report non-members!");
+		} else if (!event.context.gc.reportChannel.isSet()) {
+			throw new GnomeException("Report channel is not set up!");
 		} else if (member.getId().equals(event.context.sender.getId())) {
 			throw new GnomeException("You can't report your own messages!");
 		} else if (member.isBot()) {
@@ -37,37 +52,53 @@ public class ReportCommand extends ApplicationCommands {
 			throw new GnomeException("You can't report admin messages!");
 		}
 
-		presentModal(event, event.context.channelInfo.id, member);
-	}
+		/*
+		var options = new ArrayList<SelectMenu.Option>();
 
-	public static void presentModal(DeferrableInteractionEventWrapper<?> event, Snowflake channel, Member member) {
-		List<SelectMenu.Option> options = new ArrayList<>();
-
-		for (String s : event.context.gc.reportOptions.get().split(" \\| ")) {
+		for (var s : event.context.gc.reportOptions.get().split(" \\| ")) {
 			options.add(SelectMenu.Option.of(s, s));
 		}
 
 		options.add(SelectMenu.Option.of("Other", "Other"));
+		 */
 
-		event.respondModal("report/" + channel.asString() + "/" + member.getId().asString(), "Report " + member.getDisplayName(),
+		event.respondModal("report/" + member.getId().asString() + "/" + message.asString(), "Report " + member.getDisplayName(),
 				// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
+				TextInput.small("reason", "Reason", "spam/hacks/DMs/etc.").required(true),
 				TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
 		);
 	}
 
-	public static void reportCallback(ModalEventWrapper event, Snowflake channel, Snowflake user) {
-		if (true) {
-			event.respond("Reporting isn't implemented yet! You'll have to ping admins");
-			return;
+	public static void reportCallback(ModalEventWrapper event, Snowflake userId, Snowflake messageId) {
+		var member = event.context.gc.getMember(userId);
+
+		if (member == null) {
+			throw new GnomeException("Member not found!");
 		}
 
-		CachedRole role = event.context.gc.reportMentionRole.getRole();
+		var role = event.context.gc.reportMentionRole.getRole();
 
 		if (role == null) {
 			event.respond("Thank you for your report!");
 		} else {
 			event.respond("Thank you for your report! <@&" + role.id.asString() + "> have been notified.");
 		}
+
+		var additionalInfo = event.get("additional_info").asString();
+
+		event.context.gc.adminLogChannelEmbed(member.getUserData(), event.context.gc.adminLogChannel, spec -> {
+			spec.description("## " + event.get("reason").asString());
+
+			if (!additionalInfo.isEmpty()) {
+				spec.field("Additional Info", additionalInfo);
+			}
+
+			if (messageId.asLong() != 0L) {
+				spec.field("Message", QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, messageId));
+			}
+
+			spec.author(event.context.sender.getDisplayName() + " Reported:", event.context.sender.getAvatarUrl());
+		});
 
 		/*
 		event.respond(msg -> {

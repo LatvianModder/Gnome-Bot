@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 public class PasteCommand extends ApplicationCommands {
 	public static final Pattern URL_REGEX = Pattern.compile("https://(?:media|cdn)\\.(?:discordapp|discord)\\.(?:com|net)/attachments/(\\d+)/(\\d+)/(\\S+)");
 
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("paste")
 			.description("Paste a file")
 			.add(string("message_or_url").required())

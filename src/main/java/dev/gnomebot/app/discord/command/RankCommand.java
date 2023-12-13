@@ -8,7 +8,6 @@ import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.entity.Member;
 
 public class RankCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")
 			.description("Rank")
 			.add(time("timespan", true, false))

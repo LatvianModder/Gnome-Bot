@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PingsCommands extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
 			.description("Manage pings")
 			.add(sub("edit")

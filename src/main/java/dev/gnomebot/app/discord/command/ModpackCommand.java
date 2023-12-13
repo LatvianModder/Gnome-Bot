@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModpackCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modpack")
 			.description("Gives you a random Minecraft modpack to play")
 			.run(ModpackCommand::run);

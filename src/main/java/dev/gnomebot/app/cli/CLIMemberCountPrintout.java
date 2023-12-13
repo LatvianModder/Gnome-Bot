@@ -1,14 +1,12 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
 
 public class CLIMemberCountPrintout {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("membercount_printout")
 			.description("Membercount Printout")
 			.run(CLIMemberCountPrintout::run);

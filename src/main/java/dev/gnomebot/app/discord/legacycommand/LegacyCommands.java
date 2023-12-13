@@ -6,12 +6,6 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.latvian.apps.webutils.ansi.AnsiJava;
 import discord4j.rest.util.Permission;
-import io.github.classgraph.AnnotationEnumValue;
-import io.github.classgraph.AnnotationParameterValueList;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.FieldInfo;
-import io.github.classgraph.ScanResult;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +22,7 @@ public final class LegacyCommands {
 		COMMAND_MAP.clear();
 		COMMAND_LIST.clear();
 
+		/*
 		String pkg = LegacyDiscordCommand.class.getPackage().getName();
 		String commandAnnotation = LegacyDiscordCommand.class.getName();
 		// enableAllInfo()
@@ -53,6 +48,7 @@ public final class LegacyCommands {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		 */
 
 		COMMAND_LIST.sort(Comparator.comparing(o -> o.name));
 

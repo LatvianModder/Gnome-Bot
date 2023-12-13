@@ -22,8 +22,7 @@ import java.util.stream.Collectors;
 public class RegexKickCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.KICK_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.KICK_MEMBERS);
+		event.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 
 		String s = event.get("regex").asString();
 
@@ -49,8 +48,7 @@ public class RegexKickCommand extends ApplicationCommands {
 		Set<String> actionsToRemove = new HashSet<>();
 
 		String idKick = ComponentCallback.id(event1 -> {
-			event1.context.checkGlobalBotPerms(Permission.KICK_MEMBERS);
-			event1.context.checkGlobalSenderPerms(Permission.KICK_MEMBERS);
+			event1.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 			event1.edit().respond("**Kicked " + members.size() + " members**");
 
 			for (Member member : members) {
@@ -67,8 +65,7 @@ public class RegexKickCommand extends ApplicationCommands {
 		});
 
 		String idBan = ComponentCallback.id(event1 -> {
-			event1.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
-			event1.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
+			event1.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 			event1.edit().respond("**Banned " + members.size() + " members**");
 
 			for (var member : members) {

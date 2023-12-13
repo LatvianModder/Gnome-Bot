@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CLIApplicationCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("cli")
 			.description("Run a CLI command")
 			.add(string("command")

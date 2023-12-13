@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord;
 
-import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Macro;
@@ -9,7 +8,8 @@ import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.FeedbackCommands;
-import dev.gnomebot.app.discord.command.GnomeAdminMessageCommand;
+import dev.gnomebot.app.discord.command.GnomeMemberInteraction;
+import dev.gnomebot.app.discord.command.GnomeMessageInteraction;
 import dev.gnomebot.app.discord.command.InteractionType;
 import dev.gnomebot.app.discord.command.MacroCommands;
 import dev.gnomebot.app.discord.command.MessageInteractionEventWrapper;
@@ -83,7 +83,7 @@ public class InteractionHandler {
 				Macro macro = gc.getMacro(event.getCommandName());
 
 				if (macro != null) {
-					macro.update(Updates.inc("uses", 1));
+					macro.addUse();
 					event.reply(macro.createMessage(w.context.sender.getId(), false).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
@@ -322,8 +322,6 @@ public class InteractionHandler {
 			case "pings_help" -> PingsCommands.help(event);
 			case "regex_help" -> PingsCommands.regexHelp(event);
 			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, Snowflake.of(event.path[1]));
-			case "webhook-edit" -> WebhookCommands.editButton(event, Snowflake.of(event.path[1]));
-			case "debug-components" -> GnomeAdminMessageCommand.debugComponentsCallback(event, Snowflake.of(event.path[1]));
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -331,13 +329,15 @@ public class InteractionHandler {
 		}
 	}
 
-	private static void selectMenu(ComponentEventWrapper event, List<String> values) {
+	private static void selectMenu(ComponentEventWrapper event, List<String> values) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
 			case "poll" -> PollCommand.pollMenuCallback(event, Integer.parseInt(event.path[1]), values.get(0));
 			case "punish" -> punishMenu(event, Snowflake.of(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
 			case "report" -> ReportHandler.report(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]), values.get(0));
+			case "member-action" -> GnomeMemberInteraction.callback(event, values);
+			case "message-action" -> GnomeMessageInteraction.callback(event, values);
 			default -> {
 				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
@@ -357,7 +357,7 @@ public class InteractionHandler {
 			case "add_macro" -> MacroCommands.addMacroCallback(event, event.path[1]);
 			case "edit_macro" -> MacroCommands.editMacroCallback(event, event.path[1]);
 			case "pings" -> PingsCommands.editCallback(event);
-			case "webhook" -> WebhookCommands.executeCallback(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
+			case "webhook" -> WebhookCommands.executeCallback(event, Snowflake.of(event.path[1]));
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
 				throw new GnomeException("Unknown modal ID: " + event);

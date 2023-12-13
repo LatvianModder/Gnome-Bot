@@ -26,8 +26,7 @@ import java.util.Collections;
 public class BanCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 		Member member = null;
@@ -39,7 +38,7 @@ public class BanCommand extends ApplicationCommands {
 
 		String reason0 = event.get("reason").asString();
 		String reason = reason0.isEmpty() ? "Not specified" : reason0;
-		boolean deleteMessages = event.get("delete_messages").asBoolean(false);
+		boolean deleteMessages = event.get("delete-messages").asBoolean(false);
 
 		if (user == null) {
 			throw error("User not found!");

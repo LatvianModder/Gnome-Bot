@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
@@ -7,16 +8,11 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 
 public class AvatarCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("avatar")
 			.description("Sends avatar image in full resolution")
 			.add(user("user").required())
 			.add(bool("guild"))
 			.run(AvatarCommand::runChatInput);
-
-	@RegisterCommand
-	public static final UserInteractionBuilder USER_COMMAND = userInteraction("Get Avatar")
-			.run(AvatarCommand::runUser);
 
 	private static void runChatInput(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
@@ -31,8 +27,7 @@ public class AvatarCommand extends ApplicationCommands {
 		event.respond(MessageBuilder.create(user.getMention()).addFile(user.getId().asString() + (animated ? ".gif" : ".png"), data));
 	}
 
-	private static void runUser(UserInteractionEventWrapper event) {
-		event.acknowledgeEphemeral();
-		event.respond(Utils.getAvatarUrl(event.user, event.getMember()) + "?size=4096");
+	public static void memberInteraction(Member member, ComponentEventWrapper event) {
+		event.respond(Utils.getAvatarUrl(member, member) + "?size=4096");
 	}
 }

@@ -1,9 +1,6 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RegisterCommand;
-
 public class CLIRegexFind {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("regex_find")
 			.description("Find messages with regex")
 			.run(CLIRegexFind::run);

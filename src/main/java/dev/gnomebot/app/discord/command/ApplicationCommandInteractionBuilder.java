@@ -202,6 +202,10 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 				option.writeHash(stream);
 			}
 		}
+
+		if (defaultMemberPermissions != null) {
+			stream.writeLong(defaultMemberPermissions.getRawValue());
+		}
 	}
 
 	public UUID createHash() {

@@ -37,8 +37,7 @@ import java.util.List;
 public class MuteCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.MODERATE_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalPerms(Permission.MODERATE_MEMBERS);
 
 		if (!event.context.gc.mutedRole.isSet()) {
 			throw error("Mute role not set!");

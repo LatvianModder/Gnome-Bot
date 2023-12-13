@@ -1,24 +1,16 @@
-package dev.gnomebot.app.discord.command;
+package dev.gnomebot.app.discord.command.admin;
 
-import dev.gnomebot.app.discord.command.admin.BanCommand;
-import dev.gnomebot.app.discord.command.admin.DisplayCommands;
-import dev.gnomebot.app.discord.command.admin.EchoCommand;
-import dev.gnomebot.app.discord.command.admin.KickCommand;
-import dev.gnomebot.app.discord.command.admin.LockdownCommand;
-import dev.gnomebot.app.discord.command.admin.MuteCommand;
-import dev.gnomebot.app.discord.command.admin.MutesCommand;
-import dev.gnomebot.app.discord.command.admin.NoteCommand;
-import dev.gnomebot.app.discord.command.admin.RegexKickCommand;
-import dev.gnomebot.app.discord.command.admin.SettingsCommands;
-import dev.gnomebot.app.discord.command.admin.UnbanCommand;
-import dev.gnomebot.app.discord.command.admin.UnmuteCommand;
-import dev.gnomebot.app.discord.command.admin.WarnCommand;
-import dev.gnomebot.app.discord.command.admin.WarnsCommand;
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.discord.command.ApplicationCommands;
+import dev.gnomebot.app.discord.command.ChatInputInteractionBuilder;
+import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
+import dev.gnomebot.app.discord.command.FeedbackCommands;
+import dev.gnomebot.app.discord.command.ScamsCommands;
+import dev.gnomebot.app.discord.command.VerifyMinecraftCommand;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 
 public class GnomeAdminCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("gnome-admin")
 			.defaultMemberPermissions(PermissionSet.of(Permission.MODERATE_MEMBERS))
 			.add(subGroup("settings")
@@ -36,7 +28,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					)
 					.add(sub("logout-everyone")
 							.description("Log everyone out of the panel (Invalidates everyone's tokens)")
-							.run(PanelCommands::logoutEveryone)
+							.run(GnomeAdminCommand::logoutEveryone)
 					)
 			)
 			.add(sub("echo")
@@ -48,7 +40,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					.description("Bans a member")
 					.add(user("user").required())
 					.add(string("reason"))
-					.add(bool("delete_messages").description("Deletes Messages"))
+					.add(bool("delete-messages").description("Deletes Messages"))
 					.run(BanCommand::run)
 			)
 			.add(sub("unban")
@@ -106,7 +98,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					.description("Lockdown controls")
 					.add(sub("enable")
 							.description("Enables lockdown mode")
-							.add(time("kick_time", false, true))
+							.add(time("kick-time", false, true))
 							.run(LockdownCommand::enable)
 					)
 					.add(sub("disable")
@@ -161,7 +153,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.add(time("timespan", true, false))
 							.add(integer("limit"))
 							.add(channel("channel"))
-							.run(event -> MentionLeaderboardCommand.run(event, true))
+							.run(DisplayCommands::userMentionLeaderboard)
 					)
 					.add(sub("role-mention-leaderboard")
 							.description("Role Mention Leaderboard")
@@ -169,7 +161,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.add(time("timespan", true, false))
 							.add(integer("limit"))
 							.add(channel("channel"))
-							.run(event -> MentionLeaderboardCommand.run(event, false))
+							.run(DisplayCommands::roleMentionLeaderboard)
 					)
 			)
 			.add(subGroup("feedback")
@@ -229,6 +221,20 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					.add(string("text").required())
 					.run(ScamsCommands::test)
 			)
+			.add(subGroup("verify")
+					.add(sub("minecraft")
+							.description("Verify Minecraft")
+							.add(realUser("user").required())
+							.run(VerifyMinecraftCommand::run)
+					)
+			)
 			// END
 			;
+
+	public static void logoutEveryone(ChatInputInteractionEventWrapper event) throws Exception {
+		event.acknowledgeEphemeral();
+		event.context.checkSenderTrusted();
+		App.instance.db.invalidateAllTokens();
+		event.respond("Everyone's Gnome Panel login tokens have been invalidated!");
+	}
 }

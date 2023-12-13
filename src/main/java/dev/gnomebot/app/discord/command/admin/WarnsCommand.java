@@ -38,7 +38,7 @@ public class WarnsCommand extends ApplicationCommands {
 		if (user.isBot()) {
 			throw error("Nice try.");
 		} else if (!user.getId().equals(event.context.sender.getId())) {
-			event.context.checkGlobalSenderPerms(Permission.VIEW_AUDIT_LOG);
+			event.context.checkGlobalPerms(Permission.VIEW_AUDIT_LOG);
 		}
 
 		var list = new ArrayList<String>();

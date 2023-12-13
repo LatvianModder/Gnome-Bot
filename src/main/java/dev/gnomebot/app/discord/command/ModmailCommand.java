@@ -6,7 +6,6 @@ import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.TextInput;
 
 public class ModmailCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modmail")
 			.description("Open a form that will send a message to server owners in a private channel")
 			.run(ModmailCommand::run);

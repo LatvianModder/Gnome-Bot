@@ -2,18 +2,10 @@ package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
-import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.component.ActionComponent;
-import discord4j.core.object.component.ActionRow;
-import discord4j.core.object.component.Button;
-import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
-import discord4j.rest.util.Color;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,79 +51,9 @@ public class Macro extends WrappedDocument<Macro> {
 		return createMessage(getContent(), getExtra(), sender, removeLinks);
 	}
 
-	public static MessageBuilder createMessage(String contentString, List<String> extraList, Snowflake sender, boolean removeLinks) {
+	public static MessageBuilder createMessage(String contentString, List<String> extra, Snowflake sender, boolean removeLinks) {
 		MessageBuilder builder = MessageBuilder.create();
-		EmbedBuilder embedBuilder = EmbedBuilder.create();
-
 		List<String> lines = new ArrayList<>();
-
-		boolean hasEmbed = false;
-		List<ActionComponent> components = new ArrayList<>();
-
-		for (String extra : extraList) {
-			SimpleStringReader reader = new SimpleStringReader(extra);
-			String command = reader.readString().orElse("");
-
-			switch (command) {
-				case "newrow" -> {
-					if (!components.isEmpty()) {
-						builder.addComponent(ActionRow.of(components));
-					}
-
-					components = new ArrayList<>();
-				}
-				case "macro", "edit_macro" -> {
-					String name = reader.readString().orElse("");
-					String macro = reader.readString().orElse("");
-					String color = reader.readString().orElse("gray");
-					ReactionEmoji emoji = reader.readEmoji().orElse(null);
-
-					if (!name.isEmpty() && !macro.isEmpty()) {
-						String id = command + "/" + macro + "/" + sender.asString();
-
-						switch (color) {
-							case "gray" -> components.add(Button.secondary(id, emoji, name));
-							case "blurple" -> components.add(Button.primary(id, emoji, name));
-							case "green" -> components.add(Button.success(id, emoji, name));
-							case "red" -> components.add(Button.danger(id, emoji, name));
-						}
-					}
-				}
-				case "url" -> {
-					String name = reader.readString().orElse("");
-					String url = reader.readString().orElse("");
-					ReactionEmoji emoji = reader.readEmoji().orElse(null);
-
-					if (!name.isEmpty() && !url.isEmpty()) {
-						components.add(Button.link(url, emoji, name));
-					}
-				}
-				case "embed" -> {
-					hasEmbed = true;
-					embedBuilder.title(reader.readString().orElse(""));
-
-					String s = reader.readString().orElse("");
-
-					if (s.startsWith("#") && s.length() == 7) {
-						embedBuilder.color(Color.of(Integer.decode(s)));
-					}
-				}
-				case "embed_field" -> {
-					hasEmbed = true;
-					embedBuilder.field(reader.readString().orElse(""), reader.readString().orElse(""));
-				}
-				case "inline_embed_field" -> {
-					hasEmbed = true;
-					embedBuilder.inlineField(reader.readString().orElse(""), reader.readString().orElse(""));
-				}
-			}
-		}
-
-		if (!components.isEmpty()) {
-			builder.addComponent(ActionRow.of(components));
-		} else {
-			builder.noComponents();
-		}
 
 		Collections.addAll(lines, contentString
 				.replaceAll("role:(\\d+)", "<@&$1>")
@@ -144,15 +66,9 @@ public class Macro extends WrappedDocument<Macro> {
 			lines.add("Missingno");
 		}
 
-		if (hasEmbed) {
-			builder.content("");
-			embedBuilder.description(lines);
-			builder.addEmbed(embedBuilder);
-		} else {
-			builder.content(lines);
-			builder.noEmbeds();
-		}
+		builder.content(lines);
 
+		DiscordMessage.applyExtra(builder, extra, sender);
 		return builder;
 	}
 
@@ -190,7 +106,7 @@ public class Macro extends WrappedDocument<Macro> {
 		if (b) {
 			String author = gc.db.app.discordHandler.getUserName(Snowflake.of(getAuthor())).orElse("Deleted User");
 
-			ApplicationCommandData data = gc.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), ApplicationCommandRequest.builder()
+			var data = gc.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), ApplicationCommandRequest.builder()
 					.name(getName().toLowerCase())
 					.description("Macro created by " + author)
 					.build()
@@ -208,7 +124,12 @@ public class Macro extends WrappedDocument<Macro> {
 			long id = getSlashCommand();
 
 			if (id != 0L) {
-				gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), id).block();
+				try {
+					gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), id).block();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+
 				document.map.remove("slash_command");
 				update(Updates.unset("slash_command"));
 			}
@@ -223,5 +144,9 @@ public class Macro extends WrappedDocument<Macro> {
 		}
 
 		return chatCommandSuggestion;
+	}
+
+	public void addUse() {
+		update("uses", getUses() + 1);
 	}
 }

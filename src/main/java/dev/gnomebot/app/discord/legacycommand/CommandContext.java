@@ -58,9 +58,13 @@ public class CommandContext {
 		checkBotPerms(channelInfo, perms);
 	}
 
-	public void checkGlobalBotPerms(Permission... perms) {
+	public void checkGlobalPerms(Permission... perms) {
 		if (!gc.getEffectiveGlobalPermissions(gc.db.app.discordHandler.selfId).containsAll(PermissionSet.of(perms))) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
+		}
+
+		if (!gc.getEffectiveGlobalPermissions(sender.getId()).containsAll(PermissionSet.of(perms))) {
+			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
 		}
 	}
 
@@ -76,12 +80,6 @@ public class CommandContext {
 
 	public void checkSenderPerms(Permission... perms) {
 		checkSenderPerms(channelInfo, perms);
-	}
-
-	public void checkGlobalSenderPerms(Permission... perms) {
-		if (!gc.getEffectiveGlobalPermissions(sender.getId()).containsAll(PermissionSet.of(perms))) {
-			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
-		}
 	}
 
 	public void checkSenderTrusted() {

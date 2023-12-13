@@ -1,5 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
@@ -10,27 +12,24 @@ import org.jetbrains.annotations.Nullable;
 import java.util.stream.Collectors;
 
 public class WhoisCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("whois")
 			.description("Information about a user")
 			.add(user("user").required())
 			.run(WhoisCommand::runChatInput);
 
-	@RegisterCommand
-	public static final UserInteractionBuilder USER_COMMAND = userInteraction("User Info")
-			.run(WhoisCommand::runUser);
-
 	private static void runChatInput(ChatInputInteractionEventWrapper event) {
-		event.acknowledge();
-		run(event, event.get("user").asUser().get(), event.get("user").asOptionalMember().orElse(null));
+		run(event, event.get("user").asUser().get(), event.get("user").asOptionalMember().orElse(null), true);
 	}
 
-	private static void runUser(UserInteractionEventWrapper event) {
-		event.acknowledgeEphemeral();
-		run(event, event.user, event.getMember());
+	public static void memberInteraction(Member member, ComponentEventWrapper event) {
+		run(event, member, member, false);
 	}
 
-	private static void run(ApplicationCommandInteractionEventWrapper<?> event, User user, @Nullable Member member) {
+	private static void run(DeferrableInteractionEventWrapper<?> event, User user, @Nullable Member member, boolean chat) {
+		if (chat) {
+			event.acknowledge();
+		}
+
 		EmbedBuilder embed = EmbedBuilder.create()
 				.title(user.getTag())
 				.inlineField("Created", Utils.formatRelativeDate(user.getId().getTimestamp()))

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ChannelCommands extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("channel")
 			.description("Channel stuff")
 			.add(subGroup("xp")

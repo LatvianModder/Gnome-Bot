@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.discord.Emojis;
 
 public class DecideCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("decide")
 			.description("Decides fate")
 			.add(string("text"))

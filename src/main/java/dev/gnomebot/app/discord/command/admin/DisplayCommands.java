@@ -9,11 +9,14 @@ import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.CachedRole;
+import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.URLRequest;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
@@ -22,10 +25,14 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
+import io.javalin.http.HttpStatus;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -55,8 +62,8 @@ public class DisplayCommands extends ApplicationCommands {
 		Predicate<Member> predicate = member -> true;
 		int length = 0;
 
-		if (event.has("name_regex")) {
-			Pattern pattern = Pattern.compile(event.get("name_regex").asString(".*"), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+		if (event.has("name-regex")) {
+			Pattern pattern = Pattern.compile(event.get("name-regex").asString(".*"), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 			predicate = predicate.and(m -> m.getNickname().isPresent() ? (pattern.matcher(m.getUsername()).find() || pattern.matcher(m.getNickname().get()).find()) : pattern.matcher(m.getUsername()).find());
 		}
 
@@ -90,10 +97,10 @@ public class DisplayCommands extends ApplicationCommands {
 
 		boolean activity = event.get("activity").asBoolean(false);
 
-		if (!event.get("recently_deleted").asBoolean(false)) {
+		if (!event.get("recently-deleted").asBoolean(false)) {
 			CollectionQuery<DiscordMessage> messages = event.context.gc.messages.query().descending("timestamp").filter(Filters.gte("timestamp", new Date(System.currentTimeMillis() - 15778476000L))).limit(100);
 
-			String contentRegex = event.get("content_regex").asString();
+			String contentRegex = event.get("content-regex").asString();
 
 			if (!contentRegex.isEmpty()) {
 				messages.regex("content", Pattern.compile(contentRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE));
@@ -329,5 +336,62 @@ public class DisplayCommands extends ApplicationCommands {
 
 			event.respond(FormattingUtils.format(count) + " / " + (max == 0 ? "?" : FormattingUtils.format(max)) + " members");
 		}
+	}
+
+	public static void userMentionLeaderboard(ChatInputInteractionEventWrapper event) throws Exception {
+		mentionLeaderboard(event, true);
+	}
+
+	public static void roleMentionLeaderboard(ChatInputInteractionEventWrapper event) throws Exception {
+		mentionLeaderboard(event, false);
+	}
+
+	private static void mentionLeaderboard(ChatInputInteractionEventWrapper event, boolean isUser) throws Exception {
+		event.acknowledge();
+		event.context.checkSenderAdmin();
+
+		var mentionId = (isUser ? event.get("mention").asUser().map(User::getId) : event.get("mention").asRole().map(m -> m.id)).orElse(null);
+
+		if (mentionId == null) {
+			throw new GnomeException("Mention not found!");
+		}
+
+		long limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
+
+		long days = event.get("timespan").asDays().orElse(90L);
+		ChannelInfo channelInfo = event.get("channel").asChannelInfo().orElse(null);
+		CachedRole role = event.get("role").asRole().orElse(null);
+
+		String url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId.asString() + "/" + mentionId.asString() + "/" + days + "?limit=" + limit;
+
+		if (channelInfo != null) {
+			url += "&channel=" + channelInfo.id.asString();
+		}
+
+		if (role != null) {
+			url += "&role=" + role.id.asString();
+		}
+
+		URLRequest<BufferedImage> req = Utils.internalRequest(url).timeout(30000).toImage();
+
+		try {
+			ByteArrayOutputStream imageData = new ByteArrayOutputStream();
+			ImageIO.write(req.block(), "PNG", imageData);
+			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
+		} catch (URLRequest.UnsuccesfulRequestException ex) {
+			if (ex.status == HttpStatus.BAD_REQUEST) {
+				event.respond("This leaderboard has no data!");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			event.respond(req.getFullUrl());
+		}
+	}
+
+	public static void debugComponents(Message message, ComponentEventWrapper event) {
+		event.context.checkSenderAdmin();
+
+		var out = DiscordMessage.getExtra(message);
+		event.edit().respond(out.isEmpty() ? "No Data" : ("```\n" + String.join("\n", out) + "\n```"));
 	}
 }

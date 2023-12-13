@@ -32,7 +32,6 @@ import java.util.Date;
 import java.util.List;
 
 public class FeedbackCommands extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("feedback")
 			.description("Open a suggestion form that will be post message in feedback channel for community to vote")
 			.run(FeedbackCommands::submit);

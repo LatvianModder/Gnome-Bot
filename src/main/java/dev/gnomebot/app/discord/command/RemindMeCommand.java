@@ -6,7 +6,6 @@ import dev.gnomebot.app.util.Utils;
 import java.time.Instant;
 
 public class RemindMeCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("remindme")
 			.description("Set a reminder")
 			.add(string("text").required())

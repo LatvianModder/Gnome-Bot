@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
@@ -59,7 +58,6 @@ public class MacroCommands extends ApplicationCommands {
 
 	private static final Pattern FORMAT_ESCAPE = Pattern.compile("([*_~@])");
 
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("macro")
 			.description("Manage macros")
 			.add(sub("add")
@@ -362,11 +360,11 @@ public class MacroCommands extends ApplicationCommands {
 			if (owner.asLong() != event.context.sender.getId().asLong()) {
 				event.acknowledge();
 			} else {
-				macro.update(Updates.inc("uses", 1));
+				macro.addUse();
 				event.edit().respond(macro.createMessage(owner, false).ephemeral(true));
 			}
 		} else {
-			macro.update(Updates.inc("uses", 1));
+			macro.addUse();
 			event.respond(macro.createMessage(event.context.sender.getId(), false).ephemeral(true));
 		}
 	}

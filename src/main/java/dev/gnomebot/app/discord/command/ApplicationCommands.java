@@ -4,16 +4,13 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.Currency;
 import dev.gnomebot.app.discord.DiscordHandler;
+import dev.gnomebot.app.discord.command.admin.GnomeAdminCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.latvian.mods.rhino.mod.wrapper.UUIDWrapper;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.FieldInfo;
-import io.github.classgraph.ScanResult;
 
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -43,36 +40,60 @@ public class ApplicationCommands {
 		}
 	}
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private static void add(ApplicationCommandInteractionBuilder c) {
+		if (c.interactionType.builders.containsKey(c.name)) {
+			throw new RuntimeException("Interaction already registered! " + c.name);
+		}
+
+		if (c.interactionType.builders.size() >= c.interactionType.limit) {
+			throw new RuntimeException("Can't add any more interactions to this type! " + c.name);
+		}
+
+		c.commandHash = c.createHash();
+		c.interactionType.builders.put(c.name, c);
+	}
+
 	public static void findCommands() {
-		for (InteractionType<?> type : InteractionType.TYPES.values()) {
+		for (var type : InteractionType.TYPES.values()) {
 			type.builders.clear();
 		}
 
-		String pkg = RegisterCommand.class.getPackage().getName();
-		String commandAnnotation = RegisterCommand.class.getName();
-		//enableAllInfo()
-		try (ScanResult scanResult = new ClassGraph().enableFieldInfo().enableAnnotationInfo().acceptPackages(pkg).scan()) {
-			for (ClassInfo commandClassInfo : scanResult.getClassesWithFieldAnnotation(commandAnnotation)) {
-				for (FieldInfo fieldInfo : commandClassInfo.getFieldInfo()) {
-					if (fieldInfo.hasAnnotation(commandAnnotation)) {
-						Object o = fieldInfo.loadClassAndGetField().get(null);
+		add(ReportCommand.MESSAGE_INTERACTION);
+		add(GnomeMessageInteraction.MESSAGE_INTERACTION);
 
-						if (o instanceof ApplicationCommandInteractionBuilder c) {
-							if (c.interactionType.builders.containsKey(c.name)) {
-								throw new RuntimeException("Interaction already registered! " + c.name);
-							}
+		add(ReportCommand.USER_INTERACTION);
+		add(GnomeMemberInteraction.USER_INTERACTION);
 
-							c.commandHash = c.createHash();
-							c.interactionType.builders.put(c.name, c);
-						}
-					}
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		add(GnomeCommand.COMMAND);
+		add(GnomeAdminCommand.COMMAND);
+		add(CLIApplicationCommand.COMMAND);
 
-		for (InteractionType<?> type : InteractionType.TYPES.values()) {
+		add(AboutCommand.COMMAND);
+		add(AvatarCommand.COMMAND);
+		add(BigEmojiCommand.COMMAND);
+		add(ChannelCommands.COMMAND);
+		add(CursePointCalculatorCommand.COMMAND);
+		add(DecideCommand.COMMAND);
+		add(DefineCommand.COMMAND);
+		add(FeedbackCommands.COMMAND);
+		add(LeaderboardCommand.COMMAND);
+		add(MacroCommands.COMMAND);
+		add(MathCommand.COMMAND);
+		add(ModmailCommand.COMMAND);
+		add(ModnamesCommand.COMMAND);
+		add(ModpackCommand.COMMAND);
+		add(PasteCommand.COMMAND);
+		add(PingsCommands.COMMAND);
+		add(RandomGibberishCommand.COMMAND);
+		add(RankCommand.COMMAND);
+		add(RemindMeCommand.COMMAND);
+		add(ReportCommand.COMMAND);
+		add(TimestampCommand.COMMAND);
+		add(WebhookCommands.COMMAND);
+		add(WhoisCommand.COMMAND);
+
+		for (var type : InteractionType.TYPES.values()) {
 			App.info("Found " + type.builders.size() + " " + type.name.replace('_', ' ') + " commands");
 		}
 	}

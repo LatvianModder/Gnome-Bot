@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 public class ServerRequest {
 	public final App app;
-	private final Context context;
+	public final Context context;
 	public final String ip;
 	public final String country;
 	private final Map<String, String> variables;

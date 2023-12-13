@@ -1,13 +1,11 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.Utils;
 import discord4j.discordjson.json.ChannelData;
 import reactor.core.publisher.Flux;
 
 public class CLICleanupDB {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("cleanup_db")
 			.ownerOnly()
 			.description("Cleans up old data")

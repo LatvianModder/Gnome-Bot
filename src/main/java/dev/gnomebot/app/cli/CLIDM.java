@@ -1,11 +1,9 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.discord.DM;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import discord4j.core.object.entity.User;
 
 public class CLIDM {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("dm")
 			.description("Sends a DM to a user")
 			.run(CLIDM::run);

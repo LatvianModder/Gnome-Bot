@@ -23,8 +23,7 @@ public class UnmuteCommand extends ApplicationCommands {
 			throw new GnomeException("Muted role not set!");
 		}
 
-		event.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 

@@ -4,7 +4,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.reaction.ReactionEmoji;
 
 public class BigEmojiCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("bigemoji")
 			.description("Get image version of an emoji")
 			.add(string("emoji").required())

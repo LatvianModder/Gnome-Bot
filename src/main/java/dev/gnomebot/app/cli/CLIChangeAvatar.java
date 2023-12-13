@@ -1,7 +1,6 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.gnomebot.app.util.GuildProfileEditRequest;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
@@ -11,7 +10,6 @@ import discord4j.discordjson.possible.Possible;
 import java.util.Base64;
 
 public class CLIChangeAvatar {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("change_avatar")
 			.description("Kicks new accounts")
 			.run(CLIChangeAvatar::run);

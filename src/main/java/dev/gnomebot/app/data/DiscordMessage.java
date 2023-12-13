@@ -2,13 +2,18 @@ package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.QuoteHandler;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.rest.util.AllowedMentions;
+import discord4j.rest.util.Color;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
@@ -136,9 +141,9 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		QuoteHandler.getMessageURL(sb, collection.gc.guildId, Snowflake.of(getChannelID()), Snowflake.of(getUID()));
 	}
 
-	public static String textFromComponents(@Nullable Message message) {
+	public static List<String> getExtra(@Nullable Message message) {
 		if (message == null) {
-			return "";
+			return List.of();
 		}
 
 		var lines = new ArrayList<String>();
@@ -169,14 +174,86 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 			}
 		}
 
-		return lines.isEmpty() ? "" : String.join("\n", lines);
+		return lines;
 	}
 
-	public static List<ActionRow> componentsFromText(String text) {
-		if (text.isEmpty()) {
-			return List.of();
+	public static void applyExtra(MessageBuilder builder, List<String> extra, Snowflake sender) {
+		EmbedBuilder embedBuilder = EmbedBuilder.create();
+
+		boolean hasEmbed = false;
+		List<ActionComponent> components = new ArrayList<>();
+
+		for (String line : extra) {
+			SimpleStringReader reader = new SimpleStringReader(line);
+			String command = reader.readString().orElse("");
+
+			switch (command) {
+				case "newrow" -> {
+					if (!components.isEmpty()) {
+						builder.addComponent(ActionRow.of(components));
+					}
+
+					components = new ArrayList<>();
+				}
+				case "macro", "edit_macro" -> {
+					String name = reader.readString().orElse("");
+					String macro = reader.readString().orElse("");
+					String color = reader.readString().orElse("gray");
+					ReactionEmoji emoji = reader.readEmoji().orElse(null);
+
+					if (!name.isEmpty() && !macro.isEmpty()) {
+						String id = command + "/" + macro + "/" + sender.asString();
+
+						switch (color) {
+							case "gray" -> components.add(Button.secondary(id, emoji, name));
+							case "blurple" -> components.add(Button.primary(id, emoji, name));
+							case "green" -> components.add(Button.success(id, emoji, name));
+							case "red" -> components.add(Button.danger(id, emoji, name));
+						}
+					}
+				}
+				case "url" -> {
+					String name = reader.readString().orElse("");
+					String url = reader.readString().orElse("");
+					ReactionEmoji emoji = reader.readEmoji().orElse(null);
+
+					if (!name.isEmpty() && !url.isEmpty()) {
+						components.add(Button.link(url, emoji, name));
+					}
+				}
+				case "embed" -> {
+					hasEmbed = true;
+					embedBuilder.title(reader.readString().orElse(""));
+
+					String s = reader.readString().orElse("");
+
+					if (s.startsWith("#") && s.length() == 7) {
+						embedBuilder.color(Color.of(Integer.decode(s)));
+					}
+				}
+				case "embed_field" -> {
+					hasEmbed = true;
+					embedBuilder.field(reader.readString().orElse(""), reader.readString().orElse(""));
+				}
+				case "inline_embed_field" -> {
+					hasEmbed = true;
+					embedBuilder.inlineField(reader.readString().orElse(""), reader.readString().orElse(""));
+				}
+			}
 		}
 
-		return List.of();
+		if (!components.isEmpty()) {
+			builder.addComponent(ActionRow.of(components));
+		} else {
+			builder.noComponents();
+		}
+
+		if (hasEmbed) {
+			embedBuilder.description(builder.getContent());
+			builder.content("");
+			builder.addEmbed(embedBuilder);
+		} else {
+			builder.noEmbeds();
+		}
 	}
 }

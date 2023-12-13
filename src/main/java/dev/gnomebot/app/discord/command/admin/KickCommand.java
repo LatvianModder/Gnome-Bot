@@ -21,8 +21,7 @@ import java.util.Collections;
 public class KickCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.KICK_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.KICK_MEMBERS);
+		event.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 		Member member = null;

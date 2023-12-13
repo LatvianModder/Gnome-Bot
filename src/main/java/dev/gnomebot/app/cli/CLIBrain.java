@@ -1,13 +1,11 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.Logger;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class CLIBrain {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("brain")
 			.description("Gnome brain")
 			.run(CLIBrain::run);

@@ -22,8 +22,7 @@ import java.util.Collections;
 public class WarnCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.MODERATE_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.MODERATE_MEMBERS);
+		event.context.checkGlobalPerms(Permission.MODERATE_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 		Member member = null;

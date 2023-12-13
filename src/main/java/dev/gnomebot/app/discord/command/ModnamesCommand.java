@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModnamesCommand extends ApplicationCommands {
-	@RegisterCommand
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modnames")
 			.description("Displays 10 randomly generated mod names")
 			.add(string("type"))

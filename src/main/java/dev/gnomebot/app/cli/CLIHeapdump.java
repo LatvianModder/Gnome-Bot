@@ -1,9 +1,6 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.discord.command.RegisterCommand;
-
 public class CLIHeapdump {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("heapdump")
 			.description("Heapdump")
 			.ownerOnly()

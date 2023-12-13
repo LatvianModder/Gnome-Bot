@@ -57,4 +57,9 @@ public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<Com
 	public boolean requiresTextResponse() {
 		return false;
 	}
+
+	@Override
+	public void delete() {
+		event.deleteReply().subscribe();
+	}
 }

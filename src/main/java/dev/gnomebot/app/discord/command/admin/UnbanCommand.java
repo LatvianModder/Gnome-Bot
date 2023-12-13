@@ -10,8 +10,7 @@ import discord4j.rest.util.Permission;
 public class UnbanCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.context.checkGlobalBotPerms(Permission.BAN_MEMBERS);
-		event.context.checkGlobalSenderPerms(Permission.BAN_MEMBERS);
+		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
 		User user = event.get("user").asUser().orElse(null);
 

@@ -84,7 +84,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 		Object id = document.get("_id", null);
 
 		if (id != null) {
-			collection.query(id).update(update);
+			return collection.query(id).update(update);
 		}
 
 		return CollectionQuery.ZERO_UPDATES;

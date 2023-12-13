@@ -2,7 +2,6 @@ package dev.gnomebot.app.cli;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.DiscordMessage;
-import dev.gnomebot.app.discord.command.RegisterCommand;
 import dev.latvian.apps.webutils.data.MutableInt;
 import discord4j.common.util.Snowflake;
 
@@ -11,7 +10,6 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class CLIRoleMentionChart {
-	@RegisterCommand
 	public static final CLICommand COMMAND = CLICommand.make("role_mention_chart")
 			.description("Print breakdown of where role has been mentioned the most")
 			.run(CLIRoleMentionChart::run);

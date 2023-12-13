@@ -24,3 +24,4 @@
 *.sh
 *.log
 *.hprof
+export*.txt

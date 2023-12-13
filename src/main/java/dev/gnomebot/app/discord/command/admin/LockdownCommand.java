@@ -20,7 +20,7 @@ public class LockdownCommand extends ApplicationCommands {
 
 		boolean wasOff = !event.context.gc.lockdownMode.get();
 
-		long sec = Math.min(event.get("kick_time").asSeconds().orElse(300L), 86400L);
+		long sec = Math.min(event.get("kick-time").asSeconds().orElse(300L), 86400L);
 
 		if (wasOff) {
 			event.acknowledge();

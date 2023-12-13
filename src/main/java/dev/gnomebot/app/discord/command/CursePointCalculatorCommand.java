@@ -4,17 +4,16 @@ import dev.gnomebot.app.data.Currency;
 import dev.latvian.apps.webutils.ansi.Table;
 
 public class CursePointCalculatorCommand extends ApplicationCommands {
-	@RegisterCommand
-	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("curse_point_calculator")
+	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("curse-point-calculator")
 			.description("Curse Point calculator")
-			.add(number("daily_points").required())
+			.add(number("daily-points").required())
 			.add(currency("currency"))
 			.run(CursePointCalculatorCommand::run);
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		Currency c = event.get("currency").asCurrency().orElse(Currency.USD);
-		double points = Math.min(Math.max(0D, event.get("daily_points").asDouble(0D)), 100000D);
+		double points = Math.min(Math.max(0D, event.get("daily-points").asDouble(0D)), 100000D);
 		double money = points * 0.05D * c.rate;
 
 		var table = new Table("", "Day", "Month", "Year");
