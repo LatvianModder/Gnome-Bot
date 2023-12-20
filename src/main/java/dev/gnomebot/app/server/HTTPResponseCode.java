@@ -1,8 +1,8 @@
 package dev.gnomebot.app.server;
 
-import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
@@ -44,8 +44,8 @@ public enum HTTPResponseCode {
 		return status.getCode() / 100 == 2;
 	}
 
-	public HTTPCodeException error(String msg) {
-		return new HTTPCodeException(status, msg);
+	public HttpResponseException error(String msg) {
+		return new HttpResponseException(status.getCode(), msg);
 	}
 
 	public Response response(String customMessage) {

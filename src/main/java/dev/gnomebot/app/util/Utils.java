@@ -108,7 +108,7 @@ public class Utils {
 	}
 
 	public static ReactionEmoji stringToReaction(String s) {
-		if (s.isEmpty()) {
+		if (s.isEmpty() || s.equals("-")) {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
 			String[] s1 = s.substring(1, s.length() - 1).split(":", 3);

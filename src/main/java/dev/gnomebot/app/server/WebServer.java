@@ -5,7 +5,6 @@ import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
-import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.data.Pair;
@@ -16,6 +15,7 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
 import io.javalin.http.Header;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.HttpStatus;
 import org.bson.Document;
 import org.eclipse.jetty.websocket.api.StatusCode;
@@ -216,15 +216,16 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 			try {
 				handle0(ctx, p, ip, country, tokenCallback);
-			} catch (HTTPCodeException ex) {
-				log(p, ip, country, ex.responseCode, tokenCallback[0]);
-				var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
-				root.content.p().span("red").string(ex.msg);
-				root.asResponse(ex.responseCode, true).result(ctx);
+			} catch (HttpResponseException ex) {
+				var status = HttpStatus.forStatus(ex.getStatus());
+				log(p, ip, country, status, tokenCallback[0]);
+				var root = GnomeRootTag.createSimple(getPath(ctx), "Error " + ex.getStatus());
+				root.content.p().span("red").string(ex.getMessage());
+				root.asResponse(status, true).result(ctx);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				log(p, ip, country, HttpStatus.INTERNAL_SERVER_ERROR, tokenCallback[0]);
-				var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
+				var root = GnomeRootTag.createSimple(getPath(ctx), "Internal Server Error");
 				root.content.p().span("red").string("Internal Error: " + ex);
 				root.asResponse(HttpStatus.INTERNAL_SERVER_ERROR, true).result(ctx);
 			}
@@ -282,20 +283,20 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 			}
 
-			var root = GnomeRootTag.createSimple(getPath(ctx), "Gnome Panel");
+			var root = GnomeRootTag.createSimple(getPath(ctx), "Not Found");
 			root.content.p().span("red").string("Page not found!");
 			root.asResponse(HttpStatus.NOT_FOUND, true).result(ctx);
 		}
 
 		private Response handle1(Context ctx, RequestHandler handler, String p, ServerRequest req) throws Exception {
 			if (handler.authLevel != AuthLevel.NO_AUTH && req.token == null) {
-				var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+				var root = GnomeRootTag.createSimple(req.getPath(), "Unauthorized");
 				root.content.p().span("red").string("You must be logged in to view this page!");
 				root.content.p().string("Type ").span("green").string("/panel login").end().string(" command in any Discord server with this bot to generate login link.");
 				root.content.p().string("You can refresh this page once you've logged in.");
 				return root.asResponse(HttpStatus.UNAUTHORIZED, true);
 			} else if (handler.trusted && (req.token == null || !Config.get().isTrusted(req.token.userId))) {
-				var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+				var root = GnomeRootTag.createSimple(req.getPath(), "Forbidden");
 				root.content.p().span("red").string("You're not cool enough to view this page!");
 				root.content.p().string("This page can only be viewed by bot owners!");
 
@@ -319,7 +320,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 
 				if (!req.getAuthLevel().is(handler.authLevel)) {
-					var root = GnomeRootTag.createSimple(req.getPath(), "Gnome Panel");
+					var root = GnomeRootTag.createSimple(req.getPath(), "Unauthorized");
 					root.content.p().span("red").string("You're not cool enough to view this page!");
 					root.content.p().string("Required auth level is ").span("red").string(handler.authLevel.name.toLowerCase());
 					root.content.p().string("Your auth level is ").span("red").string(req.getAuthLevel().name.toLowerCase());

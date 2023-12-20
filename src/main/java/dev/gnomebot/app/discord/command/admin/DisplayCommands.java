@@ -8,6 +8,7 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
+import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
@@ -388,10 +389,8 @@ public class DisplayCommands extends ApplicationCommands {
 		}
 	}
 
-	public static void debugComponents(Message message, ComponentEventWrapper event) {
+	public static void debugComplexMessage(Message message, ComponentEventWrapper event) {
 		event.context.checkSenderAdmin();
-
-		var out = DiscordMessage.getExtra(message);
-		event.edit().respond(out.isEmpty() ? "No Data" : ("```\n" + String.join("\n", out) + "\n```"));
+		event.respond("```\n" + String.join("\n", ComplexMessage.of(message).getLines()) + "\n```");
 	}
 }

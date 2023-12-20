@@ -26,6 +26,6 @@ public class CLISlowResponseTest {
 			}).start();
 		}
 
-		// event.response.addComponentRow(Button.danger("modal_test", "Click this to open test form!"));
+		// event.response.addComponentRow(Button.danger("modal-test", "Click this to open test form!"));
 	}
 }

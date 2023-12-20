@@ -1,6 +1,7 @@
 package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.util.MapWrapper;
+import discord4j.common.util.Snowflake;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
@@ -11,6 +12,8 @@ public class DiscordMember extends WrappedDocument<DiscordMember> {
 	public static final long FLAG_NICKNAME = 1L << 1L;
 	public static final long FLAG_ANIMATED_AVATAR = 1L << 2L;
 	public static final long FLAG_GONE = 1L << 3L;
+
+	public static final Snowflake DELETED_USER_ID = Snowflake.of(456226577798135808L);
 
 	public final long flags;
 

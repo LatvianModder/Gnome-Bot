@@ -11,12 +11,12 @@ public class GnomeRootTag extends RootTag {
 	public Tag content;
 
 	public GnomeRootTag(String path, String title, String description) {
-		super(path, title, description);
+		super(path, title + " - Gnome Panel", description);
 		head.meta("name", "theme-color", "content", "#262728");
 		head.stylesheet("/assets/style.css");
 		body.iframe("invisibleframe").style("display:none;");
 		content = body.div().classes("content");
-		content.h2().string(title);
+		content.h1().string(title);
 		content.br();
 	}
 

@@ -78,15 +78,15 @@ public class MessageBuilder {
 		return MessageBuilder.create("Invalid script message!");
 	}
 
-	private String content;
-	private Boolean ephemeral;
-	private List<EmbedBuilder> embeds;
-	private AllowedMentions allowedMentions;
-	private List<LayoutComponent> components;
-	private List<MessageCreateFields.File> files;
-	private Snowflake messageReference;
-	private String webhookName;
-	private String webhookAvatarUrl;
+	public String content;
+	public Boolean ephemeral;
+	public List<EmbedBuilder> embeds;
+	public AllowedMentions allowedMentions;
+	public List<LayoutComponent> components;
+	public List<MessageCreateFields.File> files;
+	public Snowflake messageReference;
+	public String webhookName;
+	public String webhookAvatarUrl;
 
 	private MessageBuilder() {
 		content = null;
@@ -111,7 +111,7 @@ public class MessageBuilder {
 	}
 
 	public MessageBuilder content(List<String> content) {
-		return content(String.join("\n", content));
+		return content(content.isEmpty() ? "" : String.join("\n", content));
 	}
 
 	public MessageBuilder ephemeral(boolean ephemeral) {
@@ -331,7 +331,11 @@ public class MessageBuilder {
 		builder.allowedMentionsOrNull(this.allowedMentions.toData());
 
 		if (this.components != null) {
-			builder.components(this.components.isEmpty() ? Possible.absent() : Possible.of(this.components.stream().map(LayoutComponent::getData).toList()));
+			if (this.components.isEmpty()) {
+				builder.components();
+			} else {
+				builder.components(Possible.of(this.components.stream().map(LayoutComponent::getData).toList()));
+			}
 		}
 
 		return builder.build();

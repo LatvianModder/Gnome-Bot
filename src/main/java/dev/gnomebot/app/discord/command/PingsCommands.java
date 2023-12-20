@@ -177,14 +177,14 @@ public class PingsCommands extends ApplicationCommands {
 		} catch (GnomeException ex) {
 			event.respond(MessageBuilder.create("Syntax error on line " + ex.position + ":\n" + ex.getMessage()).addComponentRow(
 					Button.primary("pings", "Edit"),
-					Button.secondary("pings_help", "Help"),
-					Button.secondary("regex_help", "RegEx Guide")
+					Button.secondary("pings-help", "Help"),
+					Button.secondary("regex-help", "RegEx Guide")
 			));
 		} catch (Exception ex) {
 			event.respond(MessageBuilder.create("Syntax error:\n" + ex.getMessage()).addComponentRow(
 					Button.primary("pings", "Edit"),
-					Button.secondary("pings_help", "Help"),
-					Button.secondary("regex_help", "RegEx Guide")
+					Button.secondary("pings-help", "Help"),
+					Button.secondary("regex-help", "RegEx Guide")
 			));
 		}
 	}

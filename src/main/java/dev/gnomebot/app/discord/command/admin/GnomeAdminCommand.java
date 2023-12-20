@@ -7,8 +7,11 @@ import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.FeedbackCommands;
 import dev.gnomebot.app.discord.command.ScamsCommands;
 import dev.gnomebot.app.discord.command.VerifyMinecraftCommand;
+import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
+
+import java.util.ArrayList;
 
 public class GnomeAdminCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("gnome-admin")
@@ -29,6 +32,10 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					.add(sub("logout-everyone")
 							.description("Log everyone out of the panel (Invalidates everyone's tokens)")
 							.run(GnomeAdminCommand::logoutEveryone)
+					)
+					.add(sub("fix-broken-commands")
+							.description("Fix broken commands")
+							.run(GnomeAdminCommand::fixBrokenCommands)
 					)
 			)
 			.add(sub("echo")
@@ -231,10 +238,31 @@ public class GnomeAdminCommand extends ApplicationCommands {
 			// END
 			;
 
-	public static void logoutEveryone(ChatInputInteractionEventWrapper event) throws Exception {
+	public static void logoutEveryone(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderTrusted();
 		App.instance.db.invalidateAllTokens();
 		event.respond("Everyone's Gnome Panel login tokens have been invalidated!");
+	}
+
+	public static void fixBrokenCommands(ChatInputInteractionEventWrapper event) {
+		event.acknowledgeEphemeral();
+		event.context.checkSenderAdmin();
+
+		var broken = new ArrayList<ApplicationCommandData>();
+
+		for (var command : event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(event.context.gc.db.app.discordHandler.applicationId, event.context.gc.guildId.asLong()).toIterable()) {
+			var macro = event.context.gc.getMacro(command.name());
+
+			if (macro == null || macro.slashCommand != command.id().asLong()) {
+				broken.add(command);
+			}
+		}
+
+		event.respond("Found " + broken.size() + " broken commands: " + broken.stream().map(c -> "</" + c.name() + ":" + c.id().asString() + ">").toList());
+
+		for (var command : broken) {
+			event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(event.context.gc.db.app.discordHandler.applicationId, event.context.gc.guildId.asLong(), command.id().asLong()).subscribe();
+		}
 	}
 }

@@ -29,6 +29,7 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -55,6 +56,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -86,7 +88,6 @@ public class GuildCollections {
 	public final WrappedCollection<DiscordMessageCount> messageCount;
 	public final WrappedCollection<DiscordMessageXP> messageXp;
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
-	public final WrappedCollection<Macro> macros;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final DBConfig config;
@@ -158,7 +159,6 @@ public class GuildCollections {
 		messageCount = create("message_count_" + dbid, DiscordMessageCount::new);
 		messageXp = create("message_xp_" + dbid, DiscordMessageXP::new);
 		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
-		macros = create("macros_" + dbid, Macro::new);
 		memberLogThreads = create("member_log_threads_" + dbid, ThreadLocation::new);
 
 		config = new DBConfig();
@@ -286,8 +286,6 @@ public class GuildCollections {
 		//}
 		//
 		//settingsTable.print();
-
-		updateMacroMap();
 	}
 
 	public String getClickableName() {
@@ -695,10 +693,27 @@ public class GuildCollections {
 
 	public Map<String, Macro> getMacroMap() {
 		if (macroMap == null) {
-			macroMap = new HashMap<>();
+			macroMap = new LinkedHashMap<>();
 
-			for (Macro macro : macros.query()) {
-				macroMap.put(macro.getName().toLowerCase(), macro);
+			try {
+				if (Files.exists(paths.macros)) {
+					for (var entry : JSON.DEFAULT.read(paths.macros).readObject().entrySet()) {
+						if (entry.getValue() instanceof JSONObject json) {
+							var macro = new Macro(this);
+							macro.id = entry.getKey().toLowerCase();
+							macro.name = entry.getKey();
+							macro.content = json.asString("content");
+							macro.author = json.asLong("author");
+							macro.created = json.containsKey("created") ? Instant.parse(json.asString("created")) : null;
+							macro.uses = json.asInt("uses");
+							macro.slashCommand = json.asLong("slash_command");
+							macroMap.put(macro.id, macro);
+						}
+					}
+				}
+			} catch (Exception ex) {
+				macroMap = null;
+				ex.printStackTrace();
 			}
 		}
 
@@ -710,8 +725,38 @@ public class GuildCollections {
 		return getMacroMap().get(name.toLowerCase());
 	}
 
-	public void updateMacroMap() {
-		macroMap = null;
+	public void saveMacroMap() {
+		var json = JSONObject.of();
+
+		for (var macro : getMacroMap().values()) {
+			var obj = JSONObject.of();
+			obj.put("content", macro.content);
+			obj.put("author", macro.author);
+
+			if (macro.created != null) {
+				obj.put("created", macro.created.toString());
+			}
+
+			if (macro.uses > 0) {
+				obj.put("uses", macro.uses);
+			}
+
+			if (macro.slashCommand != 0L) {
+				obj.put("slash_command", macro.slashCommand);
+			}
+
+			json.put(macro.name, obj);
+		}
+
+		try {
+			if (Files.notExists(paths.macros)) {
+				Files.createFile(paths.macros);
+			}
+
+			Files.writeString(paths.macros, json.toString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfig config) {

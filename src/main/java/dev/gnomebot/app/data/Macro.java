@@ -1,113 +1,60 @@
 package dev.gnomebot.app.data;
 
-import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
-import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.discord.command.MacroCommands;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.json.ApplicationCommandRequest;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.time.Instant;
 
-public class Macro extends WrappedDocument<Macro> {
-	public static final Pattern REMOVE_MD_LINKS = Pattern.compile("\\[.+?]\\((.+?)\\)");
+public class Macro implements Comparable<Macro> {
+	public final GuildCollections guild;
+	public String id = "";
+	public String name = "";
+	public String content = "";
+	public long author = 0L;
+	public Instant created = null;
+	public int uses = 0;
+	public long slashCommand = 0L;
 
 	private ChatCommandSuggestion chatCommandSuggestion;
+	private Pair<ContentType, Object> cachedContent;
 
-	public Macro(WrappedCollection<Macro> c, MapWrapper d) {
-		super(c, d);
+	public Macro(GuildCollections guild) {
+		this.guild = guild;
 	}
 
-	public long getAuthor() {
-		return document.getLong("author");
-	}
-
-	@Override
-	public Date getDate() {
-		return document.getDate("created");
-	}
-
-	public String getContent() {
-		return document.getString("content");
-	}
-
-	public List<String> getExtra() {
-		return document.getList("extra");
-	}
-
-	public int getUses() {
-		return document.getInt("uses");
-	}
-
-	public long getSlashCommand() {
-		return document.getLong("slash_command");
-	}
-
-	public MessageBuilder createMessage(Snowflake sender, boolean removeLinks) {
-		return createMessage(getContent(), getExtra(), sender, removeLinks);
-	}
-
-	public static MessageBuilder createMessage(String contentString, List<String> extra, Snowflake sender, boolean removeLinks) {
-		MessageBuilder builder = MessageBuilder.create();
-		List<String> lines = new ArrayList<>();
-
-		Collections.addAll(lines, contentString
-				.replaceAll("role:(\\d+)", "<@&$1>")
-				.replaceAll("user:(\\d+)", "<@$1>")
-				.replace("mention:here", "@here")
-				.replace("mention:everyone", "@everyone")
-				.split("\n"));
-
-		if (lines.isEmpty()) {
-			lines.add("Missingno");
-		}
-
-		builder.content(lines);
-
-		DiscordMessage.applyExtra(builder, extra, sender);
-		return builder;
+	public MessageBuilder createMessage(Snowflake sender) {
+		return getCachedContent().a().render(getCachedContent().b(), sender);
 	}
 
 	public void rename(String rename) {
 		long l = setSlashCommand(false);
 
-		document.map.put("name", rename);
-		update("name", rename);
+		guild.getMacroMap().remove(id);
+		id = rename.toLowerCase();
+		name = rename;
+		guild.getMacroMap().put(id, this);
 
-		if (l != 0L) {
+		if (l != 0L && !isHidden()) {
 			setSlashCommand(true);
 		}
 	}
 
-	public void updateContent(String content, List<String> extra) {
-		if (!content.equals(getContent())) {
-			document.map.put("content", content);
-			update("content", content);
-		}
-
-		if (!extra.isEmpty() && !extra.equals(getExtra())) {
-			if (extra.contains("clear")) {
-				document.map.remove("extra");
-				update(Updates.unset("extra"));
-			} else {
-				document.map.put("extra", extra);
-				update("extra", extra);
-			}
-		}
+	public void updateContent(String content) {
+		this.content = content;
+		this.cachedContent = null;
 	}
 
 	public long setSlashCommand(boolean b) {
-		var gc = collection.gc;
-
 		if (b) {
-			String author = gc.db.app.discordHandler.getUserName(Snowflake.of(getAuthor())).orElse("Deleted User");
+			String author = guild.db.app.discordHandler.getUserName(Snowflake.of(this.author)).orElse("Deleted User");
 
-			var data = gc.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), ApplicationCommandRequest.builder()
-					.name(getName().toLowerCase())
+			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), ApplicationCommandRequest.builder()
+					.name(id)
 					.description("Macro created by " + author)
 					.build()
 			).block();
@@ -115,38 +62,65 @@ public class Macro extends WrappedDocument<Macro> {
 			long id = data == null ? 0L : Snowflake.of(data.id()).asLong();
 
 			if (data != null) {
-				document.map.put("slash_command", id);
-				update("slash_command", id);
+				slashCommand = id;
 			}
 
 			return id;
 		} else {
-			long id = getSlashCommand();
-
-			if (id != 0L) {
+			if (slashCommand != 0L) {
 				try {
-					gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.applicationId, gc.guildId.asLong(), id).block();
+					guild.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), slashCommand).block();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 
-				document.map.remove("slash_command");
-				update(Updates.unset("slash_command"));
+				slashCommand = 0L;
 			}
 
-			return id;
+			return slashCommand;
 		}
 	}
 
 	public ChatCommandSuggestion getChatCommandSuggestion() {
 		if (chatCommandSuggestion == null) {
-			chatCommandSuggestion = new ChatCommandSuggestion(getName(), getName(), getName().toLowerCase(), 0);
+			chatCommandSuggestion = new ChatCommandSuggestion(name, name, id, 0);
 		}
 
 		return chatCommandSuggestion;
 	}
 
 	public void addUse() {
-		update("uses", getUses() + 1);
+		uses++;
+	}
+
+	@Override
+	public int compareTo(@NotNull Macro o) {
+		return id.compareToIgnoreCase(o.id);
+	}
+
+	public String chatFormatted() {
+		return chatFormatted(false);
+	}
+
+	public String chatFormatted(boolean escape) {
+		if (slashCommand != 0L) {
+			return "</" + id + ":" + Long.toUnsignedString(slashCommand) + ">";
+		} else if (escape) {
+			return '`' + name + '`';
+		} else {
+			return MacroCommands.FORMAT_ESCAPE.matcher(name).replaceAll("\\\\$1");
+		}
+	}
+
+	public Pair<ContentType, Object> getCachedContent() {
+		if (cachedContent == null) {
+			cachedContent = ContentType.parse(content);
+		}
+
+		return cachedContent;
+	}
+
+	public boolean isHidden() {
+		return name.startsWith("__");
 	}
 }

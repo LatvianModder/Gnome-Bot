@@ -5,10 +5,10 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.discord.command.CommandOption;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.server.handler.HTTPCodeException;
 import dev.latvian.apps.webutils.CodingUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import org.apache.commons.fileupload.MultipartStream;
 import org.jetbrains.annotations.Nullable;
@@ -179,19 +179,19 @@ public class ServerRequest {
 		return bodyList;
 	}
 
-	public Snowflake getSnowflake(String var) throws HTTPCodeException {
+	public Snowflake getSnowflake(String var) {
 		try {
 			return Snowflake.of(variable(var));
 		} catch (Exception ex) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid Snowflake: " + var + " / " + variable(var));
+			throw new BadRequestResponse("Invalid Snowflake: " + var + " / " + variable(var));
 		}
 	}
 
-	public long getUnsignedLong(String var) throws HTTPCodeException {
+	public long getUnsignedLong(String var) {
 		try {
 			return Long.parseUnsignedLong(variable(var));
 		} catch (Exception ex) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid number: " + var + " / " + variable(var));
+			throw new BadRequestResponse("Invalid number: " + var + " / " + variable(var));
 		}
 	}
 

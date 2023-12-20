@@ -3,7 +3,7 @@ package dev.gnomebot.app.cli;
 import discord4j.core.object.component.Button;
 
 public class CLIModalTest {
-	public static final CLICommand COMMAND = CLICommand.make("modal_test")
+	public static final CLICommand COMMAND = CLICommand.make("modal-test")
 			.description("Test modals")
 			.noAdmin()
 			.visible()
@@ -11,6 +11,6 @@ public class CLIModalTest {
 
 	private static void run(CLIEvent event) throws Exception {
 		event.respond("Modal Test");
-		event.response.addComponentRow(Button.danger("modal_test", "Click this to open test form!"));
+		event.response.addComponentRow(Button.danger("modal-test", "Click this to open test form!"));
 	}
 }

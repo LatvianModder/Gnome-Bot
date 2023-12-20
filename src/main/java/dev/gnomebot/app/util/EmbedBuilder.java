@@ -35,20 +35,20 @@ public class EmbedBuilder {
 		return create().title(title).description(description);
 	}
 
-	private String title;
-	private String description;
-	private String url;
-	private Instant timestamp;
-	private Color defaultColor;
-	private Color color;
-	private String footerText;
-	private String footerIconUrl;
-	private String image;
-	private String thumbnail;
-	private String authorName;
-	private String authorUrl;
-	private String authorIconUrl;
-	private List<EmbedCreateFields.Field> fields;
+	public String title;
+	public String description;
+	public String url;
+	public Instant timestamp;
+	public Color defaultColor;
+	public Color color;
+	public String footerText;
+	public String footerIconUrl;
+	public String image;
+	public String thumbnail;
+	public String authorName;
+	public String authorUrl;
+	public String authorIconUrl;
+	public List<EmbedCreateFields.Field> fields;
 
 	private EmbedBuilder() {
 		title = null;

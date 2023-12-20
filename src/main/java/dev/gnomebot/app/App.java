@@ -175,8 +175,10 @@ public class App implements Runnable {
 		webServer.add("panel/:guild/offenses", AuditLogHandlers::offenses).member();
 		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
 		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
-		webServer.add("panel/:guild/scams", ScamWebHandlers::scams).admin();
-		webServer.add("panel/:guild/macros", PanelHandlers::macros).admin();
+		webServer.add("panel/:guild/scam-detection", ScamWebHandlers::scamDetection).admin();
+		webServer.add("panel/:guild/macros", PanelHandlers::macros);
+		webServer.add("panel/:guild/macros/:name", PanelHandlers::macroInfo);
+		webServer.add("panel/:guild/members/:id", PanelHandlers::memberInfo);
 
 		webServer.add("minecraft/verify", MinecraftHandlers::verify).noAuth().log();
 

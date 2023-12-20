@@ -1,14 +1,13 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMessage;
-import dev.gnomebot.app.data.Macro;
+import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.UserWebhook;
+import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
@@ -16,7 +15,6 @@ import discord4j.core.object.entity.Message;
 import org.bson.Document;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,15 +102,14 @@ public class WebhookCommands extends ApplicationCommands {
 		event.context.checkSenderOwner();
 		ChannelInfo ci = event.get("channel").asChannelInfoOrCurrent();
 
-		event.respondModal("webhook/" + ci.id.asString(), "Execute Webhook",
+		event.respondModal("webhook/" + ci.id.asString() + "/0", "Execute Webhook",
 				TextInput.paragraph("content", "Content", 0, 2000).required(false),
-				TextInput.paragraph("extra", "Extra").required(false).placeholder(MacroCommands.EXTRA_PLACEHOLDER),
 				TextInput.small("username", "Username", 0, 100).required(false).placeholder("Override username"),
 				TextInput.small("avatar_url", "Avatar URL").required(false).placeholder("Override avatar")
 		);
 	}
 
-	public static void executeCallback(ModalEventWrapper event, Snowflake channelId) {
+	public static void executeCallback(ModalEventWrapper event, Snowflake channelId, Snowflake editId) {
 		event.context.checkSenderOwner();
 		ChannelInfo ci = event.context.gc.getOrMakeChannelInfo(channelId);
 		WebHook webHook = ci.getWebHook().orElse(null);
@@ -121,32 +118,42 @@ public class WebhookCommands extends ApplicationCommands {
 			throw new GnomeException("Failed to retrieve webhook!");
 		}
 
-		String content = event.get("content").asString();
-		List<String> extra = Arrays.asList(event.get("extra").asString().split("\n"));
-		MessageBuilder message = Macro.createMessage(content, extra, Utils.NO_SNOWFLAKE, false);
-		message.webhookName(event.get("username").asString(event.context.gc.toString()));
-		message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
+		var content = ContentType.parse(event.get("content").asString());
+		var message = content.a().render(content.b(), Utils.NO_SNOWFLAKE);
 
-		Snowflake id = webHook.execute(message);
+		if (editId.asLong() == 0L) {
+			message.webhookName(event.get("username").asString(event.context.gc.toString()));
+			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
+			Snowflake id = webHook.execute(message);
 
-		if (id.asLong() != 0L) {
-			Document doc = new Document();
-			doc.put("_id", id.asLong());
-			doc.put("extra", String.join("\n", extra));
-			event.context.gc.db.webhookExecuteExtra.insert(doc);
-			event.edit().respond("Done!");
+			if (id.asLong() != 0L) {
+				event.respond("Done!");
+			} else {
+				throw new GnomeException("Failed to send webhook!");
+			}
 		} else {
-			throw new GnomeException("Failed to send webhook!");
+			try {
+				webHook.edit(editId.asString(), message).block();
+				event.respond("Done!");
+			} catch (Exception ex) {
+				throw new GnomeException("Failed to edit webhook message!");
+			}
 		}
 	}
 
 	public static void editMessage(Message message, ComponentEventWrapper event) {
 		event.context.checkSenderOwner();
-		var extra = DiscordMessage.getExtra(message);
 
-		event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Execute Webhook",
-				TextInput.paragraph("content", "Content", 0, 2000).required(false).prefilled(message.getContent()),
-				TextInput.paragraph("extra", "Extra").required(false).prefilled(String.join("\n", extra)).placeholder(MacroCommands.EXTRA_PLACEHOLDER)
-		);
+		if (ComplexMessage.has(message)) {
+			var lines = ComplexMessage.of(message).getLines();
+
+			event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Edit Webhook Message",
+					TextInput.paragraph("content", "Content").required(true).prefilled(String.join("\n", lines)).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
+			);
+		} else {
+			event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Edit Webhook Message",
+					TextInput.paragraph("content", "Content").required(true).prefilled(message.getContent()).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
+			);
+		}
 	}
 }

@@ -62,4 +62,16 @@ public interface EmbedColor {
 
 		return GRAY;
 	}
+
+	static String colorName(int color) {
+		return switch (color) {
+			case 0x2F3136 -> "gray";
+			case 0xF04848 -> "red";
+			case 0xEFC047 -> "yellow";
+			case 0x48F048 -> "green";
+			case 0x47EFC8 -> "teal";
+			case 0x0094FF -> "blue";
+			default -> "#%06X".formatted(color);
+		};
+	}
 }

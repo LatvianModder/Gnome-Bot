@@ -14,6 +14,10 @@ import java.util.regex.Pattern;
 public class SimpleStringReader {
 	public static final Pattern SIMPLE_TIME_PATTERN = Pattern.compile("(\\d+)([smhdw])", Pattern.CASE_INSENSITIVE);
 
+	public static String escape(String string) {
+		return string.isEmpty() || string.indexOf(' ') != -1 || string.indexOf('"') != -1 ? ('"' + string.replace("\"", "\\\"") + '"') : string;
+	}
+
 	protected final String string;
 	public int position;
 

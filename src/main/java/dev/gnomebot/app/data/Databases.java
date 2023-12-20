@@ -18,10 +18,12 @@ import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -42,7 +44,6 @@ public class Databases {
 	public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
 	public final WrappedCollection<InteractionDocument> interactions;
-	public final WrappedCollection<WebhookExecuteExtra> webhookExecuteExtra;
 	public final WrappedCollection<ScheduledTask> scheduledTasks;
 	public final WrappedCollection<DiscordPoll> polls;
 	public final WrappedCollection<ChannelSettings> channelSettings;
@@ -66,7 +67,6 @@ public class Databases {
 		userPings = create("user_pings", UserPings::new);
 		pastes = create("pastes", Paste::new);
 		interactions = create("interactions", InteractionDocument::new);
-		webhookExecuteExtra = create("webhook_execute_info", WebhookExecuteExtra::new);
 		scheduledTasks = create("scheduled_tasks", ScheduledTask::new);
 		polls = create("polls", DiscordPoll::new);
 		channelSettings = create("channel_settings", ChannelSettings::new);
@@ -91,6 +91,16 @@ public class Databases {
 
 	public GuildCollections guild(GuildMessageChannel channel) {
 		return guild(channel.getGuildId());
+	}
+
+	public List<GuildCollections> allGuilds() {
+		var list = new ArrayList<GuildCollections>();
+
+		for (var guild : app.discordHandler.getSelfGuildIds()) {
+			list.add(guild(guild));
+		}
+
+		return list;
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {

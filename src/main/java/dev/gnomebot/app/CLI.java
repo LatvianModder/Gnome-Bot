@@ -1,34 +1,20 @@
 package dev.gnomebot.app;
 
-import com.mongodb.client.model.Accumulators;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
 import com.sun.management.HotSpotDiagnosticMXBean;
-import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
-import dev.latvian.apps.webutils.data.Mutable;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.ThreadChannel;
-import org.bson.Document;
 
 import java.lang.management.ManagementFactory;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class CLI extends Thread {
 	public final App app;
@@ -52,6 +38,7 @@ public class CLI extends Thread {
 					case "reload" -> app.reload();
 					case "threads" -> printThreads();
 					case "dump" -> dump();
+					case "size" -> size();
 					case "port" -> port(nonInput);
 					case "stats" -> stats();
 					case "flags" -> flags(input);
@@ -90,131 +77,38 @@ public class CLI extends Thread {
 		mxBean.dumpHeap("heapdump.hprof", false);
 	}
 
-	private record Trick(String id, boolean clj, long author, long created, Mutable<String> content) {
-	}
+	private void size() throws Exception {
+		System.out.print("\u001b[s\u001b[5000;5000H\u001b[6n\u001b[u");
 
-	private void port(String input) throws Exception {
-		var guild = app.db.guild(Snowflake.of(166630061217153024L));
+		var sb = new StringBuilder();
 
-		for (var msg : guild.messages.getCollection().aggregate(List.of(
-				Aggregates.match(Filters.regex("content", Pattern.compile("^\\?\\?"))),
-				Aggregates.group("$content", Accumulators.sum("count", 1)),
-				Aggregates.match(Filters.gt("count", 1)),
-				Aggregates.sort(Sorts.ascending("count"))
-		))) {
-			var macro = guild.getMacro(msg.getString("_id").substring(2));
+		while (true) {
+			var c = System.in.read();
 
-			if (macro != null) {
-				macro.update("uses", msg.getInteger("count"));
-				App.info(macro.getName() + ": " + macro.getUses());
+			if (c == 'R') {
+				break;
 			}
+
+			sb.append((char) c);
 		}
 
+		App.info(sb);
 		App.info("+ Done");
 	}
 
-	private void portTricks(GuildCollections guild) throws Exception {
-		guild.macros.getCollection().deleteMany(Filters.eq("k9", true));
+	private void port(String input) throws Exception {
+		var mm = app.db.guild(Snowflake.of(166630061217153024L));
+		int count = 0;
 
-		var count = 0;
-		var pattern = Pattern.compile("^[?!]+trick\\s+-([aurt]+)([=\\s]clj|\\s+--type[=\\s]clj)?\\s+(\".+\"|\\S+)\\s+(.+)", Pattern.MULTILINE);
-
-		var map = new LinkedHashMap<String, Trick>();
-
-		var admins = new HashSet<Long>();
-		var adminRole = guild.adminRole.getRole().id;
-
-		for (var member : guild.getMembers()) {
-			if (member.getRoleIds().contains(adminRole)) {
-				admins.add(member.getId().asLong());
+		for (var gc : app.db.allGuilds()) {
+			for (var macro : gc.getMacroMap().values()) {
+				macro.updateContent(ContentType.decodeMentions(macro.content));
 			}
+
+			gc.saveMacroMap();
 		}
 
-		admins.add(140245257416736769L); // tt
-		admins.add(105002867424796672L); // tehnut
-		admins.add(107511731999244288L); // simon
-		admins.add(124923088067362817L); // awade
-
-		for (var msg : guild.messages.query().regex("content", Pattern.compile("^[?!]+trick -[aur]")).sort(Sorts.ascending("timestamp")).projectionFields("_id", "content", "user")) {
-			var matcher = pattern.matcher(msg.getContent());
-
-			if (matcher.find()) {
-				count++;
-
-				long author = msg.getUserID();
-				var type = matcher.group(1);
-				boolean clj = matcher.group(2) != null;
-				var trick = matcher.group(3);
-
-				if (trick.length() >= 2 && trick.startsWith("\"") && trick.endsWith("\"")) {
-					trick = trick.substring(1, trick.length() - 1);
-				}
-
-				if (trick.isEmpty()) {
-					continue;
-				}
-
-				var content = msg.getContent()
-						.substring(matcher.start(4))
-						.trim()
-						.replaceAll("<@&(\\d+)>", "role:$1")
-						.replaceAll("<@(\\d+)>", "user:$1")
-						.replace("@here", "mention:here")
-						.replace("@everyone", "mention:everyone");
-
-				if (content.isEmpty()) {
-					continue;
-				}
-
-				if (type.indexOf('a') != -1) {
-					map.put(trick.toLowerCase(), new Trick(trick, clj, author, Snowflake.of(msg.getUID()).getTimestamp().toEpochMilli(), new Mutable<>(content)));
-				} else if (type.indexOf('u') != -1) {
-					var t = map.get(trick.toLowerCase());
-
-					if (t != null && (t.author == author || admins.contains(author))) {
-						t.content.value = content;
-					}
-				} else if (type.indexOf('r') != -1) {
-					var t = map.get(trick.toLowerCase());
-
-					if (t != null && (t.author == author || admins.contains(author))) {
-						map.remove(trick.toLowerCase());
-					}
-				}
-			}
-		}
-
-		var list = new ArrayList<String>();
-
-		for (var trick : map.values()) {
-			list.add((trick.clj ? "* " : "# ") + trick.id + " " + Long.toUnsignedString(trick.author) + " " + Long.toUnsignedString(trick.created));
-
-			for (var str : trick.content.value.split("\n")) {
-				list.add("> " + str);
-			}
-
-			list.add("");
-
-			if (guild.getMacro(trick.id) == null) {
-				Document document = new Document();
-				document.put("name", trick.id);
-				document.put("content", trick.content.value);
-				document.put("author", trick.author);
-				document.put("created", new Date(trick.created));
-				document.put("uses", 0);
-				document.put("type", trick.clj ? "clj" : "text");
-				document.put("k9", true);
-				guild.macros.insert(document);
-				App.info("~ Added " + trick.id);
-			}
-		}
-
-		Files.write(Path.of("export1.txt"), list);
-
-		guild.updateMacroMap();
-
-		App.info("+ " + count + " messages found");
-		App.info("+ " + map.size() + " tricks found");
+		App.info("+ Done " + count);
 	}
 
 	private void stats() {

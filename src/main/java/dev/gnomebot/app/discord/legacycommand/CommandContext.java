@@ -16,6 +16,8 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
+import discord4j.rest.http.client.ClientException;
+import discord4j.rest.json.response.ErrorResponse;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
@@ -115,7 +117,11 @@ public class CommandContext {
 			}
 
 			return m;
+		} catch (ClientException ex) {
+			ex.printStackTrace();
+			throw new GnomeException("Failed to reply! " + ex.getStatus() + " " + ex.getErrorResponse().map(ErrorResponse::getFields).map(Object::toString).orElse("Unknown error")).clientException(ex);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new GnomeException("Failed to reply! " + ex);
 		}
 	}

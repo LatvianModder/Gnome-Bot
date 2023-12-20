@@ -30,6 +30,8 @@ body {
     /*line-height: 1.5;*/
     /*font-size: 18px;*/
     margin: 0;
+    display: flex;
+    justify-content: center;
 }
 
 .right {
@@ -38,6 +40,24 @@ body {
 
 div.content {
     padding: 1em;
+    width: fit-content;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+div.content > h1 {
+    align-self: center;
+}
+
+h2, h3 {
+    margin: 0.5rem 0;
+}
+
+a.back {
+    margin: 0 0 1rem;
+    padding: 0.5rem;
+    width: fit-content;
 }
 
 a,
@@ -190,10 +210,6 @@ textarea {
     background-color: transparent;
     color: var(--text-color);
     font-family: inherit;
-}
-
-p {
-    margin: 4px auto;
 }
 
 iframe#log {
@@ -381,6 +397,7 @@ div.pastetext a {
 p.withicon {
     font-size: 1.5em;
     line-height: 1.5em;
+    margin: 0.5rem 0;
 }
 
 p.withicon img {
@@ -395,11 +412,22 @@ table.auditlogtable td {
     max-width: 15%;
 }
 
-table.bantable {
-    /*table-layout: fixed;*/
+details.bantable {
+    background-color: var(--background-hover-color);
+    margin: 0.5rem 0;
 }
 
-.divborder > div {
+details.bantable > summary {
+    width: 100%;
+    padding: 1rem;
+    cursor: pointer;
+}
+
+details.bantable > table {
+    width: 100%;
+}
+
+.divborder > div, div.divwithborder {
     border: 1px solid var(--border-color);
     margin: 1em 0;
     padding: 1em;

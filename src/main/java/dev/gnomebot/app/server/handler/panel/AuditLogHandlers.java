@@ -7,9 +7,10 @@ import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.webutils.data.MutableInt;
+import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
@@ -19,13 +20,16 @@ import org.bson.conversions.Bson;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class AuditLogHandlers {
 	public static Response offenses(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses");
+		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses - " + request.gc);
+		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
 		root.content.p().string("Uh... nothing for now...");
 		return root.asResponse();
 	}
@@ -33,7 +37,8 @@ public class AuditLogHandlers {
 	public static Response offensesOf(ServerRequest request) {
 		var userId = Snowflake.of(request.variable("user"));
 		var user = request.app.discordHandler.getUser(userId);
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Offenses of " + (user == null ? "Unknown User" : user.getUsername()));
+		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses of " + (user == null ? "Unknown User" : user.getUsername()) + " - " + request.gc);
+		root.content.a("/panel/" + request.gc.guildId.asString() + "/offenses", "< Back").classes("back");
 
 		if (user == null) {
 			root.content.p().classes("red").string("User not found!");
@@ -54,7 +59,8 @@ public class AuditLogHandlers {
 		long message = request.query("message").asLong();
 		int level = request.query("level").asInt();
 
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Audit Log");
+		var root = GnomeRootTag.createSimple(request.getPath(), "Audit Log - " + request.gc);
+		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
 
 		UserCache userCache = request.app.discordHandler.createUserCache();
 		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
@@ -135,14 +141,16 @@ public class AuditLogHandlers {
 		return root.asResponse();
 	}
 
-	private record BanEntry(String id, String name, String displayName, String reason) {
+	private record BanEntry(String id, String name, String displayName, String reason, String discriminator) {
 	}
 
 	public static Response bans(ServerRequest request) {
 		var list = new ArrayList<BanEntry>();
 		// int count = 0;
 
-		final Guild guild = request.gc.getGuild();
+		var guild = request.gc.getGuild();
+
+		var badNamePattern = Pattern.compile("[^\\w-.()!$^*+=~\\s]");
 
 		// Required until D4J fixes ban pagination
 		for (var entry : PaginationUtil.paginateAfter(params -> Routes.GUILD_BANS_GET.newRequest(guild.getId().asLong())
@@ -157,36 +165,93 @@ public class AuditLogHandlers {
 			list.add(new BanEntry(
 							u.id().asString(),
 							u.username(),
-					u.globalName().orElse(u.username()),
-							entry.reason().orElse("")
+					u.globalName().orElse(""),
+					entry.reason().orElse(""),
+					u.discriminator().equals("0") ? "" : u.discriminator()
 					)
 			);
 		}
 
-		list.sort((o1, o2) -> o1.displayName.compareToIgnoreCase(o2.displayName));
+		list.sort((o1, o2) -> o1.name.compareToIgnoreCase(o2.name));
 
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel - " + request.gc + " - Bans");
-		var table = new Table("#", "ID", "Name", "Reason");
+		var root = GnomeRootTag.createSimple(request.getPath(), "Bans - " + request.gc);
+		root.content.style("width:100%");
+		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
 
-		String indexFormat = "%0" + String.valueOf(list.size()).length() + "d";
+		var spamList = new ArrayList<BanEntry>();
+		var hackList = new ArrayList<BanEntry>();
+		var lfgList = new ArrayList<BanEntry>();
+		var otherList = new ArrayList<BanEntry>();
+		var noReasonList = new ArrayList<BanEntry>();
+		int deletedUsers = 0;
+		var deletedUserReasons = new HashMap<String, Pair<String, MutableInt>>();
 
-		for (int i = 0; i < list.size(); i++) {
-			var entry = list.get(i);
-			var cells = table.addRow();
+		var lists = List.of(Pair.of("Spam / Scam", spamList), Pair.of("Hacks", hackList), Pair.of("LFG", lfgList), Pair.of("Other", otherList), Pair.of("Unknown Reason", noReasonList));
 
-			cells[0].value(String.format(indexFormat, i + 1));
-			cells[1].value(entry.id);
+		for (var entry : list) {
+			var reason = entry.reason.trim().toLowerCase();
 
-			if (entry.displayName.equals(entry.name)) {
-				cells[2].value(entry.displayName);
+			if (!entry.discriminator.isEmpty() && entry.name.length() == 21 && entry.name.startsWith("Deleted User ")) {
+				deletedUsers++;
+				deletedUserReasons.computeIfAbsent(reason, r -> Pair.of(entry.reason, new MutableInt())).b().add(1);
+			} else if (reason.isEmpty()) {
+				noReasonList.add(entry);
+			} else if (reason.contains("lfg")) {
+				lfgList.add(entry);
+			} else if (reason.contains("hack") || reason.contains("crack") || reason.contains("launcher") || reason.contains("client")) {
+				hackList.add(entry);
+			} else if (reason.contains("spam") || reason.contains("scam") || reason.contains("@everyone") || reason.contains("@here") || reason.contains("nsfw") || reason.contains("shitpost") || reason.contains("porn")) {
+				spamList.add(entry);
 			} else {
-				cells[2].tag().span().title(entry.name).string(entry.displayName);
+				otherList.add(entry);
 			}
-
-			cells[3].value(entry.reason);
 		}
 
-		root.content.add(table.toTag().classes("bantable"));
+		for (var listEntry : lists) {
+			var list1 = listEntry.b();
+
+			if (list1.isEmpty()) {
+				continue;
+			}
+
+			var table = new Table("#", "Name", "Reason");
+			var indexFormat = "%0" + String.valueOf(list1.size()).length() + "d";
+
+			for (int i = 0; i < list1.size(); i++) {
+				var entry = list1.get(i);
+				var cells = table.addRow();
+
+				cells[0].value(String.format(indexFormat, i + 1));
+
+				var name = badNamePattern.matcher(entry.name).find() ? "(Cringe Name)" : entry.name;
+				var displayName = entry.displayName.isEmpty() ? "" : badNamePattern.matcher(entry.displayName).find() ? "(Cringe Name)" : entry.displayName;
+
+				var nameTag = cells[1].tag().a("/panel/" + request.gc.guildId.asString() + "/members/" + entry.id);
+
+				if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
+					nameTag.string("(Cringe Name)");
+				} else if (displayName.equals("(Cringe Name)") || displayName.isEmpty()) {
+					nameTag.string(name + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
+				} else {
+					nameTag.string(displayName + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
+				}
+
+				cells[2].value(entry.reason);
+			}
+
+			root.content.paired("details").classes("bantable").paired("summary").string(listEntry.a() + " [" + list1.size() + "]").end().add(table.toTag());
+		}
+
+		deletedUserReasons.remove("");
+
+		if (deletedUsers > 0) {
+			var ul = root.content.paired("details").classes("bantable").paired("summary").string("Deleted Users [" + deletedUsers + "]").end().ul();
+
+			for (var reason : deletedUserReasons.values().stream().sorted((o1, o2) -> Integer.compare(o2.b().value, o1.b().value)).toList()) {
+				ul.li().string(reason.a() + " [" + reason.b().value + "]");
+			}
+		}
+
 		return root.asResponse();
 	}
 }

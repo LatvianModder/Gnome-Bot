@@ -22,6 +22,7 @@ public interface AppPaths {
 
 	Path RESOURCES = makeDir(Path.of("resources"));
 	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
+	Path EXPORT = makeDir(Path.of("export"));
 	Path DATA = makeDir(Path.of("data"));
 	Path LOG = DATA.resolve("log.txt");
 

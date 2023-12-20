@@ -25,6 +25,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.net.IPUtils;
@@ -797,17 +798,22 @@ public class MessageHandler {
 					context.message.delete(ex.getMessage()).subscribe();
 				}
 
-				if (ex.ephemeral) {
-					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
-						try {
-							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-						} catch (GnomeException e) {
-							e.printStackTrace();
-						}
-					}
+				var error = EmbedBuilder.create().title("Failed to reply!").redColor();
+
+				if (ex.clientException != null && ex.clientException.getErrorResponse().isPresent()) {
+					var err = new HashMap<>(ex.clientException.getErrorResponse().get().getFields());
+					error.field("Status", ex.clientException.getStatus().toString(), true);
+					error.field("Code", String.valueOf(err.remove("code")), true);
+					error.field("Message", String.valueOf(err.remove("message")), true);
+					System.out.println(err.get("errors").getClass().getName());
+					error.description("```\n" + err.get("errors") + "\n```");
 				} else {
+					error.description("```\n" + ex.getMessage() + "\n```");
+				}
+
+				if (!ex.ephemeral || DM.send(context.handler, context.sender, MessageBuilder.create(error), false).isEmpty()) {
 					try {
-						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
+						context.reply(error);
 					} catch (GnomeException e) {
 						e.printStackTrace();
 					}
@@ -835,7 +841,7 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					context.reply(macro.createMessage(context.sender.getId(), true));
+					context.reply(macro.createMessage(context.sender.getId()));
 					App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
 					return true;
 				}
@@ -847,17 +853,22 @@ public class MessageHandler {
 					context.message.delete(ex.getMessage()).subscribe();
 				}
 
-				if (ex.ephemeral) {
-					if (DM.send(context.handler, context.sender, ex.getMessage(), false).isEmpty()) {
-						try {
-							context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
-						} catch (GnomeException e) {
-							e.printStackTrace();
-						}
-					}
+				var error = EmbedBuilder.create().title("Failed to reply!").redColor();
+
+				if (ex.clientException != null && ex.clientException.getErrorResponse().isPresent()) {
+					var err = new HashMap<>(ex.clientException.getErrorResponse().get().getFields());
+					error.field("Status", ex.clientException.getStatus().toString(), true);
+					error.field("Code", String.valueOf(err.remove("code")), true);
+					error.field("Message", String.valueOf(err.remove("message")), true);
+					System.out.println(err.get("errors").getClass().getName());
+					error.description("```\n" + err.get("errors") + "\n```");
 				} else {
+					error.description("```\n" + ex.getMessage() + "\n```");
+				}
+
+				if (!ex.ephemeral || DM.send(context.handler, context.sender, MessageBuilder.create(error), false).isEmpty()) {
 					try {
-						context.reply(EmbedBuilder.create().title(ex.getMessage()).redColor());
+						context.reply(error);
 					} catch (GnomeException e) {
 						e.printStackTrace();
 					}

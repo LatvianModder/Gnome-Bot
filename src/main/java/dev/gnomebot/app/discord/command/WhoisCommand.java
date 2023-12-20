@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -30,12 +31,14 @@ public class WhoisCommand extends ApplicationCommands {
 			event.acknowledge();
 		}
 
-		EmbedBuilder embed = EmbedBuilder.create()
-				.title(user.getTag())
+		var embed = EmbedBuilder.create()
+				.title(member == null ? user.getGlobalName().orElse(user.getUsername()) : member.getDisplayName())
+				.inlineField("Username", user.getTag())
 				.inlineField("Created", Utils.formatRelativeDate(user.getId().getTimestamp()))
 				.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
 
 		if (member != null) {
+			embed.url(App.url("panel/" + member.getGuildId().asString() + "/members/" + member.getId().asString()));
 			embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
 
 			if (!member.getRoleIds().isEmpty()) {

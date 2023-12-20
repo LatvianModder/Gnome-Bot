@@ -14,9 +14,17 @@ public class AboutCommand extends ApplicationCommands {
 			.add(sub("regex")
 					.description("Info about Regular Expressions")
 					.run(PingsCommands::regexHelp)
+			)
+			.add(sub("complex")
+					.description("Info about complex message format")
+					.run(AboutCommand::complex)
 			);
 
 	private static void macro(ChatInputInteractionEventWrapper event) {
 		event.respond(MacroCommands.HELP);
+	}
+
+	private static void complex(ChatInputInteractionEventWrapper event) {
+		event.respond("WIP");
 	}
 }
