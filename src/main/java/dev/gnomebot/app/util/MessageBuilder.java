@@ -364,6 +364,11 @@ public class MessageBuilder {
 		}
 
 		builder.ephemeral(this.ephemeral == null || this.ephemeral);
+
+		if (this.files != null) {
+			builder.files(this.files);
+		}
+
 		return builder.build();
 	}
 }

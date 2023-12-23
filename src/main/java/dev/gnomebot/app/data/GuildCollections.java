@@ -696,8 +696,8 @@ public class GuildCollections {
 			macroMap = new LinkedHashMap<>();
 
 			try {
-				if (Files.exists(paths.macros)) {
-					for (var entry : JSON.DEFAULT.read(paths.macros).readObject().entrySet()) {
+				if (Files.exists(paths.macrosFile)) {
+					for (var entry : JSON.DEFAULT.read(paths.macrosFile).readObject().entrySet()) {
 						if (entry.getValue() instanceof JSONObject json) {
 							var macro = new Macro(this);
 							macro.id = entry.getKey().toLowerCase();
@@ -749,11 +749,11 @@ public class GuildCollections {
 		}
 
 		try {
-			if (Files.notExists(paths.macros)) {
-				Files.createFile(paths.macros);
+			if (Files.notExists(paths.macrosFile)) {
+				Files.createFile(paths.macrosFile);
 			}
 
-			Files.writeString(paths.macros, json.toString());
+			Files.writeString(paths.macrosFile, json.toString());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

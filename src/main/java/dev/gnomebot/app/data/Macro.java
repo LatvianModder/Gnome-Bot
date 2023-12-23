@@ -27,6 +27,15 @@ public class Macro implements Comparable<Macro> {
 		this.guild = guild;
 	}
 
+	public Pair<ContentType, Object> getCachedContent() {
+		if (cachedContent == null) {
+			cachedContent = ContentType.parse(content);
+		}
+
+		return cachedContent;
+
+	}
+
 	public MessageBuilder createMessage(Snowflake sender) {
 		return getCachedContent().a().render(getCachedContent().b(), sender);
 	}
@@ -112,15 +121,13 @@ public class Macro implements Comparable<Macro> {
 		}
 	}
 
-	public Pair<ContentType, Object> getCachedContent() {
-		if (cachedContent == null) {
-			cachedContent = ContentType.parse(content);
-		}
-
-		return cachedContent;
-	}
-
 	public boolean isHidden() {
 		return name.startsWith("__");
+	}
+
+	public void save() {
+	}
+
+	public void delete() {
 	}
 }

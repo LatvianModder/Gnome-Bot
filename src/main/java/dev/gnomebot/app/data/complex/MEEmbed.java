@@ -40,9 +40,7 @@ public class MEEmbed implements ComplexMessageContext.TextHolder, ComplexMessage
 			lines.add("embed");
 		}
 
-		for (var desc : description) {
-			lines.add(("> " + desc).trim());
-		}
+		ComplexMessage.appendContent(lines, description);
 
 		if (color != null) {
 			lines.add("color " + EmbedColor.colorName(color.getRGB() & 0xFFFFFF));
@@ -54,10 +52,7 @@ public class MEEmbed implements ComplexMessageContext.TextHolder, ComplexMessage
 
 		for (var field : fields) {
 			lines.add((field.inline ? "inline-field " : "field ") + field.name);
-
-			for (var fl : field.value) {
-				lines.add(("> " + fl).trim());
-			}
+			ComplexMessage.appendContent(lines, field.value);
 		}
 
 		if (!image.isEmpty()) {

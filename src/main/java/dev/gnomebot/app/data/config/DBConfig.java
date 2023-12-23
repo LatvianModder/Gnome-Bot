@@ -8,9 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DBConfig {
-	public final LinkedHashMap<String, BaseConfig<?>> map = new LinkedHashMap<>();
+	public final Map<String, BaseConfig<?>> map = new LinkedHashMap<>();
 
 	public void read(String name, @Nullable Document document, List<Bson> updates) {
 		if (document == null) {

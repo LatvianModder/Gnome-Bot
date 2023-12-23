@@ -78,7 +78,7 @@ public class GnomeMessageInteraction extends ApplicationCommands {
 	}
 
 	public static void callback(ComponentEventWrapper event, Snowflake messageId, String actionId) throws Exception {
-		var message = event.context.channelInfo.getMessage(messageId);
+		var message = event.context.channelInfo.getUncachedMessage(messageId);
 
 		if (message == null) {
 			throw new GnomeException("Message not found!");

@@ -5,18 +5,14 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.MessageData;
-import discord4j.discordjson.json.UserData;
 import discord4j.rest.service.ChannelService;
-
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.regex.Matcher;
 
 public class QuoteHandler {
 	public static void getMessageURL(StringBuilder builder, Snowflake guild, Snowflake channel, Snowflake message) {
@@ -39,21 +35,47 @@ public class QuoteHandler {
 		return builder.toString();
 	}
 
-	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, User user) {
-		Matcher quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
+	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, Member member) {
+		var quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
 		int quotes = 0;
 
-		boolean mentionsAdmin = gc.adminLogChannel.isSet() && gc.adminRole.isSet() && gc.adminRole.isMentioned(message);
-		ChannelService service = gc.db.app.discordHandler.client.getRestClient().getChannelService();
+		boolean init = true;
+
+		boolean mentionsAdmin = false;
+		ChannelService service = null;
+		ChannelInfo channel1 = null;
+		WebHook webHook = null;
+
+		var messageBuilder = MessageBuilder.create();
+		var remaining = new StringBuilder();
 
 		while (quoteMatcher.find()) {
-			String url = quoteMatcher.group();
+			var url = quoteMatcher.group();
+			var qguildId = Snowflake.of(quoteMatcher.group(1));
+			var qchannelId = Snowflake.of(quoteMatcher.group(2));
+			var qmessageId = Snowflake.of(quoteMatcher.group(3));
 
-			Snowflake qguildId = Snowflake.of(quoteMatcher.group(1));
-			Snowflake qchannelId = Snowflake.of(quoteMatcher.group(2));
-			Snowflake qmessageId = Snowflake.of(quoteMatcher.group(3));
+			if (init) {
+				mentionsAdmin = gc.adminLogChannel.isSet() && gc.adminRole.isSet() && gc.adminRole.isMentioned(message);
+				service = gc.db.app.discordHandler.client.getRestClient().getChannelService();
+				channel1 = mentionsAdmin ? gc.adminLogChannel.messageChannel().orElse(null) : channel;
+
+				if (channel1 == null) {
+					return 0;
+				}
+
+				webHook = member.isBot() ? null : channel1.getWebHook().orElse(null);
+
+				if (webHook != null) {
+					messageBuilder.webhookAvatarUrl(member.getAvatarUrl());
+					messageBuilder.webhookName(member.getDisplayName() + " quoted:");
+				}
+
+				init = false;
+			}
 
 			if (!mentionsAdmin && url.startsWith("<") && url.endsWith(">")) {
+				quoteMatcher.appendReplacement(remaining, ".");
 				continue;
 			}
 
@@ -61,16 +83,11 @@ public class QuoteHandler {
 
 			try {
 				m = service.getMessage(qchannelId.asLong(), qmessageId.asLong()).block();
-			} catch (Exception ex) {
+			} catch (Exception ignore) {
 			}
 
 			if (m == null) {
-				continue;
-			}
-
-			ChannelInfo channel1 = mentionsAdmin ? gc.adminLogChannel.messageChannel().orElse(null) : channel;
-
-			if (channel1 == null) {
+				quoteMatcher.appendReplacement(remaining, ".");
 				continue;
 			}
 
@@ -112,49 +129,62 @@ public class QuoteHandler {
 			}
 
 			if (content.isEmpty() && thumbnailUrl.isEmpty()) {
+				quoteMatcher.appendReplacement(remaining, ".");
 				continue;
 			}
 
-			EmbedBuilder quoteEmbed = EmbedBuilder.create();
-			String quoteURL = getMessageURL(qguildId, qchannelId, qmessageId);
+			quoteMatcher.appendReplacement(remaining, "");
+
+			var quoteEmbed = EmbedBuilder.create();
+			var quoteURL = getMessageURL(qguildId, qchannelId, qmessageId);
 
 			if (!thumbnailUrl.isEmpty()) {
 				quoteEmbed.thumbnail(thumbnailUrl);
 			}
 
-			UserData author = m.author();
-			quoteEmbed.author(author.username(), Utils.getAvatarUrl(author), quoteURL);
+			var author = m.author();
+			var authorMember = member.getId().asLong() == author.id().asLong() ? member : gc.getMember(Snowflake.of(author.id().asLong()));
+
+			if (authorMember != null) {
+				quoteEmbed.author("➤ " + authorMember.getDisplayName(), authorMember.getAvatarUrl(), quoteURL);
+			} else {
+				quoteEmbed.author("➤ " + author.globalName().orElse(author.username()), Utils.getAvatarUrl(author), quoteURL);
+			}
 
 			quoteEmbed.color(EmbedColor.GRAY);
-			quoteEmbed.description("[Quote ➤](" + quoteURL + ") " + content);
-			quoteEmbed.timestamp(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(m.timestamp(), Instant::from));
+			//quoteEmbed.description("[Quote ➤](" + quoteURL + ')' + (content.indexOf('\n') != -1 ? '\n' : ' ') + content);
+			quoteEmbed.description(content);
+			// quoteEmbed.timestamp(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(m.timestamp(), Instant::from));
 
-			if (!user.getId().equals(gc.db.app.discordHandler.selfId)) {
+			if (webHook == null && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
 				if (mentionsAdmin) {
-					quoteEmbed.footer(user.getTag() + " pinged admins", user.getAvatarUrl());
-				} else if (author == null || user.getId().asLong() != author.id().asLong()) {
-					quoteEmbed.footer(user.getUsername() + " quoted", user.getAvatarUrl());
+					quoteEmbed.footer(member.getTag() + " pinged admins", member.getAvatarUrl());
+				} else if (authorMember != member) {
+					quoteEmbed.footer(member.getDisplayName() + " quoted", member.getAvatarUrl());
 				}
 			}
 
-			channel1.createMessage(quoteEmbed).subscribe();
+			messageBuilder.addEmbed(quoteEmbed);
 
 			quotes++;
 
-			if (quotes >= 3) {
+			if (quotes >= 5) {
 				break;
 			}
 		}
 
 		if (quotes > 0) {
-			Matcher m = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
+			if (webHook == null) {
+				channel1.createMessage(messageBuilder).subscribe();
+			} else {
+				webHook.execute(messageBuilder);
+			}
 
-			if (m.matches()) {
-				String g = m.group(0);
+			quoteMatcher.appendTail(remaining);
+			var remainingStr = remaining.toString().trim();
 
-				if (!g.startsWith("<") && !g.endsWith(">")) {
-					return -1;
-				}
+			if (remainingStr.isEmpty()) {
+				return -1;
 			}
 		}
 

@@ -33,7 +33,6 @@ import discord4j.core.spec.MessageEditSpec;
 import io.javalin.http.HttpStatus;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -360,10 +359,10 @@ public class DisplayCommands extends ApplicationCommands {
 		long limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
 
 		long days = event.get("timespan").asDays().orElse(90L);
-		ChannelInfo channelInfo = event.get("channel").asChannelInfo().orElse(null);
-		CachedRole role = event.get("role").asRole().orElse(null);
+		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
+		var role = event.get("role").asRole().orElse(null);
 
-		String url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId.asString() + "/" + mentionId.asString() + "/" + days + "?limit=" + limit;
+		var url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId.asString() + "/" + mentionId.asString() + "/" + days + "?limit=" + limit;
 
 		if (channelInfo != null) {
 			url += "&channel=" + channelInfo.id.asString();
@@ -373,10 +372,10 @@ public class DisplayCommands extends ApplicationCommands {
 			url += "&role=" + role.id.asString();
 		}
 
-		URLRequest<BufferedImage> req = Utils.internalRequest(url).timeout(30000).toImage();
+		var req = Utils.internalRequest(url).timeout(30000).toImage();
 
 		try {
-			ByteArrayOutputStream imageData = new ByteArrayOutputStream();
+			var imageData = new ByteArrayOutputStream();
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
@@ -391,6 +390,13 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void debugComplexMessage(Message message, ComponentEventWrapper event) {
 		event.context.checkSenderAdmin();
-		event.respond("```\n" + String.join("\n", ComplexMessage.of(message).getLines()) + "\n```");
+		var str0 = String.join("\n", ComplexMessage.of(message).getLines());
+		var str = "```\n" + str0 + "\n```";
+
+		if (str.length() > 2000) {
+			event.respond(MessageBuilder.create("String was too long, so here's file instead").addFile("debug.txt", str0.getBytes(StandardCharsets.UTF_8)));
+		} else {
+			event.respond(str);
+		}
 	}
 }

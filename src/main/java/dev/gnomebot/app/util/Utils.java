@@ -19,6 +19,7 @@ import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.discordjson.json.ComponentData;
+import discord4j.discordjson.json.PartialMemberData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.route.Route;
@@ -171,7 +172,12 @@ public class Utils {
 
 	@Nullable
 	public static String getAvatarUrl(UserData data) {
-		return data.avatar().map(s -> "https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + s + ".png?size=128").orElse(null);
+		return data.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + data.avatar().get() + ".png?size=128") : null;
+	}
+
+	@Nullable
+	public static String getAvatarUrl(UserData data, PartialMemberData memberData) {
+		return memberData.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + memberData.avatar().get() + ".png?size=128") : getAvatarUrl(data);
 	}
 
 	public static String getAvatarUrl(User user, @Nullable Member member) {

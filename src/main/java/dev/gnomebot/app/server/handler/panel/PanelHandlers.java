@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server.handler.panel;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.GnomeRootTag;
@@ -143,7 +144,13 @@ public class PanelHandlers {
 
 		var table = root.content.section("info").table().tbody();
 		table.tr().td().string("Author").end().td().a("/panel/" + request.gc.guildId.asString() + "/members/" + authorId.asString(), authorName);
-		table.tr().td().string("Created").end().td().time(macro.created).string(macro.created.toString());
+
+		if (macro.created == null) {
+			table.tr().td().string("Created").end().td().string("Unknown");
+		} else {
+			table.tr().td().string("Created").end().td().time(macro.created).string(macro.created.toString());
+		}
+
 		table.tr().td().string("Uses").end().td().string(macro.uses);
 
 		if (macro.slashCommand == 0L) {
@@ -154,21 +161,9 @@ public class PanelHandlers {
 		}
 
 		var newlinePattern = Pattern.compile("\n");
-		var boldItalicPattern = Pattern.compile("\\*\\*\\*(.*?)\\*\\*\\*");
-		var boldPattern = Pattern.compile("\\*\\*(.*?)\\*\\*");
-		var underlinedPattern = Pattern.compile("__(.*?)__");
-		var italicPattern = Pattern.compile("([*_])(.*?)\\1");
 
 		root.content.h2().string("Content");
-		var tag = root.content.section("content").classes("divborder").div().p().string(macro.content);
-		tag.replace(newlinePattern, (tag1, matcher) -> tag1.br());
-		tag.replace(boldItalicPattern, (tag1, matcher) -> tag1.strong().em().string(matcher.group(1)));
-		tag.replace(boldPattern, (tag1, matcher) -> tag1.strong().string(matcher.group(1)));
-		tag.replace(underlinedPattern, (tag1, matcher) -> tag1.u().string(matcher.group(1)));
-		tag.replace(italicPattern, (tag1, matcher) -> tag1.em().string(matcher.group(2)));
-
-		root.content.h2().string("Raw Content");
-		var tag2 = root.content.section("raw-content").classes("divborder").div().p().string(macro.content);
+		var tag2 = root.content.section("content").classes("divborder").div().p().string(ContentType.encodeMentions(macro.content));
 		tag2.replace(newlinePattern, (tag1, matcher) -> tag1.br());
 
 		return root.asResponse();

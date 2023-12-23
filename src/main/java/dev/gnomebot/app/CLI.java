@@ -2,6 +2,7 @@ package dev.gnomebot.app;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.data.ContentType;
+import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
@@ -26,7 +27,7 @@ public class CLI extends Thread {
 
 	@Override
 	public void run() {
-		Scanner scanner = new Scanner(System.in);
+		var scanner = new Scanner(System.in);
 
 		while (app.running) {
 			var input = scanner.nextLine().split(" ");
@@ -102,7 +103,9 @@ public class CLI extends Thread {
 
 		for (var gc : app.db.allGuilds()) {
 			for (var macro : gc.getMacroMap().values()) {
-				macro.updateContent(ContentType.decodeMentions(macro.content));
+				if (macro.getCachedContent().a() == ContentType.COMPLEX) {
+					macro.updateContent(String.join("\n", ((ComplexMessage) macro.getCachedContent().b()).getLines()));
+				}
 			}
 
 			gc.saveMacroMap();

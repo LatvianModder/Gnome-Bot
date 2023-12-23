@@ -24,13 +24,36 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return parse(Arrays.asList(content.split("\n")));
 	}
 
+	public static void appendContent(List<String> lines, List<String> content) {
+		if (content.size() >= 3) {
+			lines.add(">>>");
+			lines.addAll(content);
+			lines.add("<<<");
+		} else if (!content.isEmpty()) {
+			for (var line : content) {
+				lines.add("> " + line);
+			}
+		}
+	}
+
 	public static ComplexMessage parse(List<String> lines) {
 		var complex = new ComplexMessage();
 		var ctx = new ComplexMessageContext();
 		ctx.textHolder = complex;
 
+		List<String> contentBlockLines = null;
+
 		for (var line : lines) {
-			if (line.isEmpty()) {
+			if (contentBlockLines != null) {
+				if (line.equals("<<<")) {
+					contentBlockLines.forEach(ctx::acceptText);
+					contentBlockLines = null;
+				} else {
+					contentBlockLines.add(line);
+				}
+
+				continue;
+			} else if (line.isEmpty()) {
 				continue;
 			}
 
@@ -41,13 +64,14 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 				case "//" -> {
 					// noop
 				}
+				case ">>>" -> contentBlockLines = new ArrayList<>();
 				case "embed" -> {
 					var c = complex.newEmbed();
 					ctx.propertyHolder = c;
 					ctx.textHolder = c;
 				}
 				case "---", "***" -> ctx.propertyHolder = complex.newLayoutComponent(start.equals("***") ? 1 : 0);
-				case ">" -> ctx.acceptText(reader.readRemainingString().orElse("").trim());
+				case ">" -> ctx.acceptText(reader.readRemainingString().orElse(""));
 				case "-" -> ctx.acceptProperty(reader.readString().orElse(""), reader);
 				case "+" -> ctx.acceptOption(reader);
 				default -> ctx.acceptProperty(start, reader);
@@ -170,10 +194,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 	public List<String> getLines() {
 		var lines = new ArrayList<String>();
 		lines.add("// complex");
-
-		for (var line : content) {
-			lines.add(("> " + line).trim());
-		}
+		appendContent(lines, content);
 
 		for (var embed : embeds) {
 			embed.getLines(lines);

@@ -11,6 +11,7 @@ import discord4j.core.object.entity.Webhook;
 import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.WebhookCreateSpec;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MessageData;
@@ -124,6 +125,15 @@ public final class ChannelInfo {
 	public Message getMessage(Snowflake messageId) {
 		try {
 			return gc.getClient().getMessageById(id, messageId).block();
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
+	@Nullable
+	public Message getUncachedMessage(Snowflake messageId) {
+		try {
+			return gc.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getMessageById(id, messageId).block();
 		} catch (Exception ex) {
 			return null;
 		}
