@@ -206,14 +206,12 @@ public class MacroCommands extends ApplicationCommands {
 			macro.rename(rename);
 		}
 
-		var content = ContentType.decodeMentions(event.get("content").asString(macro.content));
-
-		macro.updateContent(content);
+		macro.updateContent(ContentType.decodeMentions(event.get("content").asString(macro.content)));
 
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
 
-		var preview = macro.createMessage(event.context.sender.getId());
+		var preview = macro.createMessage(null, event.context.sender.getId());
 		preview.content("Preview:\n\n" + preview.getContent());
 		preview.ephemeral(true);
 		event.respond(preview);
@@ -315,11 +313,11 @@ public class MacroCommands extends ApplicationCommands {
 				event.acknowledge();
 			} else {
 				macro.addUse();
-				event.edit().respond(macro.createMessage(owner).ephemeral(true));
+				event.edit().respond(macro.createMessage(null, owner).ephemeral(true));
 			}
 		} else {
 			macro.addUse();
-			event.respond(macro.createMessage(event.context.sender.getId()).ephemeral(true));
+			event.respond(macro.createMessage(null, event.context.sender.getId()).ephemeral(true));
 		}
 	}
 }

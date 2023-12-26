@@ -9,8 +9,8 @@ import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.entity.RestChannel;
 import org.bson.conversions.Bson;
 
@@ -48,20 +48,29 @@ public class Paste extends WrappedDocument<Paste> {
 			return;
 		}
 
-		String user = m.getUserData().username();
-		List<Button> buttons = new ArrayList<>();
+		var userData = m.getUserData();
+		var user = userData.username();
+		var buttons = new ArrayList<Button>();
 
-		for (Attachment attachment : attachments) {
+		for (var attachment : attachments) {
 			Paste.createPaste(db, m.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), user);
 			buttons.add(Button.link(getUrl(attachment.getId().asString()), "View " + attachment.getFilename()));
 		}
 
-		channel.createMessage(MessageCreateSpec.builder()
-				.allowedMentions(DiscordMessage.noMentions())
-				.content("Paste version of " + attachments.stream().map(a -> "`" + a.getFilename() + "`").collect(Collectors.joining(", ")) + " from " + m.getAuthor().map(User::getMention).orElse("Unknown"))
-				.addComponent(ActionRow.of(buttons))
-				.build().asRequest()
-		).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
+		if (userData.id().asLong() == db.app.discordHandler.selfId.asLong() && (m.getData().components().isAbsent() || m.getData().components().get().isEmpty())) {
+			m.edit(MessageEditSpec.builder()
+					.allowedMentions(DiscordMessage.noMentions())
+					.componentsOrNull(ActionRow.of(buttons))
+					.build()
+			).subscribe();
+		} else {
+			channel.createMessage(MessageCreateSpec.builder()
+					.allowedMentions(DiscordMessage.noMentions())
+					.content("Paste version of " + attachments.stream().map(a -> "`" + a.getFilename() + "`").collect(Collectors.joining(", ")) + " from <@" + userData.id().asString() + ">")
+					.addComponent(ActionRow.of(buttons))
+					.build().asRequest()
+			).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
+		}
 	}
 
 	public static void createPaste(Databases db, long channelId, long attachmentId, String filename, String user) {

@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
@@ -15,6 +14,7 @@ import dev.gnomebot.app.discord.command.MacroCommands;
 import dev.gnomebot.app.discord.command.MessageInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.ModmailCommand;
 import dev.gnomebot.app.discord.command.ModpackCommand;
+import dev.gnomebot.app.discord.command.PasteCommands;
 import dev.gnomebot.app.discord.command.PingsCommands;
 import dev.gnomebot.app.discord.command.ReportCommand;
 import dev.gnomebot.app.discord.command.UserInteractionEventWrapper;
@@ -23,6 +23,7 @@ import dev.gnomebot.app.discord.command.admin.BanCommand;
 import dev.gnomebot.app.discord.command.admin.KickCommand;
 import dev.gnomebot.app.discord.command.admin.UnmuteCommand;
 import dev.gnomebot.app.discord.command.admin.WarnCommand;
+import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.discord.legacycommand.PollCommand;
 import dev.gnomebot.app.script.event.ComponentEventJS;
@@ -80,11 +81,12 @@ public class InteractionHandler {
 					ex.printStackTrace();
 				}
 			} else {
-				Macro macro = gc.getMacro(event.getCommandName());
+				var reader = new CommandReader(gc, getFullCommand(event));
+				var macro = gc.getMacro(reader.readString().orElse(""));
 
 				if (macro != null) {
 					macro.addUse();
-					event.reply(macro.createMessage(w.context.sender.getId()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
+					event.reply(macro.createMessage(reader, w.context.sender.getId()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
@@ -93,6 +95,20 @@ public class InteractionHandler {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	private static String getFullCommand(ChatInputInteractionEvent event) {
+		var sb = new StringBuilder(event.getCommandName());
+
+		for (var o : event.getOptions()) {
+			sb.append(' ').append(o.getName());
+
+			for (var o2 : o.getOptions()) {
+				sb.append(' ').append(o2.getName());
+			}
+		}
+
+		return sb.toString();
 	}
 
 	public static void userInteraction(DiscordHandler handler, UserInteractionEvent event) {
@@ -358,6 +374,7 @@ public class InteractionHandler {
 			case "edit-macro" -> MacroCommands.editMacroCallback(event, event.path[1]);
 			case "pings" -> PingsCommands.editCallback(event);
 			case "webhook" -> WebhookCommands.executeCallback(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
+			case "create-paste" -> PasteCommands.createCallback(event);
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
 				throw new GnomeException("Unknown modal ID: " + event);

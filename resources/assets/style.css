@@ -432,3 +432,7 @@ details.bantable > table {
     margin: 1em 0;
     padding: 1em;
 }
+
+div.content.paste {
+    width: 100%;
+}

@@ -83,7 +83,7 @@ public class ApplicationCommands {
 		add(ModmailCommand.COMMAND);
 		add(ModnamesCommand.COMMAND);
 		add(ModpackCommand.COMMAND);
-		add(PasteCommand.COMMAND);
+		add(PasteCommands.COMMAND);
 		add(PingsCommands.COMMAND);
 		add(RandomGibberishCommand.COMMAND);
 		add(RankCommand.COMMAND);

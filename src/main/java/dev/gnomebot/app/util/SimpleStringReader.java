@@ -234,4 +234,9 @@ public class SimpleStringReader {
 
 		return OptionalLong.of(l);
 	}
+
+	@Override
+	public String toString() {
+		return string;
+	}
 }

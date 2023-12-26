@@ -2,11 +2,15 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.MacroCommands;
+import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 
@@ -19,6 +23,7 @@ public class Macro implements Comparable<Macro> {
 	public Instant created = null;
 	public int uses = 0;
 	public long slashCommand = 0L;
+	private String description;
 
 	private ChatCommandSuggestion chatCommandSuggestion;
 	private Pair<ContentType, Object> cachedContent;
@@ -29,15 +34,15 @@ public class Macro implements Comparable<Macro> {
 
 	public Pair<ContentType, Object> getCachedContent() {
 		if (cachedContent == null) {
-			cachedContent = ContentType.parse(content);
+			cachedContent = ContentType.parse(guild, content);
 		}
 
 		return cachedContent;
 
 	}
 
-	public MessageBuilder createMessage(Snowflake sender) {
-		return getCachedContent().a().render(getCachedContent().b(), sender);
+	public MessageBuilder createMessage(@Nullable CommandReader reader, Snowflake sender) {
+		return getCachedContent().a().render(reader, getCachedContent().b(), sender);
 	}
 
 	public void rename(String rename) {
@@ -56,17 +61,12 @@ public class Macro implements Comparable<Macro> {
 	public void updateContent(String content) {
 		this.content = content;
 		this.cachedContent = null;
+		this.chatCommandSuggestion = null;
 	}
 
 	public long setSlashCommand(boolean b) {
 		if (b) {
-			String author = guild.db.app.discordHandler.getUserName(Snowflake.of(this.author)).orElse("Deleted User");
-
-			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), ApplicationCommandRequest.builder()
-					.name(id)
-					.description("Macro created by " + author)
-					.build()
-			).block();
+			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), buildCommand()).block();
 
 			long id = data == null ? 0L : Snowflake.of(data.id()).asLong();
 
@@ -88,6 +88,52 @@ public class Macro implements Comparable<Macro> {
 
 			return slashCommand;
 		}
+	}
+
+	public String getDescription() {
+		if (description == null) {
+			description = "Macro created by " + guild.db.app.discordHandler.getUserName(Snowflake.of(this.author)).orElse("Deleted User");
+		}
+
+		return description;
+	}
+
+	public ApplicationCommandRequest buildCommand() {
+		var builder = ApplicationCommandRequest.builder();
+		builder.name(id);
+		builder.description(getDescription());
+
+		var content = getCachedContent();
+
+		if (content.a() == ContentType.MACRO_BUNDLE) {
+			var bundle = (MacroBundle) content.b();
+
+			for (var item : bundle.macros.values()) {
+				var option = ApplicationCommandOptionData.builder();
+				option.name(item.id());
+				option.description(item.description());
+				var contentSub = item.macro().getCachedContent();
+
+				if (contentSub.a() == ContentType.MACRO_BUNDLE) {
+					option.type(ApplicationCommandOption.Type.SUB_COMMAND_GROUP.getValue());
+					var bundleSub = (MacroBundle) contentSub.b();
+
+					for (var itemSub : bundleSub.macros.values()) {
+						var optionSub = ApplicationCommandOptionData.builder();
+						optionSub.name(itemSub.id());
+						optionSub.description(itemSub.description());
+						optionSub.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue());
+						option.addOption(optionSub.build());
+					}
+				} else {
+					option.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue());
+				}
+
+				builder.addOption(option.build());
+			}
+		}
+
+		return builder.build();
 	}
 
 	public ChatCommandSuggestion getChatCommandSuggestion() {

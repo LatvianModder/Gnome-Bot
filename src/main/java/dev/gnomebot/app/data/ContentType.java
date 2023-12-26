@@ -1,51 +1,44 @@
 package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.data.complex.ComplexMessage;
+import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class ContentType {
-	public static final ContentType TEXT = new ContentType(0, "text") {
+	public static final ContentType TEXT = new ContentType() {
 		@Override
-		public MessageBuilder render(Object cached, Snowflake sender) {
+		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
 			return MessageBuilder.create(String.valueOf(cached));
 		}
 	};
 
-	public static final ContentType COMPLEX = new ContentType(1, "complex") {
+	public static final ContentType COMPLEX = new ContentType() {
 		@Override
-		public MessageBuilder render(Object cached, Snowflake sender) {
+		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
 			var msg = MessageBuilder.create();
 			((ComplexMessage) cached).apply(msg, sender);
 			return msg;
 		}
 	};
 
-	public static final ContentType JS = new ContentType(2, "js") {
+	public static final ContentType JS = new ContentType() {
 		@Override
-		public MessageBuilder render(Object cached, Snowflake sender) {
+		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
 			return MessageBuilder.create(String.valueOf(cached));
 		}
 	};
 
-	public static ContentType of(int type) {
-		return switch (type) {
-			case 1 -> COMPLEX;
-			case 2 -> JS;
-			default -> TEXT;
-		};
-	}
+	public static final ContentType MACRO_BUNDLE = new ContentType() {
+		@Override
+		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
+			return ((MacroBundle) cached).render(reader, sender);
+		}
+	};
 
-	public final int id;
-	public final String name;
-
-	private ContentType(int id, String name) {
-		this.id = id;
-		this.name = name;
-	}
-
-	public abstract MessageBuilder render(Object cached, Snowflake sender);
+	public abstract MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender);
 
 	public static String encodeMentions(String content) {
 		return content
@@ -63,7 +56,7 @@ public abstract class ContentType {
 				.replace("mention:everyone", "@everyone");
 	}
 
-	public static Pair<ContentType, Object> parse(String content) {
+	public static Pair<ContentType, Object> parse(GuildCollections gc, String content) {
 		content = content.trim();
 
 		int inl = content.indexOf('\n');
@@ -77,6 +70,8 @@ public abstract class ContentType {
 				return Pair.of(COMPLEX, ComplexMessage.parse(content));
 			} else if (first.equals("//js") || first.equals("//javascript")) {
 				return Pair.of(JS, content);
+			} else if (first.equals("//macro-bundle")) {
+				return Pair.of(MACRO_BUNDLE, MacroBundle.parse(gc, content));
 			} else {
 				return Pair.of(TEXT, content);
 			}

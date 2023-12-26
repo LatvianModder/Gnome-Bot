@@ -231,6 +231,7 @@ public class PasteHandlers {
 
 		root.content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(archive ? " [Download]" : " [Raw]").end();
 		root.content.br();
+		root.content.classes("paste");
 
 		var pasteText = root.content.div().classes("pastetext");
 

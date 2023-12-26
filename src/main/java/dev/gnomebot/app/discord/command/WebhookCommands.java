@@ -118,8 +118,8 @@ public class WebhookCommands extends ApplicationCommands {
 			throw new GnomeException("Failed to retrieve webhook!");
 		}
 
-		var content = ContentType.parse(event.get("content").asString());
-		var message = content.a().render(content.b(), Utils.NO_SNOWFLAKE);
+		var content = ContentType.parse(event.context.gc, event.get("content").asString());
+		var message = content.a().render(null, content.b(), Utils.NO_SNOWFLAKE);
 
 		if (editId.asLong() == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));

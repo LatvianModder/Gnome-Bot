@@ -585,7 +585,7 @@ public class DiscordHandler {
 
 	public Optional<String> getUserName(@Nullable Snowflake id) {
 		User user = getUser(id);
-		return user == null ? Optional.empty() : Optional.of(user.getUsername());
+		return user == null ? Optional.empty() : Optional.of(user.getGlobalName().orElse(user.getUsername()));
 	}
 
 	public Optional<String> getUserTag(@Nullable Snowflake id) {
