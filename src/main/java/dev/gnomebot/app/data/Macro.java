@@ -41,8 +41,8 @@ public class Macro implements Comparable<Macro> {
 
 	}
 
-	public MessageBuilder createMessage(@Nullable CommandReader reader, Snowflake sender) {
-		return getCachedContent().a().render(reader, getCachedContent().b(), sender);
+	public MessageBuilder createMessage(GuildCollections gc, @Nullable CommandReader reader, Snowflake sender) {
+		return getCachedContent().a().render(gc, reader, getCachedContent().b(), sender);
 	}
 
 	public void rename(String rename) {

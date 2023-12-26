@@ -10,35 +10,35 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ContentType {
 	public static final ContentType TEXT = new ContentType() {
 		@Override
-		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
-			return MessageBuilder.create(String.valueOf(cached));
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
 	public static final ContentType COMPLEX = new ContentType() {
 		@Override
-		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
 			var msg = MessageBuilder.create();
-			((ComplexMessage) cached).apply(msg, sender);
+			((ComplexMessage) cached).apply(gc, msg, sender);
 			return msg;
 		}
 	};
 
 	public static final ContentType JS = new ContentType() {
 		@Override
-		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
-			return MessageBuilder.create(String.valueOf(cached));
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
 	public static final ContentType MACRO_BUNDLE = new ContentType() {
 		@Override
-		public MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender) {
-			return ((MacroBundle) cached).render(reader, sender);
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+			return ((MacroBundle) cached).render(gc, reader, sender);
 		}
 	};
 
-	public abstract MessageBuilder render(@Nullable CommandReader reader, Object cached, Snowflake sender);
+	public abstract MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender);
 
 	public static String encodeMentions(String content) {
 		return content
@@ -67,7 +67,7 @@ public abstract class ContentType {
 			var first = content.substring(0, content.indexOf('\n')).replace(" ", "");
 
 			if (first.equals("//cpx") || first.equals("//complex")) {
-				return Pair.of(COMPLEX, ComplexMessage.parse(content));
+				return Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
 			} else if (first.equals("//js") || first.equals("//javascript")) {
 				return Pair.of(JS, content);
 			} else if (first.equals("//macro-bundle")) {

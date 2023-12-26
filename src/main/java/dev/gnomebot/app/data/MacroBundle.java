@@ -40,9 +40,9 @@ public class MacroBundle {
 
 	public final Map<String, Item> macros = new LinkedHashMap<>();
 
-	public MessageBuilder render(@Nullable CommandReader reader, Snowflake sender) {
+	public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Snowflake sender) {
 		if (reader == null) {
-			return MessageBuilder.create(String.join(" • ", macros.keySet()));
+			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}
 
 		App.info(reader.toString());
@@ -50,9 +50,9 @@ public class MacroBundle {
 		var item = macros.get(reader.readString().orElse(""));
 
 		if (item == null) {
-			return MessageBuilder.create(String.join(" • ", macros.keySet()));
+			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}
 
-		return item.macro.createMessage(reader, sender);
+		return item.macro.createMessage(gc, reader, sender);
 	}
 }

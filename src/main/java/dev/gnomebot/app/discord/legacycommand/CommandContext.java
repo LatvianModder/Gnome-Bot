@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.legacycommand;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
@@ -118,6 +119,8 @@ public class CommandContext {
 
 			return m;
 		} catch (ClientException ex) {
+			App.info("! Message:");
+			App.info(msg.toString());
 			ex.printStackTrace();
 			throw new GnomeException("Failed to reply! " + ex.getStatus() + " " + ex.getErrorResponse().map(ErrorResponse::getFields).map(Object::toString).orElse("Unknown error")).clientException(ex);
 		} catch (Exception ex) {

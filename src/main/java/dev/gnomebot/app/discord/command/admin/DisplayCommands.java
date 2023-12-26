@@ -390,7 +390,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void debugComplexMessage(Message message, ComponentEventWrapper event) {
 		event.context.checkSenderAdmin();
-		var str0 = String.join("\n", ComplexMessage.of(message).getLines());
+		var str0 = String.join("\n", ComplexMessage.of(event.context.gc, message).getLines());
 		var str = "```\n" + str0 + "\n```";
 
 		if (str.length() > 2000) {

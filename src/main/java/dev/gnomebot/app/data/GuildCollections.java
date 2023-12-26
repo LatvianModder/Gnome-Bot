@@ -722,7 +722,17 @@ public class GuildCollections {
 
 	@Nullable
 	public Macro getMacro(String name) {
-		return getMacroMap().get(name.toLowerCase());
+		var m = getMacroMap().get(name.toLowerCase());
+
+		if (m == null) {
+			if (name.startsWith("moddedmc:")) {
+				return db.guild(Snowflake.of(166630061217153024L)).getMacro(name.substring(9));
+			} else if (name.startsWith("lat:")) {
+				return db.guild(Snowflake.of(303440391124942858L)).getMacro(name.substring(4));
+			}
+		}
+
+		return m;
 	}
 
 	public void saveMacroMap() {

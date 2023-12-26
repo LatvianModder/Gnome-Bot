@@ -211,7 +211,7 @@ public class MacroCommands extends ApplicationCommands {
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
 
-		var preview = macro.createMessage(null, event.context.sender.getId());
+		var preview = macro.createMessage(event.context.gc, null, event.context.sender.getId());
 		preview.content("Preview:\n\n" + preview.getContent());
 		preview.ephemeral(true);
 		event.respond(preview);
@@ -287,7 +287,7 @@ public class MacroCommands extends ApplicationCommands {
 			throw new GnomeException("Macro name can't be empty!");
 		}
 
-		Macro macro = event.context.gc.getMacro(name);
+		var macro = event.context.gc.getMacro(name);
 
 		if (macro == null) {
 			throw new GnomeException("Macro not found!");
@@ -301,8 +301,8 @@ public class MacroCommands extends ApplicationCommands {
 		event.respond(EmbedBuilder.create().url(App.url("panel/" + event.context.gc.guildId.asString() + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 
-	public static void macroButtonCallback(ComponentEventWrapper event, String name, @Nullable Snowflake owner) {
-		Macro macro = event.context.gc.getMacro(name);
+	public static void macroButtonCallback(ComponentEventWrapper event, Snowflake guildId, String name, @Nullable Snowflake owner) {
+		var macro = (guildId.asLong() == event.context.gc.guildId.asLong() ? event.context.gc : event.context.gc.db.guild(guildId)).getMacro(name);
 
 		if (macro == null) {
 			throw new GnomeException("Macro '" + name + "' not found!");
@@ -313,11 +313,11 @@ public class MacroCommands extends ApplicationCommands {
 				event.acknowledge();
 			} else {
 				macro.addUse();
-				event.edit().respond(macro.createMessage(null, owner).ephemeral(true));
+				event.edit().respond(macro.createMessage(event.context.gc, null, owner).ephemeral(true));
 			}
 		} else {
 			macro.addUse();
-			event.respond(macro.createMessage(null, event.context.sender.getId()).ephemeral(true));
+			event.respond(macro.createMessage(event.context.gc, null, event.context.sender.getId()).ephemeral(true));
 		}
 	}
 }

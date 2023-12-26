@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data.complex;
 
+import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SelectMenuType;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
@@ -71,7 +72,7 @@ public class MESelectMenu extends MEComponent implements ComplexMessageContext.O
 	}
 
 	@Override
-	public ActionComponent toActionComponent(Snowflake sender) {
+	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
 		var menu = switch (type) {
 			case USER -> SelectMenu.ofUser(id);
 			case ROLE -> SelectMenu.ofRole(id);

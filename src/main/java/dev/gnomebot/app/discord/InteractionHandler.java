@@ -86,7 +86,7 @@ public class InteractionHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					event.reply(macro.createMessage(reader, w.context.sender.getId()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
+					event.reply(macro.createMessage(gc, reader, w.context.sender.getId()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
@@ -329,8 +329,8 @@ public class InteractionHandler {
 			case "message-action" -> GnomeMessageInteraction.callback(event, Snowflake.of(event.path[1]), event.path[2]);
 			case "member-action" -> GnomeMemberInteraction.callback(event, Snowflake.of(event.path[1]), event.path[2]);
 			case "unmute" -> UnmuteCommand.unmuteButtonCallback(event, Snowflake.of(event.path[1]));
-			case "macro" -> MacroCommands.macroButtonCallback(event, event.path[1], null);
-			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, event.path[1], Snowflake.of(event.path[2]));
+			case "macro" -> MacroCommands.macroButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], null);
+			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Snowflake.of(event.path[3]));
 			case "feedback" -> FeedbackCommands.feedbackButtonCallback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
 			case "warn" -> WarnCommand.warnButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "kick" -> KickCommand.kickButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));

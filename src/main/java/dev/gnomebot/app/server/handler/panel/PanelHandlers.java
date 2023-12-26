@@ -15,7 +15,9 @@ import io.javalin.http.NotFoundResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class PanelHandlers {
 	public static Response root(ServerRequest request) {
@@ -84,10 +86,14 @@ public class PanelHandlers {
 		var author = request.query("author").asSnowflake().asLong();
 		var macros = request.gc.getMacroMap().values().stream().filter(m -> author == 0L || m.author == author).sorted().toList();
 
+		var guildCommands = request.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(request.gc.db.app.discordHandler.applicationId, request.gc.guildId.asLong())
+				.toStream()
+				.collect(Collectors.toMap(d -> d.id().asLong(), Function.identity()));
+
 		for (var macro : macros) {
 			if (macro.slashCommand != 0L) {
 				try {
-					var cmd = request.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommand(request.gc.db.app.discordHandler.applicationId, request.gc.guildId.asLong(), macro.slashCommand).block();
+					var cmd = guildCommands.get(macro.slashCommand);
 
 					if (cmd == null || !cmd.name().equals(macro.id)) {
 						throw new NullPointerException();

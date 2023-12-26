@@ -841,7 +841,7 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					context.reply(macro.createMessage(reader, context.sender.getId()));
+					context.reply(macro.createMessage(context.gc, reader, context.sender.getId()));
 					App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
 					return true;
 				}

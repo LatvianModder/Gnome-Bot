@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data.complex;
 
+import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -7,6 +8,7 @@ import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 
 import java.util.List;
+import java.util.UUID;
 
 public class MEButton extends MEButtonBase {
 	public static Button.Style readStyle(String s) {
@@ -68,13 +70,19 @@ public class MEButton extends MEButtonBase {
 	}
 
 	@Override
-	public ActionComponent toActionComponent(Snowflake sender) {
+	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
 		var l = label.isEmpty() ? null : label;
-		var id = switch (type) {
-			case 1 -> "macro/" + target + "/" + sender.asString();
-			case 2 -> "edit-macro/" + target + "/" + sender.asString();
-			default -> target;
-		};
+		var id = target;
+
+		if (type == 1 || type == 2) {
+			var macro = sourceGuild.getMacro(target);
+
+			if (macro == null) {
+				id = "none/" + UUID.randomUUID();
+			} else {
+				id = (type == 2 ? "edit-macro/" : "macro/") + macro.guild.guildId.asString() + "/" + target + "/" + sender.asString();
+			}
+		}
 
 		return switch (style) {
 			case PRIMARY -> Button.primary(id, emoji, l);

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data.complex;
 
+import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.common.util.Snowflake;
@@ -16,12 +17,12 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return !message.getData().embeds().isEmpty() || !message.getData().components().isAbsent();
 	}
 
-	public static ComplexMessage parse(String content) {
+	public static ComplexMessage parse(GuildCollections gc, String content) {
 		if (content.isEmpty()) {
-			return new ComplexMessage();
+			return new ComplexMessage(gc);
 		}
 
-		return parse(Arrays.asList(content.split("\n")));
+		return parse(gc, Arrays.asList(content.split("\n")));
 	}
 
 	public static void appendContent(List<String> lines, List<String> content) {
@@ -36,8 +37,8 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		}
 	}
 
-	public static ComplexMessage parse(List<String> lines) {
-		var complex = new ComplexMessage();
+	public static ComplexMessage parse(GuildCollections gc, List<String> lines) {
+		var complex = new ComplexMessage(gc);
 		var ctx = new ComplexMessageContext();
 		ctx.textHolder = complex;
 
@@ -81,8 +82,8 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return complex;
 	}
 
-	public static ComplexMessage of(Message message) {
-		var complex = new ComplexMessage();
+	public static ComplexMessage of(GuildCollections gc, Message message) {
+		var complex = new ComplexMessage(gc);
 
 		if (!message.getContent().trim().isEmpty()) {
 			complex.content.addAll(Arrays.asList(message.getContent().split("\n")));
@@ -152,10 +153,10 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 
 						if (button.target.startsWith("macro/")) {
 							button.type = 1;
-							button.target = button.target.substring(6, button.target.lastIndexOf('/'));
+							button.target = button.target.split("/")[2];
 						} else if (button.target.startsWith("edit-macro/") || button.target.startsWith("edit_macro/")) {
 							button.type = 2;
-							button.target = button.target.substring(11, button.target.lastIndexOf('/'));
+							button.target = button.target.split("/")[2];
 						}
 					}
 				}
@@ -169,9 +170,14 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return complex;
 	}
 
+	public final GuildCollections guild;
 	public List<String> content = new ArrayList<>();
 	public List<MEEmbed> embeds = new ArrayList<>();
 	public List<MELayoutComponent> components = new ArrayList<>();
+
+	public ComplexMessage(GuildCollections guild) {
+		this.guild = guild;
+	}
 
 	@Override
 	public void acceptText(ComplexMessageContext ctx, String s) {
@@ -211,7 +217,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return lines;
 	}
 
-	public void apply(MessageBuilder builder, Snowflake sender) {
+	public void apply(GuildCollections targetGuild, MessageBuilder builder, Snowflake sender) {
 		builder.content(content);
 
 		if (embeds.isEmpty()) {
@@ -226,7 +232,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 			builder.noComponents();
 		} else {
 			for (var lc : components) {
-				builder.addComponent(lc.toLayoutComponent(sender));
+				builder.addComponent(lc.toLayoutComponent(guild, targetGuild, sender));
 			}
 		}
 	}

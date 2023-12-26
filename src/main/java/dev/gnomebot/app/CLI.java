@@ -104,7 +104,14 @@ public class CLI extends Thread {
 		for (var gc : app.db.allGuilds()) {
 			for (var macro : gc.getMacroMap().values()) {
 				if (macro.getCachedContent().a() == ContentType.COMPLEX) {
-					macro.updateContent(String.join("\n", ((ComplexMessage) macro.getCachedContent().b()).getLines()));
+					var cm = (ComplexMessage) macro.getCachedContent().b();
+
+					if (!cm.content.isEmpty() && cm.embeds.isEmpty() && cm.components.isEmpty()) {
+						macro.updateContent(String.join("\n", cm.content));
+						Ansi.log("+ Simplified " + gc + ":" + macro.id);
+					}
+
+					// macro.updateContent(String.join("\n", ((ComplexMessage) macro.getCachedContent().b()).getLines()));
 				}
 			}
 

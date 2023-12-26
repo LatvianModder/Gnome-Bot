@@ -11,7 +11,6 @@ import discord4j.discordjson.json.EmbedFooterData;
 import discord4j.discordjson.json.EmbedImageData;
 import discord4j.discordjson.json.EmbedThumbnailData;
 import discord4j.discordjson.json.ImmutableEmbedAuthorData;
-import discord4j.discordjson.json.ImmutableEmbedData;
 import discord4j.discordjson.json.ImmutableEmbedFooterData;
 import discord4j.rest.util.Color;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +19,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class EmbedBuilder {
 	public static EmbedBuilder create() {
@@ -264,7 +262,7 @@ public class EmbedBuilder {
 	}
 
 	public EmbedData toEmbedData() {
-		ImmutableEmbedData.Builder builder = EmbedData.builder();
+		var builder = EmbedData.builder();
 
 		if (this.title != null && !this.title.isEmpty()) {
 			builder.title(FormattingUtils.trim(this.title, 256));
@@ -319,9 +317,29 @@ public class EmbedBuilder {
 		}
 
 		if (this.fields != null) {
-			builder.fields(this.fields.stream().map(EmbedCreateFields.Field::asRequest).collect(Collectors.toList()));
+			builder.fields(this.fields.stream().map(EmbedCreateFields.Field::asRequest).toList());
 		}
 
 		return builder.build();
+	}
+
+	@Override
+	public String toString() {
+		return "EmbedBuilder{" +
+				"title='" + title + '\'' +
+				", description='" + description + '\'' +
+				", url='" + url + '\'' +
+				", timestamp=" + timestamp +
+				", defaultColor=" + defaultColor +
+				", color=" + color +
+				", footerText='" + footerText + '\'' +
+				", footerIconUrl='" + footerIconUrl + '\'' +
+				", image='" + image + '\'' +
+				", thumbnail='" + thumbnail + '\'' +
+				", authorName='" + authorName + '\'' +
+				", authorUrl='" + authorUrl + '\'' +
+				", authorIconUrl='" + authorIconUrl + '\'' +
+				", fields=" + fields.stream().map(EmbedCreateFields.Field::asRequest).toList() +
+				'}';
 	}
 }

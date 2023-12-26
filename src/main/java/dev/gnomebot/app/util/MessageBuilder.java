@@ -27,10 +27,9 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class MessageBuilder {
 	public static final AllowedMentions NO_MENTIONS = AllowedMentions.builder().build();
@@ -125,7 +124,7 @@ public class MessageBuilder {
 	}
 
 	public MessageBuilder noEmbeds() {
-		return embeds(Collections.emptyList());
+		return embeds(List.of());
 	}
 
 	public MessageBuilder addEmbed(EmbedBuilder embed) {
@@ -156,7 +155,7 @@ public class MessageBuilder {
 	}
 
 	public MessageBuilder noComponents() {
-		return components(Collections.emptyList());
+		return components(List.of());
 	}
 
 	public MessageBuilder addComponent(LayoutComponent component) {
@@ -298,7 +297,11 @@ public class MessageBuilder {
 		builder.allowedMentions(this.allowedMentions.toData());
 
 		if (this.components != null) {
-			builder.components(this.components.stream().map(MessageComponent::getData).collect(Collectors.toList()));
+			if (this.components.isEmpty()) {
+				builder.components();
+			} else {
+				builder.components(this.components.stream().map(MessageComponent::getData).toList());
+			}
 		}
 
 		if (this.webhookName != null) {
@@ -360,7 +363,11 @@ public class MessageBuilder {
 		builder.allowedMentions(this.allowedMentions);
 
 		if (this.components != null) {
-			builder.components(this.components);
+			if (this.components.isEmpty()) {
+				builder.components();
+			} else {
+				builder.components(this.components);
+			}
 		}
 
 		builder.ephemeral(this.ephemeral == null || this.ephemeral);
@@ -370,5 +377,20 @@ public class MessageBuilder {
 		}
 
 		return builder.build();
+	}
+
+	@Override
+	public String toString() {
+		return "MessageBuilder{" +
+				"content='" + content + '\'' +
+				", ephemeral=" + ephemeral +
+				", embeds=" + Optional.ofNullable(embeds).map(e -> e.stream().map(EmbedBuilder::toEmbedData).toList()).orElse(null) +
+				", allowedMentions=" + Optional.ofNullable(allowedMentions).map(AllowedMentions::toData).orElse(null) +
+				", components=" + components.stream().map(LayoutComponent::getData).toList() +
+				", files=" + files +
+				", messageReference=" + messageReference +
+				", webhookName='" + webhookName + '\'' +
+				", webhookAvatarUrl='" + webhookAvatarUrl + '\'' +
+				'}';
 	}
 }

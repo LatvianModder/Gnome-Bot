@@ -119,7 +119,7 @@ public class WebhookCommands extends ApplicationCommands {
 		}
 
 		var content = ContentType.parse(event.context.gc, event.get("content").asString());
-		var message = content.a().render(null, content.b(), Utils.NO_SNOWFLAKE);
+		var message = content.a().render(event.context.gc, null, content.b(), Utils.NO_SNOWFLAKE);
 
 		if (editId.asLong() == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));
@@ -145,7 +145,7 @@ public class WebhookCommands extends ApplicationCommands {
 		event.context.checkSenderOwner();
 
 		if (ComplexMessage.has(message)) {
-			var lines = ComplexMessage.of(message).getLines();
+			var lines = ComplexMessage.of(event.context.gc, message).getLines();
 
 			event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Edit Webhook Message",
 					TextInput.paragraph("content", "Content").required(true).prefilled(String.join("\n", lines)).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
