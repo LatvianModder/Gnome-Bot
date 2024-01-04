@@ -241,6 +241,8 @@ public class App implements Runnable {
 
 		printScheduled();
 
+		pingHandler.getPings();
+
 		success("Server restarted!");
 		new WatchdogThread(this).start();
 

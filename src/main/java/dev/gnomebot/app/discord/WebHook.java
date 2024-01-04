@@ -111,9 +111,10 @@ public class WebHook implements PingDestination {
 	}
 
 	@Override
-	public void relayPing(PingData pingData, Ping ping) {
+	public void relayPing(Snowflake targetId, PingData pingData, Ping ping) {
 		try {
-			App.info("Ping for WebHook[" + id.asString() + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+			var targetUserName = targetId.asLong() == 0L ? "Gnome" : pingData.gc().db.app.discordHandler.getUserName(targetId).orElse(targetId.asString());
+			App.info("Ping for WebHook[" + id.asString() + " of " + targetUserName + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
 
 			execute(MessageBuilder.create()
 					.content("[Ping ➤](" + pingData.url() + ") from " + pingData.url() + "\n" + pingData.content())

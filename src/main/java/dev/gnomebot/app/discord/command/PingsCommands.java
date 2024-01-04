@@ -1,9 +1,9 @@
 package dev.gnomebot.app.discord.command;
 
-import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.AppPaths;
+import dev.gnomebot.app.data.ping.PingBuilder;
 import dev.gnomebot.app.data.ping.PingData;
-import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ModalEventWrapper;
@@ -17,8 +17,8 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.User;
 
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.List;
 
 public class PingsCommands extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
@@ -132,12 +132,13 @@ public class PingsCommands extends ApplicationCommands {
 			**This guide is still incomplete!**
 			""";
 
-	public static void edit(DeferrableInteractionEventWrapper<?> event) {
-		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
+	public static void edit(DeferrableInteractionEventWrapper<?> event) throws Exception {
+		var path = AppPaths.PINGS.resolve(event.context.sender.getId().asString() + ".txt");
+
 		event.respondModal("pings", "Manage Pings", TextInput.paragraph("config", "Config")
 				.placeholder(FormattingUtils.trim("@ mentions\n+ /" + event.context.sender.getUsername() + "/i\n\nRun `/about pings` for info on how to set up pings", 100))
 				.required(false)
-				.prefilled(pings == null ? "" : pings.getConfig())
+				.prefilled(Files.exists(path) ? Files.readString(path) : "")
 		);
 	}
 
@@ -147,10 +148,17 @@ public class PingsCommands extends ApplicationCommands {
 			// return;
 		}
 
-		String config = event.get("config").asString().trim();
+		var path = AppPaths.PINGS.resolve(event.context.sender.getId().asString() + ".txt");
+		var config = event.get("config").asString().trim();
 
 		try {
-			event.context.gc.db.userPings.query(event.context.sender).upsert(List.of(Updates.set("config", config)));
+			if (config.isEmpty()) {
+				Files.delete(path);
+			} else {
+				Files.writeString(path, config);
+			}
+
+			// event.context.gc.db.userPings.query(event.context.sender).upsert(List.of(Updates.set("config", config)));
 
 			if (config.isEmpty()) {
 				event.context.gc.db.app.pingHandler.update();
@@ -158,7 +166,7 @@ public class PingsCommands extends ApplicationCommands {
 				return;
 			}
 
-			var pings = UserPings.compile(event.context.gc.db, event.context.sender.getId(), config);
+			var pings = PingBuilder.compile(event.context.gc.db, event.context.sender.getId(), config, true);
 
 			App.success(event.context.sender.getUsername() + " updated their pings:");
 
@@ -189,14 +197,14 @@ public class PingsCommands extends ApplicationCommands {
 		}
 	}
 
-	private static void share(ChatInputInteractionEventWrapper event) {
-		UserPings pings = event.context.gc.db.userPings.query(event.context.sender).first();
+	private static void share(ChatInputInteractionEventWrapper event) throws Exception {
+		var path = AppPaths.PINGS.resolve(event.context.sender.getId().asString() + ".txt");
 
-		if (pings == null) {
-			event.respond("You don't have any pings set up.");
-		} else {
+		if (Files.exists(path)) {
 			event.acknowledge();
-			event.respond(MessageBuilder.create("`/pings` config:\n```\n" + pings.getConfig().replace("```", "\\```") + "```").ephemeral(false));
+			event.respond(MessageBuilder.create("`/pings` config:\n```\n" + Files.readString(path).replace("```", "\\```") + "```").ephemeral(false));
+		} else {
+			throw new GnomeException("You don't have any pings set up.");
 		}
 	}
 
@@ -234,25 +242,25 @@ public class PingsCommands extends ApplicationCommands {
 			PingData pingData;
 
 			if (from.asLong() == 0L) {
-				var user = ctx.gc.db.app.discordHandler.getUser(ctx.gc.db.app.discordHandler.selfId);
+				var member = ctx.gc.getMember(ctx.gc.db.app.discordHandler.selfId);
 
-				Snowflake userId = user.getId();
-				String username = user.getGlobalName().orElse(user.getUsername());
-				String avatar = user.getAvatarUrl();
-				boolean bot = false;
-				pingData = new PingData(ctx.gc, ctx.channelInfo, user, userId, username, avatar, bot, match, content, "");
+				var userId = member.getId();
+				var username = member.getDisplayName();
+				var avatar = member.getAvatarUrl();
+				var bot = false;
+				pingData = new PingData(ctx.gc, ctx.channelInfo, member, userId, username, avatar, bot, match, content, "");
 			} else {
-				var user = ctx.gc.db.app.discordHandler.getUser(from);
+				var member = ctx.gc.getMember(from);
 
-				if (user == null) {
+				if (member == null) {
 					throw new GnomeException("User not found!");
 				}
 
-				Snowflake userId = user.getId();
-				String username = user.getGlobalName().orElse(user.getUsername());
-				String avatar = user.getAvatarUrl();
-				boolean bot = user.isBot();
-				pingData = new PingData(ctx.gc, ctx.channelInfo, user, userId, username, avatar, bot, match, content, "");
+				var userId = member.getId();
+				var username = member.getDisplayName();
+				var avatar = member.getAvatarUrl();
+				var bot = member.isBot();
+				pingData = new PingData(ctx.gc, ctx.channelInfo, member, userId, username, avatar, bot, match, content, "");
 			}
 
 			for (var data : ctx.gc.db.app.pingHandler.getPings()) {

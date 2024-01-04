@@ -1,8 +1,6 @@
 package dev.gnomebot.app;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
-import dev.gnomebot.app.data.ContentType;
-import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.Utils;
@@ -101,6 +99,7 @@ public class CLI extends Thread {
 		var mm = app.db.guild(Snowflake.of(166630061217153024L));
 		int count = 0;
 
+		/*
 		for (var gc : app.db.allGuilds()) {
 			for (var macro : gc.getMacroMap().values()) {
 				if (macro.getCachedContent().a() == ContentType.COMPLEX) {
@@ -117,6 +116,7 @@ public class CLI extends Thread {
 
 			gc.saveMacroMap();
 		}
+		 */
 
 		App.info("+ Done " + count);
 	}

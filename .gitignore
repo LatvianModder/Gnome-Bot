@@ -25,3 +25,4 @@
 *.log
 *.hprof
 /export
+/cache

@@ -1,8 +1,10 @@
 package dev.gnomebot.app.data.ping;
 
+import discord4j.common.util.Snowflake;
+
 public interface PingDestination {
-	PingDestination NONE = (data, ping) -> {
+	PingDestination NONE = (targetId, data, ping) -> {
 	};
 
-	void relayPing(PingData data, Ping ping);
+	void relayPing(Snowflake targetId, PingData data, Ping ping);
 }

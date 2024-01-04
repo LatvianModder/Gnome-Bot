@@ -7,7 +7,6 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ping.InteractionDocument;
-import dev.gnomebot.app.data.ping.UserPings;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
@@ -41,7 +40,7 @@ public class Databases {
 	public final Map<Snowflake, GuildCollections> guildCollections;
 	public final WrappedCollection<BasicDocument> mmShowcase;
 	public final WrappedCollection<UserWebhook> userWebhooks;
-	public final WrappedCollection<UserPings> userPings;
+	// public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
 	public final WrappedCollection<InteractionDocument> interactions;
 	public final WrappedCollection<ScheduledTask> scheduledTasks;
@@ -64,7 +63,7 @@ public class Databases {
 		guildCollections = new HashMap<>();
 		mmShowcase = create("mm_showcase", BasicDocument::new);
 		userWebhooks = create("user_webhooks", UserWebhook::new);
-		userPings = create("user_pings", UserPings::new);
+		// userPings = create("user_pings", UserPings::new);
 		pastes = create("pastes", Paste::new);
 		interactions = create("interactions", InteractionDocument::new);
 		scheduledTasks = create("scheduled_tasks", ScheduledTask::new);

@@ -26,7 +26,7 @@ public interface AppPaths {
 	Path DATA = makeDir(Path.of("data"));
 	Path LOG = DATA.resolve("log.txt");
 
-	Path CACHE = makeDir(DATA.resolve("cache"));
+	Path CACHE = makeDir(Path.of("cache"));
 	Path AVATAR_CACHE = makeDir(CACHE.resolve("avatars"));
 	Path EMOJI_CACHE = makeDir(CACHE.resolve("emoji"));
 
@@ -37,6 +37,7 @@ public interface AppPaths {
 	Path DATA_BAD_DOMAINS = DATA.resolve("bad_domains.txt");
 	Path DATA_BAD_DOMAIN_OVERRIDES = DATA.resolve("bad_domain_overrides.txt");
 	Path DATA_DM_CHANNELS = DATA.resolve("dm_channels.txt");
+	Path PINGS = makeDir(DATA.resolve("pings"));
 
 	Map<Snowflake, GuildPaths> GUILD_PATHS = new HashMap<>();
 

@@ -1,11 +1,8 @@
 package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.data.WrappedCollection;
-import dev.gnomebot.app.data.WrappedDocument;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.MapWrapper;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 
@@ -14,84 +11,70 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class UserPings extends WrappedDocument<UserPings> {
-	public UserPings(WrappedCollection<UserPings> c, MapWrapper d) {
-		super(c, d);
-	}
+public class PingBuilder {
+	public String name;
+	public final LinkedHashSet<Snowflake> ignoredGuilds = new LinkedHashSet<>();
+	public final LinkedHashSet<Snowflake> ignoredChannels = new LinkedHashSet<>();
+	public final LinkedHashSet<Snowflake> ignoredUsers = new LinkedHashSet<>();
+	public boolean bots = true;
+	public boolean self = false;
+	public final List<Ping> pings = new ArrayList<>();
 
-	public String getConfig() {
-		return document.getString("config");
-	}
+	private void set(LinkedHashSet<Snowflake> list, boolean add, String id) {
+		try {
+			Snowflake s = Snowflake.of(id);
 
-	public List<PingBuilder> createBuilders(Databases db, Snowflake userId) {
-		return compile(db, userId, getConfig());
-	}
-
-	public static class PingBuilder {
-		public String name;
-		public final LinkedHashSet<Snowflake> ignoredGuilds = new LinkedHashSet<>();
-		public final LinkedHashSet<Snowflake> ignoredChannels = new LinkedHashSet<>();
-		public final LinkedHashSet<Snowflake> ignoredUsers = new LinkedHashSet<>();
-		public boolean bots = true;
-		public boolean self = false;
-		public final List<Ping> pings = new ArrayList<>();
-
-		private void set(LinkedHashSet<Snowflake> list, boolean add, String id) {
-			try {
-				Snowflake s = Snowflake.of(id);
-
-				if (add) {
-					list.add(s);
-				} else {
-					list.remove(s);
-				}
-			} catch (Exception e) {
-				throw new GnomeException("Invalid snowflake: " + id);
+			if (add) {
+				list.add(s);
+			} else {
+				list.remove(s);
 			}
-		}
-
-		private PingBuilder copy() {
-			PingBuilder builder = new PingBuilder();
-			builder.ignoredGuilds.addAll(ignoredGuilds);
-			builder.ignoredChannels.addAll(ignoredChannels);
-			builder.ignoredUsers.addAll(ignoredUsers);
-			builder.bots = bots;
-			builder.self = self;
-			return builder;
-		}
-
-		public UserPingConfig buildConfig() {
-			return UserPingConfig.get(ignoredGuilds, ignoredChannels, ignoredUsers, bots, self);
-		}
-
-		public UserPingInstance buildInstance(Snowflake user, PingDestination destination) {
-			return new UserPingInstance(pings.toArray(Ping.NO_PINGS), user, destination, buildConfig());
-		}
-
-		@Override
-		public String toString() {
-			return "{" +
-					"name='" + name + '\'' +
-					", config=" + buildConfig() +
-					", pings=" + pings +
-					'}';
+		} catch (Exception e) {
+			throw new GnomeException("Invalid snowflake: " + id);
 		}
 	}
 
-	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config) {
+	private PingBuilder copy() {
+		PingBuilder builder = new PingBuilder();
+		builder.ignoredGuilds.addAll(ignoredGuilds);
+		builder.ignoredChannels.addAll(ignoredChannels);
+		builder.ignoredUsers.addAll(ignoredUsers);
+		builder.bots = bots;
+		builder.self = self;
+		return builder;
+	}
+
+	public UserPingConfig buildConfig() {
+		return UserPingConfig.get(ignoredGuilds, ignoredChannels, ignoredUsers, bots, self);
+	}
+
+	public UserPingInstance buildInstance(Snowflake user, PingDestination destination) {
+		return new UserPingInstance(pings.toArray(Ping.NO_PINGS), user, destination, buildConfig());
+	}
+
+	@Override
+	public String toString() {
+		return "{" +
+				"name='" + name + '\'' +
+				", config=" + buildConfig() +
+				", pings=" + pings +
+				'}';
+	}
+
+	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config, boolean checkDM) {
 		int lineno = 0;
-		List<PingBuilder> list = new ArrayList<>();
+		var list = new ArrayList<PingBuilder>();
 
 		if (config.isEmpty()) {
 			return list;
 		}
 
 		try {
-			PingBuilder root = new PingBuilder();
+			var root = new PingBuilder();
 			PingBuilder group = null;
 			PingBuilder current = root;
 
-			for (String line : config.split("\n")) {
+			for (var line : config.split("\n")) {
 				lineno++;
 				line = line.trim();
 
@@ -158,7 +141,9 @@ public class UserPings extends WrappedDocument<UserPings> {
 						current = group;
 
 						if (group.name.equals("dm")) {
-							if (DM.getChannelFromUser(userId) == null) {
+							try {
+								DM.openId(db.app.discordHandler, userId);
+							} catch (Exception ignored) {
 								throw new GnomeException("You must message <@" + db.app.discordHandler.selfId.asString() + "> first before you can use DM channel!");
 							}
 						} else if (db.userWebhooks.query().eq("user", userId.asLong()).eq("name", group.name).first() == null) {
