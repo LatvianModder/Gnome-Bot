@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data;
 
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
@@ -77,6 +78,7 @@ public class GuildCollections {
 	public final Databases db;
 	public final Snowflake guildId;
 	public final WrappedId wrappedId;
+	public final MongoDatabase database;
 	public final GuildPaths paths;
 	public DiscordJS discordJS;
 
@@ -146,20 +148,21 @@ public class GuildCollections {
 		db = d;
 		guildId = g;
 		wrappedId = new WrappedId(guildId);
+		database = db.mongoClient.getDatabase("gnomebot_" + g.asString());
 		paths = AppPaths.getGuildPaths(guildId);
 
 		String dbid = guildId.asString();
 
-		members = create("members_" + dbid, DiscordMember::new);
+		members = create("members", DiscordMember::new);
 		// TODO: Move messages to edited when channel is deleted
-		messages = create("messages_" + dbid, DiscordMessage::new);
-		editedMessages = create("edited_messages_" + dbid, DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp", null); // GDPR
-		feedback = create("feedback_" + dbid, DiscordFeedback::new);
-		polls = create("polls_" + dbid, DiscordPoll::new);
-		messageCount = create("message_count_" + dbid, DiscordMessageCount::new);
-		messageXp = create("message_xp_" + dbid, DiscordMessageXP::new);
-		auditLog = create("audit_log_" + dbid, GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
-		memberLogThreads = create("member_log_threads_" + dbid, ThreadLocation::new);
+		messages = create("messages", DiscordMessage::new);
+		editedMessages = create("edited_messages", DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp", null); // GDPR
+		feedback = create("feedback", DiscordFeedback::new);
+		polls = create("polls", DiscordPoll::new);
+		messageCount = create("message_count", DiscordMessageCount::new);
+		messageXp = create("message_xp", DiscordMessageXP::new);
+		auditLog = create("audit_log", GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
+		memberLogThreads = create("member_log_threads", ThreadLocation::new);
 
 		config = new DBConfig();
 
@@ -217,7 +220,7 @@ public class GuildCollections {
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
-		return db.create(ci, w).gc(this);
+		return db.create(database, ci, w).gc(this);
 	}
 
 	public Guild getGuild() {

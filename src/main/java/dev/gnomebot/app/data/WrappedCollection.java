@@ -2,6 +2,7 @@ package dev.gnomebot.app.data;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import dev.gnomebot.app.util.MapWrapper;
@@ -17,16 +18,18 @@ import java.util.function.BiFunction;
 
 public class WrappedCollection<T extends WrappedDocument<T>> {
 	public final Databases db;
+	public final MongoDatabase database;
 	public final String id;
 	public final BiFunction<WrappedCollection<T>, MapWrapper, T> wrapper;
 	private MongoCollection<Document> collection;
 	private List<IndexWrapper> indexes;
 	public GuildCollections gc;
 
-	public WrappedCollection(Databases _db, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
-		db = _db;
-		id = ci;
-		wrapper = w;
+	public WrappedCollection(Databases db, MongoDatabase database, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
+		this.db = db;
+		this.database = database;
+		this.id = ci;
+		this.wrapper = w;
 	}
 
 	public WrappedCollection<T> gc(GuildCollections g) {
@@ -55,7 +58,7 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 		if (collection == null) {
 			//App.info("Initialized collection " + id);
 
-			collection = db.database.getCollection(id);
+			collection = database.getCollection(id);
 
 			if (indexes != null) {
 				for (var iw : indexes) {

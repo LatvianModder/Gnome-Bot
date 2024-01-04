@@ -99,6 +99,13 @@ public class CLI extends Thread {
 		var mm = app.db.guild(Snowflake.of(166630061217153024L));
 		int count = 0;
 
+		// var database = app.db.mongoClient.getDatabase("gnomebot_test");
+		// var collection = database.getCollection("abc");
+		// collection.insertOne(new Document("test", 1));
+		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
+
+		app.db.allGuilds();
+
 		/*
 		for (var gc : app.db.allGuilds()) {
 			for (var macro : gc.getMacroMap().values()) {

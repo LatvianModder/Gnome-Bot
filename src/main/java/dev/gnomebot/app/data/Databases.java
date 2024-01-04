@@ -1,5 +1,6 @@
 package dev.gnomebot.app.data;
 
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
@@ -30,6 +31,7 @@ public class Databases {
 	public static final UpdateOptions UPSERT = new UpdateOptions().upsert(true);
 
 	public final App app;
+	public final MongoClient mongoClient;
 	public final MongoDatabase database;
 	public final Map<String, WrappedCollection<?>> collections;
 
@@ -40,7 +42,6 @@ public class Databases {
 	public final Map<Snowflake, GuildCollections> guildCollections;
 	public final WrappedCollection<BasicDocument> mmShowcase;
 	public final WrappedCollection<UserWebhook> userWebhooks;
-	// public final WrappedCollection<UserPings> userPings;
 	public final WrappedCollection<Paste> pastes;
 	public final WrappedCollection<InteractionDocument> interactions;
 	public final WrappedCollection<ScheduledTask> scheduledTasks;
@@ -52,23 +53,22 @@ public class Databases {
 	public Databases(App m) {
 		app = m;
 
-		var mongoClient = MongoClients.create(Config.get().db_uri);
+		mongoClient = MongoClients.create(Config.get().db_uri);
 		database = mongoClient.getDatabase("gnomebot");
 
 		collections = new LinkedHashMap<>();
 
-		webLog = create("web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
-		webTokens = create("web_tokens", WebToken::new);
-		guildData = create("guild_data", BasicDocument::new);
+		webLog = create(database, "web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
+		webTokens = create(database, "web_tokens", WebToken::new);
+		guildData = create(database, "guild_data", BasicDocument::new);
 		guildCollections = new HashMap<>();
-		mmShowcase = create("mm_showcase", BasicDocument::new);
-		userWebhooks = create("user_webhooks", UserWebhook::new);
-		// userPings = create("user_pings", UserPings::new);
-		pastes = create("pastes", Paste::new);
-		interactions = create("interactions", InteractionDocument::new);
-		scheduledTasks = create("scheduled_tasks", ScheduledTask::new);
-		polls = create("polls", DiscordPoll::new);
-		channelSettings = create("channel_settings", ChannelSettings::new);
+		mmShowcase = create(database, "mm_showcase", BasicDocument::new);
+		userWebhooks = create(database, "user_webhooks", UserWebhook::new);
+		pastes = create(database, "pastes", Paste::new);
+		interactions = create(database, "interactions", InteractionDocument::new);
+		scheduledTasks = create(database, "scheduled_tasks", ScheduledTask::new);
+		polls = create(database, "polls", DiscordPoll::new);
+		channelSettings = create(database, "channel_settings", ChannelSettings::new);
 
 		for (var task : scheduledTasks.query()) {
 			app.scheduledTasks.add(task);
@@ -102,8 +102,8 @@ public class Databases {
 		return list;
 	}
 
-	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
-		WrappedCollection<T> collection = new WrappedCollection<>(this, ci, w);
+	public <T extends WrappedDocument<T>> WrappedCollection<T> create(MongoDatabase database, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
+		WrappedCollection<T> collection = new WrappedCollection<>(this, database, ci, w);
 		collections.put(ci, collection);
 		return collection;
 	}
