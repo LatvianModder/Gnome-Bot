@@ -7,11 +7,13 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.ThreadChannel;
 
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Scanner;
 
@@ -104,8 +106,6 @@ public class CLI extends Thread {
 		// collection.insertOne(new Document("test", 1));
 		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
 
-		app.db.allGuilds();
-
 		/*
 		for (var gc : app.db.allGuilds()) {
 			for (var macro : gc.getMacroMap().values()) {
@@ -124,6 +124,22 @@ public class CLI extends Thread {
 			gc.saveMacroMap();
 		}
 		 */
+
+		for (var g : app.db.allGuilds()) {
+			var json = JSONObject.of();
+			var info = json.addObject("info");
+			var config = json.addObject("config");
+
+			for (var c : g.config.map.values()) {
+				if (c.internal) {
+					info.put(c.id, c.write());
+				} else {
+					config.put(c.id, c.write());
+				}
+			}
+
+			Files.writeString(g.paths.config, json.toPrettyString());
+		}
 
 		App.info("+ Done " + count);
 	}

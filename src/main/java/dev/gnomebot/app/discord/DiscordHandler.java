@@ -7,7 +7,7 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.config.ChannelConfig;
+import dev.gnomebot.app.data.config.ChannelConfigKey;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
@@ -526,7 +526,7 @@ public class DiscordHandler {
 		}
 	}
 
-	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfig channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
+	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfigKey channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
 		if (!channelConfig.isSet()) {
 			return;
 		}

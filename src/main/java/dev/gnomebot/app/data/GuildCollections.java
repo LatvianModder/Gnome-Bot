@@ -7,14 +7,14 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.GuildPaths;
-import dev.gnomebot.app.data.config.BaseConfig;
-import dev.gnomebot.app.data.config.BooleanConfig;
-import dev.gnomebot.app.data.config.ChannelConfig;
+import dev.gnomebot.app.data.config.BooleanConfigKey;
+import dev.gnomebot.app.data.config.ChannelConfigKey;
+import dev.gnomebot.app.data.config.ConfigKey;
 import dev.gnomebot.app.data.config.DBConfig;
-import dev.gnomebot.app.data.config.IntConfig;
-import dev.gnomebot.app.data.config.MemberConfig;
-import dev.gnomebot.app.data.config.RoleConfig;
-import dev.gnomebot.app.data.config.StringConfig;
+import dev.gnomebot.app.data.config.IntConfigKey;
+import dev.gnomebot.app.data.config.MemberConfigKey;
+import dev.gnomebot.app.data.config.RoleConfigKey;
+import dev.gnomebot.app.data.config.StringConfigKey;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
@@ -93,43 +93,43 @@ public class GuildCollections {
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final DBConfig config;
-	public final StringConfig name;
-	public final StringConfig iconUrl;
-	public final MemberConfig ownerId;
-	public final IntConfig feedbackNumber;
-	public final IntConfig pollNumber;
+	public final StringConfigKey name;
+	public final StringConfigKey iconUrl;
+	public final MemberConfigKey ownerId;
+	public final IntConfigKey feedbackNumber;
+	public final IntConfigKey pollNumber;
 
-	public final IntConfig globalXp;
-	public final IntConfig regularMessages;
-	public final IntConfig regularXP;
-	public final RoleConfig regularRole;
-	public final RoleConfig adminRole;
-	public final RoleConfig mutedRole;
-	public final RoleConfig feedbackSuggestRole;
-	public final RoleConfig feedbackVoteRole;
-	public final RoleConfig reportMentionRole;
-	public final ChannelConfig feedbackChannel;
-	public final ChannelConfig adminLogChannel;
-	public final ChannelConfig adminMessagesChannel;
-	public final ChannelConfig muteAppealChannel;
-	public final ChannelConfig logNewAccountsChannel;
-	public final ChannelConfig logLeavingChannel;
-	public final ChannelConfig reportChannel;
-	public final ChannelConfig logIpAddressesChannel;
-	public final ChannelConfig appealChannel;
-	public final StringConfig legacyPrefix;
-	public final StringConfig macroPrefix;
-	public final StringConfig inviteCode;
-	public final BooleanConfig lockdownMode;
-	public final IntConfig kickNewAccounts;
-	public final BooleanConfig anonymousFeedback;
-	public final BooleanConfig adminsBypassAnonFeedback;
-	public final StringConfig font;
-	public final IntConfig autoMuteUrlShortener;
-	public final IntConfig autoMuteScamUrl;
-	public final BooleanConfig autoPaste;
-	public final StringConfig reportOptions;
-	public final BooleanConfig autoMuteEmbed;
+	public final IntConfigKey globalXp;
+	public final IntConfigKey regularMessages;
+	public final IntConfigKey regularXP;
+	public final RoleConfigKey regularRole;
+	public final RoleConfigKey adminRole;
+	public final RoleConfigKey mutedRole;
+	public final RoleConfigKey feedbackSuggestRole;
+	public final RoleConfigKey feedbackVoteRole;
+	public final RoleConfigKey reportMentionRole;
+	public final ChannelConfigKey feedbackChannel;
+	public final ChannelConfigKey adminLogChannel;
+	public final ChannelConfigKey adminMessagesChannel;
+	public final ChannelConfigKey muteAppealChannel;
+	public final ChannelConfigKey logNewAccountsChannel;
+	public final ChannelConfigKey logLeavingChannel;
+	public final ChannelConfigKey reportChannel;
+	public final ChannelConfigKey logIpAddressesChannel;
+	public final ChannelConfigKey appealChannel;
+	public final StringConfigKey legacyPrefix;
+	public final StringConfigKey macroPrefix;
+	public final StringConfigKey inviteCode;
+	public final BooleanConfigKey lockdownMode;
+	public final IntConfigKey kickNewAccounts;
+	public final BooleanConfigKey anonymousFeedback;
+	public final BooleanConfigKey adminsBypassAnonFeedback;
+	public final StringConfigKey font;
+	public final IntConfigKey autoMuteUrlShortener;
+	public final IntConfigKey autoMuteScamUrl;
+	public final BooleanConfigKey autoPaste;
+	public final StringConfigKey reportOptions;
+	public final BooleanConfigKey autoMuteEmbed;
 
 	private WrappedGuild wrappedGuild;
 	private Map<Snowflake, ChannelInfo> channelMap;
@@ -166,43 +166,43 @@ public class GuildCollections {
 
 		config = new DBConfig();
 
-		name = config.add(new StringConfig(this, "name", guildId.asString()));
-		iconUrl = config.add(new StringConfig(this, "icon_url", ""));
-		ownerId = config.add(new MemberConfig(this, "owner_id"));
-		feedbackNumber = config.add(new IntConfig(this, "feedback_number", 0));
-		pollNumber = config.add(new IntConfig(this, "poll_number", 0));
+		name = config.add(new StringConfigKey(this, "name", guildId.asString()));
+		iconUrl = config.add(new StringConfigKey(this, "icon_url", ""));
+		ownerId = config.add(new MemberConfigKey(this, "owner_id"));
+		feedbackNumber = config.add(new IntConfigKey(this, "feedback_number", 0));
+		pollNumber = config.add(new IntConfigKey(this, "poll_number", 0));
 
-		globalXp = config.add(new IntConfig(this, "global_xp", 0)).title("Global XP");
-		regularMessages = config.add(new IntConfig(this, "regular_messages", 0)).title("Regular Messages");
-		regularXP = config.add(new IntConfig(this, "regular_xp", 3000)).title("Regular XP");
-		regularRole = config.add(new RoleConfig(this, "regular_role")).title("Regular Role");
-		adminRole = config.add(new RoleConfig(this, "admin_role")).title("Admin Role");
-		mutedRole = config.add(new RoleConfig(this, "muted_role")).title("Muted Role");
-		feedbackSuggestRole = config.add(new RoleConfig(this, "feedback_suggest_role")).title("Feedback Role for suggest command");
-		feedbackVoteRole = config.add(new RoleConfig(this, "feedback_vote_role")).title("Feedback Role for voting");
-		reportMentionRole = config.add(new RoleConfig(this, "report_mention_role")).title("Message Report mention role");
-		feedbackChannel = config.add(new ChannelConfig(this, "feedback_channel")).title("Feedback Channel");
-		adminLogChannel = config.add(new ChannelConfig(this, "admin_log_channel")).title("Admin Log Channel");
-		adminMessagesChannel = config.add(new ChannelConfig(this, "admin_messages_channel")).title("Admin Messages Channel");
-		muteAppealChannel = config.add(new ChannelConfig(this, "mute_appeal_channel")).title("Mute Appeal Channel");
-		logNewAccountsChannel = config.add(new ChannelConfig(this, "log_new_accounts")).title("Log New Accounts Channel");
-		logLeavingChannel = config.add(new ChannelConfig(this, "log_leaving")).title("Log Leaving Channel");
-		reportChannel = config.add(new ChannelConfig(this, "report_channel")).title("Report Channel");
-		logIpAddressesChannel = config.add(new ChannelConfig(this, "log_ip_addresses_channel")).title("Log IP Addresses Channel");
-		appealChannel = config.add(new ChannelConfig(this, "appeal_channel")).title("Appeal Channel");
-		legacyPrefix = config.add(new StringConfig(this, "prefix", "!")).title("Command Prefix");
-		macroPrefix = config.add(new StringConfig(this, "custom_command_prefix", "!")).title("Macro Prefix");
-		inviteCode = config.add(new StringConfig(this, "invite_code", "")).title("Invite Code");
-		lockdownMode = config.add(new BooleanConfig(this, "lockdown_mode", false)).title("Lockdown Mode");
-		kickNewAccounts = config.add(new IntConfig(this, "kick_new_accounts", 0)).title("Kick New Accounts (in seconds since account created, e.g 604800 == 1 week)");
-		anonymousFeedback = config.add(new BooleanConfig(this, "anonymous_feedback", false)).title("Anonymous Feedback");
-		adminsBypassAnonFeedback = config.add(new BooleanConfig(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
-		font = config.add(new StringConfig(this, "font", "DejaVu Sans Light").enumValues(App::listFonts)).title("Font");
-		autoMuteUrlShortener = config.add(new IntConfig(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
-		autoMuteScamUrl = config.add(new IntConfig(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
-		autoPaste = config.add(new BooleanConfig(this, "auto_paste", true)).title("Auto-paste text files");
-		reportOptions = config.add(new StringConfig(this, "report_options", "Scam | Spam | NSFW | Hacks")).title("Report Options (separated by ' | ')");
-		autoMuteEmbed = config.add(new BooleanConfig(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
+		globalXp = config.add(new IntConfigKey(this, "global_xp", 0)).title("Global XP");
+		regularMessages = config.add(new IntConfigKey(this, "regular_messages", 0)).title("Regular Messages");
+		regularXP = config.add(new IntConfigKey(this, "regular_xp", 3000)).title("Regular XP");
+		regularRole = config.add(new RoleConfigKey(this, "regular_role")).title("Regular Role");
+		adminRole = config.add(new RoleConfigKey(this, "admin_role")).title("Admin Role");
+		mutedRole = config.add(new RoleConfigKey(this, "muted_role")).title("Muted Role");
+		feedbackSuggestRole = config.add(new RoleConfigKey(this, "feedback_suggest_role")).title("Feedback Role for suggest command");
+		feedbackVoteRole = config.add(new RoleConfigKey(this, "feedback_vote_role")).title("Feedback Role for voting");
+		reportMentionRole = config.add(new RoleConfigKey(this, "report_mention_role")).title("Message Report mention role");
+		feedbackChannel = config.add(new ChannelConfigKey(this, "feedback_channel")).title("Feedback Channel");
+		adminLogChannel = config.add(new ChannelConfigKey(this, "admin_log_channel")).title("Admin Log Channel");
+		adminMessagesChannel = config.add(new ChannelConfigKey(this, "admin_messages_channel")).title("Admin Messages Channel");
+		muteAppealChannel = config.add(new ChannelConfigKey(this, "mute_appeal_channel")).title("Mute Appeal Channel");
+		logNewAccountsChannel = config.add(new ChannelConfigKey(this, "log_new_accounts")).title("Log New Accounts Channel");
+		logLeavingChannel = config.add(new ChannelConfigKey(this, "log_leaving")).title("Log Leaving Channel");
+		reportChannel = config.add(new ChannelConfigKey(this, "report_channel")).title("Report Channel");
+		logIpAddressesChannel = config.add(new ChannelConfigKey(this, "log_ip_addresses_channel")).title("Log IP Addresses Channel");
+		appealChannel = config.add(new ChannelConfigKey(this, "appeal_channel")).title("Appeal Channel");
+		legacyPrefix = config.add(new StringConfigKey(this, "prefix", "!")).title("Command Prefix");
+		macroPrefix = config.add(new StringConfigKey(this, "custom_command_prefix", "!")).title("Macro Prefix");
+		inviteCode = config.add(new StringConfigKey(this, "invite_code", "")).title("Invite Code");
+		lockdownMode = config.add(new BooleanConfigKey(this, "lockdown_mode", false)).title("Lockdown Mode");
+		kickNewAccounts = config.add(new IntConfigKey(this, "kick_new_accounts", 0)).title("Kick New Accounts (in seconds since account created, e.g 604800 == 1 week)");
+		anonymousFeedback = config.add(new BooleanConfigKey(this, "anonymous_feedback", false)).title("Anonymous Feedback");
+		adminsBypassAnonFeedback = config.add(new BooleanConfigKey(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
+		font = config.add(new StringConfigKey(this, "font", "DejaVu Sans Light").enumValues(App::listFonts)).title("Font");
+		autoMuteUrlShortener = config.add(new IntConfigKey(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
+		autoMuteScamUrl = config.add(new IntConfigKey(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
+		autoPaste = config.add(new BooleanConfigKey(this, "auto_paste", true)).title("Auto-paste text files");
+		reportOptions = config.add(new StringConfigKey(this, "report_options", "Scam | Spam | NSFW | Hacks")).title("Report Options (separated by ' | ')");
+		autoMuteEmbed = config.add(new BooleanConfigKey(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
 
 		recentUsers = new ArrayList<>();
 		memberLogThreadCache = new HashMap<>();
@@ -322,7 +322,7 @@ public class GuildCollections {
 		return Optional.empty();
 	}
 
-	public void adminLogChannelEmbed(@Nullable UserData user, ChannelConfig channelConfig, Consumer<EmbedBuilder> embed) {
+	public void adminLogChannelEmbed(@Nullable UserData user, ChannelConfigKey channelConfig, Consumer<EmbedBuilder> embed) {
 		var builder = EmbedBuilder.create();
 		builder.color(EmbedColor.RED);
 		builder.timestamp(Instant.now());
@@ -380,7 +380,7 @@ public class GuildCollections {
 	}
 
 	public void save(String key) {
-		BaseConfig<?> c = config.map.get(key);
+		ConfigKey<?> c = config.map.get(key);
 
 		if (c != null) {
 			c.save();
@@ -772,7 +772,7 @@ public class GuildCollections {
 		}
 	}
 
-	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfig config) {
+	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfigKey config) {
 		if (user == null) {
 			return Utils.NO_SNOWFLAKE;
 		}

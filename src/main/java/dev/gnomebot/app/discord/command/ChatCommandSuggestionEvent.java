@@ -23,8 +23,8 @@ public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInpu
 		options = new HashMap<>();
 		CommandOption f = null;
 
-		for (ApplicationCommandInteractionOption option : o) {
-			CommandOption o1 = new CommandOption(context, option);
+		for (var option : o) {
+			var o1 = new CommandOption(context, option);
 			options.put(o1.name, o1);
 
 			if (o1.focused) {

@@ -216,7 +216,7 @@ public class ActivityHandlers {
 		}
 
 		ImageCanvas canvas = new ImageCanvas();
-		canvas.setFont(new Font(request.gc.font.get(), Font.BOLD, 36));
+		canvas.setFont(new Font(request.gc.font.get(), Font.PLAIN, 36));
 
 		int w = 0;
 

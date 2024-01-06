@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DBConfig {
-	public final Map<String, BaseConfig<?>> map = new LinkedHashMap<>();
+	public final Map<String, ConfigKey<?>> map = new LinkedHashMap<>();
 
 	public void read(String name, @Nullable Document document, List<Bson> updates) {
 		if (document == null) {
@@ -47,7 +47,7 @@ public class DBConfig {
 		}
 	}
 
-	public <T extends BaseConfig<?>> T add(T config) {
+	public <T extends ConfigKey<?>> T add(T config) {
 		map.put(config.id, config);
 		return config;
 	}

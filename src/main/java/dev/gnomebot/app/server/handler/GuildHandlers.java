@@ -7,7 +7,7 @@ import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.config.BaseConfig;
+import dev.gnomebot.app.data.config.ConfigKey;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.UserCache;
@@ -140,7 +140,7 @@ public class GuildHandlers {
 	}
 
 	public static Response updateSetting(JsonRequest request) throws Exception {
-		BaseConfig<?> setting = request.request.gc.config.map.get(request.request.variable("setting"));
+		ConfigKey<?> setting = request.request.gc.config.map.get(request.request.variable("setting"));
 
 		if (setting == null) {
 			throw HTTPResponseCode.NOT_FOUND.error("Setting ID not found!");
