@@ -41,9 +41,9 @@ public class DM {
 		DM_CHANNELS_USER.clear();
 		DM_CHANNELS_MESSAGE.clear();
 
-		if (Files.exists(AppPaths.DATA_DM_CHANNELS)) {
+		if (Files.exists(AppPaths.DM_CHANNELS)) {
 			try {
-				for (String line : Files.readAllLines(AppPaths.DATA_DM_CHANNELS)) {
+				for (String line : Files.readAllLines(AppPaths.DM_CHANNELS)) {
 					String[] split = line.split(":", 3);
 					var userId = Utils.snowflake(split[0].trim());
 					var messageId = Utils.snowflake(split[1].trim());
@@ -60,7 +60,7 @@ public class DM {
 
 	public static void saveDmChannels() {
 		try {
-			Files.write(AppPaths.DATA_DM_CHANNELS, DM_CHANNELS_USER.values().stream().map(DMChannel::toString).toList());
+			Files.write(AppPaths.DM_CHANNELS, DM_CHANNELS_USER.values().stream().map(DMChannel::toString).toList());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

@@ -24,19 +24,20 @@ public interface AppPaths {
 	Path ASSETS = makeDir(RESOURCES.resolve("assets"));
 	Path EXPORT = makeDir(Path.of("export"));
 	Path DATA = makeDir(Path.of("data"));
-	Path LOG = DATA.resolve("log.txt");
 
 	Path CACHE = makeDir(Path.of("cache"));
 	Path AVATAR_CACHE = makeDir(CACHE.resolve("avatars"));
 	Path EMOJI_CACHE = makeDir(CACHE.resolve("emoji"));
 
+	Path LOG = DATA.resolve("log.txt");
 	Path CONFIG_FILE = DATA.resolve("config.json");
 	Path COMMANDS_FILE = DATA.resolve("commands");
-	Path DATA_GUILDS = makeDir(DATA.resolve("guilds"));
-	Path DATA_PUBLIC = makeDir(DATA.resolve("public"));
-	Path DATA_BAD_DOMAINS = DATA.resolve("bad_domains.txt");
-	Path DATA_BAD_DOMAIN_OVERRIDES = DATA.resolve("bad_domain_overrides.txt");
-	Path DATA_DM_CHANNELS = DATA.resolve("dm_channels.txt");
+	Path GUILD_DATA = makeDir(DATA.resolve("guilds"));
+	Path PUBLIC_DATA = makeDir(DATA.resolve("public"));
+	Path BAD_DOMAINS = DATA.resolve("bad_domains.txt");
+	Path BAD_DOMAIN_OVERRIDES = DATA.resolve("bad_domain_overrides.txt");
+	Path DM_CHANNELS = DATA.resolve("dm_channels.txt");
+	Path CUSTOM_GUILD_IDS = DATA.resolve("custom_guild_ids.json");
 	Path PINGS = makeDir(DATA.resolve("pings"));
 
 	Map<Snowflake, GuildPaths> GUILD_PATHS = new HashMap<>();

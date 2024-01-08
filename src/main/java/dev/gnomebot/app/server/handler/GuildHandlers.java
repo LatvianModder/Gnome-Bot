@@ -69,7 +69,7 @@ public class GuildHandlers {
 		json.put("name", request.gc.name);
 		json.put("owner", request.gc.getGuild().getOwnerId().asString());
 		json.put("prefix", request.gc.legacyPrefix.get());
-		json.put("invite", request.gc.inviteCode.get());
+		json.put("invite", request.gc.getInviteUrl());
 		return JSONResponse.of(json);
 	}
 

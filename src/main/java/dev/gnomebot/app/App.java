@@ -1,7 +1,6 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
@@ -339,8 +338,9 @@ public class App implements Runnable {
 
 	public void reload() {
 		CharMap.load();
+		GuildPaths.CUSTOM_NAMES.invalidate();
 
-		for (GuildCollections gc : db.guildCollections.values()) {
+		for (var gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);
 		}
 	}

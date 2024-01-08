@@ -105,7 +105,7 @@ public class ScamHandler {
 					List<String> list = new ArrayList<>(set);
 					list.sort(null);
 					list.add(0, lastRemoteUpdate.toString());
-					Files.write(AppPaths.DATA_BAD_DOMAINS, list);
+					Files.write(AppPaths.BAD_DOMAINS, list);
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -117,9 +117,9 @@ public class ScamHandler {
 
 	public static void loadDomains() {
 		synchronized (LOCK) {
-			if (Files.exists(AppPaths.DATA_BAD_DOMAIN_OVERRIDES)) {
+			if (Files.exists(AppPaths.BAD_DOMAIN_OVERRIDES)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.DATA_BAD_DOMAIN_OVERRIDES);
+					List<String> lines = Files.readAllLines(AppPaths.BAD_DOMAIN_OVERRIDES);
 					OVERRIDES.clear();
 
 					for (String s : lines) {
@@ -140,9 +140,9 @@ public class ScamHandler {
 				saveDomainsSynced();
 			}
 
-			if (Files.exists(AppPaths.DATA_BAD_DOMAINS)) {
+			if (Files.exists(AppPaths.BAD_DOMAINS)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.DATA_BAD_DOMAINS);
+					List<String> lines = Files.readAllLines(AppPaths.BAD_DOMAINS);
 					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.get(0));
 
 					if (lastRemoteUpdate != null) {
@@ -162,7 +162,7 @@ public class ScamHandler {
 
 	private static void saveDomainsSynced() {
 		try {
-			Files.write(AppPaths.DATA_BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> e.getKey() + ": " + e.getValue()).toList());
+			Files.write(AppPaths.BAD_DOMAIN_OVERRIDES, OVERRIDES.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> e.getKey() + ": " + e.getValue()).toList());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

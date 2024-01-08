@@ -77,8 +77,8 @@ public class GuildCollections {
 	public final Databases db;
 	public final Snowflake guildId;
 	public final WrappedId wrappedId;
-	public final MongoDatabase database;
 	public final GuildPaths paths;
+	public final MongoDatabase database;
 	public DiscordJS discordJS;
 
 	public String name;
@@ -86,6 +86,7 @@ public class GuildCollections {
 	public Snowflake ownerId;
 	public int feedbackNumber;
 	public int pollNumber;
+	public String vanityInviteCode;
 
 	public final WrappedCollection<DiscordMember> members;
 	public final WrappedCollection<DiscordMessage> messages;
@@ -149,14 +150,15 @@ public class GuildCollections {
 		db = d;
 		guildId = g;
 		wrappedId = new WrappedId(guildId);
-		database = db.mongoClient.getDatabase("gnomebot_" + g.asString());
 		paths = AppPaths.getGuildPaths(guildId);
+		database = db.mongoClient.getDatabase("gnomebot_" + g.asString());
 
 		name = guildId.asString();
 		iconUrl = "";
 		ownerId = Utils.NO_SNOWFLAKE;
 		feedbackNumber = 0;
 		pollNumber = 0;
+		vanityInviteCode = "";
 
 		if (Files.exists(paths.info)) {
 			try {
@@ -166,6 +168,7 @@ public class GuildCollections {
 				ownerId = Utils.snowflake(json.asString("owner_id"));
 				feedbackNumber = json.asInt("feedback_number");
 				pollNumber = json.asInt("poll_number");
+				vanityInviteCode = json.asString("vanity_invite_code");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -227,8 +230,18 @@ public class GuildCollections {
 		json.put("name", name);
 		json.put("icon_url", iconUrl);
 		json.put("owner_id", ownerId.asString());
-		json.put("feedback_number", feedbackNumber);
-		json.put("poll_number", pollNumber);
+
+		if (feedbackNumber > 0) {
+			json.put("feedback_number", feedbackNumber);
+		}
+
+		if (pollNumber > 0) {
+			json.put("poll_number", pollNumber);
+		}
+
+		if (!vanityInviteCode.isEmpty()) {
+			json.put("vanity_invite_code", vanityInviteCode);
+		}
 
 		try {
 			Files.writeString(paths.info, json.toPrettyString());
@@ -321,9 +334,23 @@ public class GuildCollections {
 		//settingsTable.print();
 	}
 
-	public String getClickableName() {
+	public String getInviteUrl() {
+		if (!vanityInviteCode.isEmpty()) {
+			return "https://discord.gg/" + vanityInviteCode;
+		}
+
 		var inv = inviteCode.get();
-		return inv.isEmpty() ? name : ("[" + name + "](https://discord.gg/" + inv + ")");
+
+		if (!inv.isEmpty()) {
+			return "https://discord.gg/" + inv;
+		}
+
+		return "";
+	}
+
+	public String getClickableName() {
+		var inv = getInviteUrl();
+		return inv.isEmpty() ? name : ("[" + name + "](" + inv + ")");
 	}
 
 	public Optional<Message> findMessage(@Nullable Snowflake id, @Nullable ChannelInfo priority) {
@@ -505,6 +532,13 @@ public class GuildCollections {
 
 			if (!ownerId.equals(o)) {
 				ownerId = o;
+				saveInfo = true;
+			}
+
+			var v = g.getVanityUrlCode().orElse("");
+
+			if (!vanityInviteCode.equals(v)) {
+				vanityInviteCode = v;
 				saveInfo = true;
 			}
 		}

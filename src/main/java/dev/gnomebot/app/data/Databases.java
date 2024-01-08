@@ -38,7 +38,6 @@ public class Databases {
 	private final Object guildLock = new Object();
 	public final WrappedCollection<WebLogEntry> webLog;
 	private final WrappedCollection<WebToken> webTokens;
-	public final WrappedCollection<BasicDocument> guildData;
 	public final Map<Snowflake, GuildCollections> guildCollections;
 	public final WrappedCollection<BasicDocument> mmShowcase;
 	public final WrappedCollection<UserWebhook> userWebhooks;
@@ -60,7 +59,6 @@ public class Databases {
 
 		webLog = create(database, "web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
 		webTokens = create(database, "web_tokens", WebToken::new);
-		guildData = create(database, "guild_data", BasicDocument::new);
 		guildCollections = new HashMap<>();
 		mmShowcase = create(database, "mm_showcase", BasicDocument::new);
 		userWebhooks = create(database, "user_webhooks", UserWebhook::new);
