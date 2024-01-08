@@ -90,8 +90,10 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		var data = gc.db.app.discordHandler.getUserData(userId);
 		App.warn("Unmuting " + gc + "/" + data.id().asString() + "/" + data.username());
 
-		if (gc.mutedRole.isSet()) {
-			gc.mutedRole.remove(userId, "Unmuted");
+		var mutedRole = gc.mutedRole.getRole();
+
+		if (mutedRole != null) {
+			mutedRole.remove(userId, "Unmuted");
 
 			gc.adminLogChannelEmbed(data, gc.adminLogChannel, spec -> {
 				spec.color(EmbedColor.GREEN);

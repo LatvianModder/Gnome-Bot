@@ -1,6 +1,7 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.mods.rhino.util.DynamicMap;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.common.util.Snowflake;
@@ -23,9 +24,9 @@ public class WrappedGuild extends DiscordObject {
 		discordJS = d;
 		gc = w;
 
-		channels = new DynamicMap<>(id -> new WrappedChannel(new WrappedId(Snowflake.of(id)), this));
+		channels = new DynamicMap<>(id -> new WrappedChannel(new WrappedId(Utils.snowflake(id)), this));
 		roles = Collections.unmodifiableMap(gc.getRoleMap().values().stream().map(r -> new WrappedRole(this, r)).collect(Collectors.toMap(k -> k.id.asString(), Function.identity())));
-		members = new DynamicMap<>(id -> new WrappedMember(new WrappedId(Snowflake.of(id)), this));
+		members = new DynamicMap<>(id -> new WrappedMember(new WrappedId(Utils.snowflake(id)), this));
 	}
 
 	@Override
@@ -40,7 +41,7 @@ public class WrappedGuild extends DiscordObject {
 
 	public WrappedUser getUser(String id) {
 		WrappedMember m = members.get(id);
-		Snowflake snowflake = Snowflake.of(id);
+		Snowflake snowflake = Utils.snowflake(id);
 
 		if (gc.getMember(snowflake) == null) {
 			return new WrappedUser(new WrappedId(snowflake), this);

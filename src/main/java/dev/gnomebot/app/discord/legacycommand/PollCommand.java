@@ -45,9 +45,8 @@ public class PollCommand {
 
 		context.message.delete().subscribe();
 
-		int number = context.gc.pollNumber.get() + 1;
-		context.gc.pollNumber.set(number);
-		context.gc.pollNumber.save();
+		int number = ++context.gc.pollNumber;
+		context.gc.saveInfo();
 
 		context.referenceMessage = false;
 

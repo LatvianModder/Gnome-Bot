@@ -7,14 +7,12 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.GuildPaths;
-import dev.gnomebot.app.data.config.BooleanConfigKey;
-import dev.gnomebot.app.data.config.ChannelConfigKey;
+import dev.gnomebot.app.data.config.ChannelConfigType;
+import dev.gnomebot.app.data.config.ConfigHolder;
 import dev.gnomebot.app.data.config.ConfigKey;
-import dev.gnomebot.app.data.config.DBConfig;
-import dev.gnomebot.app.data.config.IntConfigKey;
-import dev.gnomebot.app.data.config.MemberConfigKey;
-import dev.gnomebot.app.data.config.RoleConfigKey;
-import dev.gnomebot.app.data.config.StringConfigKey;
+import dev.gnomebot.app.data.config.FontConfigType;
+import dev.gnomebot.app.data.config.GuildConfig;
+import dev.gnomebot.app.data.config.RoleConfigType;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
@@ -30,6 +28,7 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.AnsiJava;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
@@ -54,7 +53,6 @@ import discord4j.rest.util.Image;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -63,6 +61,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +81,12 @@ public class GuildCollections {
 	public final GuildPaths paths;
 	public DiscordJS discordJS;
 
+	public String name;
+	public String iconUrl;
+	public Snowflake ownerId;
+	public int feedbackNumber;
+	public int pollNumber;
+
 	public final WrappedCollection<DiscordMember> members;
 	public final WrappedCollection<DiscordMessage> messages;
 	public final WrappedCollection<DiscordMessage> editedMessages;
@@ -92,50 +97,46 @@ public class GuildCollections {
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
-	public final DBConfig config;
-	public final StringConfigKey name;
-	public final StringConfigKey iconUrl;
-	public final MemberConfigKey ownerId;
-	public final IntConfigKey feedbackNumber;
-	public final IntConfigKey pollNumber;
-
-	public final IntConfigKey globalXp;
-	public final IntConfigKey regularMessages;
-	public final IntConfigKey regularXP;
-	public final RoleConfigKey regularRole;
-	public final RoleConfigKey adminRole;
-	public final RoleConfigKey mutedRole;
-	public final RoleConfigKey feedbackSuggestRole;
-	public final RoleConfigKey feedbackVoteRole;
-	public final RoleConfigKey reportMentionRole;
-	public final ChannelConfigKey feedbackChannel;
-	public final ChannelConfigKey adminLogChannel;
-	public final ChannelConfigKey adminMessagesChannel;
-	public final ChannelConfigKey muteAppealChannel;
-	public final ChannelConfigKey logNewAccountsChannel;
-	public final ChannelConfigKey logLeavingChannel;
-	public final ChannelConfigKey reportChannel;
-	public final ChannelConfigKey logIpAddressesChannel;
-	public final ChannelConfigKey appealChannel;
-	public final StringConfigKey legacyPrefix;
-	public final StringConfigKey macroPrefix;
-	public final StringConfigKey inviteCode;
-	public final BooleanConfigKey lockdownMode;
-	public final IntConfigKey kickNewAccounts;
-	public final BooleanConfigKey anonymousFeedback;
-	public final BooleanConfigKey adminsBypassAnonFeedback;
-	public final StringConfigKey font;
-	public final IntConfigKey autoMuteUrlShortener;
-	public final IntConfigKey autoMuteScamUrl;
-	public final BooleanConfigKey autoPaste;
-	public final StringConfigKey reportOptions;
-	public final BooleanConfigKey autoMuteEmbed;
+	public final Map<ConfigKey<?, ?>, ConfigHolder<?>> configHolders = new IdentityHashMap<>();
+	public final ConfigHolder<Integer> globalXp = config(GuildConfig.GLOBAL_XP);
+	public final ConfigHolder<Integer> regularMessages = config(GuildConfig.REGULAR_MESSAGES);
+	public final ConfigHolder<Integer> regularXP = config(GuildConfig.REGULAR_XP);
+	public final RoleConfigType.Holder regularRole = config(GuildConfig.REGULAR_ROLE);
+	public final RoleConfigType.Holder adminRole = config(GuildConfig.ADMIN_ROLE);
+	public final RoleConfigType.Holder mutedRole = config(GuildConfig.MUTED_ROLE);
+	public final RoleConfigType.Holder feedbackSuggestRole = config(GuildConfig.FEEDBACK_SUGGEST_ROLE);
+	public final RoleConfigType.Holder feedbackVoteRole = config(GuildConfig.FEEDBACK_VOTE_ROLE);
+	public final RoleConfigType.Holder reportMentionRole = config(GuildConfig.REPORT_MENTION_ROLE);
+	public final ChannelConfigType.Holder feedbackChannel = config(GuildConfig.FEEDBACK_CHANNEL);
+	public final ChannelConfigType.Holder adminLogChannel = config(GuildConfig.ADMIN_LOG_CHANNEL);
+	public final ChannelConfigType.Holder adminMessagesChannel = config(GuildConfig.ADMIN_MESSAGES_CHANNEL);
+	public final ChannelConfigType.Holder muteAppealChannel = config(GuildConfig.MUTE_APPEAL_CHANNEL);
+	public final ChannelConfigType.Holder logNewAccountsChannel = config(GuildConfig.LOG_NEW_ACCOUNTS_CHANNEL);
+	public final ChannelConfigType.Holder logLeavingChannel = config(GuildConfig.LOG_LEAVING_CHANNEL);
+	public final ChannelConfigType.Holder reportChannel = config(GuildConfig.REPORT_CHANNEL);
+	public final ChannelConfigType.Holder logIpAddressesChannel = config(GuildConfig.LOG_IP_ADDRESSES_CHANNEL);
+	public final ChannelConfigType.Holder appealChannel = config(GuildConfig.APPEAL_CHANNEL);
+	public final ConfigHolder<String> legacyPrefix = config(GuildConfig.LEGACY_PREFIX);
+	public final ConfigHolder<String> macroPrefix = config(GuildConfig.MACRO_PREFIX);
+	public final ConfigHolder<String> inviteCode = config(GuildConfig.INVITE_CODE);
+	public final ConfigHolder<Boolean> lockdownMode = config(GuildConfig.LOCKDOWN_MODE);
+	public final ConfigHolder<Integer> kickNewAccounts = config(GuildConfig.KICK_NEW_ACCOUNTS);
+	public final ConfigHolder<Boolean> anonymousFeedback = config(GuildConfig.ANONYMOUS_FEEDBACK);
+	public final ConfigHolder<Boolean> adminsBypassAnonFeedback = config(GuildConfig.ADMINS_BYPASS_ANON_FEEDBACK);
+	public final FontConfigType.Holder font = config(GuildConfig.FONT);
+	public final ConfigHolder<Integer> autoMuteUrlShortener = config(GuildConfig.AUTO_MUTE_URL_SHORTENER);
+	public final ConfigHolder<Integer> autoMuteScamUrl = config(GuildConfig.AUTO_MUTE_SCAM_URL);
+	public final ConfigHolder<Boolean> autoPaste = config(GuildConfig.AUTO_PASTE);
+	public final ConfigHolder<List<String>> reportOptions = config(GuildConfig.REPORT_OPTIONS);
+	public final ConfigHolder<Boolean> autoMuteEmbed = config(GuildConfig.AUTO_MUTE_EMBED);
 
 	private WrappedGuild wrappedGuild;
 	private Map<Snowflake, ChannelInfo> channelMap;
 	private List<ChannelInfo> channelList;
+	private Map<String, ChannelInfo> uniqueChannelNameMap;
 	private Map<Snowflake, CachedRole> roleMap;
 	private List<CachedRole> roleList;
+	private Map<String, CachedRole> uniqueRoleNameMap;
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
 	private Map<String, Macro> macroMap;
@@ -151,7 +152,26 @@ public class GuildCollections {
 		database = db.mongoClient.getDatabase("gnomebot_" + g.asString());
 		paths = AppPaths.getGuildPaths(guildId);
 
-		String dbid = guildId.asString();
+		name = guildId.asString();
+		iconUrl = "";
+		ownerId = Utils.NO_SNOWFLAKE;
+		feedbackNumber = 0;
+		pollNumber = 0;
+
+		if (Files.exists(paths.info)) {
+			try {
+				var json = JSON.DEFAULT.read(paths.info).readObject();
+				name = json.asString("name");
+				iconUrl = json.asString("icon_url");
+				ownerId = Utils.snowflake(json.asString("owner_id"));
+				feedbackNumber = json.asInt("feedback_number");
+				pollNumber = json.asInt("poll_number");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		var dbid = guildId.asString();
 
 		members = create("members", DiscordMember::new);
 		// TODO: Move messages to edited when channel is deleted
@@ -164,56 +184,25 @@ public class GuildCollections {
 		auditLog = create("audit_log", GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
 		memberLogThreads = create("member_log_threads", ThreadLocation::new);
 
-		config = new DBConfig();
+		if (Files.exists(paths.config)) {
+			try {
+				var json = JSON.DEFAULT.read(paths.config).readObject();
 
-		name = config.add(new StringConfigKey(this, "name", guildId.asString()));
-		iconUrl = config.add(new StringConfigKey(this, "icon_url", ""));
-		ownerId = config.add(new MemberConfigKey(this, "owner_id"));
-		feedbackNumber = config.add(new IntConfigKey(this, "feedback_number", 0));
-		pollNumber = config.add(new IntConfigKey(this, "poll_number", 0));
+				for (var entry : json.entrySet()) {
+					var key = GuildConfig.get(entry.getKey());
 
-		globalXp = config.add(new IntConfigKey(this, "global_xp", 0)).title("Global XP");
-		regularMessages = config.add(new IntConfigKey(this, "regular_messages", 0)).title("Regular Messages");
-		regularXP = config.add(new IntConfigKey(this, "regular_xp", 3000)).title("Regular XP");
-		regularRole = config.add(new RoleConfigKey(this, "regular_role")).title("Regular Role");
-		adminRole = config.add(new RoleConfigKey(this, "admin_role")).title("Admin Role");
-		mutedRole = config.add(new RoleConfigKey(this, "muted_role")).title("Muted Role");
-		feedbackSuggestRole = config.add(new RoleConfigKey(this, "feedback_suggest_role")).title("Feedback Role for suggest command");
-		feedbackVoteRole = config.add(new RoleConfigKey(this, "feedback_vote_role")).title("Feedback Role for voting");
-		reportMentionRole = config.add(new RoleConfigKey(this, "report_mention_role")).title("Message Report mention role");
-		feedbackChannel = config.add(new ChannelConfigKey(this, "feedback_channel")).title("Feedback Channel");
-		adminLogChannel = config.add(new ChannelConfigKey(this, "admin_log_channel")).title("Admin Log Channel");
-		adminMessagesChannel = config.add(new ChannelConfigKey(this, "admin_messages_channel")).title("Admin Messages Channel");
-		muteAppealChannel = config.add(new ChannelConfigKey(this, "mute_appeal_channel")).title("Mute Appeal Channel");
-		logNewAccountsChannel = config.add(new ChannelConfigKey(this, "log_new_accounts")).title("Log New Accounts Channel");
-		logLeavingChannel = config.add(new ChannelConfigKey(this, "log_leaving")).title("Log Leaving Channel");
-		reportChannel = config.add(new ChannelConfigKey(this, "report_channel")).title("Report Channel");
-		logIpAddressesChannel = config.add(new ChannelConfigKey(this, "log_ip_addresses_channel")).title("Log IP Addresses Channel");
-		appealChannel = config.add(new ChannelConfigKey(this, "appeal_channel")).title("Appeal Channel");
-		legacyPrefix = config.add(new StringConfigKey(this, "prefix", "!")).title("Command Prefix");
-		macroPrefix = config.add(new StringConfigKey(this, "custom_command_prefix", "!")).title("Macro Prefix");
-		inviteCode = config.add(new StringConfigKey(this, "invite_code", "")).title("Invite Code");
-		lockdownMode = config.add(new BooleanConfigKey(this, "lockdown_mode", false)).title("Lockdown Mode");
-		kickNewAccounts = config.add(new IntConfigKey(this, "kick_new_accounts", 0)).title("Kick New Accounts (in seconds since account created, e.g 604800 == 1 week)");
-		anonymousFeedback = config.add(new BooleanConfigKey(this, "anonymous_feedback", false)).title("Anonymous Feedback");
-		adminsBypassAnonFeedback = config.add(new BooleanConfigKey(this, "anonymous_feedback_admin_bypass", true)).title("Admins Bypass Anonymous Feedback");
-		font = config.add(new StringConfigKey(this, "font", "DejaVu Sans Light").enumValues(App::listFonts)).title("Font");
-		autoMuteUrlShortener = config.add(new IntConfigKey(this, "automute_url_shortener", 0, 0, 43800)).title("Auto-mute url shortener link (minutes)");
-		autoMuteScamUrl = config.add(new IntConfigKey(this, "automute_scam_url", 30, 0, 43800)).title("Auto-mute potential scam link (minutes)");
-		autoPaste = config.add(new BooleanConfigKey(this, "auto_paste", true)).title("Auto-paste text files");
-		reportOptions = config.add(new StringConfigKey(this, "report_options", "Scam | Spam | NSFW | Hacks")).title("Report Options (separated by ' | ')");
-		autoMuteEmbed = config.add(new BooleanConfigKey(this, "auto_mute_embed", true)).title("Post info embed about auto-muted users");
+					if (key != null && entry.getValue() != null && entry.getValue() != JSON.NULL) {
+						configHolders.get(key).read(entry.getValue());
+					}
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
 
 		recentUsers = new ArrayList<>();
 		memberLogThreadCache = new HashMap<>();
 		appealThreadCache = new HashMap<>();
-
-		var updates = new ArrayList<Bson>();
-		config.read(dbid, db.guildData.query(guildId.asLong()).firstDocument(), updates);
-
-		if (!updates.isEmpty()) {
-			db.guildData.query(guildId.asLong()).upsert(updates);
-		}
 
 		postReadSettings();
 		discordJS = new DiscordJS(this, false);
@@ -223,8 +212,49 @@ public class GuildCollections {
 		return db.create(database, ci, w).gc(this);
 	}
 
+	private <T, H extends ConfigHolder<T>> H config(ConfigKey<T, H> key) {
+		var holder = key.type().createHolder(this, key);
+		configHolders.put(key, holder);
+		return holder;
+	}
+
 	public Guild getGuild() {
 		return Objects.requireNonNull(db.app.discordHandler.client.getGuildById(guildId).block());
+	}
+
+	public void saveInfo() {
+		var json = JSONObject.of();
+		json.put("name", name);
+		json.put("icon_url", iconUrl);
+		json.put("owner_id", ownerId.asString());
+		json.put("feedback_number", feedbackNumber);
+		json.put("poll_number", pollNumber);
+
+		try {
+			Files.writeString(paths.info, json.toPrettyString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public void saveConfig() {
+		var json = JSONObject.of();
+
+		for (var key : GuildConfig.MAP.values()) {
+			var holder = configHolders.get(key);
+
+			if (holder != null && holder.save) {
+				json.put(key.id(), holder.write());
+			}
+		}
+
+		App.info(Ansi.of("Saved config of " + name + ": ").append(AnsiJava.of(json)));
+
+		try {
+			Files.writeString(paths.config, json.toPrettyString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	@Nullable
@@ -263,7 +293,7 @@ public class GuildCollections {
 
 	@Override
 	public String toString() {
-		return name.get();
+		return name;
 	}
 
 	public boolean isMM() {
@@ -292,11 +322,8 @@ public class GuildCollections {
 	}
 
 	public String getClickableName() {
-		if (inviteCode.get().isEmpty()) {
-			return name.get();
-		}
-
-		return "[" + name.get() + "](https://discord.gg/" + inviteCode + ")";
+		var inv = inviteCode.get();
+		return inv.isEmpty() ? name : ("[" + name + "](https://discord.gg/" + inv + ")");
 	}
 
 	public Optional<Message> findMessage(@Nullable Snowflake id, @Nullable ChannelInfo priority) {
@@ -322,7 +349,7 @@ public class GuildCollections {
 		return Optional.empty();
 	}
 
-	public void adminLogChannelEmbed(@Nullable UserData user, ChannelConfigKey channelConfig, Consumer<EmbedBuilder> embed) {
+	public void adminLogChannelEmbed(@Nullable UserData user, ChannelConfigType.Holder channelConfig, Consumer<EmbedBuilder> embed) {
 		var builder = EmbedBuilder.create();
 		builder.color(EmbedColor.RED);
 		builder.timestamp(Instant.now());
@@ -377,14 +404,6 @@ public class GuildCollections {
 		json.put("id", channel.asString());
 		json.put("name", getChannelName(channel));
 		return json;
-	}
-
-	public void save(String key) {
-		ConfigKey<?> c = config.map.get(key);
-
-		if (c != null) {
-			c.save();
-		}
 	}
 
 	public AuthLevel getAuthLevel(@Nullable Member member) {
@@ -458,34 +477,40 @@ public class GuildCollections {
 		wrappedGuild = null;
 		roleMap = null;
 		roleList = null;
+		uniqueRoleNameMap = null;
 		macroMap = null;
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
 		App.LOGGER.event(BrainEvents.REFRESHED_GUILD_CACHE);
 		refreshCache();
+		boolean saveInfo = false;
 
 		if (g != null) {
-			String n = g.getName();
+			var n = g.getName();
 
-			if (!name.get().equals(n)) {
-				name.set(n);
-				name.save();
+			if (!name.equals(n)) {
+				name = n;
+				saveInfo = true;
 			}
 
-			String i = g.getIconUrl(Image.Format.PNG).orElse("");
+			var i = g.getIconUrl(Image.Format.PNG).orElse("");
 
-			if (!iconUrl.get().equals(i)) {
-				iconUrl.set(i);
-				iconUrl.save();
+			if (!iconUrl.equals(i)) {
+				iconUrl = i;
+				saveInfo = true;
 			}
 
-			Snowflake o = g.getOwnerId();
+			var o = g.getOwnerId();
 
-			if (!ownerId.get().equals(o)) {
-				ownerId.set(o);
-				ownerId.save();
+			if (!ownerId.equals(o)) {
+				ownerId = o;
+				saveInfo = true;
 			}
+		}
+
+		if (saveInfo) {
+			saveInfo();
 		}
 	}
 
@@ -534,6 +559,7 @@ public class GuildCollections {
 	public synchronized void refreshChannelCache() {
 		channelMap = null;
 		channelList = null;
+		uniqueChannelNameMap = null;
 	}
 
 	public synchronized Map<Snowflake, ChannelInfo> getChannelMap() {
@@ -567,37 +593,89 @@ public class GuildCollections {
 		return channelList;
 	}
 
+	public Map<String, ChannelInfo> getUniqueChannelNameMap() {
+		if (uniqueChannelNameMap == null) {
+			uniqueChannelNameMap = new LinkedHashMap<>();
+
+			for (var c : getChannelMap().values()) {
+				var name = c.getName().toLowerCase().replace(' ', '-');
+				var key = name;
+
+				for (int i = 2; uniqueChannelNameMap.containsKey(key); i++) {
+					key = name + '-' + i;
+				}
+
+				uniqueChannelNameMap.put(key, c);
+			}
+		}
+
+		return uniqueChannelNameMap;
+	}
+
+	public List<CachedRole> getRoleList() {
+		if (roleList == null) {
+			roleList = new ArrayList<>();
+			var adminRoleId = adminRole.get().asLong();
+			CachedRole adminRoleW = null;
+
+			try {
+				for (var r : getGuild().getRoles()
+						.filter(r -> !r.isEveryone())
+						.sort(Comparator.comparing(Role::getRawPosition).thenComparing(Role::getId).reversed())
+						.toStream()
+						.toList()) {
+					var role = new CachedRole(this, r, roleList.size());
+
+					if (role.id.asLong() == adminRoleId) {
+						adminRoleW = role;
+					}
+
+					roleList.add(role);
+				}
+			} catch (Exception ex) {
+			}
+
+			if (adminRoleW != null) {
+				for (var role : roleList) {
+					if (role.index <= adminRoleW.index) {
+						role.adminRole = true;
+					}
+				}
+			}
+		}
+
+		return roleList;
+	}
+
 	public Map<Snowflake, CachedRole> getRoleMap() {
 		if (roleMap == null) {
 			roleMap = new LinkedHashMap<>();
 
-			try {
-				getGuild().getRoles()
-						.filter(r -> !r.isEveryone())
-						.sort(Comparator.comparing(Role::getRawPosition).thenComparing(Role::getId).reversed())
-						.toStream()
-						.forEach(r -> roleMap.put(r.getId(), new CachedRole(this, r)));
-			} catch (Exception ex) {
-			}
-
-			roleList = new ArrayList<>(roleMap.values());
-
-			CachedRole adminRoleW = roleMap.get(adminRole.get());
-			int i = adminRoleW == null ? -1 : roleList.indexOf(adminRoleW);
-
-			if (i != -1) {
-				for (int j = 0; j <= i; j++) {
-					roleList.get(j).adminRole = true;
-				}
+			for (var r : getRoleList()) {
+				roleMap.put(r.id, r);
 			}
 		}
 
 		return roleMap;
 	}
 
-	public List<CachedRole> getRoleList() {
-		getRoleMap();
-		return roleList;
+	public Map<String, CachedRole> getUniqueRoleNameMap() {
+		if (uniqueRoleNameMap == null) {
+			uniqueRoleNameMap = new LinkedHashMap<>();
+
+			for (var c : getRoleList()) {
+				var name = c.name.toLowerCase().replace(' ', '-');
+				var key = name;
+
+				for (int i = 2; uniqueRoleNameMap.containsKey(key); i++) {
+					key = name + '-' + i;
+				}
+
+				uniqueRoleNameMap.put(key, c);
+			}
+		}
+
+		return uniqueRoleNameMap;
 	}
 
 	public void auditLog(GnomeAuditLogEntry.Builder builder) {
@@ -772,7 +850,7 @@ public class GuildCollections {
 		}
 	}
 
-	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfigKey config) {
+	private Snowflake memberLogThread(int type, Map<Long, Snowflake> cache, @Nullable UserData user, ChannelConfigType.Holder config) {
 		if (user == null) {
 			return Utils.NO_SNOWFLAKE;
 		}
@@ -842,16 +920,18 @@ public class GuildCollections {
 					).subscribe();
 				}
 
-				if (adminRole.isSet()) {
+				var adminRole = this.adminRole.get();
+
+				if (adminRole.asLong() != 0L) {
 					thread.createMessage("...").withAllowedMentions(AllowedMentions.builder()
-							.allowRole(adminRole.get())
+							.allowRole(adminRole)
 							.build()
 					).flatMap(m -> m.edit(MessageEditSpec.builder()
 							.allowedMentionsOrNull(AllowedMentions.builder()
-									.allowRole(adminRole.get())
+									.allowRole(adminRole)
 									.build()
 							)
-							.contentOrNull("Adding <@&" + adminRole.get().asString() + ">...")
+							.contentOrNull("Adding <@&" + adminRole.asString() + ">...")
 							.build()
 					)).flatMap(Message::delete).subscribe();
 				}
@@ -884,5 +964,10 @@ public class GuildCollections {
 		} else {
 			db.app.schedule(duration, ScheduledTask.CLOSE_THREAD, guildId.asLong(), threadId.asLong(), 0L, "");
 		}
+	}
+
+	public ConfigHolder<?> getConfigHolder(String key) {
+		var k = GuildConfig.get(key);
+		return k == null ? null : configHolders.get(k);
 	}
 }

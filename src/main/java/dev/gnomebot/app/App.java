@@ -3,7 +3,6 @@ package dev.gnomebot.app;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.ScheduledTask;
-import dev.gnomebot.app.data.config.EnumValue;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
@@ -35,11 +34,8 @@ import discord4j.common.util.Snowflake;
 import discord4j.rest.http.client.ClientException;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.GraphicsEnvironment;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Predicate;
@@ -141,7 +137,7 @@ public class App implements Runnable {
 		webServer.add("api/guild/info/:guild", GuildHandlers::info).member().cacheHours(1);
 		webServer.add("api/guild/banner/:guild", GuildHandlers::banner).noAuth().cacheSeconds(1);
 		webServer.add("api/guild/settings/basic/:guild", GuildHandlers::getSettings).member();
-		webServer.add("api/guild/settings/basic/:guild/:setting", GuildHandlers::updateSetting).patch().owner();
+		webServer.add("api/guild/settings/basic/:guild/:key", GuildHandlers::updateSetting).patch().owner();
 		webServer.add("api/guild/icon/:guild/:size", GuildHandlers::icon).noAuth().cacheDays(1);
 		webServer.add("api/guild/file/:channel/:id/:filename", PasteHandlers::file).noAuth().cacheMinutes(5);
 		webServer.add("paste/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
@@ -347,17 +343,6 @@ public class App implements Runnable {
 		for (GuildCollections gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);
 		}
-	}
-
-	public static List<EnumValue> listFonts() {
-		var fonts = new ArrayList<EnumValue>();
-
-		for (var font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
-			fonts.add(new EnumValue(font.getName(), font.getName()));
-		}
-
-		fonts.sort(null);
-		return fonts;
 	}
 
 	public void schedule(Duration timer, String type, long guild, long channel, long user, String content) {

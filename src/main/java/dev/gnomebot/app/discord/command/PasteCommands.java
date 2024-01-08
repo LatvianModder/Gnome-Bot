@@ -4,6 +4,7 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
@@ -50,8 +51,8 @@ public class PasteCommands extends ApplicationCommands {
 		if (urlm.find()) {
 			event.acknowledge();
 
-			Snowflake channelId = Snowflake.of(urlm.group(1));
-			Snowflake attachmentId = Snowflake.of(urlm.group(2));
+			Snowflake channelId = Utils.snowflake(urlm.group(1));
+			Snowflake attachmentId = Utils.snowflake(urlm.group(2));
 			String filename = urlm.group(3);
 
 			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename, "");

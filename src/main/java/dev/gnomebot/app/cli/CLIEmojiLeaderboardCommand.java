@@ -50,8 +50,8 @@ public class CLIEmojiLeaderboardCommand {
 			Matcher matcher = Emojis.GUILD_EMOJI_PATTERN_GROUPS.matcher(message.getContent());
 
 			while (matcher.find()) {
-				EmojiEntry entry = emojiMap.computeIfAbsent(matcher.group(1).toLowerCase(), EmojiEntry::new);
-				Snowflake id = Snowflake.of(matcher.group(2));
+				var entry = emojiMap.computeIfAbsent(matcher.group(1).toLowerCase(), EmojiEntry::new);
+				var id = Utils.snowflake(matcher.group(2));
 
 				if (entry.id == null || id.getTimestamp().toEpochMilli() > entry.id.getTimestamp().toEpochMilli()) {
 					entry.id = id;
@@ -71,7 +71,7 @@ public class CLIEmojiLeaderboardCommand {
 				.sorted(Comparator.comparingLong(EmojiEntry::getOrder))
 				.limit(50L).toList();
 
-		Font font = new Font(event.gc.font.get(), Font.BOLD, 36);
+		Font font = event.gc.font.create(36);
 		FontMetrics metrics = new Canvas().getFontMetrics(font);
 
 		int w = 0;

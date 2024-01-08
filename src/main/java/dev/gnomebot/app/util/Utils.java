@@ -49,6 +49,11 @@ public class Utils {
 	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
 	public static final Route GET_DM_CHANNELS = Route.get("/users/@me/channels");
 
+	@SuppressWarnings("unchecked")
+	public static <T> T cast(Object value) {
+		return (T) value;
+	}
+
 	public static String createToken() {
 		var bytes = new byte[30];
 		MathUtils.RANDOM.nextBytes(bytes);
@@ -113,7 +118,7 @@ public class Utils {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
 			String[] s1 = s.substring(1, s.length() - 1).split(":", 3);
-			return ReactionEmoji.custom(Snowflake.of(s1[2]), s1[1], s1[0].equals("a"));
+			return ReactionEmoji.custom(Utils.snowflake(s1[2]), s1[1], s1[0].equals("a"));
 		} else {
 			return ReactionEmoji.unicode(s);
 		}
@@ -232,5 +237,16 @@ public class Utils {
 
 	public static String permsToString(Permission[] perms) {
 		return Arrays.stream(perms).map(Utils::permName).collect(Collectors.joining(", "));
+	}
+
+	public static Snowflake snowflake(String string) {
+		if (!string.isEmpty() && !string.equals("0")) {
+			try {
+				return Snowflake.of(string);
+			} catch (Exception ignore) {
+			}
+		}
+
+		return NO_SNOWFLAKE;
 	}
 }

@@ -74,7 +74,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 				for (var path : pingFiles) {
 					futures.add(CompletableFuture.supplyAsync(() -> {
-						var userId = Snowflake.of(path.getFileName().toString().replace(".txt", ""));
+						var userId = Utils.snowflake(path.getFileName().toString().replace(".txt", ""));
 
 						try {
 							return Pair.of(userId, PingBuilder.compile(db, userId, Files.readString(path).trim(), false));

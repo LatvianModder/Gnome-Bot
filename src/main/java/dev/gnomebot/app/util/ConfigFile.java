@@ -52,8 +52,7 @@ public class ConfigFile {
 	}
 
 	public Snowflake getSnowflake(String key) {
-		String s = getString(key, "");
-		return s.isEmpty() || s.equals("0") ? Utils.NO_SNOWFLAKE : Snowflake.of(s);
+		return Utils.snowflake(getString(key, ""));
 	}
 
 	public int getInt(String key, int def) {

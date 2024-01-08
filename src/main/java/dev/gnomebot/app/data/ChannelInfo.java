@@ -108,6 +108,10 @@ public final class ChannelInfo {
 		}
 	}
 
+	public boolean isXpSet() {
+		return getXp() > 0;
+	}
+
 	public RestChannel getRest() {
 		return rest.get();
 	}

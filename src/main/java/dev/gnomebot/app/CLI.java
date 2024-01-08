@@ -7,13 +7,11 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
-import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.ThreadChannel;
 
 import java.lang.management.ManagementFactory;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Scanner;
 
@@ -46,16 +44,15 @@ public class CLI extends Thread {
 					case "debug" -> debug();
 					case "token" -> App.info(Utils.createToken());
 					case "short_token" -> App.info(Utils.createShortToken());
-					case "leave_guild" -> leaveGuild(Snowflake.of(input[1]));
+					case "leave_guild" -> leaveGuild(Utils.snowflake(input[1]));
 					case "remove_modifiers" -> App.info(CharMap.MODIFIER_PATTERN.matcher(nonInput).replaceAll(""));
 					case "colors" -> colors();
 					case "echo_cli" -> echoCli(nonInput);
 					case "guilds" -> printGuilds();
-					case "tt1" -> testThread1(Snowflake.of(input[1]));
+					case "tt1" -> testThread1(Utils.snowflake(input[1]));
 					case "tt2" -> testThread2(nonInput);
 					case "scheduled" -> app.printScheduled();
-					case "close_thread" -> closeThread(Snowflake.of(input[1]), Integer.parseInt(input[2]));
-					case "guild_config" -> guildConfig(Snowflake.of(input[1]), input[2], input[3]);
+					case "close_thread" -> closeThread(Utils.snowflake(input[1]), Integer.parseInt(input[2]));
 					default -> Ansi.log("Unknown command: " + input[0]);
 				}
 			} catch (IllegalArgumentException ex) {
@@ -124,22 +121,6 @@ public class CLI extends Thread {
 			gc.saveMacroMap();
 		}
 		 */
-
-		for (var g : app.db.allGuilds()) {
-			var json = JSONObject.of();
-			var info = json.addObject("info");
-			var config = json.addObject("config");
-
-			for (var c : g.config.map.values()) {
-				if (c.internal) {
-					info.put(c.id, c.write());
-				} else {
-					config.put(c.id, c.write());
-				}
-			}
-
-			Files.writeString(g.paths.config, json.toPrettyString());
-		}
 
 		App.info("+ Done " + count);
 	}
@@ -243,12 +224,5 @@ public class CLI extends Thread {
 		var channel = app.discordHandler.client.getChannelById(threadId).cast(ThreadChannel.class).block();
 		var gc = app.db.guild(channel.getGuildId());
 		gc.closeThread(threadId, Duration.ofSeconds(seconds));
-	}
-
-	private void guildConfig(Snowflake guildId, String config, String value) {
-		// guild_config 719235642579746827 global_xp 10
-		var c = app.db.guild(guildId).config.map.get(config);
-		c.deserialize(value);
-		c.save();
 	}
 }

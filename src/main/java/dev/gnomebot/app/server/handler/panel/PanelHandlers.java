@@ -29,7 +29,7 @@ public class PanelHandlers {
 			AuthLevel authLevel = gc.getAuthLevel(request.token.userId);
 
 			if (authLevel.is(AuthLevel.MEMBER)) {
-				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId.get(), authLevel));
+				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId, authLevel));
 			}
 		}
 

@@ -70,7 +70,7 @@ public class MuteCommand extends ApplicationCommands {
 			throw error("User not found!");
 		}
 
-		event.context.gc.mutedRole.add(user.getId(), "Muted");
+		event.context.gc.mutedRole.role().ifPresent(r -> r.add(user.getId(), "Muted"));
 		event.context.gc.unmute(user.getId(), seconds, reason);
 
 		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
@@ -131,7 +131,7 @@ public class MuteCommand extends ApplicationCommands {
 		if (context.gc.mutedRole.is(m)) {
 			return;
 		} else {
-			context.gc.mutedRole.add(m.getId(), "Muted");
+			context.gc.mutedRole.role().ifPresent(r -> r.add(m.getId(), "Muted"));
 		}
 
 		List<LayoutComponent> adminButtons = new ArrayList<>();

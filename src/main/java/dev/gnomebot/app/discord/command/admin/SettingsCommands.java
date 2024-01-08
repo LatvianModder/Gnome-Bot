@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.command.admin;
 
-import dev.gnomebot.app.App;
+import dev.gnomebot.app.data.config.GuildConfig;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
@@ -11,47 +11,47 @@ public class SettingsCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderOwner();
 
-		var key = event.context.gc.config.map.get(event.get("key").asString(""));
+		var holder = event.context.gc.getConfigHolder(event.get("key").asString(""));
 
-		if (key != null && !key.internal) {
-			var value = event.context.gc.config.map.get(event.get("value").asString(""));
+		if (holder != null) {
+			var value = event.get("value").asString("");
+			var error = holder.validate(0, value);
 
-			event.respond("WIP");
+			if (error.isEmpty()) {
+				holder.deserialize(0, value);
+				event.respond("Updated config value");
+			} else {
+				throw new GnomeException(error);
+			}
+		} else {
+			throw new GnomeException("Config key not found!");
 		}
-
-		throw new GnomeException("Config key not found!");
 	}
 
 	public static void get(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		var key = event.context.gc.config.map.get(event.get("key").asString(""));
+		var holder = event.context.gc.getConfigHolder(event.get("key").asString(""));
 
-		if (key != null && !key.internal) {
-			event.respond(key.serialize());
+		if (holder != null) {
+			event.respond(holder.serialize(0));
+		} else {
+			throw new GnomeException("Config key not found!");
 		}
-
-		throw new GnomeException("Config key not found!");
 	}
 
 	public static void suggestKey(ChatCommandSuggestionEvent event) {
-		for (var key : event.context.gc.config.map.values()) {
-			if (!key.internal) {
-				event.suggest(key.id, key.serialize());
-			}
+		for (var key : GuildConfig.MAP.values()) {
+			event.suggest(key.title(), key.id());
 		}
 	}
 
 	public static void suggestValue(ChatCommandSuggestionEvent event) {
-		var key = event.context.gc.config.map.get(event.get("key").asString(""));
+		var key = GuildConfig.get(event.get("key").asString(""));
 
-		App.info(key);
-
-		if (key != null && !key.internal && key.enumValues != null) {
-			App.info(key.enumValues.get());
-
-			for (var value : key.enumValues.get()) {
+		if (key != null && key.type().hasEnumValues()) {
+			for (var value : key.type().getEnumValues(event.context.gc)) {
 				event.suggest(value.name(), value.value());
 			}
 		}

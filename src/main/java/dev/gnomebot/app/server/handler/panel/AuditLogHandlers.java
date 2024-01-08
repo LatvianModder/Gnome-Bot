@@ -35,7 +35,7 @@ public class AuditLogHandlers {
 	}
 
 	public static Response offensesOf(ServerRequest request) {
-		var userId = Snowflake.of(request.variable("user"));
+		var userId = request.getSnowflake("user");
 		var user = request.app.discordHandler.getUser(userId);
 		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses of " + (user == null ? "Unknown User" : user.getUsername()) + " - " + request.gc);
 		root.content.a("/panel/" + request.gc.guildId.asString() + "/offenses", "< Back").classes("back");

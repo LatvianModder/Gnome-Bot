@@ -45,10 +45,10 @@ public class DM {
 			try {
 				for (String line : Files.readAllLines(AppPaths.DATA_DM_CHANNELS)) {
 					String[] split = line.split(":", 3);
-					Snowflake userId = Snowflake.of(split[0].trim());
-					Snowflake messageId = Snowflake.of(split[1].trim());
-					Snowflake channelId = split.length == 3 ? Snowflake.of(split[2].trim()) : Utils.NO_SNOWFLAKE;
-					DMChannel dm = new DMChannel(userId, messageId, channelId.asLong() == 0L ? Utils.NO_SNOWFLAKE : channelId);
+					var userId = Utils.snowflake(split[0].trim());
+					var messageId = Utils.snowflake(split[1].trim());
+					var channelId = split.length == 3 ? Utils.snowflake(split[2].trim()) : Utils.NO_SNOWFLAKE;
+					var dm = new DMChannel(userId, messageId, channelId.asLong() == 0L ? Utils.NO_SNOWFLAKE : channelId);
 					DM_CHANNELS_USER.put(userId, dm);
 					DM_CHANNELS_MESSAGE.put(messageId, dm);
 				}

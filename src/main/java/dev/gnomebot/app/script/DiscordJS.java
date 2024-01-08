@@ -52,8 +52,8 @@ public class DiscordJS {
 
 			try {
 				TypeWrappers typeWrappers = context.getTypeWrappers();
-				typeWrappers.register(Snowflake.class, o -> o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Snowflake.of(o.toString()));
-				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Snowflake.of(o.toString())));
+				typeWrappers.register(Snowflake.class, o -> o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString()));
+				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString())));
 				typeWrappers.register(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
 				typeWrappers.register(MessageBuilder.class, MessageBuilder::of);
 				typeWrappers.register(EmbedBuilder.class, EmbedBuilder::of);

@@ -121,7 +121,7 @@ public class PasteHandlers {
 
 	public static Response pasteRaw(ServerRequest request) throws Exception {
 		var id0 = request.variable("id").split("!", 2);
-		var id = Snowflake.of(id0[0]);
+		var id = Utils.snowflake(id0[0]);
 
 		Paste paste = request.app.db.pastes.query(id.asLong()).first();
 
@@ -181,7 +181,7 @@ public class PasteHandlers {
 
 	public static Response paste(ServerRequest request) throws Exception {
 		var id0 = request.variable("id").split("!", 2);
-		var id = Snowflake.of(id0[0]);
+		var id = Utils.snowflake(id0[0]);
 		String subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 		byte[] contents;
 		String filename;

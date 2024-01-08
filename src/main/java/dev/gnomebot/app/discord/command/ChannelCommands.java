@@ -17,7 +17,6 @@ import org.bson.Document;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -99,7 +98,7 @@ public class ChannelCommands extends ApplicationCommands {
 	private static void listXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 
-		List<ChannelInfo> channelsWithXp = event.context.gc.getChannelList().stream().filter(s -> s.getXp() > 0L).toList();
+		var channelsWithXp = event.context.gc.getChannelList().stream().filter(ChannelInfo::isXpSet).toList();
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Channel XP:");
@@ -147,7 +146,6 @@ public class ChannelCommands extends ApplicationCommands {
 		event.context.checkSenderAdmin();
 		int xp = Math.max(0, event.get("xp").asInt());
 		event.context.gc.globalXp.set(xp);
-		event.context.gc.globalXp.save();
 		event.respond("All channel XP set to " + xp);
 	}
 

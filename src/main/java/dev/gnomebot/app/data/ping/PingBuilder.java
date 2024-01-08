@@ -3,6 +3,7 @@ package dev.gnomebot.app.data.ping;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.common.util.Snowflake;
 
@@ -22,7 +23,7 @@ public class PingBuilder {
 
 	private void set(LinkedHashSet<Snowflake> list, boolean add, String id) {
 		try {
-			Snowflake s = Snowflake.of(id);
+			Snowflake s = Utils.snowflake(id);
 
 			if (add) {
 				list.add(s);

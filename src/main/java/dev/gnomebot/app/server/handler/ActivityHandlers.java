@@ -24,7 +24,6 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Date;
@@ -216,7 +215,7 @@ public class ActivityHandlers {
 		}
 
 		ImageCanvas canvas = new ImageCanvas();
-		canvas.setFont(new Font(request.gc.font.get(), Font.PLAIN, 36));
+		canvas.setFont(request.gc.font.create(36));
 
 		int w = 0;
 
@@ -274,7 +273,7 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
 		}
 
-		long member = Snowflake.of(request.variable("member")).asLong();
+		long member = Utils.snowflake(request.variable("member")).asLong();
 		long channel = request.query("channel").asLong();
 
 		var json = JSONObject.of();
@@ -387,7 +386,7 @@ public class ActivityHandlers {
 		for (MessageInfo mi : channels.values()) {
 			mi.messages = new int[weeks];
 			mi.totalMessages = 0;
-			filter.add(Filters.eq("channel", Snowflake.of(mi.id).asLong()));
+			filter.add(Filters.eq("channel", Utils.snowflake(mi.id).asLong()));
 		}
 
 		for (DiscordMessageCount mc : request.gc.messageCount.query().filter(Filters.or(filter))) {
@@ -418,7 +417,7 @@ public class ActivityHandlers {
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
-		json.put("name", request.gc.name.get());
+		json.put("name", request.gc.name);
 		json.put("weeks", w);
 
 		var infos = json.addArray("channels");
@@ -530,7 +529,7 @@ public class ActivityHandlers {
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
-		json.put("name", request.gc.name.get());
+		json.put("name", request.gc.name);
 		json.put("weeks", w);
 
 		var infos = json.addArray("members");
@@ -680,7 +679,7 @@ public class ActivityHandlers {
 		}
 
 		ImageCanvas canvas = new ImageCanvas();
-		canvas.setFont(new Font(request.gc.font.get(), Font.BOLD, 36));
+		canvas.setFont(request.gc.font.create(36));
 
 		int w = 0;
 

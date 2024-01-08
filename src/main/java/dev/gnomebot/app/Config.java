@@ -3,6 +3,7 @@ package dev.gnomebot.app;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.URLRequest;
+import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 
 import java.nio.file.Path;
@@ -70,7 +71,7 @@ public class Config {
 
 		for (String s : c.getStringList("trusted")) {
 			try {
-				Snowflake id = Snowflake.of(s);
+				var id = Utils.snowflake(s);
 
 				if (id.asLong() != 0L) {
 					trusted.add(id);

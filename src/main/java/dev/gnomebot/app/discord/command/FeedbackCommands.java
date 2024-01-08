@@ -60,9 +60,8 @@ public class FeedbackCommands extends ApplicationCommands {
 
 		String suggestion = event.get("feedback").asString();
 
-		int number = event.context.gc.feedbackNumber.get() + 1;
-		event.context.gc.feedbackNumber.set(number);
-		event.context.gc.feedbackNumber.save();
+		int number = ++event.context.gc.feedbackNumber;
+		event.context.gc.saveInfo();
 
 		event.context.referenceMessage = false;
 
@@ -113,7 +112,7 @@ public class FeedbackCommands extends ApplicationCommands {
 
 		int id = event.get("id").asInt();
 
-		if (id <= 0 || id > event.context.gc.feedbackNumber.get()) {
+		if (id <= 0 || id > event.context.gc.feedbackNumber) {
 			throw error("Suggestion not found!");
 		}
 

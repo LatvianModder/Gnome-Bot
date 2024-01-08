@@ -39,7 +39,7 @@ public class InfoHandlers {
 
 	public static Response user(ServerRequest request) {
 		var size = request.query("size").asString("128");
-		var id = Snowflake.of(request.variable("user"));
+		var id = request.getSnowflake("user");
 
 		// App.info("Getting info for " + id.asString());
 
@@ -69,7 +69,7 @@ public class InfoHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("size_too_large");
 		}
 
-		Snowflake id = Snowflake.of(request.variable("user"));
+		Snowflake id = request.getSnowflake("user");
 		String url;
 
 		int sizeToRetrieve = 4096;
@@ -115,7 +115,7 @@ public class InfoHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("size_too_large");
 		}
 
-		Snowflake id = Snowflake.of(request.variable("emoji"));
+		Snowflake id = request.getSnowflake("emoji");
 		String url = ImageUtil.getUrl("emojis/" + id.asString(), Image.Format.PNG);
 
 		int sizeToRetrieve = 4096;

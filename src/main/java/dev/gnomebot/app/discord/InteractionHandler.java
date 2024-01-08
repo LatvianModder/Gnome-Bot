@@ -30,6 +30,7 @@ import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.OngoingAction;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -323,23 +324,23 @@ public class InteractionHandler {
 	private static void button(ComponentEventWrapper event) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
+			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
 			case "callback" -> callback(event, event.path[1]);
 			case "stop" -> stopOngoingAction(event, event.path[1]);
-			case "message-action" -> GnomeMessageInteraction.callback(event, Snowflake.of(event.path[1]), event.path[2]);
-			case "member-action" -> GnomeMemberInteraction.callback(event, Snowflake.of(event.path[1]), event.path[2]);
-			case "unmute" -> UnmuteCommand.unmuteButtonCallback(event, Snowflake.of(event.path[1]));
-			case "macro" -> MacroCommands.macroButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], null);
-			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Snowflake.of(event.path[3]));
+			case "message-action" -> GnomeMessageInteraction.callback(event, Utils.snowflake(event.path[1]), event.path[2]);
+			case "member-action" -> GnomeMemberInteraction.callback(event, Utils.snowflake(event.path[1]), event.path[2]);
+			case "unmute" -> UnmuteCommand.unmuteButtonCallback(event, Utils.snowflake(event.path[1]));
+			case "macro" -> MacroCommands.macroButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], null);
+			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Utils.snowflake(event.path[3]));
 			case "feedback" -> FeedbackCommands.feedbackButtonCallback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
-			case "warn" -> WarnCommand.warnButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
-			case "kick" -> KickCommand.kickButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
-			case "ban" -> BanCommand.banButtonCallback(event, Snowflake.of(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "warn" -> WarnCommand.warnButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "kick" -> KickCommand.kickButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "ban" -> BanCommand.banButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "refresh_modpack" -> ModpackCommand.refreshCallback(event);
 			case "pings" -> PingsCommands.edit(event);
 			case "pings-help" -> PingsCommands.help(event);
 			case "regex-help" -> PingsCommands.regexHelp(event);
-			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, Snowflake.of(event.path[1]));
+			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, Utils.snowflake(event.path[1]));
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -350,10 +351,10 @@ public class InteractionHandler {
 	private static void selectMenu(ComponentEventWrapper event, List<String> values) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
+			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
 			case "poll" -> PollCommand.pollMenuCallback(event, Integer.parseInt(event.path[1]), values.get(0));
-			case "punish" -> punishMenu(event, Snowflake.of(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
-			case "report" -> ReportHandler.report(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]), values.get(0));
+			case "punish" -> punishMenu(event, Utils.snowflake(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
+			case "report" -> ReportHandler.report(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]), values.get(0));
 			default -> {
 				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
@@ -364,16 +365,16 @@ public class InteractionHandler {
 	private static void modalSubmit(ModalEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Snowflake.of(event.path[1]));
+			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
 			case "modal-test" -> event.respond("Modal: " + event);
 			case "modmail" -> ModmailCommand.modmailCallback(event);
-			case "report" -> ReportCommand.reportCallback(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
+			case "report" -> ReportCommand.reportCallback(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]));
 			case "feedback" -> FeedbackCommands.submitCallback(event);
-			case "ping-test" -> PingsCommands.testCallback(event, Snowflake.of(event.path[1]));
+			case "ping-test" -> PingsCommands.testCallback(event, Utils.snowflake(event.path[1]));
 			case "add-macro" -> MacroCommands.addMacroCallback(event, event.path[1]);
 			case "edit-macro" -> MacroCommands.editMacroCallback(event, event.path[1]);
 			case "pings" -> PingsCommands.editCallback(event);
-			case "webhook" -> WebhookCommands.executeCallback(event, Snowflake.of(event.path[1]), Snowflake.of(event.path[2]));
+			case "webhook" -> WebhookCommands.executeCallback(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]));
 			case "create-paste" -> PasteCommands.createCallback(event);
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);

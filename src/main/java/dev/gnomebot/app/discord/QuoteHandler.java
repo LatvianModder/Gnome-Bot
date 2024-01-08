@@ -51,9 +51,9 @@ public class QuoteHandler {
 
 		while (quoteMatcher.find()) {
 			var url = quoteMatcher.group();
-			var qguildId = Snowflake.of(quoteMatcher.group(1));
-			var qchannelId = Snowflake.of(quoteMatcher.group(2));
-			var qmessageId = Snowflake.of(quoteMatcher.group(3));
+			var qguildId = Utils.snowflake(quoteMatcher.group(1));
+			var qchannelId = Utils.snowflake(quoteMatcher.group(2));
+			var qmessageId = Utils.snowflake(quoteMatcher.group(3));
 
 			if (init) {
 				mentionsAdmin = gc.adminLogChannel.isSet() && gc.adminRole.isSet() && gc.adminRole.isMentioned(message);

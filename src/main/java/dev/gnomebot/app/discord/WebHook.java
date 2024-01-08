@@ -38,7 +38,7 @@ public class WebHook implements PingDestination {
 			token = "";
 			threadId = "";
 		} else {
-			id = Snowflake.of(s[0]);
+			id = Utils.snowflake(s[0]);
 			token = s[1];
 			threadId = s.length >= 3 ? s[2] : "";
 		}
@@ -91,7 +91,7 @@ public class WebHook implements PingDestination {
 					.block();
 
 			if (result.containsKey("id")) {
-				return Snowflake.of(result.asString("id"));
+				return Utils.snowflake(result.asString("id"));
 			}
 
 			return Utils.NO_SNOWFLAKE;

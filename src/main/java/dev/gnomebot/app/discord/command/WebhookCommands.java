@@ -123,7 +123,7 @@ public class WebhookCommands extends ApplicationCommands {
 
 		if (editId.asLong() == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));
-			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl.get()));
+			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl));
 			Snowflake id = webHook.execute(message);
 
 			if (id.asLong() != 0L) {

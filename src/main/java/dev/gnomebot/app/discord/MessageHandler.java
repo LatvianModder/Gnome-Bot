@@ -495,8 +495,8 @@ public class MessageHandler {
 		context.message = message;
 		context.sender = member;
 
-		if (gc.regularMessages.get() > 0 && totalMessages >= gc.regularMessages.get() && !gc.regularRole.is(member)) {
-			gc.regularRole.add(member.getId(), "Reached Regular");
+		if (gc.regularRole.isSet() && gc.regularMessages.get() > 0 && totalMessages >= gc.regularMessages.get()) {
+			gc.regularRole.role().ifPresent(r -> r.add(member, "Reached Regular"));
 		}
 
 		if (!member.isBot() && !authLevel.is(AuthLevel.ADMIN)) {
@@ -520,7 +520,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Potential Scam URL: " + scam, s -> s);
+					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Potential Scam URL: " + scam, null);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
@@ -547,7 +547,7 @@ public class MessageHandler {
 					message.delete().subscribe();
 					return;
 				} else {
-					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "URL Shortener Link", s -> s);
+					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "URL Shortener Link", null);
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.URL_SHORTENER)
@@ -559,7 +559,7 @@ public class MessageHandler {
 			}
 
 			if (member.getRoleIds().isEmpty() && INVITE_PATTERN.matcher(contentNoEmojis).find()) {
-				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Suspicious Invite", s -> s);
+				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Suspicious Invite", null);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.DISCORD_INVITE)
 						.channel(channelInfo.id.asLong())
@@ -570,7 +570,7 @@ public class MessageHandler {
 			}
 
 			if ((flags & DiscordMessage.FLAG_IP) != 0L) {
-				handler.suspiciousMessageModLog(gc, gc.logIpAddressesChannel, discordMessage, member, "IP Address", s -> s);
+				handler.suspiciousMessageModLog(gc, gc.logIpAddressesChannel, discordMessage, member, "IP Address", null);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.IP_ADDRESS)
 						.channel(channelInfo.id.asLong())
@@ -589,10 +589,12 @@ public class MessageHandler {
 			App.info("Failed to read message: " + ex);
 		}
 
+		boolean adminRoleMentioned = gc.adminRole.isMentioned(message);
+
 		if (handleQuotes == -1) {
 			message.delete().subscribe();
 			return;
-		} else if (handleQuotes == 0 && gc.adminLogChannel.isSet() && !member.isBot() && gc.adminRole.isMentioned(message)) {
+		} else if (handleQuotes == 0 && adminRoleMentioned && gc.adminLogChannel.isSet() && !member.isBot()) {
 			var builder = new StringBuilder("[Admin ping:](");
 			QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId());
 			builder.append(")\n\n");
@@ -626,7 +628,7 @@ public class MessageHandler {
 			}
 		}
 
-		if (gc.adminRole.isMentioned(message)) {
+		if (adminRoleMentioned) {
 			var c = new StringBuilder(content);
 
 			if (referenceMessage != null) {
@@ -747,9 +749,9 @@ public class MessageHandler {
 				} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
 					channelInfo.createMessage("no u").subscribe();
 				} else if (contentNoEmojis.contains("help")) {
-					channelInfo.createMessage("Try `" + gc.legacyPrefix + "help`").subscribe();
+					channelInfo.createMessage("Try `" + gc.legacyPrefix.get() + "help`").subscribe();
 				} else if (contentNoEmojis.contains("prefix")) {
-					channelInfo.createMessage("Current command prefix is `" + gc.legacyPrefix + "`").subscribe();
+					channelInfo.createMessage("Current command prefix is `" + gc.legacyPrefix.get() + "`").subscribe();
 				} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
 					channelInfo.createMessage("Hi").subscribe();
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
@@ -777,7 +779,7 @@ public class MessageHandler {
 	}
 
 	private static boolean handleLegacyCommand(CommandContext context, String content) {
-		String prefix = context.gc.legacyPrefix.get();
+		var prefix = context.gc.legacyPrefix.get();
 
 		if (content.startsWith(prefix) && content.length() > prefix.length()) {
 			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));

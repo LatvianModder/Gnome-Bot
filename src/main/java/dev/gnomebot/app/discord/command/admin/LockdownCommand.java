@@ -30,7 +30,6 @@ public class LockdownCommand extends ApplicationCommands {
 
 		if (wasOff) {
 			event.context.gc.lockdownMode.set(true);
-			event.context.gc.lockdownMode.save();
 
 			event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LOCKDOWN_ENABLED)
 					.source(event.context.sender)
@@ -77,7 +76,6 @@ public class LockdownCommand extends ApplicationCommands {
 			}
 
 			event.context.gc.lockdownMode.set(false);
-			event.context.gc.lockdownMode.save();
 
 			event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LOCKDOWN_DISABLED)
 					.source(event.context.sender)

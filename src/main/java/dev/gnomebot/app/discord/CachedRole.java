@@ -3,6 +3,8 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Permission;
@@ -15,20 +17,22 @@ public class CachedRole {
 	public final GuildCollections gc;
 	public final Snowflake id;
 	public final String name;
+	public final int index;
 	public final int rawPosition;
 	public final Color color;
 	public final PermissionSet permissions;
 	public final boolean ownerRole;
 	public boolean adminRole;
 
-	public CachedRole(GuildCollections g, Role role) {
-		gc = g;
-		id = role.getId();
-		name = role.getName();
-		rawPosition = role.getRawPosition();
-		color = role.getColor();
-		permissions = role.getPermissions().contains(Permission.ADMINISTRATOR) ? PermissionSet.all() : role.getPermissions();
-		ownerRole = permissions.contains(Permission.ADMINISTRATOR);
+	public CachedRole(GuildCollections g, Role role, int index) {
+		this.gc = g;
+		this.id = role.getId();
+		this.name = role.getName();
+		this.index = index;
+		this.rawPosition = role.getRawPosition();
+		this.color = role.getColor();
+		this.permissions = role.getPermissions().contains(Permission.ADMINISTRATOR) ? PermissionSet.all() : role.getPermissions();
+		this.ownerRole = permissions.contains(Permission.ADMINISTRATOR);
 	}
 
 	@Override
@@ -62,6 +66,18 @@ public class CachedRole {
 		}
 	}
 
+	public boolean is(Member member) {
+		return member.getRoleIds().contains(id);
+	}
+
+	public boolean isMentioned(Message message) {
+		return message.getRoleMentionIds().contains(id);
+	}
+
+	public boolean add(Member member, @Nullable String reason) {
+		return member.getRoleIds().contains(id) || add(member.getId(), reason);
+	}
+
 	public boolean add(@Nullable Snowflake member, @Nullable String reason) {
 		if (member != null) {
 			try {
@@ -74,6 +90,10 @@ public class CachedRole {
 		}
 
 		return false;
+	}
+
+	public boolean remove(Member member, @Nullable String reason) {
+		return !member.getRoleIds().contains(id) || remove(member.getId(), reason);
 	}
 
 	public boolean remove(@Nullable Snowflake member, @Nullable String reason) {

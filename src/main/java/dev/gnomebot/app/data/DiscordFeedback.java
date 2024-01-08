@@ -7,6 +7,7 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
 import discord4j.core.spec.EmbedCreateFields;
@@ -158,7 +159,11 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		return builder.build();
 	}
 
-	public void toJson(GuildCollections gc, JSONObject json, MemberCache memberCache, AuthLevel authLevel) {
+	public static boolean canSee(GuildCollections gc, AuthLevel authLevel) {
+		return !gc.anonymousFeedback.get() || authLevel.is(AuthLevel.OWNER) || (gc.adminsBypassAnonFeedback.get() && authLevel.is(AuthLevel.ADMIN));
+	}
+
+	public void toJson(JSONObject json, MemberCache memberCache, boolean canSee, boolean owner) {
 		MapWrapper voteMap = getVotes();
 		int[] v = new int[2];
 
@@ -169,8 +174,6 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 				v[1]++;
 			}
 		}
-
-		boolean canSee = !gc.anonymousFeedback.get() || authLevel.is(AuthLevel.OWNER) || (gc.adminsBypassAnonFeedback.get() && authLevel.is(AuthLevel.ADMIN));
 
 		json.put("id", Snowflake.asString(getUID()));
 		json.put("number", getNumber());
@@ -190,15 +193,15 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		json.put("downvotes", v[1]);
 		json.put("deleted", isDeleted());
 
-		if (authLevel.is(AuthLevel.OWNER)) {
+		if (owner) {
 			var upTags = json.addArray("upvoters");
 			var downTags = json.addArray("downvoters");
 
 			for (Map.Entry<String, Object> o : voteMap.map.entrySet()) {
 				if (Boolean.TRUE.equals(o.getValue())) {
-					upTags.add(memberCache.getDisplayName(Snowflake.of(o.getKey())));
+					upTags.add(memberCache.getDisplayName(Utils.snowflake(o.getKey())));
 				} else {
-					downTags.add(memberCache.getDisplayName(Snowflake.of(o.getKey())));
+					downTags.add(memberCache.getDisplayName(Utils.snowflake(o.getKey())));
 				}
 			}
 		}

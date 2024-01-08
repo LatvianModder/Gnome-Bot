@@ -1,13 +1,12 @@
 package dev.gnomebot.app.discord;
 
-import com.mongodb.Function;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.config.ChannelConfigKey;
+import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
@@ -89,6 +88,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class DiscordHandler {
 	public final App app;
@@ -526,8 +526,8 @@ public class DiscordHandler {
 		}
 	}
 
-	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfigKey channelConfig, DiscordMessage message, @Nullable User user, String reason, Function<String, String> content) {
-		if (!channelConfig.isSet()) {
+	public void suspiciousMessageModLog(GuildCollections gc, ChannelConfigType.Holder channelConfig, DiscordMessage message, @Nullable User user, String reason, @Nullable Function<String, String> content) {
+		if (channelConfig.isSet()) {
 			return;
 		}
 
@@ -550,7 +550,7 @@ public class DiscordHandler {
 		sb1.append(") <#");
 		sb1.append(Snowflake.of(message.getChannelID()).asString());
 		sb1.append("> from ").append(u.getMention()).append("\n\n");
-		sb1.append(content.apply(message.getContent()));
+		sb1.append(content == null ? message.getContent() : content.apply(message.getContent()));
 
 		gc.adminLogChannelEmbed(u.getUserData(), channelConfig, spec -> {
 			spec.description(sb1.toString());

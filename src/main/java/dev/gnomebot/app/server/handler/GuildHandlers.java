@@ -7,14 +7,12 @@ import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.config.ConfigKey;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.server.json.JsonRequest;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.webutils.ImageUtils;
@@ -25,6 +23,8 @@ import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
+import io.javalin.http.BadRequestResponse;
+import io.javalin.http.NotFoundResponse;
 import org.bson.conversions.Bson;
 
 import java.awt.image.BufferedImage;
@@ -44,7 +44,7 @@ public class GuildHandlers {
 			AuthLevel authLevel = gc.getAuthLevel(request.token.userId);
 
 			if (authLevel.is(AuthLevel.MEMBER)) {
-				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId.get(), authLevel));
+				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId, authLevel));
 			}
 		}
 
@@ -66,7 +66,7 @@ public class GuildHandlers {
 	public static Response info(ServerRequest request) {
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
-		json.put("name", request.gc.name.get());
+		json.put("name", request.gc.name);
 		json.put("owner", request.gc.getGuild().getOwnerId().asString());
 		json.put("prefix", request.gc.legacyPrefix.get());
 		json.put("invite", request.gc.inviteCode.get());
@@ -85,22 +85,20 @@ public class GuildHandlers {
 
 		var bs = JSONArray.of();
 
-		for (var setting : request.gc.config.map.values()) {
-			if (!setting.internal) {
-				var o = bs.addObject();
-				o.put("id", setting.id);
-				o.put("name", setting.title);
-				o.put("index", bs.size());
-				o.put("type", setting.getType());
-				o.put("value", setting.serialize());
-			}
+		for (var setting : request.gc.configHolders.values()) {
+			var o = bs.addObject();
+			o.put("id", setting.key.id());
+			o.put("name", setting.key.title());
+			o.put("index", bs.size());
+			o.put("type", setting.key.type().getTypeName());
+			o.put("value", setting.serialize(1));
 		}
 
 		Member owner = request.gc.getMember(request.gc.getGuild().getOwnerId());
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
-		json.put("name", request.gc.name.get());
+		json.put("name", request.gc.name);
 		json.put("canEdit", request.getAuthLevel().is(AuthLevel.OWNER));
 
 		var ow = json.addObject("owner");
@@ -139,20 +137,26 @@ public class GuildHandlers {
 		return JSONResponse.of(json);
 	}
 
-	public static Response updateSetting(JsonRequest request) throws Exception {
-		ConfigKey<?> setting = request.request.gc.config.map.get(request.request.variable("setting"));
+	public static Response updateSetting(ServerRequest request) throws Exception {
+		var holder = request.gc.getConfigHolder(request.variable("key"));
 
-		if (setting == null) {
-			throw HTTPResponseCode.NOT_FOUND.error("Setting ID not found!");
+		if (holder == null) {
+			throw new NotFoundResponse("Setting ID not found!");
+		}
+
+		var body = request.getMainBody().getText().trim();
+		var error = holder.validate(1, body);
+
+		if (!error.isEmpty()) {
+			throw new BadRequestResponse(error);
 		}
 
 		try {
-			setting.deserialize(request.getString("value"));
+			holder.deserialize(1, body);
 		} catch (Exception ex) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Failed to parse value!");
+			throw new BadRequestResponse("Failed to parse value!");
 		}
 
-		setting.save();
 		return JSONResponse.SUCCESS;
 	}
 
@@ -163,7 +167,7 @@ public class GuildHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Size " + size + " too large!");
 		}
 
-		String url = request.gc.iconUrl.get();
+		String url = request.gc.iconUrl;
 		BufferedImage img = null;
 
 		if (!url.isEmpty()) {
@@ -200,11 +204,13 @@ public class GuildHandlers {
 
 		var object = JSONObject.of();
 		object.put("id", request.gc.guildId.asString());
-		object.put("name", request.gc.name.get());
+		object.put("name", request.gc.name);
 		var array = object.addArray("feedback");
+		boolean canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
+		boolean owner = request.getAuthLevel().is(AuthLevel.OWNER);
 
 		for (var feedback : list) {
-			feedback.toJson(request.gc, array.addObject(), memberCache, request.getAuthLevel());
+			feedback.toJson(array.addObject(), memberCache, canSee, owner);
 		}
 
 		return JSONResponse.of(object);
@@ -220,7 +226,8 @@ public class GuildHandlers {
 
 		MemberCache memberCache = request.gc.createMemberCache();
 		var json = JSONObject.of();
-		feedback.toJson(request.gc, json, memberCache, request.getAuthLevel());
+		boolean canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
+		feedback.toJson(json, memberCache, canSee, request.getAuthLevel().is(AuthLevel.OWNER));
 		return JSONResponse.of(json);
 	}
 
@@ -238,7 +245,7 @@ public class GuildHandlers {
 
 	public static Response member(ServerRequest request) {
 		var json = JSONObject.of();
-		var id = Snowflake.of(request.variable("member"));
+		var id = request.getSnowflake("member");
 		json.put("id", id.asString());
 		var member = request.gc.getMember(id);
 
@@ -354,7 +361,7 @@ public class GuildHandlers {
 	}
 
 	public static Response exportMessages(ServerRequest request) {
-		Snowflake id = Snowflake.of(request.variable("member"));
+		Snowflake id = request.getSnowflake("member");
 		LinkedList<ExportedMessage> list = new LinkedList<>();
 
 		for (var m : request.gc.messages.query().eq("user", id.asLong())) {

@@ -6,6 +6,7 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
@@ -63,7 +64,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			return Optional.of(gc.db.app.discordHandler.getUser(Snowflake.of(s)));
+			return Optional.of(gc.db.app.discordHandler.getUser(Utils.snowflake(s)));
 		} catch (Exception ex) {
 			DiscordMember member = gc.members.query().eq("name", s).first();
 
@@ -101,7 +102,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			return Optional.of(gc.getOrMakeChannelInfo(Snowflake.of(s)));
+			return Optional.of(gc.getOrMakeChannelInfo(Utils.snowflake(s)));
 		} catch (Exception ex) {
 		}
 
@@ -124,11 +125,11 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			ChannelInfo ci = gc.getChannelInfo(Snowflake.of(s[0]));
+			ChannelInfo ci = gc.getChannelInfo(Utils.snowflake(s[0]));
 			Snowflake li = ci == null ? null : ci.getLastMessageId();
 
 			if (li != null) {
-				return Optional.of(Pair.of(ci, s.length == 2 ? Snowflake.of(s[1]) : li));
+				return Optional.of(Pair.of(ci, s.length == 2 ? Utils.snowflake(s[1]) : li));
 			}
 		} catch (Exception ex) {
 		}
@@ -150,7 +151,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			Snowflake snowflake = Snowflake.of(s);
+			Snowflake snowflake = Utils.snowflake(s);
 
 			if (snowflake.asLong() == gc.guildId.asLong()) {
 				return Optional.empty();

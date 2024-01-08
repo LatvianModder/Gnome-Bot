@@ -127,8 +127,8 @@ public class MemberHandler {
 			prevMessages = mdoc.containsKey("total_messages") ? mdoc.getLong("total_messages") : 0L;
 		}
 
-		if (gc.regularMessages.get() > 0 && prevMessages >= gc.regularMessages.get()) {
-			gc.regularRole.add(member.getId(), "Reached Regular");
+		if (gc.regularRole.isSet() && gc.regularMessages.get() > 0 && prevMessages >= gc.regularMessages.get()) {
+			gc.regularRole.role().ifPresent(r -> r.add(member, "Reached Regular"));
 		}
 
 		// App.info(Utils.ANSI_GREEN + member.getTag() + Utils.ANSI_RESET + " has joined the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server!");
@@ -167,7 +167,7 @@ public class MemberHandler {
 		App.LOGGER.event(BrainEvents.MEMBER_LEFT);
 
 		if (gc.logLeavingChannel.isSet()) {
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.append(event.getUser().getMention());
 			sb.append(" (");
 			sb.append(event.getUser().getTag());
