@@ -1,9 +1,12 @@
 package dev.gnomebot.app.data;
 
+import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.MacroCommands;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.data.HexId32;
+import dev.latvian.apps.webutils.data.Lazy;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandOption;
@@ -12,16 +15,18 @@ import discord4j.discordjson.json.ApplicationCommandRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 
-public class Macro implements Comparable<Macro> {
+public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 	public final GuildCollections guild;
-	public String id = "";
+	private final Lazy<String> content;
+	public HexId32 id = HexId32.NONE;
+	public String stringId = "";
 	public String name = "";
-	public String content = "";
 	public long author = 0L;
 	public Instant created = null;
-	public int uses = 0;
 	public long slashCommand = 0L;
 	private String description;
 
@@ -30,11 +35,48 @@ public class Macro implements Comparable<Macro> {
 
 	public Macro(GuildCollections guild) {
 		this.guild = guild;
+		this.content = Lazy.of(this);
+	}
+
+	public Path getContentPath(boolean write) {
+		var ids = id.toString();
+		var dir = guild.paths.macros.resolve(ids.substring(0, 2));
+
+		if (write) {
+			dir = AppPaths.makeDir(dir);
+		}
+
+		return dir.resolve(ids + ".txt");
+	}
+
+	public void setContent(String content) {
+		try {
+			if (content.isEmpty()) {
+				Files.deleteIfExists(getContentPath(false));
+			} else {
+				Files.writeString(getContentPath(true), content);
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		invalidateCache();
+	}
+
+	public String getContent() {
+		var c = content.get();
+		return c == null ? "" : c;
+	}
+
+	public void invalidateCache() {
+		content.invalidate();
+		cachedContent = null;
+		chatCommandSuggestion = null;
 	}
 
 	public Pair<ContentType, Object> getCachedContent() {
 		if (cachedContent == null) {
-			cachedContent = ContentType.parse(guild, content);
+			cachedContent = ContentType.parse(guild, getContent());
 		}
 
 		return cachedContent;
@@ -48,20 +90,14 @@ public class Macro implements Comparable<Macro> {
 	public void rename(String rename) {
 		long l = setSlashCommand(false);
 
-		guild.getMacroMap().remove(id);
-		id = rename.toLowerCase();
+		guild.getMacroMap().remove(stringId);
+		stringId = rename.toLowerCase();
 		name = rename;
-		guild.getMacroMap().put(id, this);
+		guild.getMacroMap().put(stringId, this);
 
 		if (l != 0L && !isHidden()) {
 			setSlashCommand(true);
 		}
-	}
-
-	public void updateContent(String content) {
-		this.content = content;
-		this.cachedContent = null;
-		this.chatCommandSuggestion = null;
 	}
 
 	public long setSlashCommand(boolean b) {
@@ -100,7 +136,7 @@ public class Macro implements Comparable<Macro> {
 
 	public ApplicationCommandRequest buildCommand() {
 		var builder = ApplicationCommandRequest.builder();
-		builder.name(id);
+		builder.name(stringId);
 		builder.description(getDescription());
 
 		var content = getCachedContent();
@@ -138,19 +174,23 @@ public class Macro implements Comparable<Macro> {
 
 	public ChatCommandSuggestion getChatCommandSuggestion() {
 		if (chatCommandSuggestion == null) {
-			chatCommandSuggestion = new ChatCommandSuggestion(name, name, id, 0);
+			chatCommandSuggestion = new ChatCommandSuggestion(name, name, stringId, 0);
 		}
 
 		return chatCommandSuggestion;
 	}
 
+	public int getUses() {
+		return guild.getMacroUses(id.getAsInt());
+	}
+
 	public void addUse() {
-		uses++;
+		guild.addMacroUse(id.getAsInt());
 	}
 
 	@Override
 	public int compareTo(@NotNull Macro o) {
-		return id.compareToIgnoreCase(o.id);
+		return stringId.compareToIgnoreCase(o.stringId);
 	}
 
 	public String chatFormatted() {
@@ -159,7 +199,7 @@ public class Macro implements Comparable<Macro> {
 
 	public String chatFormatted(boolean escape) {
 		if (slashCommand != 0L) {
-			return "</" + id + ":" + Long.toUnsignedString(slashCommand) + ">";
+			return "</" + stringId + ":" + Long.toUnsignedString(slashCommand) + ">";
 		} else if (escape) {
 			return '`' + name + '`';
 		} else {
@@ -175,5 +215,16 @@ public class Macro implements Comparable<Macro> {
 	}
 
 	public void delete() {
+	}
+
+	@Override
+	public String get() throws Exception {
+		var path = getContentPath(false);
+
+		if (Files.exists(path)) {
+			return Files.readString(path);
+		}
+
+		return "";
 	}
 }

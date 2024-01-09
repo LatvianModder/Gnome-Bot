@@ -103,24 +103,16 @@ public class CLI extends Thread {
 		// collection.insertOne(new Document("test", 1));
 		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
 
-		/*
 		for (var gc : app.db.allGuilds()) {
-			for (var macro : gc.getMacroMap().values()) {
-				if (macro.getCachedContent().a() == ContentType.COMPLEX) {
-					var cm = (ComplexMessage) macro.getCachedContent().b();
-
-					if (!cm.content.isEmpty() && cm.embeds.isEmpty() && cm.components.isEmpty()) {
-						macro.updateContent(String.join("\n", cm.content));
-						Ansi.log("+ Simplified " + gc + ":" + macro.id);
-					}
-
-					// macro.updateContent(String.join("\n", ((ComplexMessage) macro.getCachedContent().b()).getLines()));
-				}
-			}
+			App.info("Porting " + gc);
 
 			gc.saveMacroMap();
+			gc.saveMacroUseMap();
+
+			for (var macro : gc.getMacroMap().values()) {
+				// Files.writeString(gc.paths.macros.resolve(macro.id + ".txt"), macro.getContent());
+			}
 		}
-		 */
 
 		App.info("+ Done " + count);
 	}

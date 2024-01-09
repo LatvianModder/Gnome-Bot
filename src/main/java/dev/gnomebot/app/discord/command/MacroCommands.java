@@ -113,9 +113,9 @@ public class MacroCommands extends ApplicationCommands {
 
 		if (macro != null) {
 			if (macro.author == event.context.sender.getId().asLong()) {
-				event.respondModal("edit-macro/" + macro.id, "Editing macro '" + macro.name + "'",
+				event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'",
 						TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.name),
-						TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.content))
+						TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.getContent()))
 				);
 
 				return;
@@ -147,15 +147,18 @@ public class MacroCommands extends ApplicationCommands {
 		}
 
 		var macro = new Macro(event.context.gc);
-		macro.id = name.toLowerCase();
+		event.context.gc.db.findMacroId(macro);
+		macro.stringId = name.toLowerCase();
 		macro.name = name;
-		macro.content = content;
 		macro.author = event.context.sender.getId().asLong();
 		macro.created = Instant.now();
-		macro.uses = 0;
 
-		event.context.gc.getMacroMap().put(macro.id, macro);
+		event.context.gc.getMacroMap().put(macro.stringId, macro);
+		event.context.gc.getMacroUseMap().remove(macro.id.getAsInt());
 		event.context.gc.saveMacroMap();
+		event.context.gc.saveMacroUseMap();
+
+		macro.setContent(content);
 
 		event.respond(MessageBuilder.create("Macro '" + name + "' created!").ephemeral(false));
 	}
@@ -173,9 +176,9 @@ public class MacroCommands extends ApplicationCommands {
 			throw new GnomeException("Macro not found!");
 		}
 
-		event.respondModal("edit-macro/" + macro.id, "Editing macro '" + macro.name + "'",
+		event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'",
 				TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.name),
-				TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.content))
+				TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.getContent()))
 		);
 	}
 
@@ -206,7 +209,7 @@ public class MacroCommands extends ApplicationCommands {
 			macro.rename(rename);
 		}
 
-		macro.updateContent(ContentType.decodeMentions(event.get("content").asString(macro.content)));
+		macro.setContent(ContentType.decodeMentions(event.get("content").asString(macro.getContent())));
 
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
@@ -243,8 +246,11 @@ public class MacroCommands extends ApplicationCommands {
 			s += "\nWith error: " + ex;
 		}
 
-		event.context.gc.getMacroMap().remove(macro.id);
+		macro.setContent("");
+		event.context.gc.getMacroMap().remove(macro.stringId);
+		event.context.gc.getMacroUseMap().remove(macro.id.getAsInt());
 		event.context.gc.saveMacroMap();
+		event.context.gc.saveMacroUseMap();
 		event.respond(s);
 	}
 
@@ -262,10 +268,14 @@ public class MacroCommands extends ApplicationCommands {
 		for (var macro : event.context.gc.getMacroMap().values()) {
 			if (author == null || macro.author == author.getId().asLong()) {
 				if (name == null || name.matcher(macro.name).find()) {
-					if (content == null || content.matcher(macro.content).find()) {
+					if (content == null || content.matcher(macro.getContent()).find()) {
 						if (includeHidden || !macro.isHidden()) {
 							list.add(macro);
 						}
+					}
+
+					if (content != null) {
+						macro.invalidateCache();
 					}
 				}
 			}
@@ -297,7 +307,7 @@ public class MacroCommands extends ApplicationCommands {
 		List<String> list = new ArrayList<>();
 		list.add("Author: <@" + Snowflake.of(macro.author).asString() + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
-		list.add("Uses: " + macro.uses);
+		list.add("Uses: " + macro.getUses());
 		event.respond(EmbedBuilder.create().url(App.url("panel/" + event.context.gc.guildId.asString() + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 

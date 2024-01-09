@@ -172,7 +172,7 @@ public class App implements Runnable {
 		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
 		webServer.add("panel/:guild/scam-detection", ScamWebHandlers::scamDetection).admin();
 		webServer.add("panel/:guild/macros", PanelHandlers::macros);
-		webServer.add("panel/:guild/macros/:name", PanelHandlers::macroInfo);
+		webServer.add("panel/:guild/macros/:id", PanelHandlers::macroInfo);
 		webServer.add("panel/:guild/members/:id", PanelHandlers::memberInfo);
 
 		webServer.add("minecraft/verify", MinecraftHandlers::verify).noAuth().log();
@@ -339,6 +339,7 @@ public class App implements Runnable {
 	public void reload() {
 		CharMap.load();
 		GuildPaths.CUSTOM_NAMES.invalidate();
+		GuildPaths.INVERTED_CUSTOM_NAMES.invalidate();
 
 		for (var gc : db.guildCollections.values()) {
 			gc.discordJS = new DiscordJS(gc, false);

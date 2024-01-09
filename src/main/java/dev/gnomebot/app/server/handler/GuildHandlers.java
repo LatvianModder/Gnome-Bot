@@ -6,7 +6,6 @@ import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.UserCache;
@@ -31,32 +30,37 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class GuildHandlers {
 	public static Response guilds(ServerRequest request) throws Exception {
-		List<PanelGuildData> guilds = new ArrayList<>();
+		var futures = new ArrayList<CompletableFuture<PanelGuildData>>();
 
-		for (long guildId0 : request.token.getGuildIds(request.app.discordHandler)) {
-			Snowflake guildId = Snowflake.of(guildId0);
-			GuildCollections gc = request.app.db.guild(guildId);
-			AuthLevel authLevel = gc.getAuthLevel(request.token.userId);
+		for (var gc : request.app.db.allGuilds()) {
+			futures.add(CompletableFuture.supplyAsync(() -> {
+				var authLevel = gc.getAuthLevel(request.token.userId);
 
-			if (authLevel.is(AuthLevel.MEMBER)) {
-				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId, authLevel));
-			}
+				if (authLevel.is(AuthLevel.MEMBER)) {
+					return new PanelGuildData(gc, authLevel);
+				} else {
+					return null;
+				}
+			}));
 		}
 
-		guilds.sort((o1, o2) -> o1.name().compareToIgnoreCase(o2.name()));
+		CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+		var guilds = futures.stream().map(CompletableFuture::join).filter(Objects::nonNull).sorted().toList();
 
 		var json = JSONArray.of();
 
 		for (var g : guilds) {
 			var o1 = json.addObject();
-			o1.put("id", g.id().asString());
-			o1.put("name", g.name());
-			o1.put("owner", g.owner().asString());
+			o1.put("id", g.gc().guildId.asString());
+			o1.put("name", g.gc().toString());
+			o1.put("owner", g.gc().ownerId.asString());
 			o1.put("authLevel", g.authLevel().name);
 		}
 

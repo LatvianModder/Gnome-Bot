@@ -29,6 +29,8 @@ import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.AnsiJava;
+import dev.latvian.apps.webutils.data.HexId32;
+import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.common.util.Snowflake;
@@ -140,7 +142,8 @@ public class GuildCollections {
 	private Map<String, CachedRole> uniqueRoleNameMap;
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
-	private Map<String, Macro> macroMap;
+	private final Map<String, Macro> macroMap;
+	private Map<Integer, MutableInt> macroUseMap;
 	private final Map<Long, Snowflake> memberLogThreadCache;
 	private final Map<Long, Snowflake> appealThreadCache;
 
@@ -173,6 +176,8 @@ public class GuildCollections {
 				ex.printStackTrace();
 			}
 		}
+
+		App.info("Loading guild '" + this + "'...");
 
 		var dbid = guildId.asString();
 
@@ -208,6 +213,46 @@ public class GuildCollections {
 		appealThreadCache = new HashMap<>();
 
 		postReadSettings();
+
+		macroMap = new HashMap<>();
+
+		getMacroUseMap().clear();
+
+		try {
+			if (Files.exists(paths.macrosFile)) {
+				for (var entry : JSON.DEFAULT.read(paths.macrosFile).readObject().entrySet()) {
+					if (entry.getValue() instanceof JSONObject json) {
+						var macro = new Macro(this);
+
+						if (json.containsKey("name")) {
+							macro.id = HexId32.of(entry.getKey());
+							db.loadMacro(macro);
+							macro.name = json.asString("name");
+						} else {
+							db.findMacroId(macro);
+							macro.name = entry.getKey();
+						}
+
+						macro.stringId = macro.name.toLowerCase();
+						macro.author = json.asLong("author");
+						macro.created = json.containsKey("created") ? Instant.parse(json.asString("created")) : null;
+						macro.slashCommand = json.asLong("slash_command");
+						macroMap.put(macro.stringId, macro);
+
+						if (json.containsKey("content")) {
+							macro.setContent(json.asString("content"));
+						}
+
+						if (json.containsKey("uses")) {
+							getMacroUseMap().computeIfAbsent(macro.id.getAsInt(), MutableInt.MAP_VALUE).add(json.asInt("uses"));
+						}
+					}
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
 		discordJS = new DiscordJS(this, false);
 	}
 
@@ -505,7 +550,7 @@ public class GuildCollections {
 		roleMap = null;
 		roleList = null;
 		uniqueRoleNameMap = null;
-		macroMap = null;
+		macroUseMap = null;
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
@@ -807,31 +852,6 @@ public class GuildCollections {
 	}
 
 	public Map<String, Macro> getMacroMap() {
-		if (macroMap == null) {
-			macroMap = new LinkedHashMap<>();
-
-			try {
-				if (Files.exists(paths.macrosFile)) {
-					for (var entry : JSON.DEFAULT.read(paths.macrosFile).readObject().entrySet()) {
-						if (entry.getValue() instanceof JSONObject json) {
-							var macro = new Macro(this);
-							macro.id = entry.getKey().toLowerCase();
-							macro.name = entry.getKey();
-							macro.content = json.asString("content");
-							macro.author = json.asLong("author");
-							macro.created = json.containsKey("created") ? Instant.parse(json.asString("created")) : null;
-							macro.uses = json.asInt("uses");
-							macro.slashCommand = json.asLong("slash_command");
-							macroMap.put(macro.id, macro);
-						}
-					}
-				}
-			} catch (Exception ex) {
-				macroMap = null;
-				ex.printStackTrace();
-			}
-		}
-
 		return macroMap;
 	}
 
@@ -855,22 +875,18 @@ public class GuildCollections {
 
 		for (var macro : getMacroMap().values()) {
 			var obj = JSONObject.of();
-			obj.put("content", macro.content);
+			obj.put("name", macro.name);
 			obj.put("author", macro.author);
 
 			if (macro.created != null) {
 				obj.put("created", macro.created.toString());
 			}
 
-			if (macro.uses > 0) {
-				obj.put("uses", macro.uses);
-			}
-
 			if (macro.slashCommand != 0L) {
 				obj.put("slash_command", macro.slashCommand);
 			}
 
-			json.put(macro.name, obj);
+			json.put(macro.id.toString(), obj);
 		}
 
 		try {
@@ -879,6 +895,68 @@ public class GuildCollections {
 			}
 
 			Files.writeString(paths.macrosFile, json.toString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public Map<Integer, MutableInt> getMacroUseMap() {
+		if (macroUseMap == null) {
+			macroUseMap = new HashMap<>();
+			boolean ported = false;
+
+			try {
+				if (Files.exists(paths.macroUseFile)) {
+					for (var line : Files.readAllLines(paths.macroUseFile)) {
+						if (line.isBlank()) {
+							continue;
+						}
+
+						var split = line.lastIndexOf(':');
+
+						if (split == -1) {
+							continue;
+						}
+
+						var key = line.substring(0, split);
+						var value = new MutableInt(Integer.parseInt(line.substring(split + 1)));
+
+						macroUseMap.put(HexId32.of(key).getAsInt(), value);
+						ported = true;
+					}
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				ported = false;
+			}
+
+			if (ported) {
+				saveMacroUseMap();
+			}
+		}
+
+		return macroUseMap;
+	}
+
+	public int getMacroUses(int id) {
+		var m = getMacroUseMap().get(id);
+		return m == null ? 0 : m.value;
+	}
+
+	public void addMacroUse(int id) {
+		getMacroUseMap().computeIfAbsent(id, MutableInt.MAP_VALUE).add(1);
+		saveMacroUseMap();
+	}
+
+	public void saveMacroUseMap() {
+		var lines = new ArrayList<String>();
+
+		for (var entry : getMacroUseMap().entrySet()) {
+			lines.add(HexId32.of(entry.getKey()).toString() + ":" + entry.getValue().value);
+		}
+
+		try {
+			Files.write(paths.macroUseFile, lines);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

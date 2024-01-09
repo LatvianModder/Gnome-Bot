@@ -1,7 +1,7 @@
 package dev.gnomebot.app;
 
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Lazy;
-import dev.latvian.apps.webutils.json.JSON;
 import discord4j.common.util.Snowflake;
 
 import java.nio.file.Files;
@@ -10,20 +10,38 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GuildPaths {
-	public static final Lazy<Map<String, String>> CUSTOM_NAMES = Lazy.of(() -> {
-		var map = new HashMap<String, String>();
+	public static final Lazy<Map<Snowflake, String>> CUSTOM_NAMES = Lazy.of(() -> {
+		var map = new HashMap<Snowflake, String>();
 
 		if (Files.exists(AppPaths.CUSTOM_GUILD_IDS)) {
 			try {
-				for (var entry : JSON.DEFAULT.read(AppPaths.CUSTOM_GUILD_IDS).readObject().entrySet()) {
-					map.put(entry.getKey(), String.valueOf(entry.getValue()));
+				for (var line : Files.readAllLines(AppPaths.CUSTOM_GUILD_IDS)) {
+					if (line.isBlank()) {
+						continue;
+					}
+
+					var split = line.split(":", 2);
+
+					if (split.length >= 2) {
+						map.put(Utils.snowflake(split[0]), split[1]);
+					}
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 
-		map.put("0", "unknown");
+		map.put(Utils.NO_SNOWFLAKE, "unknown");
+		return map;
+	});
+
+	public static final Lazy<Map<String, Snowflake>> INVERTED_CUSTOM_NAMES = Lazy.of(() -> {
+		var map = new HashMap<String, Snowflake>();
+
+		for (var e : CUSTOM_NAMES.get().entrySet()) {
+			map.put(e.getValue(), e.getKey());
+		}
+
 		return map;
 	});
 
@@ -33,18 +51,20 @@ public class GuildPaths {
 	public final Path info;
 	public final Path config;
 	public final Path macrosFile;
+	public final Path macroUseFile;
 	public final Path macros;
 	public final Path scripts;
 
 	public GuildPaths(Snowflake i) {
 		id = i;
-		key = CUSTOM_NAMES.get().getOrDefault(id.asString(), id.asString());
+		key = CUSTOM_NAMES.get().getOrDefault(id, id.asString());
 		path = AppPaths.makeDir(AppPaths.GUILD_DATA.resolve(key));
 
 		info = path.resolve("info.json");
 		config = path.resolve("config.json");
 		macrosFile = path.resolve("macros.json");
-		macros = AppPaths.makeDir(path.resolve("macros"));
-		scripts = AppPaths.makeDir(path.resolve("scripts"));
+		macroUseFile = path.resolve("macro_use.txt");
+		macros = path.resolve("macros");
+		scripts = path.resolve("scripts");
 	}
 }

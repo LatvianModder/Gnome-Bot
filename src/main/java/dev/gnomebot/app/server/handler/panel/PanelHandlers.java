@@ -2,45 +2,48 @@ package dev.gnomebot.app.server.handler.panel;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ContentType;
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.handler.PanelGuildData;
-import dev.latvian.apps.webutils.CodingUtils;
+import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.NotFoundResponse;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PanelHandlers {
 	public static Response root(ServerRequest request) {
-		List<PanelGuildData> guilds = new ArrayList<>();
+		var futures = new ArrayList<CompletableFuture<PanelGuildData>>();
 
-		for (long guildId0 : request.token.getGuildIds(request.app.discordHandler)) {
-			Snowflake guildId = Snowflake.of(guildId0);
-			GuildCollections gc = request.app.db.guild(guildId);
-			AuthLevel authLevel = gc.getAuthLevel(request.token.userId);
+		for (var gc : request.app.db.allGuilds()) {
+			futures.add(CompletableFuture.supplyAsync(() -> {
+				var authLevel = gc.getAuthLevel(request.token.userId);
 
-			if (authLevel.is(AuthLevel.MEMBER)) {
-				guilds.add(new PanelGuildData(guildId, gc.toString(), gc.ownerId, authLevel));
-			}
+				if (authLevel.is(AuthLevel.MEMBER)) {
+					return new PanelGuildData(gc, authLevel);
+				} else {
+					return null;
+				}
+			}));
 		}
 
-		guilds.sort((o1, o2) -> o1.name().compareToIgnoreCase(o2.name()));
+		CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+		var guilds = futures.stream().map(CompletableFuture::join).filter(Objects::nonNull).sorted().toList();
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel");
 
-		for (PanelGuildData data : guilds) {
+		for (var data : guilds) {
 			var line = root.content.p().classes("withicon");
-			line.img("/api/guild/icon/" + data.id().asString() + "/128").lazyLoading();
-			line.a("/panel/" + data.id().asString()).string(data.name());
+			line.img("/api/guild/icon/" + data.gc().guildId.asString() + "/128").lazyLoading();
+			line.a("/panel/" + data.gc().guildId.asString()).string(data.gc().toString());
 		}
 
 		return root.asResponse();
@@ -95,13 +98,13 @@ public class PanelHandlers {
 				try {
 					var cmd = guildCommands.get(macro.slashCommand);
 
-					if (cmd == null || !cmd.name().equals(macro.id)) {
+					if (cmd == null || !cmd.name().equals(macro.stringId)) {
 						throw new NullPointerException();
 					}
 
-					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + CodingUtils.encodeURL(macro.id), macro.name);
+					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name);
 				} catch (Exception ex) {
-					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + CodingUtils.encodeURL(macro.id), macro.name + " (Broken!)").classes("");
+					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
 				}
 			}
 		}
@@ -109,19 +112,17 @@ public class PanelHandlers {
 		var allMacros = root.content.section("macros").classes("divborder").div().h3().string("All Macros").end().ol();
 
 		for (var macro : macros) {
-			allMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + CodingUtils.encodeURL(macro.id), macro.name);
+			allMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name);
 		}
 
 		return root.asResponse();
 	}
 
 	public static Response macroInfo(ServerRequest request) {
-		var macroName = CodingUtils.decodeURL(request.variable("name"));
+		var macro = request.gc.db.allMacros.get(HexId32.of(request.variable("id")).getAsInt());
 
-		var macro = request.gc.getMacro(macroName);
-
-		if (macro == null) {
-			throw new NotFoundResponse("Macro '" + macroName + "' not found!");
+		if (macro == null || macro.guild != request.gc) {
+			throw new NotFoundResponse("Macro '" + request.variable("id") + "' not found!");
 		}
 
 		if (request.hasQuery("slash")) {
@@ -157,7 +158,7 @@ public class PanelHandlers {
 			table.tr().td().string("Created").end().td().time(macro.created).string(macro.created.toString());
 		}
 
-		table.tr().td().string("Uses").end().td().string(macro.uses);
+		table.tr().td().string("Uses").end().td().string(macro.getUses());
 
 		if (macro.slashCommand == 0L) {
 			table.tr().td().string("Slash Command").end().td().string("Disabled").space().a("?slash=1", "(Enable)");
@@ -169,7 +170,7 @@ public class PanelHandlers {
 		var newlinePattern = Pattern.compile("\n");
 
 		root.content.h2().string("Content");
-		var tag2 = root.content.section("content").classes("divborder").div().p().string(ContentType.encodeMentions(macro.content));
+		var tag2 = root.content.section("content").classes("divborder").div().p().string(ContentType.encodeMentions(macro.getContent()));
 		tag2.replace(newlinePattern, (tag1, matcher) -> tag1.br());
 
 		return root.asResponse();

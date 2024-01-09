@@ -6,10 +6,14 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.Config;
+import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.ping.InteractionDocument;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.data.HexId32;
+import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import io.javalin.http.Context;
@@ -18,12 +22,12 @@ import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -33,12 +37,14 @@ public class Databases {
 	public final App app;
 	public final MongoClient mongoClient;
 	public final MongoDatabase database;
-	public final Map<String, WrappedCollection<?>> collections;
-
 	private final Object guildLock = new Object();
+
+	public final Map<String, WrappedCollection<?>> collections;
+	public final Map<Snowflake, GuildCollections> guildCollections;
+	public final Map<Integer, Macro> allMacros;
+
 	public final WrappedCollection<WebLogEntry> webLog;
 	private final WrappedCollection<WebToken> webTokens;
-	public final Map<Snowflake, GuildCollections> guildCollections;
 	public final WrappedCollection<BasicDocument> mmShowcase;
 	public final WrappedCollection<UserWebhook> userWebhooks;
 	public final WrappedCollection<Paste> pastes;
@@ -56,10 +62,11 @@ public class Databases {
 		database = mongoClient.getDatabase("gnomebot");
 
 		collections = new LinkedHashMap<>();
+		guildCollections = new HashMap<>();
+		allMacros = new HashMap<>();
 
 		webLog = create(database, "web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
 		webTokens = create(database, "web_tokens", WebToken::new);
-		guildCollections = new HashMap<>();
 		mmShowcase = create(database, "mm_showcase", BasicDocument::new);
 		userWebhooks = create(database, "user_webhooks", UserWebhook::new);
 		pastes = create(database, "pastes", Paste::new);
@@ -70,6 +77,19 @@ public class Databases {
 
 		for (var task : scheduledTasks.query()) {
 			app.scheduledTasks.add(task);
+		}
+
+		try {
+			for (var path : Files.list(AppPaths.GUILD_DATA).filter(Files::isDirectory).toList()) {
+				var dirName = path.getFileName().toString();
+				var id = GuildPaths.INVERTED_CUSTOM_NAMES.get().getOrDefault(dirName, Utils.snowflake(dirName));
+
+				if (id.asLong() != 0L) {
+					guild(id);
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -90,14 +110,8 @@ public class Databases {
 		return guild(channel.getGuildId());
 	}
 
-	public List<GuildCollections> allGuilds() {
-		var list = new ArrayList<GuildCollections>();
-
-		for (var guild : app.discordHandler.getSelfGuildIds()) {
-			list.add(guild(guild));
-		}
-
-		return list;
+	public Collection<GuildCollections> allGuilds() {
+		return guildCollections.values();
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(MongoDatabase database, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
@@ -212,5 +226,20 @@ public class Databases {
 
 	public void invalidateAllTokens() {
 		webTokens.drop();
+	}
+
+	public synchronized void loadMacro(Macro macro) {
+		allMacros.put(macro.id.getAsInt(), macro);
+	}
+
+	public synchronized void findMacroId(Macro macro) {
+		var key = macro.id.getAsInt();
+
+		while (key == 0 || allMacros.containsKey(key)) {
+			key = MathUtils.RANDOM.nextInt();
+		}
+
+		macro.id = HexId32.of(key);
+		allMacros.put(key, macro);
 	}
 }

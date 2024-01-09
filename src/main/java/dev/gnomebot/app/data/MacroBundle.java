@@ -26,7 +26,7 @@ public class MacroBundle {
 			var macro = gc.getMacro(reader.readString().orElse(""));
 
 			if (macro != null) {
-				var id = reader.readString().orElse(macro.id);
+				var id = reader.readString().orElse(macro.stringId);
 				bundle.macros.put(id, new Item(macro, id, reader.readString().orElse(macro.getDescription())));
 
 				if (bundle.macros.size() >= 25) {

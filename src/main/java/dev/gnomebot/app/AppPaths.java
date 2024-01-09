@@ -37,7 +37,7 @@ public interface AppPaths {
 	Path BAD_DOMAINS = DATA.resolve("bad_domains.txt");
 	Path BAD_DOMAIN_OVERRIDES = DATA.resolve("bad_domain_overrides.txt");
 	Path DM_CHANNELS = DATA.resolve("dm_channels.txt");
-	Path CUSTOM_GUILD_IDS = DATA.resolve("custom_guild_ids.json");
+	Path CUSTOM_GUILD_IDS = DATA.resolve("custom_guild_ids.txt");
 	Path PINGS = makeDir(DATA.resolve("pings"));
 
 	Map<Snowflake, GuildPaths> GUILD_PATHS = new HashMap<>();
