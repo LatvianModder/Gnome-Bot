@@ -24,7 +24,7 @@ public record IntConfigType(int min, int max) implements BasicConfigType<Integer
 	@Override
 	public String validate(GuildCollections guild, int type, String value) {
 		try {
-			int val = Integer.parseInt(value);
+			var val = Integer.parseInt(value);
 
 			if (val < min || val > max) {
 				if (max == Integer.MAX_VALUE) {

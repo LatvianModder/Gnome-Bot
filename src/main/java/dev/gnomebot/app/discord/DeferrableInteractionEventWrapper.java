@@ -98,7 +98,7 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 		} catch (ClientException ex) {
 			App.error("Failed to respond to slash command " + this + ": " + ex.getMessage());
 
-			for (Throwable t : ex.getSuppressed()) {
+			for (var t : ex.getSuppressed()) {
 				t.printStackTrace();
 			}
 		} catch (Exception ex) {

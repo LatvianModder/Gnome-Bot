@@ -11,7 +11,7 @@ public class BigEmojiCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
-		ReactionEmoji emoji = Utils.stringToReaction(event.get("emoji").asString());
+		var emoji = Utils.stringToReaction(event.get("emoji").asString());
 
 		if (emoji instanceof ReactionEmoji.Custom custom) {
 			if (custom.isAnimated()) {

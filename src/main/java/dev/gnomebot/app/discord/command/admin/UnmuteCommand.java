@@ -12,7 +12,6 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
 import java.util.Collections;
@@ -25,7 +24,7 @@ public class UnmuteCommand extends ApplicationCommands {
 
 		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 
 		if (user == null) {
 			throw new GnomeException("User not found!");

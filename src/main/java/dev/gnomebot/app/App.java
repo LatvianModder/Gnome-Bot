@@ -10,7 +10,6 @@ import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.RequestHandler;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.server.WebServer;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
@@ -187,7 +186,7 @@ public class App implements Runnable {
 
 		var table = new Table("Method", "Path", "Auth Level", "Cache");
 
-		for (RequestHandler wrapper : webServer.handlerList) {
+		for (var wrapper : webServer.handlerList) {
 			var cells = table.addRow();
 
 			switch (wrapper.method) {
@@ -249,7 +248,7 @@ public class App implements Runnable {
 				}
 
 				if (!scheduledTasks.isEmpty()) {
-					long now = System.currentTimeMillis();
+					var now = System.currentTimeMillis();
 
 					var itr = scheduledTasks.iterator();
 

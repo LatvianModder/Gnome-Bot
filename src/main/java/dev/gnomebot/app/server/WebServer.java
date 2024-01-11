@@ -80,7 +80,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 		for (var method : METHODS) {
 			var w = new MethodHandler(this, method);
-			int maxPathSize = 0;
+			var maxPathSize = 0;
 
 			for (var handler : handlerList) {
 				if (handler.method == null) {
@@ -91,7 +91,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			if (maxPathSize > 0) {
-				for (int i = 0; i < maxPathSize; i++) {
+				for (var i = 0; i < maxPathSize; i++) {
 					w.handlers.add(new ArrayList<>());
 				}
 
@@ -130,7 +130,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 	}
 
 	public RequestHandler add(String path, ServerPathHandler handler) {
-		RequestHandler h = new RequestHandler(app, path, handler);
+		var h = new RequestHandler(app, path, handler);
 		handlerList.add(h);
 		return h;
 	}
@@ -149,7 +149,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 	}
 
 	public static String getPath(Context context) {
-		String s = context.queryString();
+		var s = context.queryString();
 		return context.path() + (s == null ? "" : ("?" + s));
 	}
 
@@ -212,7 +212,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			country = country.toLowerCase();
-			WebToken[] tokenCallback = new WebToken[1];
+			var tokenCallback = new WebToken[1];
 
 			try {
 				handle0(ctx, p, ip, country, tokenCallback);
@@ -252,7 +252,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			var p1 = new StringBuilder(p);
 
 			if (!ctx.queryParamMap().isEmpty()) {
-				boolean first = true;
+				var first = true;
 
 				for (var qp : ctx.queryParamMap().entrySet()) {
 					if (first) {
@@ -275,7 +275,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 					vars.clear();
 
 					if (dh.matches(pa, vars)) {
-						ServerRequest serverRequest = new ServerRequest(webServer.app, ctx, ip, country, vars);
+						var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, vars);
 						serverRequest.token = token;
 						handle1(ctx, dh, p1.toString(), serverRequest).result(ctx);
 						return;

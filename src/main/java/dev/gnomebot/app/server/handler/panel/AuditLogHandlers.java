@@ -1,9 +1,7 @@
 package dev.gnomebot.app.server.handler.panel;
 
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.ansi.Table;
@@ -22,7 +20,6 @@ import reactor.core.publisher.Flux;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -50,26 +47,26 @@ public class AuditLogHandlers {
 	}
 
 	public static Response auditLog(ServerRequest request) {
-		int limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
-		int skip = Math.max(0, request.query("skip").asInt());
-		String type = request.query("type").asString();
-		long user = request.query("user").asLong();
-		long source = request.query("source").asLong();
-		long channel = request.query("channel").asLong();
-		long message = request.query("message").asLong();
-		int level = request.query("level").asInt();
+		var limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
+		var skip = Math.max(0, request.query("skip").asInt());
+		var type = request.query("type").asString();
+		var user = request.query("user").asLong();
+		var source = request.query("source").asLong();
+		var channel = request.query("channel").asLong();
+		var message = request.query("message").asLong();
+		var level = request.query("level").asInt();
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Audit Log - " + request.gc);
 		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
 
-		UserCache userCache = request.app.discordHandler.createUserCache();
-		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
-		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
+		var userCache = request.app.discordHandler.createUserCache();
+		var entryQuery = request.gc.auditLog.query();
+		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
 
-			for (String s : type.split(",")) {
+			for (var s : type.split(",")) {
 				types.add(Filters.eq("type", s));
 			}
 
@@ -98,20 +95,20 @@ public class AuditLogHandlers {
 
 		var table = new Table("Timestamp", "Type", "Channel", "User", "Old Content", "Content", "Source");
 
-		for (GnomeAuditLogEntry entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
-			GnomeAuditLogEntry.Type t = entry.getType();
+		for (var entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
+			var t = entry.getType();
 
 			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(Snowflake.of(entry.getUser())).map(User::isBot).orElse(false)) {
 				continue;
 			}
 
-			Table.Cell[] cells = table.addRow();
+			var cells = table.addRow();
 
 			cells[0].value(entry.getDate().toInstant().toString());
 			cells[1].value(t.name);
 
 			if (entry.getChannel() != 0L) {
-				Snowflake channelId = Snowflake.of(entry.getChannel());
+				var channelId = Snowflake.of(entry.getChannel());
 
 				if (!availableChannels.contains(channelId)) {
 					continue;
@@ -183,7 +180,7 @@ public class AuditLogHandlers {
 		var lfgList = new ArrayList<BanEntry>();
 		var otherList = new ArrayList<BanEntry>();
 		var noReasonList = new ArrayList<BanEntry>();
-		int deletedUsers = 0;
+		var deletedUsers = 0;
 		var deletedUserReasons = new HashMap<String, Pair<String, MutableInt>>();
 
 		var lists = List.of(Pair.of("Spam / Scam", spamList), Pair.of("Hacks", hackList), Pair.of("LFG", lfgList), Pair.of("Other", otherList), Pair.of("Unknown Reason", noReasonList));
@@ -217,7 +214,7 @@ public class AuditLogHandlers {
 			var table = new Table("#", "Name", "Reason");
 			var indexFormat = "%0" + String.valueOf(list1.size()).length() + "d";
 
-			for (int i = 0; i < list1.size(); i++) {
+			for (var i = 0; i < list1.size(); i++) {
 				var entry = list1.get(i);
 				var cells = table.addRow();
 

@@ -5,7 +5,6 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 
 public class AvatarCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("avatar")
@@ -16,14 +15,14 @@ public class AvatarCommand extends ApplicationCommands {
 
 	private static void runChatInput(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
-		boolean guild = event.get("guild").asBoolean(true);
+		var guild = event.get("guild").asBoolean(true);
 
-		User user = event.get("user").asUser().get();
-		Member member = event.get("user").asOptionalMember().orElse(null);
+		var user = event.get("user").asUser().get();
+		var member = event.get("user").asOptionalMember().orElse(null);
 
-		String avatarUrl = Utils.getAvatarUrl(user, guild ? member : null);
-		boolean animated = avatarUrl.endsWith(".gif");
-		byte[] data = URLRequest.of(avatarUrl + "?size=4096").toBytes().block();
+		var avatarUrl = Utils.getAvatarUrl(user, guild ? member : null);
+		var animated = avatarUrl.endsWith(".gif");
+		var data = URLRequest.of(avatarUrl + "?size=4096").toBytes().block();
 		event.respond(MessageBuilder.create(user.getMention()).addFile(user.getId().asString() + (animated ? ".gif" : ".png"), data));
 	}
 

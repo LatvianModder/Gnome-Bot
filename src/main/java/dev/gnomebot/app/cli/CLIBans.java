@@ -1,7 +1,6 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.UserCache;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.common.util.Snowflake;
 
@@ -16,12 +15,12 @@ public class CLIBans {
 
 	private static void run(CLIEvent event) {
 		var table = new Table("User ID", "Tag", "Reason", "Banned By", "Banned At");
-		UserCache userCache = event.gc.db.app.discordHandler.createUserCache();
+		var userCache = event.gc.db.app.discordHandler.createUserCache();
 
 		for (var ban : event.gc.getGuild().getBans().toIterable()) {
 			var userId = Snowflake.of(ban.getData().user().id().asLong());
 
-			boolean found = false;
+			var found = false;
 
 			for (var entry : event.gc.auditLog.query().eq("type", GnomeAuditLogEntry.Type.BAN.name).eq("user", userId.asLong())) {
 				found = true;

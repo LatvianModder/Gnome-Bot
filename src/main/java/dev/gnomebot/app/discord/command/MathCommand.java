@@ -19,8 +19,8 @@ public class MathCommand extends ApplicationCommands {
 			throw error("Wolfram Alpha token is not set! Owner of this bot instance has to set that up.");
 		}
 
-		String equation = event.get("equation").asString();
-		boolean detailed = event.get("detailed").asBoolean(false);
+		var equation = event.get("equation").asString();
+		var detailed = event.get("detailed").asBoolean(false);
 
 		if (equation.isEmpty()) {
 			throw error("Invalid question!");
@@ -41,8 +41,8 @@ public class MathCommand extends ApplicationCommands {
 		request.query("appid", Config.get().wolfram_alpha_token);
 
 		try {
-			byte[] bytes = request.block();
-			String contentType = request.getHeader("Content-Type");
+			var bytes = request.block();
+			var contentType = request.getHeader("Content-Type");
 
 			if (contentType.startsWith("image/")) {
 				event.respond(MessageBuilder.create("\"" + equation + "\"").addFile("image." + contentType.substring(6).split("\\W", 2)[0], bytes));

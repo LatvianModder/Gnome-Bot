@@ -1,14 +1,11 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import io.javalin.http.HttpStatus;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 
 public class LeaderboardCommand extends ApplicationCommands {
@@ -23,17 +20,17 @@ public class LeaderboardCommand extends ApplicationCommands {
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
 
-		long limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
+		var limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
 
 		if (limit > 100L) {
 			event.context.checkSenderAdmin();
 		}
 
-		long days = event.get("timespan").asDays().orElse(90L);
-		ChannelInfo channelInfo = event.get("channel").asChannelInfo().orElse(null);
-		CachedRole role = event.get("role").asRole().orElse(null);
+		var days = event.get("timespan").asDays().orElse(90L);
+		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
+		var role = event.get("role").asRole().orElse(null);
 
-		String url = "api/guild/activity/leaderboard-image/" + event.context.gc.guildId.asString() + "/" + days + "?limit=" + limit;
+		var url = "api/guild/activity/leaderboard-image/" + event.context.gc.guildId.asString() + "/" + days + "?limit=" + limit;
 
 		if (channelInfo != null) {
 			url += "&channel=" + channelInfo.id.asString();
@@ -43,10 +40,10 @@ public class LeaderboardCommand extends ApplicationCommands {
 			url += "&role=" + role.id.asString();
 		}
 
-		URLRequest<BufferedImage> req = Utils.internalRequest(url).timeout(30000).toImage();
+		var req = Utils.internalRequest(url).timeout(30000).toImage();
 
 		try {
-			ByteArrayOutputStream imageData = new ByteArrayOutputStream();
+			var imageData = new ByteArrayOutputStream();
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {

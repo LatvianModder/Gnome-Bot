@@ -4,7 +4,6 @@ import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordMessageCount;
 import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
@@ -18,9 +17,7 @@ import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.awt.Color;
@@ -51,17 +48,17 @@ public class ActivityHandlers {
 	}
 
 	public static Response leaderboard(ServerRequest request) throws Exception {
-		long time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
 
 		if (time < 0L) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
 		}
 
-		int limit = request.query("limit").asInt();
-		long channel = request.query("channel").asLong();
-		Snowflake role = Snowflake.of(request.query("role").asLong());
+		var limit = request.query("limit").asInt();
+		var channel = request.query("channel").asLong();
+		var role = Snowflake.of(request.query("role").asLong());
 
-		Map<Snowflake, Member> memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -82,8 +79,8 @@ public class ActivityHandlers {
 
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
-		for (Document document : request.gc.messageXp.aggregate(agg)) {
-			LeaderboardEntry entry = new LeaderboardEntry();
+		for (var document : request.gc.messageXp.aggregate(agg)) {
+			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
@@ -93,9 +90,9 @@ public class ActivityHandlers {
 
 		var array = JSONArray.of();
 
-		for (LeaderboardEntry entry : leaderboardEntries) {
+		for (var entry : leaderboardEntries) {
 			try {
-				Member member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(Snowflake.of(entry.userId));
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
@@ -106,7 +103,7 @@ public class ActivityHandlers {
 				o.put("name", member.getDisplayName());
 				o.put("xp", entry.xp);
 				o.put("rank", array.size() + 1);
-				int col = member.getColor().block().getRGB() & 0xFFFFFF;
+				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 			} catch (Exception ex) {
 			}
@@ -120,17 +117,17 @@ public class ActivityHandlers {
 	}
 
 	public static Response leaderboardImage(ServerRequest request) throws Exception {
-		long time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
 
 		if (time < 0L) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
 		}
 
-		int limit = request.query("limit").asInt(20);
-		long channel = request.query("channel").asLong();
-		Snowflake role = Snowflake.of(request.query("role").asLong());
+		var limit = request.query("limit").asInt(20);
+		var channel = request.query("channel").asLong();
+		var role = Snowflake.of(request.query("role").asLong());
 
-		Map<Snowflake, Member> memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -151,8 +148,8 @@ public class ActivityHandlers {
 
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
-		for (Document document : request.gc.messageXp.aggregate(agg)) {
-			LeaderboardEntry entry = new LeaderboardEntry();
+		for (var document : request.gc.messageXp.aggregate(agg)) {
+			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
@@ -164,7 +161,7 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				Member member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(Snowflake.of(entry.userId));
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
@@ -175,7 +172,7 @@ public class ActivityHandlers {
 				e.name = member.getDisplayName();
 				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;
-				int col = member.getColor().block().getRGB() & 0xFFFFFF;
+				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
 				list.add(e);
 			} catch (Exception ex) {
@@ -190,12 +187,12 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
 		}
 
-		BufferedImage[] avatars = new BufferedImage[list.size()];
-		AtomicInteger avatarsRemaining = new AtomicInteger(list.size());
+		var avatars = new BufferedImage[list.size()];
+		var avatarsRemaining = new AtomicInteger(list.size());
 
-		for (int i = 0; i < list.size(); i++) {
-			final int index = i;
-			Thread thread = new Thread(() -> {
+		for (var i = 0; i < list.size(); i++) {
+			final var index = i;
+			var thread = new Thread(() -> {
 				try {
 					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
 				} catch (Exception ex) {
@@ -214,10 +211,10 @@ public class ActivityHandlers {
 			Thread.sleep(10L);
 		}
 
-		ImageCanvas canvas = new ImageCanvas();
+		var canvas = new ImageCanvas();
 		canvas.setFont(request.gc.font.create(36));
 
-		int w = 0;
+		var w = 0;
 
 		for (var entry : list) {
 			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
@@ -255,7 +252,7 @@ public class ActivityHandlers {
 
 		var indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
 
-		for (int i = 0; i < list.size(); i++) {
+		for (var i = 0; i < list.size(); i++) {
 			var entry = list.get(i);
 			canvas.addString(6, 36 + i * 45, String.format(indexFormat, entry.rank), Color.GRAY);
 			canvas.addString(151, 36 + i * 45, entry.name, new Color(entry.color));
@@ -267,14 +264,14 @@ public class ActivityHandlers {
 	}
 
 	public static Response rank(ServerRequest request) throws Exception {
-		long time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
 
 		if (time < 0L) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
 		}
 
-		long member = Utils.snowflake(request.variable("member")).asLong();
-		long channel = request.query("channel").asLong();
+		var member = Utils.snowflake(request.variable("member")).asLong();
+		var channel = request.query("channel").asLong();
 
 		var json = JSONObject.of();
 
@@ -350,7 +347,7 @@ public class ActivityHandlers {
 	}
 
 	public static Response channels(ServerRequest request) throws Exception {
-		boolean fast = request.query("fast").asBoolean(false);
+		var fast = request.query("fast").asBoolean(false);
 
 		Map<Snowflake, MessageInfo> channels = new LinkedHashMap<>();
 
@@ -360,7 +357,7 @@ public class ActivityHandlers {
 					.filter(c -> c.canViewChannel(request.token.userId))
 					.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
 					.forEach(c -> {
-						MessageInfo mi = new MessageInfo();
+						var mi = new MessageInfo();
 						mi.id = c.id.asString();
 						mi.name = c.getName();
 						channels.put(c.id, mi);
@@ -373,9 +370,9 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("Channels not found!");
 		}
 
-		final long now = System.currentTimeMillis();
-		final long oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
-		int weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
+		final var now = System.currentTimeMillis();
+		final var oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
+		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
 			weeks = 1;
@@ -383,37 +380,37 @@ public class ActivityHandlers {
 
 		List<Bson> filter = new ArrayList<>();
 
-		for (MessageInfo mi : channels.values()) {
+		for (var mi : channels.values()) {
 			mi.messages = new int[weeks];
 			mi.totalMessages = 0;
 			filter.add(Filters.eq("channel", Utils.snowflake(mi.id).asLong()));
 		}
 
-		for (DiscordMessageCount mc : request.gc.messageCount.query().filter(Filters.or(filter))) {
-			int week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
+		for (var mc : request.gc.messageCount.query().filter(Filters.or(filter))) {
+			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
-				MessageInfo mi = channels.get(Snowflake.of(mc.getChannel()));
+				var mi = channels.get(Snowflake.of(mc.getChannel()));
 
 				if (mi != null) {
-					int m = mc.getCount();
+					var m = mc.getCount();
 					mi.messages[week] += m;
 					mi.totalMessages += m;
 				}
 			}
 		}
 
-		List<MessageInfo> channelList = channels.values()
+		var channelList = channels.values()
 				.stream()
 				.filter(messageInfo -> messageInfo.totalMessages > 0)
 				.sorted((o1, o2) -> Integer.compare(o2.totalMessages, o1.totalMessages))
 				.toList();
 
-		for (int i = 0; i < channelList.size(); i++) {
+		for (var i = 0; i < channelList.size(); i++) {
 			channelList.get(i).index = i;
 		}
 
-		int w = weeks;
+		var w = weeks;
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
@@ -433,17 +430,17 @@ public class ActivityHandlers {
 
 		var messages = json.addArray("messages");
 
-		for (int i = 0; i < w; i++) {
+		for (var i = 0; i < w; i++) {
 			if (fast) {
 				var ai = new int[channelList.size()];
 
-				for (MessageInfo mi : channelList) {
+				for (var mi : channelList) {
 					ai[mi.index] = mi.messages[i];
 				}
 
 				var a = messages.addArray();
 
-				for (int aii : ai) {
+				for (var aii : ai) {
 					a.add(aii);
 				}
 			} else {
@@ -463,17 +460,17 @@ public class ActivityHandlers {
 	}
 
 	public static Response members(ServerRequest request) throws Exception {
-		boolean fast = request.query("fast").asBoolean(false);
+		var fast = request.query("fast").asBoolean(false);
 
 		Map<Snowflake, MessageInfo> members = new LinkedHashMap<>();
 
 		try {
-			List<Member> channelList = request.gc.getGuild().getMembers()
+			var channelList = request.gc.getGuild().getMembers()
 					.toStream()
 					.sorted((o1, o2) -> o1.getUsername().compareToIgnoreCase(o2.getUsername())).toList();
 
-			for (Member m : channelList) {
-				MessageInfo mi = new MessageInfo();
+			for (var m : channelList) {
+				var mi = new MessageInfo();
 				mi.id = m.getId().asString();
 				mi.name = m.getDisplayName();
 				members.put(m.getId(), mi);
@@ -486,46 +483,46 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("Members not found!");
 		}
 
-		final long now = System.currentTimeMillis();
-		final long oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
-		int weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
+		final var now = System.currentTimeMillis();
+		final var oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
+		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
 			weeks = 1;
 		}
 
-		for (MessageInfo mi : members.values()) {
+		for (var mi : members.values()) {
 			mi.messages = new int[weeks];
 			mi.totalMessages = 0;
 		}
 
-		for (DiscordMessageCount mc : request.gc.messageCount.query()) {
-			int week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
+		for (var mc : request.gc.messageCount.query()) {
+			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
-				MessageInfo mi = members.get(Snowflake.of(mc.getUser()));
+				var mi = members.get(Snowflake.of(mc.getUser()));
 
 				if (mi != null) {
-					int m = mc.getCount();
+					var m = mc.getCount();
 					mi.messages[week] += m;
 					mi.totalMessages += m;
 				}
 			}
 		}
 
-		List<MessageInfo> memberList = members.values()
+		var memberList = members.values()
 				.stream()
 				.filter(messageInfo -> messageInfo.totalMessages >= 10)
 				.sorted((o1, o2) -> Integer.compare(o2.totalMessages, o1.totalMessages))
 				.collect(Collectors.toList());
 
-		for (int i = 0; i < memberList.size(); i++) {
+		for (var i = 0; i < memberList.size(); i++) {
 			memberList.get(i).index = i;
 		}
 
 		memberList.removeIf(m -> m.index >= 1000);
 
-		int w = weeks;
+		var w = weeks;
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
@@ -545,22 +542,22 @@ public class ActivityHandlers {
 
 		var messages = json.addArray("messages");
 
-		for (int i = 0; i < w; i++) {
+		for (var i = 0; i < w; i++) {
 			if (fast) {
-				int[] ai = new int[memberList.size()];
+				var ai = new int[memberList.size()];
 
-				for (MessageInfo mi : memberList) {
+				for (var mi : memberList) {
 					ai[mi.index] = mi.messages[i];
 				}
 
 				var a = messages.addArray();
-				for (int aii : ai) {
+				for (var aii : ai) {
 					a.add(aii);
 				}
 			} else {
 				var o = messages.addObject();
 
-				for (MessageInfo mi : memberList) {
+				for (var mi : memberList) {
 					if (mi.messages[i] > 0) {
 						o.put(mi.name, mi.messages[i]);
 					}
@@ -582,7 +579,7 @@ public class ActivityHandlers {
 	}
 
 	private static Response mentionLeaderboardImage(ServerRequest request, boolean isUser) throws Exception {
-		long time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
 
 		if (time < 0L) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
@@ -590,10 +587,10 @@ public class ActivityHandlers {
 
 		var mentionId = Long.parseUnsignedLong(request.variable("mention"));
 
-		int limit = request.query("limit").asInt(20);
-		long channel = request.query("channel").asLong();
+		var limit = request.query("limit").asInt(20);
+		var channel = request.query("channel").asLong();
 
-		Map<Snowflake, Member> memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -616,7 +613,7 @@ public class ActivityHandlers {
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
 		for (var document : request.gc.messageXp.aggregate(agg)) {
-			LeaderboardEntry entry = new LeaderboardEntry();
+			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
@@ -628,7 +625,7 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				Member member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(Snowflake.of(entry.userId));
 
 				if (member == null) {
 					continue;
@@ -639,7 +636,7 @@ public class ActivityHandlers {
 				e.name = member.getDisplayName();
 				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;
-				int col = member.getColor().block().getRGB() & 0xFFFFFF;
+				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
 				list.add(e);
 			} catch (Exception ex) {
@@ -654,12 +651,12 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
 		}
 
-		BufferedImage[] avatars = new BufferedImage[list.size()];
-		AtomicInteger avatarsRemaining = new AtomicInteger(list.size());
+		var avatars = new BufferedImage[list.size()];
+		var avatarsRemaining = new AtomicInteger(list.size());
 
-		for (int i = 0; i < list.size(); i++) {
-			final int index = i;
-			Thread thread = new Thread(() -> {
+		for (var i = 0; i < list.size(); i++) {
+			final var index = i;
+			var thread = new Thread(() -> {
 				try {
 					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
 				} catch (Exception ex) {
@@ -678,10 +675,10 @@ public class ActivityHandlers {
 			Thread.sleep(10L);
 		}
 
-		ImageCanvas canvas = new ImageCanvas();
+		var canvas = new ImageCanvas();
 		canvas.setFont(request.gc.font.create(36));
 
-		int w = 0;
+		var w = 0;
 
 		for (var entry : list) {
 			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
@@ -719,7 +716,7 @@ public class ActivityHandlers {
 
 		var indexFormat = "#%0" + String.valueOf(list.size()).length() + "d";
 
-		for (int i = 0; i < list.size(); i++) {
+		for (var i = 0; i < list.size(); i++) {
 			var entry = list.get(i);
 			canvas.addString(6, 36 + i * 45, String.format(indexFormat, entry.rank), Color.GRAY);
 			canvas.addString(151, 36 + i * 45, entry.name, new Color(entry.color));

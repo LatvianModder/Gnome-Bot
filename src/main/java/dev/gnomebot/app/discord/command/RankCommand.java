@@ -5,7 +5,6 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.json.JSONObject;
-import discord4j.core.object.entity.Member;
 
 public class RankCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")
@@ -20,13 +19,13 @@ public class RankCommand extends ApplicationCommands {
 
 		// event.respond("Currently this command is out of order! Sorry for inconvenience!");
 
-		Member m = event.get("member").asMember().orElse(event.context.sender);
-		long days = event.get("timespan").asDays().orElse(90L);
+		var m = event.get("member").asMember().orElse(event.context.sender);
+		var days = event.get("timespan").asDays().orElse(90L);
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
 				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJsonArray().block();
-				String id = m.getId().asString();
+				var id = m.getId().asString();
 
 				for (var e : leaderboardJson) {
 					var o = (JSONObject) e;
@@ -34,7 +33,7 @@ public class RankCommand extends ApplicationCommands {
 					if (o.asString("id").equals(id)) {
 						// event.response().createFollowupMessage("**Rank:**  #0   |   **XP:**  0").subscribe();
 
-						EmbedBuilder embed = EmbedBuilder.create();
+						var embed = EmbedBuilder.create();
 						embed.author(m.getDisplayName(), m.getAvatarUrl());
 
 						if (o.asInt("rank") == 69) {
@@ -46,7 +45,7 @@ public class RankCommand extends ApplicationCommands {
 						embed.inlineField("XP", FormattingUtils.format(o.asLong("xp")));
 
 						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
-							long totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();
+							var totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();
 
 							if (totalMessages < event.context.gc.regularMessages.get()) {
 								if (totalMessages < MessageHandler.MM_MEMBER) {

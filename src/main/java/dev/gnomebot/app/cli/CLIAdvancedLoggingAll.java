@@ -1,7 +1,5 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.data.GuildCollections;
-
 public class CLIAdvancedLoggingAll {
 	public static final CLICommand COMMAND = CLICommand.make("advanced_logging_all")
 			.description("Toggles advanced logging in all guilds")
@@ -12,7 +10,7 @@ public class CLIAdvancedLoggingAll {
 		event.gc.advancedLogging = !event.gc.advancedLogging;
 		event.respond("Advanced logging: " + event.gc.advancedLogging);
 
-		for (GuildCollections gc : event.gc.db.guildCollections.values()) {
+		for (var gc : event.gc.db.guildCollections.values()) {
 			gc.advancedLogging = event.gc.advancedLogging;
 		}
 	}

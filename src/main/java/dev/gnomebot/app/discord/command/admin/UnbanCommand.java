@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord.command.admin;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 
@@ -12,7 +11,7 @@ public class UnbanCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 
 		Member member = null;
 

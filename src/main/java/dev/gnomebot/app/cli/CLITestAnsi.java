@@ -10,7 +10,7 @@ public class CLITestAnsi {
 			.run(CLITestAnsi::run);
 
 	private static void run(CLIEvent event) throws Exception {
-		StringBuilder sb = new StringBuilder("```ansi");
+		var sb = new StringBuilder("```ansi");
 
 		sb.append('\n');
 		sb.append(DiscordAnsi.progressBar(0.0F, "0%"));

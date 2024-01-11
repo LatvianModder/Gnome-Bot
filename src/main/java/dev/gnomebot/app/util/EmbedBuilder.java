@@ -10,8 +10,6 @@ import discord4j.discordjson.json.EmbedData;
 import discord4j.discordjson.json.EmbedFooterData;
 import discord4j.discordjson.json.EmbedImageData;
 import discord4j.discordjson.json.EmbedThumbnailData;
-import discord4j.discordjson.json.ImmutableEmbedAuthorData;
-import discord4j.discordjson.json.ImmutableEmbedFooterData;
 import discord4j.rest.util.Color;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,7 +69,7 @@ public class EmbedBuilder {
 		} else if (object instanceof CharSequence) {
 			return create(object.toString());
 		} else if (object instanceof Map map) {
-			EmbedBuilder builder = EmbedBuilder.create();
+			var builder = EmbedBuilder.create();
 
 			if (map.get("title") instanceof CharSequence s) {
 				builder.title(s.toString());
@@ -218,7 +216,7 @@ public class EmbedBuilder {
 	// Specs //
 
 	public EmbedCreateSpec toEmbedCreateSpec() {
-		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+		var builder = EmbedCreateSpec.builder();
 
 		if (this.title != null && !this.title.isEmpty()) {
 			builder.title(FormattingUtils.trim(this.title, 256));
@@ -283,7 +281,7 @@ public class EmbedBuilder {
 		builder.color(this.color == null ? this.defaultColor.getRGB() : this.color.getRGB());
 
 		if (this.footerText != null) {
-			ImmutableEmbedFooterData.Builder footer = EmbedFooterData.builder();
+			var footer = EmbedFooterData.builder();
 			footer.text(FormattingUtils.trim(this.footerText, 2048));
 
 			if (this.footerIconUrl != null) {
@@ -302,7 +300,7 @@ public class EmbedBuilder {
 		}
 
 		if (this.authorName != null) {
-			ImmutableEmbedAuthorData.Builder author = EmbedAuthorData.builder();
+			var author = EmbedAuthorData.builder();
 			author.name(FormattingUtils.trim(this.authorName, 256));
 
 			if (this.authorUrl != null) {

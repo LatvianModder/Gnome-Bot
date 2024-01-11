@@ -9,7 +9,7 @@ public record PingDestinationBundle(PingDestination[] destinations) implements P
 
 	@Override
 	public void relayPing(Snowflake targetId, PingData data, Ping ping) {
-		for (PingDestination destination : destinations) {
+		for (var destination : destinations) {
 			destination.relayPing(targetId, data, ping);
 		}
 	}

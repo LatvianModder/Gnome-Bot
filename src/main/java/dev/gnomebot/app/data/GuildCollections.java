@@ -18,6 +18,7 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
+import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.script.WrappedGuild;
 import dev.gnomebot.app.script.WrappedId;
@@ -46,8 +47,6 @@ import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
-import discord4j.discordjson.Id;
-import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MemberData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.AllowedMentions;
@@ -69,7 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -467,7 +465,7 @@ public class GuildCollections {
 	}
 
 	public String getChannelName(Snowflake channel) {
-		ChannelInfo c = getChannelMap().get(channel);
+		var c = getChannelMap().get(channel);
 		return c == null ? channel.asString() : c.getName();
 	}
 
@@ -487,18 +485,18 @@ public class GuildCollections {
 			return AuthLevel.OWNER;
 		}
 
-		Set<Snowflake> roleIds = member.getRoleIds();
+		var roleIds = member.getRoleIds();
 
-		for (Snowflake id : roleIds) {
-			CachedRole r = getRoleMap().get(id);
+		for (var id : roleIds) {
+			var r = getRoleMap().get(id);
 
 			if (r != null && r.ownerRole) {
 				return AuthLevel.OWNER;
 			}
 		}
 
-		for (Snowflake id : roleIds) {
-			CachedRole r = getRoleMap().get(id);
+		for (var id : roleIds) {
+			var r = getRoleMap().get(id);
 
 			if (r != null && r.adminRole) {
 				return AuthLevel.ADMIN;
@@ -517,24 +515,24 @@ public class GuildCollections {
 			return AuthLevel.OWNER;
 		}
 
-		MemberData data = getMemberData(memberId);
+		var data = getMemberData(memberId);
 
 		if (data == null) {
 			return AuthLevel.NO_AUTH;
 		}
 
-		List<Id> roleIds = data.roles();
+		var roleIds = data.roles();
 
-		for (Id id : roleIds) {
-			CachedRole r = getRoleMap().get(Snowflake.of(id));
+		for (var id : roleIds) {
+			var r = getRoleMap().get(Snowflake.of(id));
 
 			if (r != null && r.ownerRole) {
 				return AuthLevel.OWNER;
 			}
 		}
 
-		for (Id id : roleIds) {
-			CachedRole r = getRoleMap().get(Snowflake.of(id));
+		for (var id : roleIds) {
+			var r = getRoleMap().get(Snowflake.of(id));
 
 			if (r != null && r.adminRole) {
 				return AuthLevel.ADMIN;
@@ -556,7 +554,7 @@ public class GuildCollections {
 	public void guildUpdated(@Nullable Guild g) {
 		App.LOGGER.event(BrainEvents.REFRESHED_GUILD_CACHE);
 		refreshCache();
-		boolean saveInfo = false;
+		var saveInfo = false;
 
 		if (g != null) {
 			var n = g.getName();
@@ -612,7 +610,7 @@ public class GuildCollections {
 		}
 
 		if (!deleted) {
-			ChannelInfo ci = getChannelMap().get(channel.getId());
+			var ci = getChannelMap().get(channel.getId());
 
 			if (ci != null) {
 				ci.settings.updateFrom(channel);
@@ -680,7 +678,7 @@ public class GuildCollections {
 				var name = c.getName().toLowerCase().replace(' ', '-');
 				var key = name;
 
-				for (int i = 2; uniqueChannelNameMap.containsKey(key); i++) {
+				for (var i = 2; uniqueChannelNameMap.containsKey(key); i++) {
 					key = name + '-' + i;
 				}
 
@@ -746,7 +744,7 @@ public class GuildCollections {
 				var name = c.name.toLowerCase().replace(' ', '-');
 				var key = name;
 
-				for (int i = 2; uniqueRoleNameMap.containsKey(key); i++) {
+				for (var i = 2; uniqueRoleNameMap.containsKey(key); i++) {
 					key = name + '-' + i;
 				}
 
@@ -793,12 +791,12 @@ public class GuildCollections {
 	}
 
 	public ChannelInfo getOrMakeChannelInfo(Snowflake id) {
-		ChannelInfo ci = getChannelMap().get(id);
+		var ci = getChannelMap().get(id);
 
 		if (ci == null) {
 			ci = new ChannelInfo(this, id, getChannelSettings(id));
-			ChannelData data = ci.getChannelData();
-			Id parentId = data == null ? null : data.parentId().toOptional().orElse(Optional.empty()).orElse(null);
+			var data = ci.getChannelData();
+			var parentId = data == null ? null : data.parentId().toOptional().orElse(Optional.empty()).orElse(null);
 
 			if (parentId != null) {
 				ci = getOrMakeChannelInfo(Snowflake.of(parentId)).thread(id, "-");
@@ -812,14 +810,14 @@ public class GuildCollections {
 		if (recentUserSuggestions == null) {
 			recentUserSuggestions = new ArrayList<>();
 
-			for (int i = 0; i < recentUsers.size(); i++) {
-				RecentUser user = recentUsers.get(i);
+			for (var i = 0; i < recentUsers.size(); i++) {
+				var user = recentUsers.get(i);
 				recentUserSuggestions.add(new ChatCommandSuggestion(user.tag(), user.id().asString(), user.tag().toLowerCase(), recentUsers.size() - i));
 			}
 
-			Set<Snowflake> set = recentUsers.stream().map(RecentUser::id).collect(Collectors.toSet());
+			var set = recentUsers.stream().map(RecentUser::id).collect(Collectors.toSet());
 
-			for (Member member : getMembers()) {
+			for (var member : getMembers()) {
 				if (!set.contains(member.getId())) {
 					recentUserSuggestions.add(new ChatCommandSuggestion(member.getTag(), member.getId().asString(), member.getTag().toLowerCase(), 0));
 				}
@@ -842,7 +840,7 @@ public class GuildCollections {
 		}
 
 		recentUserSuggestions = null;
-		RecentUser user = new RecentUser(userId, tag);
+		var user = new RecentUser(userId, tag);
 		recentUsers.remove(user);
 		recentUsers.add(0, user);
 
@@ -868,6 +866,33 @@ public class GuildCollections {
 		}
 
 		return m;
+	}
+
+	public Macro getMacroFromCommand(String name) {
+		if (name.isEmpty()) {
+			throw new GnomeException("Macro name can't be empty!");
+		}
+
+		try {
+			var m = db.allMacros.get(HexId32.of(name).getAsInt());
+
+			if (m != null) {
+				return m;
+			}
+		} catch (Exception ignored) {
+		}
+
+		var m = getMacro(name);
+
+		if (m == null) {
+			throw new GnomeException("Macro '" + name + "' not found!");
+		}
+
+		return m;
+	}
+
+	public boolean macroExists(String name) {
+		return getMacro(name) != null || HexId32.isValid(name) && db.allMacros.containsKey(HexId32.of(name).getAsInt());
 	}
 
 	public void saveMacroMap() {
@@ -903,7 +928,7 @@ public class GuildCollections {
 	public Map<Integer, MutableInt> getMacroUseMap() {
 		if (macroUseMap == null) {
 			macroUseMap = new HashMap<>();
-			boolean ported = false;
+			var ported = false;
 
 			try {
 				if (Files.exists(paths.macroUseFile)) {
@@ -948,10 +973,15 @@ public class GuildCollections {
 		saveMacroUseMap();
 	}
 
+	private static int compareMacroEntries(Map.Entry<Integer, MutableInt> o1, Map.Entry<Integer, MutableInt> o2) {
+		int i = Integer.compare(o2.getValue().value, o1.getValue().value);
+		return i == 0 ? o1.getKey().compareTo(o2.getKey()) : i;
+	}
+
 	public void saveMacroUseMap() {
 		var lines = new ArrayList<String>();
 
-		for (var entry : getMacroUseMap().entrySet()) {
+		for (var entry : getMacroUseMap().entrySet().stream().sorted(GuildCollections::compareMacroEntries).toList()) {
 			lines.add(HexId32.of(entry.getKey()).toString() + ":" + entry.getValue().value);
 		}
 

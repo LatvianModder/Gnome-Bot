@@ -68,8 +68,8 @@ public class CreateLobbyCommand {
 
 	@LegacyDiscordCommand(name = "create_lobby", help = "Creates a lobby others can join. Used for games", aliases = {"lobby", "create_game"}, arguments = "[max people]")
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		int max = Math.min(100, Math.max(1, reader.readLong().orElse(8L).intValue()));
-		Message m = context.reply("Creating a lobby...");
+		var max = Math.min(100, Math.max(1, reader.readLong().orElse(8L).intValue()));
+		var m = context.reply("Creating a lobby...");
 		m.addReaction(Emojis.VOTEUP).block();
 		m.addReaction(Emojis.STOP).block();
 		m.edit(MessageEditSpec.builder()

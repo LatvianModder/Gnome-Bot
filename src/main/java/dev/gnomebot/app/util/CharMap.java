@@ -5,7 +5,6 @@ import dev.gnomebot.app.AppPaths;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.data.Substitute;
 
-import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,10 +42,10 @@ public class CharMap {
 			return false;
 		}
 
-		int p = 0;
+		var p = 0;
 
-		for (int i = 0; i < string.length(); i++) {
-			char c = string.charAt(i);
+		for (var i = 0; i < string.length(); i++) {
+			var c = string.charAt(i);
 
 			if (c == ' ') {
 				p = 0;
@@ -68,17 +67,17 @@ public class CharMap {
 
 		List<Character> chars = new ArrayList<>();
 
-		for (char c = 'a'; c <= 'z'; c++) {
+		for (var c = 'a'; c <= 'z'; c++) {
 			chars.add(c);
 		}
 
-		for (char c = '0'; c <= '9'; c++) {
+		for (var c = '0'; c <= '9'; c++) {
 			chars.add(c);
 		}
 
-		for (Character c : chars) {
-			try (BufferedReader reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("characters/" + c + ".txt"))) {
-				CharMap m = MAP.computeIfAbsent(c, CharMap::new);
+		for (var c : chars) {
+			try (var reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("characters/" + c + ".txt"))) {
+				var m = MAP.computeIfAbsent(c, CharMap::new);
 				String line;
 
 				while ((line = reader.readLine()) != null) {
@@ -93,10 +92,10 @@ public class CharMap {
 			}
 		}
 
-		for (Map.Entry<Character, CharMap> entry : new HashMap<>(MAP).entrySet()) {
-			int order = 0;
+		for (var entry : new HashMap<>(MAP).entrySet()) {
+			var order = 0;
 
-			for (String c : entry.getValue().possible) {
+			for (var c : entry.getValue().possible) {
 				if (c.length() > 1 || !isWordChar(c.charAt(0))) {
 					SUBSTITUTES.add(new Substitute(entry.getValue().string, c, order));
 					order++;
@@ -108,16 +107,16 @@ public class CharMap {
 		special.put("delete", "");
 		special.put("ae", "ae");
 
-		for (Map.Entry<String, String> entry : special.entrySet()) {
-			try (BufferedReader reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("characters/" + entry.getKey() + ".txt"))) {
+		for (var entry : special.entrySet()) {
+			try (var reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("characters/" + entry.getKey() + ".txt"))) {
 				String line;
 
 				while ((line = reader.readLine()) != null) {
 					if (!line.isEmpty()) {
 						SUBSTITUTES.add(new Substitute(entry.getValue(), line, -1));
 
-						String low = line.toLowerCase();
-						String up = line.toUpperCase();
+						var low = line.toLowerCase();
+						var up = line.toUpperCase();
 
 						if (!low.equals(line)) {
 							SUBSTITUTES.add(new Substitute(entry.getValue(), low, -1));
@@ -140,9 +139,9 @@ public class CharMap {
 
 	private static String removeMidSpaces(String s) {
 		if (s.length() % 2 == 1 && s.length() >= 3 && s.charAt(1) <= ' ') {
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 
-			for (int i = 0; i < s.length(); i++) {
+			for (var i = 0; i < s.length(); i++) {
 				if (i % 2 == 1) {
 					if (s.charAt(i) > ' ') {
 						return s;
@@ -241,7 +240,7 @@ public class CharMap {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		var sb = new StringBuilder();
 		buildPattern(sb);
 		return sb.toString();
 	}
@@ -254,7 +253,7 @@ public class CharMap {
 		sb.append('[');
 		sb.append(character);
 
-		for (Character c : possibleCharacters) {
+		for (var c : possibleCharacters) {
 			if (c != character) {
 				sb.append(c);
 			}
@@ -263,7 +262,7 @@ public class CharMap {
 		sb.append(']');
 
 		if (!possibleStrings.isEmpty()) {
-			for (String s : possibleStrings) {
+			for (var s : possibleStrings) {
 				sb.append('|');
 				sb.append(s);
 			}

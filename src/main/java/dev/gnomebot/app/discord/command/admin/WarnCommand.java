@@ -13,7 +13,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 
@@ -24,7 +23,7 @@ public class WarnCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.MODERATE_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 		Member member = null;
 
 		try {
@@ -32,8 +31,8 @@ public class WarnCommand extends ApplicationCommands {
 		} catch (Exception ex) {
 		}
 
-		String reason0 = event.get("reason").asString();
-		String reason = reason0.isEmpty() ? "Not specified" : reason0;
+		var reason0 = event.get("reason").asString();
+		var reason = reason0.isEmpty() ? "Not specified" : reason0;
 
 		if (user == null) {
 			throw error("User not found!");
@@ -42,7 +41,7 @@ public class WarnCommand extends ApplicationCommands {
 		}
 
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
-		boolean dm = DM.send(event.context.handler, user, "You've been warned on " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user, "You've been warned on " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (dm) {
 			event.context.reply(event.context.sender.getMention() + " warned " + user.getMention());

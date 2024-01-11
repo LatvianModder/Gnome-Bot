@@ -32,11 +32,11 @@ public final class EventHandler<T extends EventJS> extends BaseFunction {
 				consumers = new ArrayList<>();
 			}
 
-			EventCallback callback = (EventCallback) Context.jsToJava(args[0], EventCallback.class);
+			var callback = (EventCallback) Context.jsToJava(args[0], EventCallback.class);
 			consumers.add(callback);
 		} else if (args.length == 2) {
-			String extra = String.valueOf(args[0]);
-			EventCallback callback = (EventCallback) Context.jsToJava(args[1], EventCallback.class);
+			var extra = String.valueOf(args[0]);
+			var callback = (EventCallback) Context.jsToJava(args[1], EventCallback.class);
 
 			if (extra.isEmpty()) {
 				if (consumers == null) {
@@ -49,7 +49,7 @@ public final class EventHandler<T extends EventJS> extends BaseFunction {
 					extraConsumers = new HashMap<>();
 				}
 
-				List<EventCallback> list = extraConsumers.get(extra);
+				var list = extraConsumers.get(extra);
 
 				if (list == null) {
 					list = new ArrayList<>();
@@ -77,7 +77,7 @@ public final class EventHandler<T extends EventJS> extends BaseFunction {
 			return false;
 		}
 
-		for (EventCallback callback : consumers) {
+		for (var callback : consumers) {
 			try {
 				callback.post(event);
 

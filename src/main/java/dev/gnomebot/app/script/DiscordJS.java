@@ -16,7 +16,6 @@ import dev.latvian.mods.rhino.NativeJavaClass;
 import dev.latvian.mods.rhino.NativeJavaObject;
 import dev.latvian.mods.rhino.Scriptable;
 import dev.latvian.mods.rhino.ScriptableObject;
-import dev.latvian.mods.rhino.util.wrap.TypeWrappers;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.WebhookExecuteRequest;
@@ -47,19 +46,19 @@ public class DiscordJS {
 		readOnly = ro;
 
 		if (Files.exists(gc.paths.scripts) && hasFiles(gc.paths.scripts)) {
-			Context context = Context.enterWithNewFactory();
+			var context = Context.enterWithNewFactory();
 			context.setClassShutter((fullClassName, type) -> true);
 
 			try {
-				TypeWrappers typeWrappers = context.getTypeWrappers();
+				var typeWrappers = context.getTypeWrappers();
 				typeWrappers.register(Snowflake.class, o -> o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString()));
 				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString())));
 				typeWrappers.register(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
 				typeWrappers.register(MessageBuilder.class, MessageBuilder::of);
 				typeWrappers.register(EmbedBuilder.class, EmbedBuilder::of);
 
-				for (Path file : Files.walk(gc.paths.scripts).filter(Files::isRegularFile).toList()) {
-					Path rfile = gc.paths.scripts.relativize(file);
+				for (var file : Files.walk(gc.paths.scripts).filter(Files::isRegularFile).toList()) {
+					var rfile = gc.paths.scripts.relativize(file);
 
 					try (Reader reader = Files.newBufferedReader(file)) {
 						Scriptable scope = context.initStandardObjects();

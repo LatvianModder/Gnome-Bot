@@ -27,19 +27,19 @@ public class DefineCommand extends ApplicationCommands {
 			var o = Utils.readInternalJson("api/info/define/" + CodingUtils.encodeURL(event.get("word").asString()));
 
 			if (o.asBoolean("found")) {
-				MessageBuilder builder = MessageBuilder.create();
-				String word = o.asString("word");
+				var builder = MessageBuilder.create();
+				var word = o.asString("word");
 
-				EmbedBuilder embedBuilder = EmbedBuilder.create();
+				var embedBuilder = EmbedBuilder.create();
 				embedBuilder.color(EmbedColor.GRAY);
 				embedBuilder.title(word);
 
 				var meanings = o.asArray("meanings");
 
-				for (int i = 0; i < Math.min(25, meanings.size()); i++) {
+				for (var i = 0; i < Math.min(25, meanings.size()); i++) {
 					var o1 = meanings.asObject(i);
 
-					StringBuilder b = new StringBuilder("*");
+					var b = new StringBuilder("*");
 					FormattingUtils.titleCase(b, o1.asString("definition"));
 					b.append('*');
 
@@ -58,7 +58,7 @@ public class DefineCommand extends ApplicationCommands {
 
 				for (var o1 : o.asArray("phonetics").ofObjects()) {
 					if (!o1.asString("audio_url").isEmpty()) {
-						String url = o1.asString("audio_url");
+						var url = o1.asString("audio_url");
 
 						if (url.endsWith(".mp3")) {
 							if (url.startsWith("https:https://")) {

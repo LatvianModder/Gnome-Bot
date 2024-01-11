@@ -129,7 +129,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 
 		List<ApplicationCommandOptionData> list = new ArrayList<>();
 
-		for (Self builder : options.values()) {
+		for (var builder : options.values()) {
 			var b = ApplicationCommandOptionData.builder();
 			b.type(builder.type.getValue());
 			b.name(builder.name);
@@ -144,7 +144,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 				b.choices(builder.choices);
 			}
 
-			List<ApplicationCommandOptionData> o = builder.createOptions();
+			var o = builder.createOptions();
 
 			if (!o.isEmpty()) {
 				b.options(o);
@@ -210,8 +210,8 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 
 	public UUID createHash() {
 		try {
-			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-			try (DataOutputStream stream = new DataOutputStream(bytes)) {
+			var bytes = new ByteArrayOutputStream();
+			try (var stream = new DataOutputStream(bytes)) {
 				writeHash(stream);
 			}
 

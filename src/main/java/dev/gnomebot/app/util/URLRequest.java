@@ -125,12 +125,12 @@ public class URLRequest<T> {
 	}
 
 	public String getFullUrl() {
-		StringBuilder u = new StringBuilder(url);
+		var u = new StringBuilder(url);
 
 		if (!query.isEmpty()) {
-			boolean first = true;
+			var first = true;
 
-			for (Map.Entry<String, String> entry : query.entrySet()) {
+			for (var entry : query.entrySet()) {
 				if (first) {
 					first = false;
 					u.append('?');
@@ -216,7 +216,7 @@ public class URLRequest<T> {
 	}
 
 	public <M> URLRequest<M> map(Mapper<M> mapper) {
-		URLRequest<M> request = new URLRequest<>(url, mapper);
+		var request = new URLRequest<M>(url, mapper);
 		request.query = query;
 		request.setCookies = setCookies;
 		request.cookies = cookies;
@@ -233,8 +233,8 @@ public class URLRequest<T> {
 
 	public URLRequest<byte[]> toBytes(int bufferSize) {
 		return map(stream -> {
-			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-			byte[] buffer = new byte[bufferSize];
+			var bytes = new ByteArrayOutputStream();
+			var buffer = new byte[bufferSize];
 			int len;
 
 			while ((len = stream.read(buffer)) > 0) {
@@ -263,7 +263,7 @@ public class URLRequest<T> {
 
 	public URLRequest<List<String>> toStringList() {
 		return map(stream -> {
-			BufferedReader reader = getReader(stream);
+			var reader = getReader(stream);
 			List<String> list = new ArrayList<>();
 			String l;
 
@@ -277,7 +277,7 @@ public class URLRequest<T> {
 
 	public URLRequest<String> toJoinedString() {
 		return map(stream -> {
-			BufferedReader reader = getReader(stream);
+			var reader = getReader(stream);
 			List<String> list = new ArrayList<>();
 			String l;
 
@@ -290,10 +290,10 @@ public class URLRequest<T> {
 	}
 
 	public T block() throws Exception {
-		String m = method.isEmpty() ? (out == null ? "GET" : "POST") : method;
+		var m = method.isEmpty() ? (out == null ? "GET" : "POST") : method;
 		// App.log("Opening " + m + " connection to " + url + "...");
 
-		String fullUrl = getFullUrl();
+		var fullUrl = getFullUrl();
 		connection = (HttpURLConnection) new URL(fullUrl).openConnection();
 		connection.setRequestMethod(m);
 		connection.setDoInput(true);
@@ -308,7 +308,7 @@ public class URLRequest<T> {
 			connection.setRequestProperty("Cookie", CodingUtils.encodeURL(cookies, "; "));
 		}
 
-		for (SetCookie cookie : setCookies) {
+		for (var cookie : setCookies) {
 			Map<String, String> map = new LinkedHashMap<>();
 			map.put(cookie.key, cookie.value);
 
@@ -342,16 +342,16 @@ public class URLRequest<T> {
 		}
 
 		if (out != null) {
-			try (OutputStream stream = connection.getOutputStream()) {
+			try (var stream = connection.getOutputStream()) {
 				out.write(stream);
 			}
 		}
 
-		int code = connection.getResponseCode();
+		var code = connection.getResponseCode();
 
 		if (code / 100 == 2) {
 			if (mapper.autoclose()) {
-				try (InputStream stream = connection.getInputStream()) {
+				try (var stream = connection.getInputStream()) {
 					return mapper.map(stream);
 				}
 			} else {
@@ -359,8 +359,8 @@ public class URLRequest<T> {
 			}
 		}
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
-			StringBuilder sb = new StringBuilder();
+		try (var reader = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
+			var sb = new StringBuilder();
 			String l;
 
 			while ((l = reader.readLine()) != null) {
@@ -391,7 +391,7 @@ public class URLRequest<T> {
 	}
 
 	public void subscribe(Consumer<T> contentCallback, Consumer<Exception> errorCallback) {
-		Thread thread = new Thread(() -> {
+		var thread = new Thread(() -> {
 			try {
 				contentCallback.accept(block());
 			} catch (Exception ex) {
@@ -408,7 +408,7 @@ public class URLRequest<T> {
 	}
 
 	public String getHeader(String header, String def) {
-		String s = connection.getHeaderField(header);
+		var s = connection.getHeaderField(header);
 		return s == null || s.isEmpty() ? def : s;
 	}
 

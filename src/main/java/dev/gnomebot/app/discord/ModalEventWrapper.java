@@ -26,11 +26,11 @@ public class ModalEventWrapper extends ComponentEventWrapper {
 	}
 
 	private static void mapOptions(CommandContext context, List<MessageComponent> list, Map<String, CommandOption> options, Map<String, List<String>> selectMenuOptions) {
-		for (MessageComponent component : list) {
+		for (var component : list) {
 			if (component instanceof ActionRow row) {
 				mapOptions(context, row.getChildren(), options, selectMenuOptions);
 			} else if (component instanceof TextInput textInput) {
-				CommandOption o1 = new CommandOption(context, textInput.getCustomId(), textInput.getValue().orElse(""), false);
+				var o1 = new CommandOption(context, textInput.getCustomId(), textInput.getValue().orElse(""), false);
 				options.put(o1.name, o1);
 			} else if (component instanceof SelectMenu selectMenu) {
 				selectMenuOptions.put(selectMenu.getCustomId(), selectMenu.getOptions().stream().map(SelectMenu.Option::getValue).toList());
@@ -48,7 +48,7 @@ public class ModalEventWrapper extends ComponentEventWrapper {
 	}
 
 	public CommandOption get(String id) {
-		CommandOption o = options.get(id);
+		var o = options.get(id);
 
 		if (o == null) {
 			return new CommandOption(context, id, "", false);

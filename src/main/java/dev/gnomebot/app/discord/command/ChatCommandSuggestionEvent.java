@@ -43,7 +43,7 @@ public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInpu
 	}
 
 	public CommandOption get(String id) {
-		CommandOption o = options.get(id);
+		var o = options.get(id);
 
 		if (o == null) {
 			return new CommandOption(context, id, "", false);

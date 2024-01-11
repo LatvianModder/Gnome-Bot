@@ -39,7 +39,7 @@ public class ReactionHandler {
 		TEMP_REACTION_HANDLERS.put(callback.message.getId(), callback);
 
 		if (ttl > 0L) {
-			Thread thread = new Thread(() -> {
+			var thread = new Thread(() -> {
 				try {
 					Thread.sleep(ttl * 1000L);
 					removeListener(callback.message.getId());
@@ -58,7 +58,7 @@ public class ReactionHandler {
 	}
 
 	public static void removeListener(Snowflake id) throws Exception {
-		Callback callback = TEMP_REACTION_HANDLERS.remove(id);
+		var callback = TEMP_REACTION_HANDLERS.remove(id);
 
 		if (callback != null) {
 			callback.onRemoved(false);
@@ -209,7 +209,7 @@ public class ReactionHandler {
 			App.LOGGER.event(BrainEvents.REACTION_REMOVED);
 
 			event.getGuildId().ifPresent(guildId -> {
-				GuildCollections gc = handler.app.db.guild(guildId);
+				var gc = handler.app.db.guild(guildId);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_REMOVED)
 						.channel(event.getChannelId().asLong())

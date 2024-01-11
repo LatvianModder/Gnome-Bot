@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
@@ -40,7 +39,6 @@ import discord4j.core.event.domain.interaction.MessageInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
-import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 
@@ -51,7 +49,7 @@ import java.util.List;
 
 public class InteractionHandler {
 	public static void chatInputInteraction(DiscordHandler handler, ChatInputInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 		var command = InteractionType.CHAT_INPUT.builders.get(event.getCommandName());
 		var options = event.getOptions();
 
@@ -113,7 +111,7 @@ public class InteractionHandler {
 	}
 
 	public static void userInteraction(DiscordHandler handler, UserInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 		var command = InteractionType.USER.builders.get(event.getCommandName());
 
 		if (command != null && !command.supportsDM && gc == null) {
@@ -143,7 +141,7 @@ public class InteractionHandler {
 	}
 
 	public static void messageInteraction(DiscordHandler handler, MessageInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 		var command = InteractionType.MESSAGE.builders.get(event.getCommandName());
 
 		if (command != null && !command.supportsDM && gc == null) {
@@ -173,14 +171,14 @@ public class InteractionHandler {
 	}
 
 	public static void button(DiscordHandler handler, ButtonInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 
 		if (gc != null) {
-			Member member = event.getInteraction().getMember().orElse(null);
+			var member = event.getInteraction().getMember().orElse(null);
 
 			if (member != null) {
-				String customId = event.getCustomId();
-				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
+				var customId = event.getCustomId();
+				var eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
 				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -203,15 +201,15 @@ public class InteractionHandler {
 	}
 
 	public static void selectMenu(DiscordHandler handler, SelectMenuInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 
 		if (gc != null) {
-			Member member = event.getInteraction().getMember().orElse(null);
+			var member = event.getInteraction().getMember().orElse(null);
 
 			if (member != null) {
-				String customId = event.getCustomId();
+				var customId = event.getCustomId();
 
-				ComponentEventWrapper eventWrapper = new ComponentEventWrapper(gc, event, customId);
+				var eventWrapper = new ComponentEventWrapper(gc, event, customId);
 
 				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -232,14 +230,14 @@ public class InteractionHandler {
 	}
 
 	public static void modalSubmitInteraction(DiscordHandler handler, ModalSubmitInteractionEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 
 		if (gc != null) {
-			Member member = event.getInteraction().getMember().orElse(null);
+			var member = event.getInteraction().getMember().orElse(null);
 
 			if (member != null) {
-				String customId = event.getCustomId();
-				ModalEventWrapper eventWrapper = new ModalEventWrapper(gc, event, customId);
+				var customId = event.getCustomId();
+				var eventWrapper = new ModalEventWrapper(gc, event, customId);
 
 				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(customId, new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -262,7 +260,7 @@ public class InteractionHandler {
 	}
 
 	public static void chatInputAutoComplete(DiscordHandler handler, ChatInputAutoCompleteEvent event) {
-		GuildCollections gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
+		var gc = event.getInteraction().getGuildId().map(handler.app.db::guild).orElse(null);
 
 		if (gc == null) {
 			return;
@@ -278,7 +276,7 @@ public class InteractionHandler {
 
 		try {
 			if (command != null) {
-				ChatCommandSuggestionEvent eventWrapper = new ChatCommandSuggestionEvent(gc, event, options);
+				var eventWrapper = new ChatCommandSuggestionEvent(gc, event, options);
 
 				if (eventWrapper.focused != null) {
 					// App.info(eventWrapper.focused.name + " " + command + " " + optionsToString(new StringBuilder(), options));
@@ -291,11 +289,11 @@ public class InteractionHandler {
 							event.respondWithSuggestions(Collections.emptyList()).subscribe();
 						} else {
 							eventWrapper.suggestions.sort(ChatCommandSuggestion::compareTo);
-							String search = eventWrapper.transformSearch.apply(eventWrapper.focused.asString());
+							var search = eventWrapper.transformSearch.apply(eventWrapper.focused.asString());
 
 							List<ApplicationCommandOptionChoiceData> list = new ArrayList<>();
 
-							for (ChatCommandSuggestion data : eventWrapper.suggestions) {
+							for (var data : eventWrapper.suggestions) {
 								if (list.size() == 25) {
 									break;
 								} else if (search.isEmpty() || data.match().startsWith(search)) {
@@ -303,7 +301,7 @@ public class InteractionHandler {
 								}
 							}
 
-							for (ChatCommandSuggestion data : eventWrapper.suggestions) {
+							for (var data : eventWrapper.suggestions) {
 								if (list.size() == 25) {
 									break;
 								} else if (!search.isEmpty() && !data.match().startsWith(search) && data.match().contains(search)) {
@@ -396,7 +394,7 @@ public class InteractionHandler {
 	}
 
 	private static void callback(ComponentEventWrapper event, String id) {
-		ComponentCallback callback = ComponentCallback.MAP.get(id);
+		var callback = ComponentCallback.MAP.get(id);
 
 		if (callback == null) {
 			event.respond("Callback expired!");

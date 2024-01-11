@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord.command;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
@@ -18,7 +17,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
-import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.MessageEditSpec;
@@ -37,7 +35,7 @@ public class FeedbackCommands extends ApplicationCommands {
 			.run(FeedbackCommands::submit);
 
 	private static void submit(ChatInputInteractionEventWrapper event) {
-		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
+		var feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
 			throw new GnomeException("Feedback channel is not set up on this server!");
@@ -52,34 +50,34 @@ public class FeedbackCommands extends ApplicationCommands {
 		//event.respond("Feedback sent!");
 
 		// event.acknowledgeEphemeral();
-		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
+		var feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
 			throw new GnomeException("Feedback channel is not set up on this server!");
 		}
 
-		String suggestion = event.get("feedback").asString();
+		var suggestion = event.get("feedback").asString();
 
-		int number = ++event.context.gc.feedbackNumber;
+		var number = ++event.context.gc.feedbackNumber;
 		event.context.gc.saveInfo();
 
 		event.context.referenceMessage = false;
 
 		event.context.checkBotPerms(feedbackChannel, Permission.ADD_REACTIONS, Permission.SEND_MESSAGES);
 
-		Message m = feedbackChannel.createMessage(EmbedBuilder.create()
+		var m = feedbackChannel.createMessage(EmbedBuilder.create()
 				.url(App.url("feedback/" + event.context.gc.guildId.asString() + "/" + number))
 				.title("Loading suggestion #" + number + "...")
 		).block();
 
-		Document document = new Document();
+		var document = new Document();
 		document.put("_id", m.getId().asLong());
 		document.put("author", event.context.sender.getId().asLong());
 		document.put("timestamp", Date.from(m.getTimestamp()));
 		document.put("number", number);
 		document.put("content", suggestion);
 		document.put("status", 0);
-		BasicDBObject votes = new BasicDBObject();
+		var votes = new BasicDBObject();
 		votes.put(event.context.sender.getId().asString(), true);
 		document.put("votes", votes);
 		event.context.gc.feedback.insert(document);
@@ -110,19 +108,19 @@ public class FeedbackCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		int id = event.get("id").asInt();
+		var id = event.get("id").asInt();
 
 		if (id <= 0 || id > event.context.gc.feedbackNumber) {
 			throw error("Suggestion not found!");
 		}
 
-		DiscordFeedback feedback = event.context.gc.feedback.query().eq("number", id).first();
+		var feedback = event.context.gc.feedback.query().eq("number", id).first();
 
 		if (feedback == null) {
 			throw error("Suggestion not found!");
 		}
 
-		String reason = event.get("reason").asString("Not specified");
+		var reason = event.get("reason").asString("Not specified");
 
 		List<Bson> updates = new ArrayList<>();
 		updates.add(Updates.set("reason", reason));
@@ -135,7 +133,7 @@ public class FeedbackCommands extends ApplicationCommands {
 		feedback.document.map.put("status", status.id);
 
 		event.context.gc.findMessage(Snowflake.of(feedback.getUID()), event.context.gc.feedbackChannel.messageChannel().orElse(null)).ifPresent(message -> {
-			EmbedCreateFields.Footer footer = Utils.getFooter(message);
+			var footer = Utils.getFooter(message);
 			message.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
 
 			if (!status.canEdit()) {
@@ -162,7 +160,7 @@ public class FeedbackCommands extends ApplicationCommands {
 		event.context.checkSenderAdmin();
 		event.acknowledge();
 
-		ChannelInfo feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
+		var feedbackChannel = event.context.gc.feedbackChannel.messageChannel().orElse(null);
 
 		if (feedbackChannel == null) {
 			throw error("Feedback channel is not set up on this server!");
@@ -170,9 +168,9 @@ public class FeedbackCommands extends ApplicationCommands {
 
 		event.context.handler.app.queueBlockingTask(cancelled -> {
 			try {
-				int i = 0;
+				var i = 0;
 
-				for (DiscordFeedback feedback : event.context.gc.feedback.query().neq("deleted", true).neq("status", 0)) {
+				for (var feedback : event.context.gc.feedback.query().neq("deleted", true).neq("status", 0)) {
 					feedback.update(Updates.set("deleted", true));
 					App.info("Deleting #" + feedback.getNumber() + " - " + feedback.getStatus() + ": " + feedback.getReason());
 
@@ -190,14 +188,14 @@ public class FeedbackCommands extends ApplicationCommands {
 	}
 
 	public static void feedbackButtonCallback(ComponentEventWrapper event, int number, Vote vote) {
-		DiscordFeedback feedback = event.context.gc.feedback.query().eq("number", number).first();
+		var feedback = event.context.gc.feedback.query().eq("number", number).first();
 
 		if (feedback == null) {
 			event.acknowledge();
 			return;
 		}
 
-		Message m = event.context.channelInfo.getMessage(Snowflake.of(feedback.getUID()));
+		var m = event.context.channelInfo.getMessage(Snowflake.of(feedback.getUID()));
 
 		if (!feedback.getStatus().canEdit()) {
 			throw new GnomeException("You can't vote for this suggestion, it's already decided on!");
@@ -207,7 +205,7 @@ public class FeedbackCommands extends ApplicationCommands {
 			event.acknowledge();
 
 			if (feedback.setVote(event.context.sender.getId().asString(), vote)) {
-				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				var footer = Utils.getFooter(m);
 				m.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
 			}
 		} else {

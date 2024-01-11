@@ -11,11 +11,11 @@ import java.util.concurrent.CompletableFuture;
 public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination destination, UserPingConfig config) {
 	public void handle(PingData pingData) {
 		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
-			long start = System.nanoTime();
+			var start = System.nanoTime();
 			var ping = match(pingData.content());
 
 			if (ping != null) {
-				long time = System.nanoTime() - start;
+				var time = System.nanoTime() - start;
 
 				if (time >= 100_000L) { // 0.100 ms
 					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
@@ -29,11 +29,11 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 	@Nullable
 	public Ping test(PingData pingData) {
 		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
-			long start = System.nanoTime();
+			var start = System.nanoTime();
 			var ping = match(pingData.content());
 
 			if (ping != null) {
-				long time = System.nanoTime() - start;
+				var time = System.nanoTime() - start;
 
 				if (time >= 100_000L) { // 0.100 ms
 					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
@@ -48,7 +48,7 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 
 	public Ping match(String content) {
 		try {
-			for (Ping ping : pings) {
+			for (var ping : pings) {
 				if (ping != null && ping.pattern().matcher(new TimeLimitedCharSequence(content, 100L)).find()) {
 					return ping.allow() ? ping : null;
 				}

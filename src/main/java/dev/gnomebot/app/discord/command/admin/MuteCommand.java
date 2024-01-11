@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command.admin;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
@@ -23,12 +22,10 @@ import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -43,11 +40,11 @@ public class MuteCommand extends ApplicationCommands {
 			throw error("Mute role not set!");
 		}
 
-		User user = event.get("user").asUser().orElse(null);
-		long seconds = event.get("time").asSeconds().orElse(Integer.MAX_VALUE);
+		var user = event.get("user").asUser().orElse(null);
+		var seconds = event.get("time").asSeconds().orElse(Integer.MAX_VALUE);
 
-		String reason0 = event.get("reason").asString();
-		String reason = reason0.isEmpty() ? "Not specified" : reason0;
+		var reason0 = event.get("reason").asString();
+		var reason = reason0.isEmpty() ? "Not specified" : reason0;
 
 		if (user == null) {
 			throw error("User not found!");
@@ -56,7 +53,7 @@ public class MuteCommand extends ApplicationCommands {
 		}
 
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
-		boolean dm = DM.send(event.context.handler, user, "You've been muted on " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user, "You've been muted on " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (dm) {
 			event.context.reply(event.context.sender.getMention() + " muted " + user.getMention());
@@ -64,7 +61,7 @@ public class MuteCommand extends ApplicationCommands {
 			event.context.reply(event.context.sender.getMention() + " muted " + user.getMention() + ": " + reason);
 		}
 
-		DiscordMember discordMember = event.context.gc.members.findFirst(user.getId().asLong());
+		var discordMember = event.context.gc.members.findFirst(user.getId().asLong());
 
 		if (discordMember == null) {
 			throw error("User not found!");
@@ -95,9 +92,9 @@ public class MuteCommand extends ApplicationCommands {
 	}
 
 	public static void mute(CommandContext context, Member m, long seconds, String reason, String auto) {
-		DiscordMember discordMember = context.gc.members.findFirst(m);
-		Date expires = new Date(System.currentTimeMillis() + seconds * 1000L);
-		Instant expiresInstant = expires.toInstant();
+		var discordMember = context.gc.members.findFirst(m);
+		var expires = new Date(System.currentTimeMillis() + seconds * 1000L);
+		var expiresInstant = expires.toInstant();
 
 		if (discordMember != null) {
 			discordMember.update(Updates.set("muted", expires));
@@ -108,7 +105,7 @@ public class MuteCommand extends ApplicationCommands {
 		Message contextMessage;
 
 		if (context.gc.autoMuteEmbed.get()) {
-			EmbedBuilder embedBuilder = EmbedBuilder.create();
+			var embedBuilder = EmbedBuilder.create();
 
 			embedBuilder.color(EmbedColor.RED);
 
@@ -153,7 +150,7 @@ public class MuteCommand extends ApplicationCommands {
 			}
 		}
 
-		EmbedBuilder embed = EmbedBuilder.create();
+		var embed = EmbedBuilder.create();
 		embed.color(EmbedColor.RED);
 		embed.author(m.getTag() + " has been muted!", m.getAvatarUrl());
 		embed.description(context.sender.getMention() + " muted " + m.getMention());
@@ -188,7 +185,7 @@ public class MuteCommand extends ApplicationCommands {
 			dmButtons.add(Button.link(QuoteHandler.getChannelURL(context.gc.guildId, context.gc.muteAppealChannel.get()), "Appeal"));
 		}
 
-		boolean dm = DM.send(context.handler, m, MessageBuilder.create()
+		var dm = DM.send(context.handler, m, MessageBuilder.create()
 						.addEmbed(embed)
 						.components(dmButtons.isEmpty() ? null : Collections.singletonList(ActionRow.of(dmButtons)))
 				, true).isPresent();

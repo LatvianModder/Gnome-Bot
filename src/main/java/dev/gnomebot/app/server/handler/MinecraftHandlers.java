@@ -282,7 +282,7 @@ public class MinecraftHandlers {
 				throw new BadRequestResponse("Minecraft link error B1: " + JSON.DEFAULT.writePretty(json));
 			}
 
-			String xblToken = json.asString("Token");
+			var xblToken = json.asString("Token");
 			return acquireXsts(xblToken);
 		}
 

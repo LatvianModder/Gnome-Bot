@@ -39,8 +39,8 @@ public interface DiscordAnsi {
 			text = text.substring(0, 41);
 		}
 
-		StringBuilder sb = new StringBuilder(" ".repeat(41));
-		int start = (41 - text.length()) / 2;
+		var sb = new StringBuilder(" ".repeat(41));
+		var start = (41 - text.length()) / 2;
 		sb.replace(start, start + text.length(), text);
 
 		if (progress < 0F) {

@@ -133,13 +133,17 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 		return sort(Sorts.descending(keys));
 	}
 
-	public CollectionQuery<T> projectionFields(String... field) {
+	public CollectionQuery<T> projection(Bson bson) {
 		if (projectionFields == null) {
 			projectionFields = new ArrayList<>(1);
 		}
 
-		projectionFields.add(Projections.include(field));
+		projectionFields.add(bson);
 		return this;
+	}
+
+	public CollectionQuery<T> projectionFields(String... field) {
+		return projection(Projections.include(field));
 	}
 
 	public CollectionQuery<T> many() {
@@ -152,7 +156,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 	}
 
 	public FindIterable<Document> findIterable() {
-		FindIterable<Document> findIterable = collection.getCollection().find();
+		var findIterable = collection.getCollection().find();
 
 		if (filters != null) {
 			findIterable.filter(getFilterBson());
@@ -171,7 +175,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 		}
 
 		if (projectionFields != null) {
-			findIterable.projection(Projections.fields(projectionFields));
+			findIterable.projection(projectionFields.size() == 1 ? projectionFields.get(0) : Projections.fields(projectionFields));
 		}
 
 		return findIterable;
@@ -194,12 +198,12 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 
 	@Nullable
 	public T first() {
-		Document doc = firstDocument();
+		var doc = firstDocument();
 		return doc == null ? null : collection.create(MapWrapper.wrap(doc));
 	}
 
 	public long count() {
-		CountOptions options = new CountOptions();
+		var options = new CountOptions();
 
 		if (limit > 0) {
 			options.limit(limit);
@@ -222,7 +226,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 
 	public UpdateResult update(Bson... updates) {
 		if (filters != null) {
-			Bson u = updates.length == 1 ? updates[0] : Updates.combine(updates);
+			var u = updates.length == 1 ? updates[0] : Updates.combine(updates);
 			return many ? collection.getCollection().updateMany(getFilterBson(), u) : collection.getCollection().updateOne(getFilterBson(), u);
 		}
 
@@ -231,7 +235,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 
 	public UpdateResult update(List<Bson> updates) {
 		if (filters != null) {
-			Bson u = updates.size() == 1 ? updates.get(0) : Updates.combine(updates);
+			var u = updates.size() == 1 ? updates.get(0) : Updates.combine(updates);
 			return many ? collection.getCollection().updateMany(getFilterBson(), u) : collection.getCollection().updateOne(getFilterBson(), u);
 		}
 
@@ -240,7 +244,7 @@ public class CollectionQuery<T extends WrappedDocument<T>> implements Iterable<T
 
 	public UpdateResult upsert(List<Bson> updates) {
 		if (filters != null) {
-			Bson u = updates.size() == 1 ? updates.get(0) : Updates.combine(updates);
+			var u = updates.size() == 1 ? updates.get(0) : Updates.combine(updates);
 			return collection.getCollection().updateOne(getFilterBson(), u, Databases.UPSERT);
 		}
 

@@ -80,8 +80,6 @@ import discord4j.rest.util.PaginationUtil;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -98,13 +96,13 @@ public class DiscordHandler {
 
 	@SuppressWarnings("unchecked")
 	public static void addDispatcherType(String event, Class<? extends Dispatch> type) throws Exception {
-		Field field = PayloadDeserializer.class.getDeclaredField("dispatchTypes");
+		var field = PayloadDeserializer.class.getDeclaredField("dispatchTypes");
 		field.setAccessible(true);
 		((Map<String, Class<? extends Dispatch>>) field.get(null)).put(event, type);
 	}
 
 	public static <D, S, E extends Event> void addDispatcherHandler(Class<D> dispatchType, DispatchHandler<D, S, E> dispatchHandler) throws Exception {
-		Method method = DispatchHandlers.class.getDeclaredMethod("addHandler", Class.class, DispatchHandler.class);
+		var method = DispatchHandlers.class.getDeclaredMethod("addHandler", Class.class, DispatchHandler.class);
 		method.setAccessible(true);
 		method.invoke(null, dispatchType, dispatchHandler);
 	}
@@ -230,14 +228,14 @@ public class DiscordHandler {
 	}
 
 	private void guildCreated(GuildCreateEvent event) {
-		GuildCollections gc = app.db.guild(event.getGuild().getId());
+		var gc = app.db.guild(event.getGuild().getId());
 		gc.guildUpdated(event.getGuild());
 
 		// App.info("Guild created: " + event.getGuild().getName());
 	}
 
 	private void guildUpdated(GuildUpdateEvent event) {
-		GuildCollections gc = app.db.guild(event.getCurrent().getId());
+		var gc = app.db.guild(event.getCurrent().getId());
 		gc.guildUpdated(event.getCurrent());
 
 		// App.info("Guild updated: " + event.getCurrent().getName());
@@ -296,26 +294,26 @@ public class DiscordHandler {
 	}
 
 	private void memberJoined(MemberJoinEvent event) {
-		GuildCollections gc = app.db.guild(event.getGuildId());
+		var gc = app.db.guild(event.getGuildId());
 		gc.memberUpdated(event.getMember().getId(), 1);
 		MemberHandler.joined(this, gc, event);
 	}
 
 	private void memberLeft(MemberLeaveEvent event) {
-		GuildCollections gc = app.db.guild(event.getGuildId());
+		var gc = app.db.guild(event.getGuildId());
 		gc.memberUpdated(event.getUser().getId(), 2);
 		MemberHandler.left(this, gc, event);
 	}
 
 	private void memberUpdated(MemberUpdateEvent event) {
 		try {
-			Member member = event.getMember().block();
+			var member = event.getMember().block();
 
 			if (event.getOld().isPresent() && member != null) {
-				Member old = event.getOld().get();
-				GuildCollections gc = app.db.guild(event.getGuildId());
+				var old = event.getOld().get();
+				var gc = app.db.guild(event.getGuildId());
 
-				MutableLong b = new MutableLong(0L);
+				var b = new MutableLong(0L);
 				//checkDifference(gc, b, old, member, Member::getDiscriminator, "Discriminator");
 				checkDifference(gc, b, old, member, Member::getUsername, "Username");
 				//checkDifference(gc, b, old, member, Member::getAvatarUrl, "Avatar");
@@ -349,8 +347,8 @@ public class DiscordHandler {
 			return;
 		}
 
-		Object o = value.apply(oldM);
-		Object n = value.apply(newM);
+		var o = value.apply(oldM);
+		var n = value.apply(newM);
 
 		if (!Objects.equals(o, n)) {
 			b.value++;
@@ -367,7 +365,7 @@ public class DiscordHandler {
 
 	private void memberPresenceUpdated(PresenceUpdateEvent event) {
 		if (event.getNewAvatar().isPresent() || event.getNewDiscriminator().isPresent() || event.getNewUsername().isPresent()) {
-			GuildCollections gc = app.db.guild(event.getGuildId());
+			var gc = app.db.guild(event.getGuildId());
 			gc.memberUpdated(event.getUserId(), 0);
 
 			if (gc.advancedLogging) {
@@ -539,13 +537,13 @@ public class DiscordHandler {
 			return;
 		}
 
-		final User u = user;
+		final var u = user;
 
 		//App.error("Suspicious message by " + u.getUsername() + " detected: " + content.apply(message.getContent()) + " [" + reason + "]" + Ansi.RESET);
 
 		App.LOGGER.event(BrainEvents.SUSPICIOUS_MESSAGE);
 
-		StringBuilder sb1 = new StringBuilder("[Suspicious message detected in](");
+		var sb1 = new StringBuilder("[Suspicious message detected in](");
 		message.appendMessageURL(sb1);
 		sb1.append(") <#");
 		sb1.append(Snowflake.of(message.getChannelID()).asString());
@@ -579,17 +577,17 @@ public class DiscordHandler {
 
 	@Nullable
 	public UserData getUserData(@Nullable Snowflake id) {
-		User user = getUser(id);
+		var user = getUser(id);
 		return user == null ? null : user.getUserData();
 	}
 
 	public Optional<String> getUserName(@Nullable Snowflake id) {
-		User user = getUser(id);
+		var user = getUser(id);
 		return user == null ? Optional.empty() : Optional.of(user.getGlobalName().orElse(user.getUsername()));
 	}
 
 	public Optional<String> getUserTag(@Nullable Snowflake id) {
-		User user = getUser(id);
+		var user = getUser(id);
 		return user == null ? Optional.empty() : Optional.of(user.getTag());
 	}
 

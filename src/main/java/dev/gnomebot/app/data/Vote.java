@@ -32,7 +32,7 @@ public enum Vote {
 	}
 
 	public static Optional<Vote> fromEmojiOptional(ReactionEmoji e) {
-		for (Vote v : VALUES) {
+		for (var v : VALUES) {
 			if (v.reaction.equals(e)) {
 				return Optional.of(v);
 			}

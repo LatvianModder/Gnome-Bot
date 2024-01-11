@@ -14,16 +14,16 @@ public class ModnamesCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
-		String type = event.get("type").asString();
+		var type = event.get("type").asString();
 
-		EmbedBuilder builder = EmbedBuilder.create("10 randomly generated mod names:");
+		var builder = EmbedBuilder.create("10 randomly generated mod names:");
 
 		List<String> names = new ArrayList<>();
 
-		for (int i = 0; i < 10; i++) {
+		for (var i = 0; i < 10; i++) {
 			try {
-				URLRequest<String> request = URLRequest.of("https://modname.mcmc.dev/generate/" + type).toJoinedString();
-				String m = request.block();
+				var request = URLRequest.of("https://modname.mcmc.dev/generate/" + type).toJoinedString();
+				var m = request.block();
 				names.add("[" + m + "](https://modname.mcmc.dev/" + request.getHeader("x-modname-permalink") + ")");
 			} catch (Exception ex) {
 			}

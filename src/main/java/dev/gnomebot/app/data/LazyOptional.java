@@ -60,7 +60,7 @@ public class LazyOptional<T> {
 	}
 
 	public T getNonnull() {
-		T t = get();
+		var t = get();
 
 		if (t == null) {
 			throw new NullPointerException();

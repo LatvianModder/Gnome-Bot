@@ -6,12 +6,10 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -58,14 +56,14 @@ public class EmojifulCommand {
 			return;
 		}
 
-		Message message = context.reply("React to this message with all emojis you want in the datapack, then press " + Emojis.VOTEUP.asFormat());
+		var message = context.reply("React to this message with all emojis you want in the datapack, then press " + Emojis.VOTEUP.asFormat());
 		message.addReaction(Emojis.VOTEUP).block();
 
 		ReactionHandler.addListener(new ReactionHandler.Callback(context.gc, message) {
 			@Override
 			public boolean onReaction(Member member, ReactionEmoji emoji) throws Exception {
 				if (member.getId().equals(context.sender.getId())) {
-					ReactionEmoji.Custom custom = emoji.asCustomEmoji().orElse(null);
+					var custom = emoji.asCustomEmoji().orElse(null);
 					if (custom != null) {
 						if (custom.equals(Emojis.VOTEUP)) {
 							ReactionHandler.removeListener(message.getId());
@@ -80,12 +78,12 @@ public class EmojifulCommand {
 
 			@Override
 			public void onRemoved(boolean shutdown) throws Exception {
-				Set<ReactionEmoji.Custom> reactions = context.channelInfo.getMessage(message.getId()).getReactions().stream().filter(r -> r.getEmoji().asCustomEmoji().isPresent()).map(r -> r.getEmoji().asCustomEmoji().get()).collect(Collectors.toSet());
+				var reactions = context.channelInfo.getMessage(message.getId()).getReactions().stream().filter(r -> r.getEmoji().asCustomEmoji().isPresent()).map(r -> r.getEmoji().asCustomEmoji().get()).collect(Collectors.toSet());
 				reactions.remove(Emojis.VOTEUP);
 
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				var out = new ByteArrayOutputStream();
 
-				try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
+				try (var zipOutputStream = new ZipOutputStream(out)) {
 					zipOutputStream.putNextEntry(new ZipEntry("pack.mcmeta"));
 
 					var mcmeta = JSONObject.of();

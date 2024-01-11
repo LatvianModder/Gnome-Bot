@@ -90,7 +90,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	}
 
 	private void deleteOrEdit(GuildCollections gc, boolean deleted, String newContent, boolean auditLog) {
-		long flags1 = deleted ? flags : (flags & ~DiscordMessage.FLAG_EDITED);
+		var flags1 = deleted ? flags : (flags & ~DiscordMessage.FLAG_EDITED);
 
 		List<Bson> updates = new ArrayList<>();
 		updates.add(Updates.set("channel", getChannelID()));
@@ -101,7 +101,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		updates.add(Updates.set("new_content", newContent));
 		updates.add(Updates.set("deleted", deleted));
 
-		long reply = getReply();
+		var reply = getReply();
 
 		if (auditLog) {
 			gc.auditLog(GnomeAuditLogEntry.builder(deleted ? GnomeAuditLogEntry.Type.MESSAGE_DELETED : GnomeAuditLogEntry.Type.MESSAGE_EDITED)

@@ -24,7 +24,7 @@ public interface EmbedColor {
 		if (o instanceof Color c) {
 			return c;
 		} else if (o instanceof CharSequence) {
-			String s = o.toString().toLowerCase();
+			var s = o.toString().toLowerCase();
 
 			return switch (s) {
 				case "gray" -> GRAY;

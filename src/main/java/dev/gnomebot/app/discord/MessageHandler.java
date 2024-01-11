@@ -8,11 +8,8 @@ import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ChannelSettings;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.discord.command.admin.MuteCommand;
@@ -34,13 +31,11 @@ import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
-import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.StartThreadSpec;
@@ -57,8 +52,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageHandler {
@@ -94,10 +87,10 @@ public class MessageHandler {
 	}
 
 	public static void autoDelete(RestClient client, Snowflake original) {
-		List<MessageId> ids = AUTO_DELETE.remove(original);
+		var ids = AUTO_DELETE.remove(original);
 
 		if (ids != null && !ids.isEmpty()) {
-			for (MessageId m : ids) {
+			for (var m : ids) {
 				client.getChannelService().deleteMessage(m.channel, m.id, null).subscribe();
 			}
 		}
@@ -108,16 +101,16 @@ public class MessageHandler {
 			return false;
 		}
 
-		String s1 = CODE_BLOCK_PATTERN.matcher(s).replaceAll("").trim();
+		var s1 = CODE_BLOCK_PATTERN.matcher(s).replaceAll("").trim();
 
 		if (s1.length() < 5 || s1.indexOf('@') == -1) {
 			return false;
 		}
 
-		Matcher m = EVERYONE_MENTION_PATTERN.matcher(s1);
+		var m = EVERYONE_MENTION_PATTERN.matcher(s1);
 
 		while (m.find()) {
-			String s2 = m.group(0);
+			var s2 = m.group(0);
 
 			if (s2.equals("@everyone") || s2.equals("@here") || s2.equals("\\@everyone") || s2.equals("\\@here")) {
 				return true;
@@ -132,16 +125,16 @@ public class MessageHandler {
 
 	public static void created(DiscordHandler handler, MessageCreateEvent event) {
 		WatchdogThread.update();
-		Message m = event.getMessage();
+		var m = event.getMessage();
 
-		User author = m.getAuthor().orElse(null);
+		var author = m.getAuthor().orElse(null);
 
 		if (author != null && VALID_MESSAGE_TYPES.contains(m.getData().type())) {
-			Member member = event.getMember().orElse(null);
-			MessageChannel channel = m.getChannel().block();
+			var member = event.getMember().orElse(null);
+			var channel = m.getChannel().block();
 
 			if (channel instanceof PrivateChannel privateChannel && !author.isBot()) {
-				String content = Emojis.stripEmojis(m.getContent());
+				var content = Emojis.stripEmojis(m.getContent());
 				DM.log(handler, privateChannel, author, m);
 
 				if (FAST_READ_PATTERN.matcher(content).find()) {
@@ -163,8 +156,8 @@ public class MessageHandler {
 				var gc = handler.app.db.guild(event.getGuildId().orElse(null));
 				var threadChannel = gchannel instanceof ThreadChannel t ? t : null;
 
-				Snowflake topLevelChannelId = gc == null ? null : threadChannel != null ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
-				ChannelInfo channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
+				var topLevelChannelId = gc == null ? null : threadChannel != null ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
+				var channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
 
 				if (channelInfo != null && threadChannel != null) {
 					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
@@ -201,9 +194,9 @@ public class MessageHandler {
 	public static void deleted(DiscordHandler handler, MessageDeleteEvent event) {
 		if (event.getGuildId().isPresent()) {
 			App.instance.queueBlockingTask(cancelled -> {
-				GuildCollections gc = handler.app.db.guild(event.getGuildId().get());
+				var gc = handler.app.db.guild(event.getGuildId().get());
 
-				DiscordMessage message = gc.messages.findFirst(event.getMessageId());
+				var message = gc.messages.findFirst(event.getMessageId());
 
 				if (message != null) {
 					message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
@@ -217,14 +210,14 @@ public class MessageHandler {
 	}
 
 	public static void bulkDeleted(DiscordHandler handler, MessageBulkDeleteEvent event) {
-		Set<Snowflake> messageIds = event.getMessageIds();
+		var messageIds = event.getMessageIds();
 
 		if (!messageIds.isEmpty()) {
 			App.instance.queueBlockingTask(cancelled -> {
-				GuildCollections gc = handler.app.db.guild(event.getGuildId());
+				var gc = handler.app.db.guild(event.getGuildId());
 
-				for (Snowflake m : messageIds) {
-					DiscordMessage message = gc.messages.findFirst(m);
+				for (var m : messageIds) {
+					var message = gc.messages.findFirst(m);
 
 					if (message != null) {
 						message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
@@ -238,8 +231,8 @@ public class MessageHandler {
 
 	public static void updated(DiscordHandler handler, MessageUpdateEvent event) {
 		if (event.isContentChanged() && event.getCurrentContent().isPresent() && event.getGuildId().isPresent()) {
-			GuildCollections gc = handler.app.db.guild(event.getGuildId().get());
-			DiscordMessage message = gc.messages.findFirst(event.getMessageId());
+			var gc = handler.app.db.guild(event.getGuildId().get());
+			var message = gc.messages.findFirst(event.getMessageId());
 
 			if (message != null) {
 				message.edit(gc, event.getCurrentContent().get(), !message.is(DiscordMessage.FLAG_BOT));
@@ -254,16 +247,16 @@ public class MessageHandler {
 
 	@SuppressWarnings("deprecation")
 	public static void messageCreated(DiscordHandler handler, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
-		DM.DMChannel dmId = DM.getChannelFromMessage(channelInfo.id);
+		var dmId = DM.getChannelFromMessage(channelInfo.id);
 
 		if (dmId != null && !message.getContent().isEmpty()) {
 			DM.send(handler, handler.getUser(dmId.userId()), message.getContent(), true);
 			return;
 		}
 
-		GuildCollections gc = channelInfo.gc;
-		String content = message.getContent();
-		String contentNoEmojis = Emojis.stripEmojis(content);
+		var gc = channelInfo.gc;
+		var content = message.getContent();
+		var contentNoEmojis = Emojis.stripEmojis(content);
 
 		List<Bson> updates = new ArrayList<>();
 		updates.add(Updates.set("timestamp", message.getTimestamp()));
@@ -271,7 +264,7 @@ public class MessageHandler {
 		updates.add(Updates.set("user", user.getId().asLong()));
 		updates.add(Updates.set("content", content));
 
-		long flags = 0L;
+		var flags = 0L;
 
 		if (user.isBot()) {
 			flags |= DiscordMessage.FLAG_BOT;
@@ -289,12 +282,12 @@ public class MessageHandler {
 		var videos = new BasicDBList();
 		var files = new BasicDBList();
 
-		for (Embed embed : message.getEmbeds()) {
+		for (var embed : message.getEmbeds()) {
 			embed.getImage().ifPresent(img -> images.add(img.getProxyUrl()));
 			embed.getVideo().ifPresent(vid -> videos.add(vid.getUrl()));
 		}
 
-		for (Attachment a : message.getAttachments()) {
+		for (var a : message.getAttachments()) {
 			switch (AttachmentType.get(a)) {
 				case IMAGE -> images.add(a.getProxyUrl());
 				case VIDEO -> videos.add(a.getProxyUrl());
@@ -325,7 +318,7 @@ public class MessageHandler {
 		var userMentions = new BasicDBList();
 		var roleMentions = new BasicDBList();
 
-		for (Snowflake userId : message.getUserMentionIds()) {
+		for (var userId : message.getUserMentionIds()) {
 			userMentions.add(userId.asLong());
 
 			if (userId.equals(handler.selfId)) {
@@ -333,7 +326,7 @@ public class MessageHandler {
 			}
 		}
 
-		for (Snowflake roleId : message.getRoleMentionIds()) {
+		for (var roleId : message.getRoleMentionIds()) {
 			roleMentions.add(roleId.asLong());
 		}
 
@@ -357,24 +350,24 @@ public class MessageHandler {
 			flags |= DiscordMessage.FLAG_MULTILINE;
 		}
 
-		Message referenceMessage = message.getReferencedMessage().orElse(null);
+		var referenceMessage = message.getReferencedMessage().orElse(null);
 
 		if (referenceMessage != null) {
 			updates.add(Updates.set("reply", referenceMessage.getId().asLong()));
 			flags |= DiscordMessage.FLAG_REPLY;
 		}
 
-		Matcher ipMatcher = IP_PATTERN.matcher(contentNoEmojis);
+		var ipMatcher = IP_PATTERN.matcher(contentNoEmojis);
 
 		while (ipMatcher.find()) {
-			String jarPart = ipMatcher.group(5);
+			var jarPart = ipMatcher.group(5);
 
 			if (jarPart == null || jarPart.isEmpty()) {
 				try {
-					int a = Integer.parseInt(ipMatcher.group(1));
-					int b = Integer.parseInt(ipMatcher.group(2));
-					int c = Integer.parseInt(ipMatcher.group(3));
-					int d = Integer.parseInt(ipMatcher.group(4));
+					var a = Integer.parseInt(ipMatcher.group(1));
+					var b = Integer.parseInt(ipMatcher.group(2));
+					var c = Integer.parseInt(ipMatcher.group(3));
+					var d = Integer.parseInt(ipMatcher.group(4));
 
 					if (IPUtils.isIP(a, b, c, d)) {
 						flags |= DiscordMessage.FLAG_IP;
@@ -393,7 +386,7 @@ public class MessageHandler {
 			App.error("Failed to save message " + message.getId().asString() + ": " + ex);
 		}
 
-		DiscordMessage discordMessage = gc.messages.findFirst(message);
+		var discordMessage = gc.messages.findFirst(message);
 
 		if (discordMessage == null) {
 			App.error("Failed to retrieve message " + message.getId().asString());
@@ -407,11 +400,11 @@ public class MessageHandler {
 				App.info("Failed to save member from message " + message.getId().asString() + ": " + ex);
 			}
 
-			Date date = Date.from(message.getTimestamp().truncatedTo(ChronoUnit.DAYS));
-			Date d = new Date(date.getYear(), date.getMonth(), date.getDate());
+			var date = Date.from(message.getTimestamp().truncatedTo(ChronoUnit.DAYS));
+			var d = new Date(date.getYear(), date.getMonth(), date.getDate());
 
 			try {
-				Document xpDoc = gc.messageCount.query()
+				var xpDoc = gc.messageCount.query()
 						.eq("date", d)
 						.eq("channel", channelInfo.id.asLong())
 						.eq("user", user.getId().asLong())
@@ -437,7 +430,7 @@ public class MessageHandler {
 
 			if (xp > 0) {
 				try {
-					Document xpDoc = gc.messageXp.query()
+					var xpDoc = gc.messageXp.query()
 							.eq("date", d)
 							.eq("channel", channelInfo.id.asLong())
 							.eq("user", user.getId().asLong())
@@ -461,10 +454,10 @@ public class MessageHandler {
 			}
 		}
 
-		DiscordMember wrappedDiscordMember = importing ? null : gc.members.findFirst(user);
-		long totalMessages = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalMessages();
-		long totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalXp();
-		AuthLevel authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
+		var wrappedDiscordMember = importing ? null : gc.members.findFirst(user);
+		var totalMessages = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalMessages();
+		var totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalXp();
+		var authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
 		if (user.isBot()) {
 			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_BOT);
@@ -483,12 +476,12 @@ public class MessageHandler {
 		if (!user.isBot()) {
 			gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
 
-			for (Snowflake mention : message.getUserMentionIds()) {
+			for (var mention : message.getUserMentionIds()) {
 				handler.getUserTag(mention).ifPresent(tag -> gc.pushRecentUser(mention, tag));
 			}
 		}
 
-		CommandContext context = new CommandContext();
+		var context = new CommandContext();
 		context.handler = handler;
 		context.gc = gc;
 		context.channelInfo = channelInfo;
@@ -506,7 +499,7 @@ public class MessageHandler {
 				App.info("Potential scam URL detected in " + gc + ": " + scam);
 
 				if (gc.autoMuteScamUrl.get() > 0 && context.gc.mutedRole.isSet()) {
-					long seconds = gc.autoMuteScamUrl.get() * 60L;
+					var seconds = gc.autoMuteScamUrl.get() * 60L;
 
 					context.referenceMessage = false;
 
@@ -533,7 +526,7 @@ public class MessageHandler {
 
 			if (ScamHandler.URL_SHORTENER_PATTERN.matcher(contentNoEmojis).find()) {
 				if (gc.autoMuteUrlShortener.get() > 0 && context.gc.mutedRole.isSet()) {
-					long seconds = gc.autoMuteUrlShortener.get() * 60L;
+					var seconds = gc.autoMuteUrlShortener.get() * 60L;
 
 					context.referenceMessage = false;
 
@@ -581,7 +574,7 @@ public class MessageHandler {
 			}
 		}
 
-		int handleQuotes = 0;
+		var handleQuotes = 0;
 
 		try {
 			handleQuotes = QuoteHandler.handle(gc, message, channelInfo, member);
@@ -589,7 +582,7 @@ public class MessageHandler {
 			App.info("Failed to read message: " + ex);
 		}
 
-		boolean adminRoleMentioned = gc.adminRole.isMentioned(message);
+		var adminRoleMentioned = gc.adminRole.isMentioned(message);
 
 		if (handleQuotes == -1) {
 			message.delete().subscribe();
@@ -671,10 +664,10 @@ public class MessageHandler {
 
 		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
 			try {
-				String u = member.getDisplayName();
-				String c = contentNoEmojis.replace('\n', ' ');
+				var u = member.getDisplayName();
+				var c = contentNoEmojis.replace('\n', ' ');
 
-				int ci = c.indexOf("```");
+				var ci = c.indexOf("```");
 
 				if (ci != -1) {
 					c = c.substring(0, ci);
@@ -688,7 +681,7 @@ public class MessageHandler {
 				if (c.isEmpty()) {
 					n = FormattingUtils.trim("Post by " + u, 100);
 				} else {
-					String u1 = FormattingUtils.trim(u, 94);
+					var u1 = FormattingUtils.trim(u, 94);
 					n = FormattingUtils.trim(c, 95 - u1.length()) + " - " + u1;
 				}
 
@@ -737,7 +730,7 @@ public class MessageHandler {
 		}
 
 		if (!contentNoEmojis.isEmpty()) {
-			boolean thankGnome = THANK_GNOME_PATTERN.matcher(contentNoEmojis).find();
+			var thankGnome = THANK_GNOME_PATTERN.matcher(contentNoEmojis).find();
 
 			if (handleLegacyCommand(context, content)) {
 				//App.info("Gnome command: " + content);
@@ -782,7 +775,7 @@ public class MessageHandler {
 		var prefix = context.gc.legacyPrefix.get();
 
 		if (content.startsWith(prefix) && content.length() > prefix.length()) {
-			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));
+			var reader = new CommandReader(context.gc, content.substring(prefix.length()));
 
 			try {
 				LegacyCommands.run(context, reader, content, false);
@@ -835,11 +828,11 @@ public class MessageHandler {
 
 	private static boolean handleMacro(CommandContext context, String content, String prefix) {
 		if (content.length() > prefix.length() && content.startsWith(prefix)) {
-			CommandReader reader = new CommandReader(context.gc, content.substring(prefix.length()));
+			var reader = new CommandReader(context.gc, content.substring(prefix.length()));
 
 			try {
-				String macroName = reader.readString().orElse("").trim();
-				Macro macro = context.gc.getMacro(macroName);
+				var macroName = reader.readString().orElse("").trim();
+				var macro = context.gc.getMacro(macroName);
 
 				if (macro != null) {
 					macro.addUse();

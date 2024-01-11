@@ -76,7 +76,7 @@ public class WrappedUser extends DiscordObject {
 	}
 
 	public String getBelongingName() {
-		String n = getName();
+		var n = getName();
 		return n + (n.endsWith("s") ? "'" : "'s");
 	}
 

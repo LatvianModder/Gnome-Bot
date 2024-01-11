@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
@@ -24,13 +23,13 @@ public class CommandReader extends SimpleStringReader {
 	}
 
 	public Optional<User> readUser() {
-		Optional<String> ns = readString();
+		var ns = readString();
 
 		if (ns.isEmpty()) {
 			return Optional.empty();
 		}
 
-		String s = ns.get();
+		var s = ns.get();
 
 		if (s.equalsIgnoreCase("Gnome")) {
 			return Optional.of(gc.db.app.discordHandler.getSelfUser());
@@ -44,16 +43,16 @@ public class CommandReader extends SimpleStringReader {
 			}
 		}
 
-		int lh = s.lastIndexOf('#');
+		var lh = s.lastIndexOf('#');
 
 		if (lh > 0 && s.indexOf('@') == 0) {
-			String s0 = s.substring(1, lh);
-			String s1 = s.substring(lh + 1);
+			var s0 = s.substring(1, lh);
+			var s1 = s.substring(lh + 1);
 			App.info(s0 + " # " + s1);
-			DiscordMember member = gc.members.query().eq("name", s0).eq("discriminator", s1).first();
+			var member = gc.members.query().eq("name", s0).eq("discriminator", s1).first();
 
 			if (member != null) {
-				User user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
+				var user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
 
 				if (user != null) {
 					return Optional.of(user);
@@ -66,7 +65,7 @@ public class CommandReader extends SimpleStringReader {
 		try {
 			return Optional.of(gc.db.app.discordHandler.getUser(Utils.snowflake(s)));
 		} catch (Exception ex) {
-			DiscordMember member = gc.members.query().eq("name", s).first();
+			var member = gc.members.query().eq("name", s).first();
 
 			if (member == null) {
 				member = gc.members.query().exists("nickname").regex("nickname", Pattern.compile("^" + s + "$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)).first();
@@ -77,7 +76,7 @@ public class CommandReader extends SimpleStringReader {
 			}
 
 			if (member != null) {
-				User user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
+				var user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
 
 				if (user != null) {
 					return Optional.of(user);
@@ -89,13 +88,13 @@ public class CommandReader extends SimpleStringReader {
 	}
 
 	public Optional<ChannelInfo> readChannelInfo() {
-		Optional<String> ns = readString();
+		var ns = readString();
 
 		if (ns.isEmpty()) {
 			return Optional.empty();
 		}
 
-		String s = ns.get();
+		var s = ns.get();
 
 		if (s.startsWith("<#") && s.endsWith(">")) {
 			s = s.substring(2, s.length() - 1);
@@ -110,13 +109,13 @@ public class CommandReader extends SimpleStringReader {
 	}
 
 	public Optional<Pair<ChannelInfo, Snowflake>> readChannelAndMessage() {
-		Optional<String> ns = readString();
+		var ns = readString();
 
 		if (ns.isEmpty()) {
 			return Optional.empty();
 		}
 
-		String[] s = ns.get().split("[/:]", 2);
+		var s = ns.get().split("[/:]", 2);
 
 		App.info(Arrays.toString(s));
 
@@ -125,8 +124,8 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			ChannelInfo ci = gc.getChannelInfo(Utils.snowflake(s[0]));
-			Snowflake li = ci == null ? null : ci.getLastMessageId();
+			var ci = gc.getChannelInfo(Utils.snowflake(s[0]));
+			var li = ci == null ? null : ci.getLastMessageId();
 
 			if (li != null) {
 				return Optional.of(Pair.of(ci, s.length == 2 ? Utils.snowflake(s[1]) : li));
@@ -138,20 +137,20 @@ public class CommandReader extends SimpleStringReader {
 	}
 
 	public Optional<CachedRole> readRole() {
-		Optional<String> ns = readString();
+		var ns = readString();
 
 		if (ns.isEmpty()) {
 			return Optional.empty();
 		}
 
-		String s = ns.get();
+		var s = ns.get();
 
 		if (s.startsWith("<@&") && s.endsWith(">")) {
 			s = s.substring(3, s.length() - 1);
 		}
 
 		try {
-			Snowflake snowflake = Utils.snowflake(s);
+			var snowflake = Utils.snowflake(s);
 
 			if (snowflake.asLong() == gc.guildId.asLong()) {
 				return Optional.empty();
@@ -167,7 +166,7 @@ public class CommandReader extends SimpleStringReader {
 				return Optional.empty();
 			}
 
-			for (CachedRole r : gc.getRoleList()) {
+			for (var r : gc.getRoleList()) {
 				if (r.name.equals(s)) {
 					return Optional.of(r);
 				}
@@ -175,13 +174,13 @@ public class CommandReader extends SimpleStringReader {
 
 			s = s.replaceAll("\\W", "").toLowerCase();
 
-			for (CachedRole r : gc.getRoleList()) {
+			for (var r : gc.getRoleList()) {
 				if (r.name.replaceAll("\\W", "").toLowerCase().equals(s)) {
 					return Optional.of(r);
 				}
 			}
 
-			for (CachedRole r : gc.getRoleList()) {
+			for (var r : gc.getRoleList()) {
 				if (r.name.replaceAll("\\W", "").toLowerCase().contains(s)) {
 					return Optional.of(r);
 				}

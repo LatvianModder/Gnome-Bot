@@ -17,19 +17,19 @@ public class RandomGibberishCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		StringBuilder sb = new StringBuilder();
-		Random random = new Random();
+		var sb = new StringBuilder();
+		var random = new Random();
 
-		for (int i = 0; i < 100; i++) {
-			int len = random.nextInt(4) + random.nextInt(5);
+		for (var i = 0; i < 100; i++) {
+			var len = random.nextInt(4) + random.nextInt(5);
 
 			if (len < 2) {
 				continue;
 			}
 
-			char[] c = new char[len / 2 * 2];
+			var c = new char[len / 2 * 2];
 
-			for (int j = 0; j < len / 2; j++) {
+			for (var j = 0; j < len / 2; j++) {
 				putChars(c, j * 2, random);
 			}
 

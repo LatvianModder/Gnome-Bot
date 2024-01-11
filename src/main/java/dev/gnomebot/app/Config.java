@@ -42,11 +42,11 @@ public class Config {
 	public final String microsoft_client_secret;
 
 	private Config(Path file) {
-		ConfigFile c = new ConfigFile(file);
+		var c = new ConfigFile(file);
 
 		port = c.getInt("port", 26609);
 
-		String defUrl = "";
+		var defUrl = "";
 
 		if (!c.has("panel_url")) {
 			try {
@@ -69,7 +69,7 @@ public class Config {
 
 		trusted = new HashSet<>();
 
-		for (String s : c.getStringList("trusted")) {
+		for (var s : c.getStringList("trusted")) {
 			try {
 				var id = Utils.snowflake(s);
 

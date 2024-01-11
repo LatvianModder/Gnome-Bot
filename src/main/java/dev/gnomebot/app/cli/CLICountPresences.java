@@ -10,9 +10,9 @@ public class CLICountPresences {
 	// add counter_leaderboard
 
 	private static void run(CLIEvent event) {
-		int max = event.gc.getGuild().getMaxPresences();
+		var max = event.gc.getGuild().getMaxPresences();
 
-		int count = event.gc.getGuild()
+		var count = event.gc.getGuild()
 				.getPresences()
 				.count()
 				.block()

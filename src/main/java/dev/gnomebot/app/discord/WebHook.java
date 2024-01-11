@@ -11,9 +11,7 @@ import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Webhook;
 import discord4j.discordjson.json.MessageData;
-import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.rest.service.WebhookService;
-import discord4j.rest.util.MultipartRequest;
 import reactor.core.publisher.Mono;
 
 public class WebHook implements PingDestination {
@@ -76,10 +74,10 @@ public class WebHook implements PingDestination {
 	}
 
 	public Snowflake execute(MessageBuilder message) {
-		String body = "{}";
+		var body = "{}";
 
 		try {
-			MultipartRequest<? extends WebhookExecuteRequest> request = message.toMultipartWebhookExecuteRequest();
+			var request = message.toMultipartWebhookExecuteRequest();
 			body = Utils.bodyToString(request.getFiles().isEmpty() ? request.getJsonPayload() : request); // support multipart
 			var result = URLRequest.of(getUrl(id.asString(), token))
 					.query("wait", true)

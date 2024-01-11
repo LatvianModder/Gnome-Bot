@@ -81,7 +81,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 	}
 
 	public UpdateResult update(Bson update) {
-		Object id = document.get("_id", null);
+		var id = document.get("_id", null);
 
 		if (id != null) {
 			return collection.query(id).update(update);
@@ -104,7 +104,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 	}
 
 	public final DeleteResult delete() {
-		Object id = document.get("_id", null);
+		var id = document.get("_id", null);
 
 		if (id != null) {
 			return collection.query(id).delete();

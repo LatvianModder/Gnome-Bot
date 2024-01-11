@@ -8,19 +8,17 @@ import dev.gnomebot.app.discord.MemberHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.util.EmbedBuilder;
-import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class LockdownCommand extends ApplicationCommands {
 	public static void enable(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderAdmin();
 
-		boolean wasOff = !event.context.gc.lockdownMode.get();
+		var wasOff = !event.context.gc.lockdownMode.get();
 
-		long sec = Math.min(event.get("kick-time").asSeconds().orElse(300L), 86400L);
+		var sec = Math.min(event.get("kick-time").asSeconds().orElse(300L), 86400L);
 
 		if (wasOff) {
 			event.acknowledge();
@@ -45,8 +43,8 @@ public class LockdownCommand extends ApplicationCommands {
 			}
 
 			if (sec > 0L) {
-				long time = Instant.now().getEpochSecond() - sec;
-				List<Member> list = event.context.gc.getGuild().getMembers().filter(member -> member.getJoinTime().isPresent() && member.getJoinTime().get().getEpochSecond() > time).toStream().collect(Collectors.toList());
+				var time = Instant.now().getEpochSecond() - sec;
+				var list = event.context.gc.getGuild().getMembers().filter(member -> member.getJoinTime().isPresent() && member.getJoinTime().get().getEpochSecond() > time).toStream().collect(Collectors.toList());
 
 				list.forEach(m -> {
 					if (event.context.gc.logLeavingChannel.isSet()) {

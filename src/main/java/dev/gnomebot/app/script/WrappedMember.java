@@ -1,7 +1,6 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.discord.CachedRole;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
@@ -9,10 +8,8 @@ import discord4j.core.spec.BanQuerySpec;
 import discord4j.core.spec.GuildMemberEditSpec;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
-import java.util.Set;
 
 public class WrappedMember extends WrappedUser {
 	private String nickname;
@@ -55,7 +52,7 @@ public class WrappedMember extends WrappedUser {
 
 	@Nullable
 	public Date getDateJoined() {
-		Instant i = getDiscordMember().getJoinTime().orElse(null);
+		var i = getDiscordMember().getJoinTime().orElse(null);
 		return i == null ? null : Date.from(i);
 	}
 
@@ -68,11 +65,11 @@ public class WrappedMember extends WrappedUser {
 	}
 
 	public WrappedRole[] getRoles() {
-		Set<Snowflake> list = getDiscordMember().getRoleIds();
-		WrappedRole[] array = new WrappedRole[list.size()];
+		var list = getDiscordMember().getRoleIds();
+		var array = new WrappedRole[list.size()];
 
-		int i = 0;
-		for (Snowflake s : list) {
+		var i = 0;
+		for (var s : list) {
 			array[i] = guild.roles.get(s.asString());
 			i++;
 		}
@@ -104,7 +101,7 @@ public class WrappedMember extends WrappedUser {
 
 	public boolean addRole(Snowflake roleId, @Nullable String reason) {
 		guild.discordJS.checkReadOnly();
-		CachedRole role = guild.gc.getRoleMap().get(roleId);
+		var role = guild.gc.getRoleMap().get(roleId);
 
 		if (role != null) {
 			return role.add(id.asSnowflake(), reason);
@@ -120,7 +117,7 @@ public class WrappedMember extends WrappedUser {
 
 	public boolean removeRole(Snowflake roleId, @Nullable String reason) {
 		guild.discordJS.checkReadOnly();
-		CachedRole role = guild.gc.getRoleMap().get(roleId);
+		var role = guild.gc.getRoleMap().get(roleId);
 
 		if (role != null) {
 			return role.remove(id.asSnowflake(), reason);

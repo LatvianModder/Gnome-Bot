@@ -33,8 +33,8 @@ public class ModpackCommand extends ApplicationCommands {
 
 			try {
 				URLRequest.of("https://raw.githubusercontent.com/LatvianModder/Gnome-Bot-Files/main/modpack_trick_list.csv").toStringList().block().forEach(s -> {
-					Pack pack = new Pack();
-					String[] s1 = s.trim().split(",", 2);
+					var pack = new Pack();
+					var s1 = s.trim().split(",", 2);
 
 					if (s1.length >= 2 && !s1[0].equals("Modpack Name")) {
 						pack.name = s1[0].trim();
@@ -58,7 +58,7 @@ public class ModpackCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledge();
-		Pack pack = getRandomPack();
+		var pack = getRandomPack();
 
 		event.getResponse().editInitialResponse(WebhookMessageEditRequest.builder()
 				.addEmbed(EmbedCreateSpec.builder()
@@ -74,9 +74,9 @@ public class ModpackCommand extends ApplicationCommands {
 
 	public static void refreshCallback(ComponentEventWrapper event) {
 		if (event.context.message.getInteraction().isPresent() && event.context.sender.getId().equals(event.context.message.getInteraction().get().getUser().getId())) {
-			MessageBuilder builder = MessageBuilder.create();
+			var builder = MessageBuilder.create();
 
-			ModpackCommand.Pack pack = ModpackCommand.getRandomPack();
+			var pack = ModpackCommand.getRandomPack();
 
 			builder.addEmbed(EmbedBuilder.create()
 					.color(EmbedColor.GRAY)

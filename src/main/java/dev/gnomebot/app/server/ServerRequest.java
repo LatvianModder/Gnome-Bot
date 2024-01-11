@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ServerRequest {
@@ -56,12 +55,12 @@ public class ServerRequest {
 
 		query = new LinkedHashMap<>();
 
-		CommandContext c = new CommandContext();
+		var c = new CommandContext();
 		c.handler = app.discordHandler;
 		c.gc = gc;
 		c.sender = member;
 
-		for (Map.Entry<String, List<String>> entry : context.queryParamMap().entrySet()) {
+		for (var entry : context.queryParamMap().entrySet()) {
 			if (!entry.getValue().isEmpty()) {
 				query.put(entry.getKey(), new CommandOption(c, entry.getKey(), entry.getValue().get(0), false));
 			}
@@ -84,10 +83,10 @@ public class ServerRequest {
 
 	public CommandOption query(String id) {
 		initQuery();
-		CommandOption o = query.get(id);
+		var o = query.get(id);
 
 		if (o == null) {
-			CommandContext c = new CommandContext();
+			var c = new CommandContext();
 			c.handler = app.discordHandler;
 			c.gc = gc;
 			c.sender = member;
@@ -98,7 +97,7 @@ public class ServerRequest {
 	}
 
 	public String header(String name, String def) {
-		String s = context.header(name);
+		var s = context.header(name);
 		return s == null || s.isEmpty() ? def : s;
 	}
 
@@ -108,7 +107,7 @@ public class ServerRequest {
 
 	@Nullable
 	public Body getBody(Predicate<Body> b) {
-		for (Body body : getBodyList()) {
+		for (var body : getBodyList()) {
 			if (b.test(body)) {
 				return body;
 			}
@@ -127,8 +126,8 @@ public class ServerRequest {
 		if (bodyList == null) {
 			bodyList = new ArrayList<>();
 
-			byte[] b = context.bodyAsBytes();
-			String t = header("Content-Type", "unknown");
+			var b = context.bodyAsBytes();
+			var t = header("Content-Type", "unknown");
 
 			// An eh implementation of multipart content
 			if (t.startsWith("multipart/form-data;")) {
@@ -136,16 +135,16 @@ public class ServerRequest {
 				var multipartStream = new MultipartStream(new ByteArrayInputStream(b), m.get("boundary").getBytes(StandardCharsets.UTF_8));
 
 				try {
-					boolean nextPart = multipartStream.skipPreamble();
+					var nextPart = multipartStream.skipPreamble();
 
 					while (nextPart) {
-						Body body = new Body();
+						var body = new Body();
 
-						for (String s : multipartStream.readHeaders().split("\r\n")) {
+						for (var s : multipartStream.readHeaders().split("\r\n")) {
 							if (s.toLowerCase().startsWith("content-type:")) {
 								body.properties.put("content-type", s.substring(13).trim());
 							} else if (s.toLowerCase().startsWith("content-disposition")) {
-								Matcher matcher = Pattern.compile("([\\w-]+)=\"([^\"]+)\"").matcher(s);
+								var matcher = Pattern.compile("([\\w-]+)=\"([^\"]+)\"").matcher(s);
 
 								while (matcher.find()) {
 									body.properties.put(matcher.group(1).toLowerCase(), matcher.group(2));
@@ -157,7 +156,7 @@ public class ServerRequest {
 						body.filename = body.getProperty("filename", body.name);
 						body.contentType = body.getProperty("content-type", "text/plain");
 
-						ByteArrayOutputStream out = new ByteArrayOutputStream();
+						var out = new ByteArrayOutputStream();
 						multipartStream.readBodyData(out);
 						body.bytes = out.toByteArray();
 						bodyList.add(body);
@@ -170,7 +169,7 @@ public class ServerRequest {
 			}
 
 			if (bodyList.isEmpty()) {
-				Body body = new Body();
+				var body = new Body();
 				body.contentType = t;
 				body.bytes = b;
 				bodyList.add(body);

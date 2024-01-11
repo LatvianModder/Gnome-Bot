@@ -11,12 +11,10 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
-import discord4j.core.object.entity.User;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -85,15 +83,15 @@ public class MacroCommands extends ApplicationCommands {
 			);
 
 	private static void suggestAnyMacro(ChatCommandSuggestionEvent event) {
-		for (Macro macro : event.context.gc.getMacroMap().values()) {
+		for (var macro : event.context.gc.getMacroMap().values()) {
 			event.suggestions.add(macro.getChatCommandSuggestion());
 		}
 	}
 
 	private static void suggestOwnMacro(ChatCommandSuggestionEvent event) {
-		boolean admin = event.context.isAdmin();
+		var admin = event.context.isAdmin();
 
-		for (Macro macro : event.context.gc.getMacroMap().values()) {
+		for (var macro : event.context.gc.getMacroMap().values()) {
 			if (admin || macro.author == event.context.sender.getId().asLong()) {
 				event.suggestions.add(macro.getChatCommandSuggestion());
 			}
@@ -101,7 +99,7 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	private static void add(ChatInputInteractionEventWrapper event) {
-		String name = event.get("name").asString();
+		var name = event.get("name").asString();
 
 		if (name.isEmpty()) {
 			throw new GnomeException("Macro name can't be empty!");
@@ -109,19 +107,8 @@ public class MacroCommands extends ApplicationCommands {
 			throw new GnomeException("Macro name too long! Max 50 characters.");
 		}
 
-		Macro macro = event.context.gc.getMacro(name);
-
-		if (macro != null) {
-			if (macro.author == event.context.sender.getId().asLong()) {
-				event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'",
-						TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.name),
-						TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.getContent()))
-				);
-
-				return;
-			} else {
-				throw new GnomeException("Macro with that name already exists!");
-			}
+		if (event.context.gc.macroExists(name)) {
+			throw new GnomeException("Macro with that name already exists!");
 		}
 
 		event.respondModal("add-macro/" + name, "Adding macro '" + name + "'",
@@ -136,7 +123,7 @@ public class MacroCommands extends ApplicationCommands {
 			throw new GnomeException("Macro name too long! Max 50 characters.");
 		}
 
-		if (event.context.gc.getMacro(name) != null) {
+		if (event.context.gc.macroExists(name)) {
 			throw new GnomeException("Macro with that name already exists!");
 		}
 
@@ -164,17 +151,7 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	private static void edit(ChatInputInteractionEventWrapper event) {
-		String name = event.get("name").asString();
-
-		if (name.isEmpty()) {
-			throw new GnomeException("Macro name can't be empty!");
-		}
-
-		Macro macro = event.context.gc.getMacro(name);
-
-		if (macro == null) {
-			throw new GnomeException("Macro not found!");
-		}
+		var macro = event.context.gc.getMacroFromCommand(event.get("name").asString());
 
 		event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'",
 				TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.name),
@@ -183,26 +160,20 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	public static void editMacroCallback(ModalEventWrapper event, String name) {
-		if (name.isEmpty()) {
-			throw new GnomeException("Macro name can't be empty!");
-		}
+		var macro = event.context.gc.getMacroFromCommand(name);
 
-		Macro macro = event.context.gc.getMacro(name);
-
-		if (macro == null) {
-			throw new GnomeException("Macro not found!");
-		} else if (macro.author != event.context.sender.getId().asLong() && !event.context.isAdmin()) {
+		if (macro.author != event.context.sender.getId().asLong() && !event.context.isAdmin()) {
 			throw new GnomeException("You can only edit your own macros!");
 		}
 
-		String rename = event.get("rename").asString(macro.name);
+		var rename = event.get("rename").asString(macro.name);
 
 		if (!rename.equals(macro.name)) {
 			if (rename.length() > 50) {
 				throw new GnomeException("Macro name too long! Max 50 characters.");
 			}
 
-			if (event.context.gc.getMacro(rename) != null) {
+			if (event.context.gc.macroExists(rename)) {
 				throw new GnomeException("Macro with that name already exists!");
 			}
 
@@ -221,23 +192,15 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	private static void remove(ChatInputInteractionEventWrapper event) {
-		String name = event.get("name").asString();
+		var macro = event.context.gc.getMacroFromCommand(event.get("name").asString());
 
-		if (name.isEmpty()) {
-			throw new GnomeException("Macro name can't be empty!");
-		}
-
-		Macro macro = event.context.gc.getMacro(name);
-
-		if (macro == null) {
-			throw new GnomeException("Macro not found!");
-		} else if (macro.author != event.context.sender.getId().asLong()) {
+		if (macro.author != event.context.sender.getId().asLong()) {
 			event.context.checkSenderAdmin();
 		}
 
 		event.acknowledge();
 
-		String s = "Macro '" + macro.name + "' removed!";
+		var s = "Macro '" + macro.name + "' removed!";
 
 		try {
 			macro.setSlashCommand(false);
@@ -247,6 +210,7 @@ public class MacroCommands extends ApplicationCommands {
 		}
 
 		macro.setContent("");
+		event.context.gc.db.allMacros.remove(macro.id.getAsInt());
 		event.context.gc.getMacroMap().remove(macro.stringId);
 		event.context.gc.getMacroUseMap().remove(macro.id.getAsInt());
 		event.context.gc.saveMacroMap();
@@ -256,12 +220,12 @@ public class MacroCommands extends ApplicationCommands {
 
 	private static void find(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
-		User author = event.get("author").asUser().orElse(null);
-		String nameStr = event.get("name").asString().toLowerCase();
+		var author = event.get("author").asUser().orElse(null);
+		var nameStr = event.get("name").asString().toLowerCase();
 		var name = nameStr.isEmpty() ? null : Pattern.compile(nameStr, Pattern.CASE_INSENSITIVE);
-		String contentStr = event.get("content").asString().toLowerCase();
+		var contentStr = event.get("content").asString().toLowerCase();
 		var content = contentStr.isEmpty() ? null : Pattern.compile(contentStr, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-		boolean includeHidden = event.get("include-hidden").asBoolean(false);
+		var includeHidden = event.get("include-hidden").asBoolean(false);
 
 		var list = new ArrayList<Macro>();
 
@@ -291,20 +255,10 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	private static void info(ChatInputInteractionEventWrapper event) {
-		String name = event.get("name").asString();
-
-		if (name.isEmpty()) {
-			throw new GnomeException("Macro name can't be empty!");
-		}
-
-		var macro = event.context.gc.getMacro(name);
-
-		if (macro == null) {
-			throw new GnomeException("Macro not found!");
-		}
+		var macro = event.context.gc.getMacroFromCommand(event.get("name").asString());
 
 		event.acknowledge();
-		List<String> list = new ArrayList<>();
+		var list = new ArrayList<String>();
 		list.add("Author: <@" + Snowflake.of(macro.author).asString() + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
@@ -312,11 +266,7 @@ public class MacroCommands extends ApplicationCommands {
 	}
 
 	public static void macroButtonCallback(ComponentEventWrapper event, Snowflake guildId, String name, @Nullable Snowflake owner) {
-		var macro = (guildId.asLong() == event.context.gc.guildId.asLong() ? event.context.gc : event.context.gc.db.guild(guildId)).getMacro(name);
-
-		if (macro == null) {
-			throw new GnomeException("Macro '" + name + "' not found!");
-		}
+		var macro = (guildId.asLong() == event.context.gc.guildId.asLong() ? event.context.gc : event.context.gc.db.guild(guildId)).getMacroFromCommand(name);
 
 		if (owner != null) {
 			if (owner.asLong() != event.context.sender.getId().asLong()) {

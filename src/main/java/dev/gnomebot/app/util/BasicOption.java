@@ -119,7 +119,7 @@ public class BasicOption {
 			return ZoneOffset.UTC;
 		}
 
-		String string = asString("UTC");
+		var string = asString("UTC");
 
 		if (string.startsWith("GMT")) {
 			string = "Etc/" + string;
@@ -130,10 +130,10 @@ public class BasicOption {
 		} catch (Exception ex) {
 		}
 
-		String l = string.toLowerCase();
+		var l = string.toLowerCase();
 
 		try {
-			for (String s : ZoneId.getAvailableZoneIds()) {
+			for (var s : ZoneId.getAvailableZoneIds()) {
 				if (s.toLowerCase().equals(l)) {
 					return ZoneId.of(s);
 				}
@@ -142,7 +142,7 @@ public class BasicOption {
 		}
 
 		try {
-			for (String s : ZoneId.getAvailableZoneIds()) {
+			for (var s : ZoneId.getAvailableZoneIds()) {
 				if (s.toLowerCase().contains(l)) {
 					return ZoneId.of(s);
 				}
@@ -154,7 +154,7 @@ public class BasicOption {
 	}
 
 	public String asContentOrFetch() throws Exception {
-		String s = value.trim();
+		var s = value.trim();
 
 		if (s.startsWith("^http")) {
 			s = URLRequest.of(s.substring(1)).toJoinedString().block();

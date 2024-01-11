@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command.admin;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.util.Utils;
@@ -18,7 +17,7 @@ public class WarnsCommand extends ApplicationCommands {
 
 		if (event.has("user") && event.get("user").asString().equals("all")) {
 			List<String> list = new ArrayList<>();
-			MemberCache cache = event.context.gc.createMemberCache();
+			var cache = event.context.gc.createMemberCache();
 
 			for (var entry : event.context.gc.auditLog.query().filter(Filters.bitsAllSet("flags", GnomeAuditLogEntry.Flags.LEVEL_23)).descending("_id").limit(20)) {
 				cache.get(Snowflake.of(entry.getUser())).ifPresent(m -> list.add(Utils.formatRelativeDate(entry.getDate().toInstant()) + " " + m.getMention() + ": " + entry.getContent() + " - <@" + entry.getSource() + ">"));

@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.interaction;
 
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.data.ping.InteractionDocument;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +15,7 @@ public interface CustomInteractionTypes {
 	Object TEMP_LOCK = new Object();
 
 	static CustomInteractionType register(String id, CustomInteractionCallback.Provider callback) {
-		CustomInteractionType type = new CustomInteractionType(id, callback);
+		var type = new CustomInteractionType(id, callback);
 		MAP.put(id, type);
 		return type;
 	}
@@ -29,13 +28,13 @@ public interface CustomInteractionTypes {
 	@Nullable
 	static CustomInteractionCallback get(Databases db, UUID id) {
 		synchronized (TEMP_LOCK) {
-			CustomInteractionCallback c = TEMP.get(id);
+			var c = TEMP.get(id);
 
 			if (c == null) {
-				InteractionDocument doc = db.interactions.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).first();
+				var doc = db.interactions.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).first();
 
 				if (doc != null) {
-					CustomInteractionType t = MAP.get(doc.getType());
+					var t = MAP.get(doc.getType());
 
 					if (t != null) {
 						return t.callback.create(doc.document);
@@ -49,7 +48,7 @@ public interface CustomInteractionTypes {
 
 	@Nullable
 	static CustomInteractionCallback remove(Databases db, UUID id) {
-		CustomInteractionCallback c = get(db, id);
+		var c = get(db, id);
 
 		if (c != null) {
 			synchronized (TEMP_LOCK) {
@@ -64,7 +63,7 @@ public interface CustomInteractionTypes {
 
 	@Nullable
 	static CustomInteractionCallback execute(Databases db, UUID id, ComponentEventWrapper event) {
-		CustomInteractionCallback c = get(db, id);
+		var c = get(db, id);
 
 		if (c != null) {
 			if (!c.getType().keep) {
@@ -84,7 +83,7 @@ public interface CustomInteractionTypes {
 	static void create(Databases db, CustomInteractionCallback callback) {
 		synchronized (TEMP_LOCK) {
 			if (callback.getType().persistent) {
-				Document doc = new Document();
+				var doc = new Document();
 				doc.put("idm", callback.id.getMostSignificantBits());
 				doc.put("idl", callback.id.getLeastSignificantBits());
 				callback.save(doc);

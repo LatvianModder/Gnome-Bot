@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class RegexKickCommand extends ApplicationCommands {
@@ -24,22 +23,22 @@ public class RegexKickCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 
-		String s = event.get("regex").asString();
+		var s = event.get("regex").asString();
 
 		if (s.isEmpty()) {
 			throw error("Invalid regex!");
 		}
 
-		Pattern pattern = FormattingUtils.parseSafeRegEx(s, 0);
+		var pattern = FormattingUtils.parseSafeRegEx(s, 0);
 
 		if (pattern == null) {
 			throw error("Invalid regex!");
 		}
 
-		String reason = event.get("reason").asString("scam");
+		var reason = event.get("reason").asString("scam");
 		List<Member> members = new ArrayList<>();
 
-		for (Member member : event.context.gc.getMembers()) {
+		for (var member : event.context.gc.getMembers()) {
 			if (pattern.matcher(member.getUsername()).matches()) {
 				members.add(member);
 			}
@@ -47,11 +46,11 @@ public class RegexKickCommand extends ApplicationCommands {
 
 		Set<String> actionsToRemove = new HashSet<>();
 
-		String idKick = ComponentCallback.id(event1 -> {
+		var idKick = ComponentCallback.id(event1 -> {
 			event1.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 			event1.edit().respond("**Kicked " + members.size() + " members**");
 
-			for (Member member : members) {
+			for (var member : members) {
 				member.kick(reason).subscribe();
 
 				event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAN)
@@ -64,7 +63,7 @@ public class RegexKickCommand extends ApplicationCommands {
 			return actionsToRemove;
 		});
 
-		String idBan = ComponentCallback.id(event1 -> {
+		var idBan = ComponentCallback.id(event1 -> {
 			event1.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 			event1.edit().respond("**Banned " + members.size() + " members**");
 

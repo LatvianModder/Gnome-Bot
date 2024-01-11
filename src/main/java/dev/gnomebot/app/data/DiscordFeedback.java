@@ -16,7 +16,6 @@ import discord4j.rest.util.Color;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
-import java.util.Map;
 import java.util.Objects;
 
 public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
@@ -84,9 +83,9 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public int[] countVotes() {
-		int[] v = new int[2];
+		var v = new int[2];
 
-		for (Object o : getVotes().map.values()) {
+		for (var o : getVotes().map.values()) {
 			if (Boolean.TRUE.equals(o)) {
 				v[0]++;
 			} else {
@@ -106,7 +105,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public boolean setVote(String key, Vote vote) {
-		Vote v = getVote(key);
+		var v = getVote(key);
 
 		if (!Objects.equals(vote, v)) {
 			if (vote == Vote.NONE) {
@@ -128,10 +127,10 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public EmbedCreateSpec edit(GuildCollections gc, @Nullable EmbedCreateFields.Footer footer) {
-		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+		var builder = EmbedCreateSpec.builder();
 
-		Status status = getStatus();
-		int[] v = countVotes();
+		var status = getStatus();
+		var v = countVotes();
 
 		if (status == Status.NONE) {
 			builder.title("Suggestion #" + getNumber());
@@ -164,10 +163,10 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public void toJson(JSONObject json, MemberCache memberCache, boolean canSee, boolean owner) {
-		MapWrapper voteMap = getVotes();
-		int[] v = new int[2];
+		var voteMap = getVotes();
+		var v = new int[2];
 
-		for (Object o : voteMap.map.values()) {
+		for (var o : voteMap.map.values()) {
 			if (Boolean.TRUE.equals(o)) {
 				v[0]++;
 			} else {
@@ -197,7 +196,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 			var upTags = json.addArray("upvoters");
 			var downTags = json.addArray("downvoters");
 
-			for (Map.Entry<String, Object> o : voteMap.map.entrySet()) {
+			for (var o : voteMap.map.entrySet()) {
 				if (Boolean.TRUE.equals(o.getValue())) {
 					upTags.add(memberCache.getDisplayName(Utils.snowflake(o.getKey())));
 				} else {

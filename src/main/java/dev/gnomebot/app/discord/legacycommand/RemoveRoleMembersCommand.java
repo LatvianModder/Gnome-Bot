@@ -1,28 +1,26 @@
 package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 
 public class RemoveRoleMembersCommand {
 	@LegacyDiscordCommand(name = "remove_role_members", help = "Removes members from role", arguments = "<role>", permissionLevel = AuthLevel.ADMIN)
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		boolean confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
+		var confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
 
-		final Snowflake role = Snowflake.of(reader.readLong().orElse(0L));
+		final var role = Snowflake.of(reader.readLong().orElse(0L));
 
 		context.handler.app.queueBlockingTask(task -> {
-			int removed = 0;
+			var removed = 0;
 
-			for (Member member : context.gc.getGuild().getMembers().toIterable()) {
+			for (var member : context.gc.getGuild().getMembers().toIterable()) {
 				if (task.cancelled) {
 					return;
 				}
 
-				DiscordMember m = context.gc.members.findFirst(member);
+				var m = context.gc.members.findFirst(member);
 
 				if (m != null) {
 					var n = Ansi.of(member.getTag());

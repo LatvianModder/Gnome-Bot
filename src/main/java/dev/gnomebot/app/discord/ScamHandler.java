@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -119,14 +118,14 @@ public class ScamHandler {
 		synchronized (LOCK) {
 			if (Files.exists(AppPaths.BAD_DOMAIN_OVERRIDES)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.BAD_DOMAIN_OVERRIDES);
+					var lines = Files.readAllLines(AppPaths.BAD_DOMAIN_OVERRIDES);
 					OVERRIDES.clear();
 
-					for (String s : lines) {
-						String[] split = s.trim().split(": ", 2);
+					for (var s : lines) {
+						var split = s.trim().split(": ", 2);
 
 						if (split.length == 2 && !split[0].trim().isEmpty() && !split[1].trim().isEmpty()) {
-							Type t = Type.MAP.getOrDefault(split[1].trim().toLowerCase(), Type.DEFAULT);
+							var t = Type.MAP.getOrDefault(split[1].trim().toLowerCase(), Type.DEFAULT);
 
 							if (t != Type.DEFAULT) {
 								OVERRIDES.put(split[0].trim().toLowerCase(), t);
@@ -142,7 +141,7 @@ public class ScamHandler {
 
 			if (Files.exists(AppPaths.BAD_DOMAINS)) {
 				try {
-					List<String> lines = Files.readAllLines(AppPaths.BAD_DOMAINS);
+					var lines = Files.readAllLines(AppPaths.BAD_DOMAINS);
 					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.get(0));
 
 					if (lastRemoteUpdate != null) {
@@ -193,7 +192,7 @@ public class ScamHandler {
 		}
 
 		synchronized (LOCK) {
-			Type o = OVERRIDES.getOrDefault(domain, Type.DEFAULT);
+			var o = OVERRIDES.getOrDefault(domain, Type.DEFAULT);
 
 			if (o != Type.DEFAULT) {
 				return o;
@@ -214,11 +213,11 @@ public class ScamHandler {
 			return null;
 		}
 
-		Matcher urlMatcher = MessageHandler.URL_PATTERN.matcher(content);
+		var urlMatcher = MessageHandler.URL_PATTERN.matcher(content);
 
 		while (urlMatcher.find()) {
-			String url = urlMatcher.group();
-			String domain = urlMatcher.group(1);
+			var url = urlMatcher.group();
+			var domain = urlMatcher.group(1);
 
 			if (domain.startsWith("www.")) {
 				domain = domain.substring(4);
@@ -228,7 +227,7 @@ public class ScamHandler {
 				continue;
 			}
 
-			Type override = checkScamDomain(domain);
+			var override = checkScamDomain(domain);
 
 			if (override == Type.BLOCK) {
 				return new Scam(url, domain, "misc");
@@ -236,13 +235,13 @@ public class ScamHandler {
 				continue;
 			}
 
-			Matcher nitroScamMatcher = ScamHandler.NITRO_PATTERN.matcher(url);
+			var nitroScamMatcher = ScamHandler.NITRO_PATTERN.matcher(url);
 
 			if (nitroScamMatcher.find()) {
 				return new Scam(nitroScamMatcher.group(), domain, "nitro");
 			}
 
-			Matcher steamScamMatcher = ScamHandler.STEAM_PATTERN.matcher(url);
+			var steamScamMatcher = ScamHandler.STEAM_PATTERN.matcher(url);
 
 			if (steamScamMatcher.find()) {
 				return new Scam(steamScamMatcher.group(), domain, "steam");

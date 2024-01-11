@@ -47,7 +47,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 	}
 
 	public boolean setVote(String key, int vote) {
-		int v = getVote(key);
+		var v = getVote(key);
 
 		if (vote != v) {
 			if (vote == -1) {
@@ -65,12 +65,12 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 	}
 
 	public EmbedCreateSpec edit(GuildCollections gc, @Nullable EmbedCreateFields.Footer footer) {
-		EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+		var builder = EmbedCreateSpec.builder();
 
-		List<String> options = getOptions();
-		int[] v = new int[options.size()];
+		var options = getOptions();
+		var v = new int[options.size()];
 
-		for (Object o : getVotes().map.values()) {
+		for (var o : getVotes().map.values()) {
 			v[((Number) o).intValue()]++;
 		}
 
@@ -78,15 +78,15 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 		builder.url(App.url("poll/" + gc.guildId.asString() + "/" + getNumber()));
 		builder.description(getContent());
 
-		int sum = 0;
+		var sum = 0;
 
-		for (int i : v) {
+		for (var i : v) {
 			sum += i;
 		}
 
 		sum = Math.max(1, sum);
 
-		for (int i = 0; i < v.length; i++) {
+		for (var i = 0; i < v.length; i++) {
 			builder.addField(Emojis.NUMBER_STRINGS[i] + " " + options.get(i), "**" + v[i] + "** [" + (v[i] * 100 / sum) + "%]", true);
 		}
 

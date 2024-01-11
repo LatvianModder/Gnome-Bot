@@ -12,7 +12,7 @@ public interface JsonServerPathHandler extends ServerPathHandler {
 
 	@Override
 	default Response handle(ServerRequest request) throws Exception {
-		String body = request.getMainBody().getText();
+		var body = request.getMainBody().getText();
 
 		try {
 			var in = body.isEmpty() ? null : JSON.DEFAULT.read(body).readObject();

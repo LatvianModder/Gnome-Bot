@@ -1,18 +1,12 @@
 package dev.gnomebot.app.server.handler;
 
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.CollectionQuery;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.discord.MemberCache;
-import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
-import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.webutils.ImageUtils;
 import dev.latvian.apps.webutils.json.JSONArray;
@@ -21,7 +15,6 @@ import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.NotFoundResponse;
 import org.bson.conversions.Bson;
@@ -31,7 +24,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -78,14 +70,14 @@ public class GuildHandlers {
 	}
 
 	public static Response banner(ServerRequest request) throws Exception {
-		BufferedImage image = new BufferedImage(320, 76, BufferedImage.TYPE_INT_ARGB);
+		var image = new BufferedImage(320, 76, BufferedImage.TYPE_INT_ARGB);
 		image.setRGB(1, 1, 0xFFFF0000);
 		return FileResponse.png(image);
 	}
 
 	public static Response getSettings(ServerRequest request) {
-		List<ChannelInfo> channels = request.gc.getChannelList();
-		List<CachedRole> roles = request.gc.getRoleList();
+		var channels = request.gc.getChannelList();
+		var roles = request.gc.getRoleList();
 
 		var bs = JSONArray.of();
 
@@ -98,7 +90,7 @@ public class GuildHandlers {
 			o.put("value", setting.serialize(1));
 		}
 
-		Member owner = request.gc.getMember(request.gc.getGuild().getOwnerId());
+		var owner = request.gc.getMember(request.gc.getGuild().getOwnerId());
 
 		var json = JSONObject.of();
 		json.put("id", request.gc.guildId.asString());
@@ -130,7 +122,7 @@ public class GuildHandlers {
 			var o = r.addObject();
 			o.put("id", role.id.asString());
 			o.put("name", role.name);
-			int col = role.color.getRGB();
+			var col = role.color.getRGB();
 			o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 		}
 
@@ -165,13 +157,13 @@ public class GuildHandlers {
 	}
 
 	public static Response icon(ServerRequest request) throws Exception {
-		int size = Integer.parseInt(request.variable("size"));
+		var size = Integer.parseInt(request.variable("size"));
 
 		if (size <= 0 || size > 1024) {
 			throw HTTPResponseCode.BAD_REQUEST.error("Size " + size + " too large!");
 		}
 
-		String url = request.gc.iconUrl;
+		var url = request.gc.iconUrl;
 		BufferedImage img = null;
 
 		if (!url.isEmpty()) {
@@ -188,8 +180,8 @@ public class GuildHandlers {
 		if (img == null) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
-			for (int x = 0; x < size; x++) {
-				for (int y = 0; y < size; y++) {
+			for (var x = 0; x < size; x++) {
+				for (var y = 0; y < size; y++) {
 					img.setRGB(x, y, 0xFF000000);
 				}
 			}
@@ -210,8 +202,8 @@ public class GuildHandlers {
 		object.put("id", request.gc.guildId.asString());
 		object.put("name", request.gc.name);
 		var array = object.addArray("feedback");
-		boolean canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
-		boolean owner = request.getAuthLevel().is(AuthLevel.OWNER);
+		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
+		var owner = request.getAuthLevel().is(AuthLevel.OWNER);
 
 		for (var feedback : list) {
 			feedback.toJson(array.addObject(), memberCache, canSee, owner);
@@ -221,16 +213,16 @@ public class GuildHandlers {
 	}
 
 	public static Response feedback(ServerRequest request) throws Exception {
-		int id = (int) request.getUnsignedLong("id");
-		DiscordFeedback feedback = request.gc.feedback.query().eq("number", id).first();
+		var id = (int) request.getUnsignedLong("id");
+		var feedback = request.gc.feedback.query().eq("number", id).first();
 
 		if (feedback == null) {
 			throw HTTPResponseCode.NOT_FOUND.error("Feedback not found!");
 		}
 
-		MemberCache memberCache = request.gc.createMemberCache();
+		var memberCache = request.gc.createMemberCache();
 		var json = JSONObject.of();
-		boolean canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
+		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
 		feedback.toJson(json, memberCache, canSee, request.getAuthLevel().is(AuthLevel.OWNER));
 		return JSONResponse.of(json);
 	}
@@ -256,7 +248,7 @@ public class GuildHandlers {
 		if (member != null) {
 			json.put("name", member.getUsername());
 			json.put("nickname", member.getNickname().orElse(""));
-			int col = member.getColor().block().getRGB();
+			var col = member.getColor().block().getRGB();
 			json.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 		} else {
 			json.put("name", request.app.discordHandler.getUserName(id).orElse("Unknown"));
@@ -269,18 +261,18 @@ public class GuildHandlers {
 
 	public static Response auditLog(ServerRequest request) {
 		var array = JSONArray.of();
-		int limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
-		int skip = Math.max(0, request.query("skip").asInt());
-		String type = request.query("type").asString();
-		long user = request.query("user").asLong();
-		long source = request.query("source").asLong();
-		long channel = request.query("channel").asLong();
-		long message = request.query("message").asLong();
-		int level = request.query("level").asInt();
+		var limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
+		var skip = Math.max(0, request.query("skip").asInt());
+		var type = request.query("type").asString();
+		var user = request.query("user").asLong();
+		var source = request.query("source").asLong();
+		var channel = request.query("channel").asLong();
+		var message = request.query("message").asLong();
+		var level = request.query("level").asInt();
 
-		UserCache userCache = request.app.discordHandler.createUserCache();
-		CollectionQuery<GnomeAuditLogEntry> entryQuery = request.gc.auditLog.query();
-		Set<Snowflake> availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
+		var userCache = request.app.discordHandler.createUserCache();
+		var entryQuery = request.gc.auditLog.query();
+		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
@@ -323,7 +315,7 @@ public class GuildHandlers {
 			o.put("revocable", t.has(GnomeAuditLogEntry.Flags.REVOCABLE));
 
 			if (entry.getChannel() != 0L) {
-				Snowflake channelId = Snowflake.of(entry.getChannel());
+				var channelId = Snowflake.of(entry.getChannel());
 
 				if (!availableChannels.contains(channelId)) {
 					continue;
@@ -353,7 +345,7 @@ public class GuildHandlers {
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.EXTRA)) {
-				MapWrapper mw = entry.getExtra();
+				var mw = entry.getExtra();
 
 				if (!mw.map.isEmpty()) {
 					o.put("extra", mw.toJSON());
@@ -365,11 +357,11 @@ public class GuildHandlers {
 	}
 
 	public static Response exportMessages(ServerRequest request) {
-		Snowflake id = request.getSnowflake("member");
-		LinkedList<ExportedMessage> list = new LinkedList<>();
+		var id = request.getSnowflake("member");
+		var list = new LinkedList<ExportedMessage>();
 
 		for (var m : request.gc.messages.query().eq("user", id.asLong())) {
-			ExportedMessage message = new ExportedMessage();
+			var message = new ExportedMessage();
 			message.timestamp = m.getDate().getTime();
 			message.channel = m.getChannelID();
 			message.flags = m.flags;

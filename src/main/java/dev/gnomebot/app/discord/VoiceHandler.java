@@ -3,16 +3,14 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.data.GuildCollections;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
-import discord4j.core.object.VoiceState;
 
 public class VoiceHandler {
 	public static void stateUpdate(DiscordHandler handler, VoiceStateUpdateEvent event) {
-		VoiceState oldState = event.getOld().orElse(null);
-		VoiceState state = event.getCurrent();
+		var oldState = event.getOld().orElse(null);
+		var state = event.getCurrent();
 
-		GuildCollections gc = handler.app.db.guild(event.getCurrent().getGuildId());
+		var gc = handler.app.db.guild(event.getCurrent().getGuildId());
 
 		if (event.isJoinEvent()) {
 			// App.info(Utils.ANSI_GREEN + gc + "/" + c.getName() + " " + Utils.ANSI_YELLOW + m.getTag() + Utils.ANSI_RESET + " Changed voice state: " + Utils.ANSI_CYAN + "JOIN");

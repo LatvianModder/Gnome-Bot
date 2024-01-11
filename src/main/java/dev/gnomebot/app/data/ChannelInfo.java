@@ -7,8 +7,6 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.Webhook;
-import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.retriever.EntityRetrievalStrategy;
@@ -57,7 +55,7 @@ public final class ChannelInfo {
 			}
 
 			try {
-				GuildChannel channel = gc.getGuild().getChannelById(id).block();
+				var channel = gc.getGuild().getChannelById(id).block();
 				return channel instanceof TopLevelGuildMessageChannel ? (TopLevelGuildMessageChannel) channel : null;
 			} catch (Exception ex) {
 				try {
@@ -68,10 +66,10 @@ public final class ChannelInfo {
 			}
 		});
 		webHook = LazyOptional.of(() -> {
-			TopLevelGuildMessageChannel tlc = getTopLevelChannel();
+			var tlc = getTopLevelChannel();
 
 			if (tlc != null) {
-				Webhook webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
+				var webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
 
 				if (webhook == null) {
 					Ansi.log("Webhook for " + this + " not found, creating");
@@ -90,7 +88,7 @@ public final class ChannelInfo {
 	}
 
 	public ChannelInfo thread(Snowflake threadId, String name) {
-		ChannelInfo ci = new ChannelInfo(gc, threadId, settings);
+		var ci = new ChannelInfo(gc, threadId, settings);
 		ci.threadParent = this;
 		ci.threadName = name;
 		return ci;
@@ -213,7 +211,7 @@ public final class ChannelInfo {
 			cachedPermissions = new HashMap<>();
 		}
 
-		PermissionSet set = cachedPermissions.get(member);
+		var set = cachedPermissions.get(member);
 
 		if (set == null) {
 			set = Utils.getEffectivePermissions(getTopLevelChannel(), member);
@@ -228,9 +226,9 @@ public final class ChannelInfo {
 			return true;
 		}
 
-		PermissionSet perms = getPermissions(memberId);
+		var perms = getPermissions(memberId);
 
-		for (Permission p : permissions) {
+		for (var p : permissions) {
 			if (!perms.contains(p)) {
 				return false;
 			}

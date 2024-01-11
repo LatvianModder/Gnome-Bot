@@ -59,7 +59,7 @@ public abstract class ContentType {
 	public static Pair<ContentType, Object> parse(GuildCollections gc, String content) {
 		content = content.trim();
 
-		int inl = content.indexOf('\n');
+		var inl = content.indexOf('\n');
 
 		if (inl == -1) {
 			return Pair.of(TEXT, content);

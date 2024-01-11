@@ -5,7 +5,7 @@ import java.util.List;
 
 public class CLICommand {
 	public static CLICommand make(String name) {
-		CLICommand c = new CLICommand();
+		var c = new CLICommand();
 		c.name = name;
 		return c;
 	}

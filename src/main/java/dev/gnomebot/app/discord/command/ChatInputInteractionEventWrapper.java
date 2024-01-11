@@ -16,7 +16,7 @@ public class ChatInputInteractionEventWrapper extends ApplicationCommandInteract
 		options = new HashMap<>();
 
 		for (var option : o) {
-			CommandOption o1 = new CommandOption(context, option);
+			var o1 = new CommandOption(context, option);
 			options.put(o1.name, o1);
 		}
 	}
@@ -31,7 +31,7 @@ public class ChatInputInteractionEventWrapper extends ApplicationCommandInteract
 	}
 
 	public CommandOption get(String id) {
-		CommandOption o = options.get(id);
+		var o = options.get(id);
 
 		if (o == null) {
 			return new CommandOption(context, id, "", false);

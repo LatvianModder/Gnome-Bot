@@ -26,9 +26,9 @@ public class WebToken extends WrappedDocument<WebToken> {
 		if (ids == null || ids.isEmpty()) {
 			ids = new ArrayList<>();
 
-			for (Snowflake guildId : handler.getSelfGuildIds()) {
-				GuildCollections gc = handler.app.db.guild(guildId);
-				AuthLevel authLevel = gc.getAuthLevel(userId);
+			for (var guildId : handler.getSelfGuildIds()) {
+				var gc = handler.app.db.guild(guildId);
+				var authLevel = gc.getAuthLevel(userId);
 
 				if (authLevel.is(AuthLevel.MEMBER)) {
 					ids.add(guildId.asLong());

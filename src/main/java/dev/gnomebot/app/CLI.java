@@ -1,5 +1,6 @@
 package dev.gnomebot.app;
 
+import com.mongodb.client.model.Filters;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
@@ -14,6 +15,7 @@ import discord4j.core.object.entity.channel.ThreadChannel;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class CLI extends Thread {
 	public final App app;
@@ -71,7 +73,7 @@ public class CLI extends Thread {
 
 	private void dump() throws Exception {
 		var server = ManagementFactory.getPlatformMBeanServer();
-		HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
+		var mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
 		mxBean.dumpHeap("heapdump.hprof", false);
 	}
 
@@ -95,23 +97,19 @@ public class CLI extends Thread {
 	}
 
 	private void port(String input) throws Exception {
-		var mm = app.db.guild(Snowflake.of(166630061217153024L));
-		int count = 0;
+		// var mm = app.db.guild(Snowflake.of(166630061217153024L));
+		var count = 0;
 
 		// var database = app.db.mongoClient.getDatabase("gnomebot_test");
 		// var collection = database.getCollection("abc");
 		// collection.insertOne(new Document("test", 1));
 		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
 
+		var regex = Pattern.compile("^[?!]+");
+		var filter = Filters.regex("content", Pattern.compile("^[?!]+\\S+"));
+
 		for (var gc : app.db.allGuilds()) {
 			App.info("Porting " + gc);
-
-			gc.saveMacroMap();
-			gc.saveMacroUseMap();
-
-			for (var macro : gc.getMacroMap().values()) {
-				// Files.writeString(gc.paths.macros.resolve(macro.id + ".txt"), macro.getContent());
-			}
 		}
 
 		App.info("+ Done " + count);
@@ -134,9 +132,9 @@ public class CLI extends Thread {
 	}
 
 	private void flags(String[] input) {
-		long flags = 0L;
+		var flags = 0L;
 
-		for (int i = 1; i < input.length; i++) {
+		for (var i = 1; i < input.length; i++) {
 			try {
 				flags |= 1L << Long.parseLong(input[i]);
 			} catch (NumberFormatException ex) {
@@ -159,7 +157,7 @@ public class CLI extends Thread {
 	private void printGuilds() {
 		var table = new Table("Name", "Owner", "Members", "Messages", "Gnome Messages", "ID");
 
-		for (Guild g : app.discordHandler.getSelfGuilds()) {
+		for (var g : app.discordHandler.getSelfGuilds()) {
 			App.info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
 			var gc = app.db.guild(g.getId());
 
@@ -173,7 +171,7 @@ public class CLI extends Thread {
 		var line1 = new StringBuilder();
 		var line2 = new StringBuilder();
 
-		for (int i = 0; i < 8; i++) {
+		for (var i = 0; i < 8; i++) {
 			line1.append("\u001B[3").append(i).append("m■ Hello ");
 			line2.append("\u001B[9").append(i).append("m■ Hello ");
 		}
@@ -181,10 +179,10 @@ public class CLI extends Thread {
 		App.info(line1);
 		App.info(line2);
 
-		for (int y = 0; y < 16; y++) {
+		for (var y = 0; y < 16; y++) {
 			var str = new StringBuilder();
 
-			for (int x = 0; x < 16; x++) {
+			for (var x = 0; x < 16; x++) {
 				str.append("\u001B[48;5;").append(x + y * 16).append("m  ");
 			}
 

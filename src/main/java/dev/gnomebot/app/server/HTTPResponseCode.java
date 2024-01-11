@@ -23,7 +23,7 @@ public enum HTTPResponseCode {
 	public static final HTTPResponseCode[] VALUES = values();
 
 	public static HTTPResponseCode get(int code) {
-		for (HTTPResponseCode responseCode : VALUES) {
+		for (var responseCode : VALUES) {
 			if (responseCode.status.getCode() == code) {
 				return responseCode;
 			}

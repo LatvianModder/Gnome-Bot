@@ -22,7 +22,7 @@ public class Body {
 	}
 
 	public Map<String, String> getPostData() {
-		String text = getText();
+		var text = getText();
 
 		if (text.isEmpty()) {
 			return Collections.emptyMap();
@@ -30,13 +30,13 @@ public class Body {
 
 		Map<String, String> map = new LinkedHashMap<>();
 
-		for (String s : text.split("&")) {
-			String[] p = s.split("=", 2);
+		for (var s : text.split("&")) {
+			var p = s.split("=", 2);
 
 			if (p.length == 2) {
 				try {
-					String k = URLDecoder.decode(p[0], StandardCharsets.UTF_8);
-					String v = URLDecoder.decode(p[1], StandardCharsets.UTF_8);
+					var k = URLDecoder.decode(p[0], StandardCharsets.UTF_8);
+					var v = URLDecoder.decode(p[1], StandardCharsets.UTF_8);
 
 					if (!k.isEmpty() && !v.isEmpty()) {
 						map.put(k, v);

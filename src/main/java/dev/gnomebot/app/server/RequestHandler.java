@@ -117,7 +117,7 @@ public class RequestHandler {
 			return false;
 		}
 
-		for (int i = 0; i < splitPath.length; i++) {
+		for (var i = 0; i < splitPath.length; i++) {
 			if (splitPath[i].charAt(0) == ':') {
 				vars.put(splitPath[i].substring(1), p[i]);
 			} else if (!splitPath[i].equals(p[i])) {

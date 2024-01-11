@@ -15,7 +15,7 @@ public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<Com
 
 		path = id.split("/");
 
-		for (int i = 0; i < path.length; i++) {
+		for (var i = 0; i < path.length; i++) {
 			path[i] = decode(path[i]);
 		}
 	}

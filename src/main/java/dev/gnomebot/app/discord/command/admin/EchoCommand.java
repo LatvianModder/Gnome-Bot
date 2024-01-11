@@ -9,7 +9,7 @@ public class EchoCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderPerms(Permission.MANAGE_MESSAGES);
-		String message = event.get("message").asString();
+		var message = event.get("message").asString();
 
 		if (message.isEmpty()) {
 			throw error("Empty content!");

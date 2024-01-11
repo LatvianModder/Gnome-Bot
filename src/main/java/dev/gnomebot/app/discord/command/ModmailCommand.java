@@ -21,7 +21,7 @@ public class ModmailCommand extends ApplicationCommands {
 	public static void modmailCallback(ModalEventWrapper event) {
 		event.respond("Message sent!");
 
-		String message = event.get("message").asString();
+		var message = event.get("message").asString();
 
 		event.context.gc.adminMessagesChannel.messageChannel().flatMap(ChannelInfo::getWebHook).ifPresent(w -> w.execute(MessageBuilder.create()
 				.webhookName("Modmail from " + event.context.sender.getTag())

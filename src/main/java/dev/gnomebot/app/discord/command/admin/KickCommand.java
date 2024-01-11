@@ -13,7 +13,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
 import java.util.Collections;
@@ -23,7 +22,7 @@ public class KickCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.KICK_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 		Member member = null;
 
 		try {
@@ -31,8 +30,8 @@ public class KickCommand extends ApplicationCommands {
 		} catch (Exception ex) {
 		}
 
-		String reason0 = event.get("reason").asString();
-		String reason = reason0.isEmpty() ? "Not specified" : reason0;
+		var reason0 = event.get("reason").asString();
+		var reason = reason0.isEmpty() ? "Not specified" : reason0;
 
 		if (user == null) {
 			throw error("User not found!");
@@ -42,7 +41,7 @@ public class KickCommand extends ApplicationCommands {
 
 		event.context.reply(event.context.sender.getMention() + " kicked " + user.getMention());
 
-		boolean dm = DM.send(event.context.handler, user, "You've been kicked from " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user, "You've been kicked from " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (member != null) {
 			// MemberHandler.ignoreNextBan = true;

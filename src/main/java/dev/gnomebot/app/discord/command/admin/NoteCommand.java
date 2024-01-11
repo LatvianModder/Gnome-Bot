@@ -5,7 +5,6 @@ import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.server.AuthLevel;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.rest.util.Permission;
 
 public class NoteCommand extends ApplicationCommands {
@@ -13,7 +12,7 @@ public class NoteCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.MODERATE_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 		Member member = null;
 
 		try {
@@ -21,7 +20,7 @@ public class NoteCommand extends ApplicationCommands {
 		} catch (Exception ex) {
 		}
 
-		String note = event.get("note").asString();
+		var note = event.get("note").asString();
 
 		if (user == null) {
 			throw error("User not found!");

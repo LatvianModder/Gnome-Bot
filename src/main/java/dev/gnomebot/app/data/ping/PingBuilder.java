@@ -23,7 +23,7 @@ public class PingBuilder {
 
 	private void set(LinkedHashSet<Snowflake> list, boolean add, String id) {
 		try {
-			Snowflake s = Utils.snowflake(id);
+			var s = Utils.snowflake(id);
 
 			if (add) {
 				list.add(s);
@@ -36,7 +36,7 @@ public class PingBuilder {
 	}
 
 	private PingBuilder copy() {
-		PingBuilder builder = new PingBuilder();
+		var builder = new PingBuilder();
 		builder.ignoredGuilds.addAll(ignoredGuilds);
 		builder.ignoredChannels.addAll(ignoredChannels);
 		builder.ignoredUsers.addAll(ignoredUsers);
@@ -63,7 +63,7 @@ public class PingBuilder {
 	}
 
 	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config, boolean checkDM) {
-		int lineno = 0;
+		var lineno = 0;
 		var list = new ArrayList<PingBuilder>();
 
 		if (config.isEmpty()) {
@@ -73,7 +73,7 @@ public class PingBuilder {
 		try {
 			var root = new PingBuilder();
 			PingBuilder group = null;
-			PingBuilder current = root;
+			var current = root;
 
 			for (var line : config.split("\n")) {
 				lineno++;
@@ -83,7 +83,7 @@ public class PingBuilder {
 					continue;
 				}
 
-				char c = line.charAt(0);
+				var c = line.charAt(0);
 
 				if (c == '#') {
 					continue;
@@ -95,14 +95,14 @@ public class PingBuilder {
 
 				switch (c) {
 					case '+', '-' -> {
-						String s = line.substring(2);
+						var s = line.substring(2);
 
 						if (s.startsWith("/")) {
 							if (s.lastIndexOf('/') < 2) {
 								throw new GnomeException("RegEx must end with /[flags]!");
 							}
 
-							Pattern pattern = FormattingUtils.parseSafeRegEx(s, 0);
+							var pattern = FormattingUtils.parseSafeRegEx(s, 0);
 
 							if (pattern == null) {
 								throw new GnomeException("Invalid RegEx!");
@@ -120,7 +120,7 @@ public class PingBuilder {
 
 							current.pings.add(new Ping(Pattern.compile("\\b" + s.substring(1, s.length() - 1).replaceAll("([.?$^!+*\\[\\]{}<>()\\\\])", "\\\\$1") + "\\b", Pattern.CASE_INSENSITIVE), c == '+'));
 						} else {
-							String[] s1 = s.split(" ", 2);
+							var s1 = s.split(" ", 2);
 
 							switch (s1[0]) {
 								case "bots" -> current.bots = c == '+';

@@ -2,7 +2,6 @@ package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.AppPaths;
 
-import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,11 +28,11 @@ public class EmojiMap {
 		if (nameToUnicode == null) {
 			nameToUnicode = new LinkedHashMap<>();
 
-			try (BufferedReader reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("emoji_list.json"))) {
+			try (var reader = Files.newBufferedReader(AppPaths.RESOURCES.resolve("emoji_list.json"))) {
 				String line;
 
 				while ((line = reader.readLine()) != null) {
-					String[] s = line.trim().split(" ", 2);
+					var s = line.trim().split(" ", 2);
 
 					if (s.length == 2 && !s[0].isEmpty() && !s[1].isEmpty()) {
 						nameToUnicode.put(s[0], s[1]);

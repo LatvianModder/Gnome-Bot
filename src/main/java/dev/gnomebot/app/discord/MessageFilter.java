@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class MessageFilter {
 	public static void alias(StringBuilder sb, char c) {
-		CharMap a = CharMap.get(c);
+		var a = CharMap.get(c);
 
 		if (!a.isEmpty()) {
 			a.buildPattern(sb);
@@ -64,7 +64,7 @@ public class MessageFilter {
 	}
 
 	public Document toDocument() {
-		Document doc = new Document();
+		var doc = new Document();
 		doc.put("type", type.getId());
 		doc.put("filter", filter);
 		doc.put("actions", actions);
@@ -82,14 +82,14 @@ public class MessageFilter {
 			return;
 		}
 
-		StringBuilder sb = new StringBuilder();
+		var sb = new StringBuilder();
 
 		if (leftBoundary) {
 			sb.append("\\b");
 		}
 
-		for (int i = 0; i < filter.length(); i++) {
-			char c = Character.toLowerCase(filter.charAt(i));
+		for (var i = 0; i < filter.length(); i++) {
+			var c = Character.toLowerCase(filter.charAt(i));
 
 			if (i > 0 && spaces) {
 				sb.append("[\\s\\W]*");

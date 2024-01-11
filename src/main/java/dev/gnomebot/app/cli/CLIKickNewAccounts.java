@@ -1,7 +1,6 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.App;
-import discord4j.core.object.entity.Member;
 
 import java.time.Instant;
 
@@ -11,12 +10,12 @@ public class CLIKickNewAccounts {
 			.run(CLIKickNewAccounts::run);
 
 	private static void run(CLIEvent event) {
-		long kickSeconds = Math.min(event.reader.readSeconds().orElse(86400L), 604800L);
-		long nowSecond = Instant.now().getEpochSecond();
-		long kicked = 0L;
+		var kickSeconds = Math.min(event.reader.readSeconds().orElse(86400L), 604800L);
+		var nowSecond = Instant.now().getEpochSecond();
+		var kicked = 0L;
 
-		for (Member member : event.gc.getMembers()) {
-			long accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
+		for (var member : event.gc.getMembers()) {
+			var accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
 
 			if (accountAge <= kickSeconds) {
 				App.info("Kicked " + member.getTag());

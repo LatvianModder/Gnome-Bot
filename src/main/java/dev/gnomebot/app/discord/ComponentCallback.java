@@ -19,7 +19,7 @@ public interface ComponentCallback {
 	Map<String, ComponentCallback> MAP = new HashMap<>();
 
 	static String id(ComponentCallback callback) {
-		String id = UUID.randomUUID().toString().replace("-", "");
+		var id = UUID.randomUUID().toString().replace("-", "");
 		MAP.put(id, callback);
 		return "callback/" + id;
 	}

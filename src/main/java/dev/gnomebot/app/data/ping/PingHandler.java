@@ -55,7 +55,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 	public synchronized UserPingInstance[] getPings() {
 		if (userPingInstances == null) {
-			long start = System.currentTimeMillis();
+			var start = System.currentTimeMillis();
 			var destinationMap = new HashMap<TargetDestinationKey, PingDestination>();
 			var destinations = new ArrayList<PingDestination>();
 			var list = new ArrayList<UserPingInstance>();

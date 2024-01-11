@@ -111,7 +111,7 @@ public class CommandContext {
 
 			msg.allowedMentions(allowedMentions);
 
-			Message m = Objects.requireNonNull(channelInfo.createMessage(msg).block());
+			var m = Objects.requireNonNull(channelInfo.createMessage(msg).block());
 
 			if (referenceMessage && message != null) {
 				MessageHandler.addAutoDelete(message.getId(), new MessageId(m));

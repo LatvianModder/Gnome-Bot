@@ -15,16 +15,16 @@ public class CLIChangeAvatar {
 			.run(CLIChangeAvatar::run);
 
 	private static void run(CLIEvent event) throws Exception {
-		String url = event.reader.readRemainingString().orElse("");
-		GuildProfileEditRequest request = new GuildProfileEditRequest();
+		var url = event.reader.readRemainingString().orElse("");
+		var request = new GuildProfileEditRequest();
 
 		if (url.isEmpty()) {
 			event.respond("Avatar reset!");
 			request.avatar = null;
 		} else {
-			byte[] image = URLRequest.of(url).toBytes().block();
-			boolean gif = url.endsWith(".gif");
-			String s = (gif ? "data:image/gif;base64," : "data:image/png;base64,") + Base64.getEncoder().encodeToString(image);
+			var image = URLRequest.of(url).toBytes().block();
+			var gif = url.endsWith(".gif");
+			var s = (gif ? "data:image/gif;base64," : "data:image/png;base64,") + Base64.getEncoder().encodeToString(image);
 			App.info(FormattingUtils.trim(s, 1000));
 			request.avatar = Possible.of(s);
 		}

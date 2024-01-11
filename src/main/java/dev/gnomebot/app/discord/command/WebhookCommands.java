@@ -1,8 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ContentType;
-import dev.gnomebot.app.data.UserWebhook;
 import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
@@ -16,7 +14,6 @@ import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class WebhookCommands extends ApplicationCommands {
@@ -43,7 +40,7 @@ public class WebhookCommands extends ApplicationCommands {
 
 	private static void add(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		String n = event.get("name").asString().trim().toLowerCase();
+		var n = event.get("name").asString().trim().toLowerCase();
 
 		try {
 			Snowflake.of(n);
@@ -55,13 +52,13 @@ public class WebhookCommands extends ApplicationCommands {
 			throw new GnomeException("Invalid or taken name!");
 		}
 
-		Matcher matcher = WEBHOOK_PATTERN.matcher(event.get("url").asString());
+		var matcher = WEBHOOK_PATTERN.matcher(event.get("url").asString());
 
 		if (!matcher.matches()) {
 			throw new GnomeException("Invalid webhook URL!");
 		}
 
-		Document document = new Document();
+		var document = new Document();
 		document.put("user", event.context.sender.getId().asLong());
 		document.put("name", n);
 		document.put("webhook_id", matcher.group(1));
@@ -74,9 +71,9 @@ public class WebhookCommands extends ApplicationCommands {
 
 	private static void remove(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		String n = event.get("name").asString().trim().toLowerCase();
+		var n = event.get("name").asString().trim().toLowerCase();
 
-		UserWebhook webhook = event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first();
+		var webhook = event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first();
 
 		if (webhook == null) {
 			throw new GnomeException("Webhook not found! Try `/webhook list`");
@@ -91,7 +88,7 @@ public class WebhookCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
 
-		for (UserWebhook webhook : event.context.gc.db.userWebhooks.query().eq("user", event.context.sender.getId().asLong())) {
+		for (var webhook : event.context.gc.db.userWebhooks.query().eq("user", event.context.sender.getId().asLong())) {
 			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHook.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
 		}
 
@@ -100,7 +97,7 @@ public class WebhookCommands extends ApplicationCommands {
 
 	private static void execute(ChatInputInteractionEventWrapper event) {
 		event.context.checkSenderOwner();
-		ChannelInfo ci = event.get("channel").asChannelInfoOrCurrent();
+		var ci = event.get("channel").asChannelInfoOrCurrent();
 
 		event.respondModal("webhook/" + ci.id.asString() + "/0", "Execute Webhook",
 				TextInput.paragraph("content", "Content", 0, 2000).required(false),
@@ -111,8 +108,8 @@ public class WebhookCommands extends ApplicationCommands {
 
 	public static void executeCallback(ModalEventWrapper event, Snowflake channelId, Snowflake editId) {
 		event.context.checkSenderOwner();
-		ChannelInfo ci = event.context.gc.getOrMakeChannelInfo(channelId);
-		WebHook webHook = ci.getWebHook().orElse(null);
+		var ci = event.context.gc.getOrMakeChannelInfo(channelId);
+		var webHook = ci.getWebHook().orElse(null);
 
 		if (webHook == null) {
 			throw new GnomeException("Failed to retrieve webhook!");
@@ -124,7 +121,7 @@ public class WebhookCommands extends ApplicationCommands {
 		if (editId.asLong() == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));
 			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl));
-			Snowflake id = webHook.execute(message);
+			var id = webHook.execute(message);
 
 			if (id.asLong() != 0L) {
 				event.respond("Done!");

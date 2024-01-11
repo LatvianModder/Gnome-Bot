@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleStringReader {
@@ -26,12 +25,12 @@ public class SimpleStringReader {
 	}
 
 	public Optional<String> readRemainingString() {
-		String s = position >= string.length() ? "" : string.substring(position).trim();
+		var s = position >= string.length() ? "" : string.substring(position).trim();
 		return s.isEmpty() ? Optional.empty() : Optional.of(s);
 	}
 
 	public List<String> readRemainingStringLines() {
-		String s = readRemainingString().orElse("");
+		var s = readRemainingString().orElse("");
 		return s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split("\n"));
 	}
 
@@ -40,7 +39,7 @@ public class SimpleStringReader {
 			return 0;
 		}
 
-		char c = string.charAt(position);
+		var c = string.charAt(position);
 		position++;
 		return c;
 	}
@@ -54,7 +53,7 @@ public class SimpleStringReader {
 	}
 
 	public Optional<String> readString() {
-		char c = peekChar();
+		var c = peekChar();
 
 		if (c == 0) {
 			return Optional.empty();
@@ -66,7 +65,7 @@ public class SimpleStringReader {
 			}
 		}
 
-		StringBuilder sb = new StringBuilder();
+		var sb = new StringBuilder();
 
 		if (c == '"') {
 			readChar();
@@ -88,7 +87,7 @@ public class SimpleStringReader {
 			}
 		}
 
-		String s = sb.toString();
+		var s = sb.toString();
 		return s.isEmpty() ? Optional.empty() : Optional.of(s);
 	}
 
@@ -97,15 +96,15 @@ public class SimpleStringReader {
 	}
 
 	public Optional<String> peekString() {
-		int p = position;
-		Optional<String> s = readString();
+		var p = position;
+		var s = readString();
 		position = p;
 		return s;
 	}
 
 	public Optional<Boolean> readBoolean() {
-		int p = position;
-		Optional<String> s = readString();
+		var p = position;
+		var s = readString();
 
 		if (s.isEmpty()) {
 			return Optional.empty();
@@ -121,8 +120,8 @@ public class SimpleStringReader {
 	}
 
 	public Optional<Long> readLong() {
-		int p = position;
-		Optional<String> s = readString();
+		var p = position;
+		var s = readString();
 
 		if (s.isEmpty()) {
 			return Optional.empty();
@@ -136,8 +135,8 @@ public class SimpleStringReader {
 	}
 
 	public OptionalLong readSeconds() {
-		int p = position;
-		Optional<String> s = readString();
+		var p = position;
+		var s = readString();
 
 		if (s.isEmpty()) {
 			return OptionalLong.empty();
@@ -151,7 +150,7 @@ public class SimpleStringReader {
 			return OptionalLong.of(100L * 365L * 86400L);
 		}
 
-		Matcher simpleMatcher = SIMPLE_TIME_PATTERN.matcher(s.get());
+		var simpleMatcher = SIMPLE_TIME_PATTERN.matcher(s.get());
 		long t;
 		long t1;
 
@@ -182,8 +181,8 @@ public class SimpleStringReader {
 				throw new GnomeException("Invalid timespan!").pos(p);
 			}
 
-			int p1 = position;
-			String q = readString().orElseThrow(() -> new GnomeException("Missing time quantifier!").pos(p1)).toLowerCase();
+			var p1 = position;
+			var q = readString().orElseThrow(() -> new GnomeException("Missing time quantifier!").pos(p1)).toLowerCase();
 
 			if (q.startsWith("s")) {
 				t1 = t;
@@ -204,11 +203,11 @@ public class SimpleStringReader {
 			}
 		}
 
-		String next = peekString().orElse("");
+		var next = peekString().orElse("");
 
 		if (next.equalsIgnoreCase("and") || next.equals("&") || next.equals("+")) {
 			readString();
-			long t2 = readSeconds().orElse(0L);
+			var t2 = readSeconds().orElse(0L);
 
 			if (t2 > 0L) {
 				return OptionalLong.of(t1 + t2);
@@ -219,14 +218,14 @@ public class SimpleStringReader {
 	}
 
 	public OptionalLong readDays() {
-		int p = position;
-		OptionalLong s = readSeconds();
+		var p = position;
+		var s = readSeconds();
 
 		if (s.isEmpty() || s.getAsLong() == 0L) {
 			return s;
 		}
 
-		long l = s.getAsLong() / 86400L;
+		var l = s.getAsLong() / 86400L;
 
 		if (l <= 0L) {
 			throw new GnomeException("Invalid timespan!").pos(p);

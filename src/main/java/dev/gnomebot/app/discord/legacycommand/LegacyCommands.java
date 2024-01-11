@@ -52,13 +52,13 @@ public final class LegacyCommands {
 
 		COMMAND_LIST.sort(Comparator.comparing(o -> o.name));
 
-		for (LegacyCommands cmd : COMMAND_LIST) {
-			for (String a : cmd.aliases) {
+		for (var cmd : COMMAND_LIST) {
+			for (var a : cmd.aliases) {
 				COMMAND_MAP.put(a, cmd);
 			}
 		}
 
-		for (LegacyCommands cmd : COMMAND_LIST) {
+		for (var cmd : COMMAND_LIST) {
 			COMMAND_MAP.put(cmd.name, cmd);
 		}
 
@@ -66,8 +66,8 @@ public final class LegacyCommands {
 	}
 
 	public static void run(CommandContext context, CommandReader reader, String content, boolean ignorePermissions) throws Exception {
-		String commandName = reader.readString().orElse("").toLowerCase();
-		LegacyCommands command = COMMAND_MAP.get(commandName);
+		var commandName = reader.readString().orElse("").toLowerCase();
+		var command = COMMAND_MAP.get(commandName);
 
 		if (command == null) {
 			throw new GnomeException(GnomeException.Type.NOT_FOUND, "Command not found!");

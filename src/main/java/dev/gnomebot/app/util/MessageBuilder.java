@@ -14,8 +14,6 @@ import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.FollowupMessageRequest;
-import discord4j.discordjson.json.ImmutableFollowupMessageRequest;
-import discord4j.discordjson.json.ImmutableWebhookMessageEditRequest;
 import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.discordjson.json.WebhookMessageEditRequest;
@@ -52,7 +50,7 @@ public class MessageBuilder {
 		} else if (object instanceof CharSequence) {
 			return create(object.toString());
 		} else if (object instanceof Map<?, ?> map) {
-			MessageBuilder builder = MessageBuilder.create();
+			var builder = MessageBuilder.create();
 
 			if (map.get("content") instanceof CharSequence s) {
 				builder.content(s.toString());
@@ -228,7 +226,7 @@ public class MessageBuilder {
 	// Specs //
 
 	public MessageCreateSpec toMessageCreateSpec() {
-		MessageCreateSpec.Builder builder = MessageCreateSpec.builder();
+		var builder = MessageCreateSpec.builder();
 
 		if (this.content != null && !this.content.isEmpty()) {
 			builder.content(FormattingUtils.trimContent(this.content));
@@ -260,7 +258,7 @@ public class MessageBuilder {
 	}
 
 	public MessageEditSpec.Builder toMessageEditSpec() {
-		MessageEditSpec.Builder builder = MessageEditSpec.builder();
+		var builder = MessageEditSpec.builder();
 
 		if (this.content != null) {
 			builder.contentOrNull(this.content.isEmpty() ? null : FormattingUtils.trimContent(this.content));
@@ -284,7 +282,7 @@ public class MessageBuilder {
 	}
 
 	public FollowupMessageRequest toFollowupMessageRequest() {
-		ImmutableFollowupMessageRequest.Builder builder = FollowupMessageRequest.builder();
+		var builder = FollowupMessageRequest.builder();
 
 		if (this.content != null) {
 			builder.content(FormattingUtils.trimContent(this.content));
@@ -321,7 +319,7 @@ public class MessageBuilder {
 	}
 
 	public WebhookMessageEditRequest toWebhookMessageEditRequest() {
-		ImmutableWebhookMessageEditRequest.Builder builder = WebhookMessageEditRequest.builder();
+		var builder = WebhookMessageEditRequest.builder();
 
 		if (this.content != null) {
 			builder.contentOrNull(this.content.isEmpty() ? null : FormattingUtils.trimContent(this.content));
@@ -350,7 +348,7 @@ public class MessageBuilder {
 	}
 
 	public InteractionApplicationCommandCallbackSpec toInteractionApplicationCommandCallbackSpec() {
-		InteractionApplicationCommandCallbackSpec.Builder builder = InteractionApplicationCommandCallbackSpec.builder();
+		var builder = InteractionApplicationCommandCallbackSpec.builder();
 
 		if (this.content != null) {
 			builder.content(FormattingUtils.trimContent(this.content));

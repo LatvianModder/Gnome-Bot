@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import com.mongodb.BasicDBObject;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordPoll;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
@@ -11,7 +10,6 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.SelectMenu;
-import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.Permission;
@@ -28,7 +26,7 @@ public class PollCommand {
 	public static final CommandCallback COMMAND = (context, reader) -> {
 		context.checkBotPerms(Permission.SEND_MESSAGES);
 
-		List<String> s = Arrays.stream(reader.readRemainingString().orElse("").split("\n")).filter(str -> !str.isEmpty()).collect(Collectors.toList());
+		var s = Arrays.stream(reader.readRemainingString().orElse("").split("\n")).filter(str -> !str.isEmpty()).collect(Collectors.toList());
 
 		if (s.isEmpty()) {
 			throw new GnomeException("Poll can't have empty question!").ephemeral().deleteMessage();
@@ -41,11 +39,11 @@ public class PollCommand {
 			s.add("No");
 		}
 
-		String content = s.remove(0);
+		var content = s.remove(0);
 
 		context.message.delete().subscribe();
 
-		int number = ++context.gc.pollNumber;
+		var number = ++context.gc.pollNumber;
 		context.gc.saveInfo();
 
 		context.referenceMessage = false;
@@ -54,11 +52,11 @@ public class PollCommand {
 
 		selectMenuOptions.add(SelectMenu.Option.of("Remove my vote", "vote/none").withEmoji(Emojis.VOTENONE));
 
-		for (int i = 0; i < s.size(); i++) {
+		for (var i = 0; i < s.size(); i++) {
 			selectMenuOptions.add(SelectMenu.Option.of(s.get(i), "vote/" + i).withEmoji(Emojis.NUMBERS[i]));
 		}
 
-		Message m = context.reply(MessageBuilder.create()
+		var m = context.reply(MessageBuilder.create()
 				.addEmbed(EmbedBuilder.create()
 						.color(EmbedColor.GRAY)
 						.url(App.url("poll/" + context.gc.guildId.asString() + "/" + number))
@@ -71,7 +69,7 @@ public class PollCommand {
 				)
 		);
 
-		Document document = new Document();
+		var document = new Document();
 		document.put("_id", m.getId().asLong());
 		document.put("author", context.sender.getId().asLong());
 		document.put("timestamp", Date.from(m.getTimestamp()));
@@ -86,27 +84,27 @@ public class PollCommand {
 	};
 
 	public static void pollMenuCallback(ComponentEventWrapper event, int number, String value) {
-		DiscordPoll poll = event.context.gc.polls.query().eq("number", number).first();
+		var poll = event.context.gc.polls.query().eq("number", number).first();
 
 		if (poll == null) {
 			event.acknowledge();
 			return;
 		}
 
-		Message m = event.context.channelInfo.getMessage(Snowflake.of(poll.getUID()));
+		var m = event.context.channelInfo.getMessage(Snowflake.of(poll.getUID()));
 
 		if (value.equals("vote/none")) {
 			event.acknowledge();
 
 			if (poll.setVote(event.context.sender.getId().asString(), -1)) {
-				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				var footer = Utils.getFooter(m);
 				m.edit(MessageEditSpec.builder().addEmbed(poll.edit(event.context.gc, footer)).build()).subscribe();
 			}
 		} else if (value.startsWith("vote/")) {
 			event.acknowledge();
 
 			if (poll.setVote(event.context.sender.getId().asString(), Integer.parseInt(value.substring(5)))) {
-				EmbedCreateFields.Footer footer = Utils.getFooter(m);
+				var footer = Utils.getFooter(m);
 				m.edit(MessageEditSpec.builder().addEmbed(poll.edit(event.context.gc, footer)).build()).subscribe();
 			}
 		}

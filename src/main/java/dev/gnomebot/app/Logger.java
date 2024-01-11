@@ -23,7 +23,7 @@ public class Logger {
 
 	public void replaceSystemOutLogger() {
 		try {
-			PrintStream fileOut = new PrintStream(new BufferedOutputStream(Files.newOutputStream(AppPaths.LOG)), true);
+			var fileOut = new PrintStream(new BufferedOutputStream(Files.newOutputStream(AppPaths.LOG)), true);
 			System.setOut(fileOut);
 			System.setErr(fileOut);
 		} catch (Exception ex) {

@@ -3,15 +3,11 @@ package dev.gnomebot.app.discord.command;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMember;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.common.util.Snowflake;
-import discord4j.discordjson.json.MessageData;
-import discord4j.rest.service.ChannelService;
 import org.bson.Document;
 
 import java.time.Instant;
@@ -100,10 +96,10 @@ public class ChannelCommands extends ApplicationCommands {
 
 		var channelsWithXp = event.context.gc.getChannelList().stream().filter(ChannelInfo::isXpSet).toList();
 
-		StringBuilder sb = new StringBuilder();
+		var sb = new StringBuilder();
 		sb.append("Channel XP:");
 
-		for (ChannelInfo ch : channelsWithXp) {
+		for (var ch : channelsWithXp) {
 			if (ch.canViewChannel(event.context.sender.getId())) {
 				sb.append("\n<#").append(ch.id.asString()).append(">: ").append(ch.getXp());
 			}
@@ -114,7 +110,7 @@ public class ChannelCommands extends ApplicationCommands {
 
 	private static void getXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		ChannelInfo info = event.get("channel").asChannelInfoOrCurrent();
+		var info = event.get("channel").asChannelInfoOrCurrent();
 
 		if (info == null) {
 			throw new GnomeException("Invalid channel!");
@@ -127,13 +123,13 @@ public class ChannelCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		ChannelInfo info = event.get("channel").asChannelInfoOrCurrent();
+		var info = event.get("channel").asChannelInfoOrCurrent();
 
 		if (info == null) {
 			throw new GnomeException("Invalid channel!");
 		}
 
-		int xp = Math.max(-1, event.get("xp").asInt());
+		var xp = Math.max(-1, event.get("xp").asInt());
 
 		info.settings.xp = xp;
 		info.settings.update("xp", xp);
@@ -144,7 +140,7 @@ public class ChannelCommands extends ApplicationCommands {
 	private static void setAllXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-		int xp = Math.max(0, event.get("xp").asInt());
+		var xp = Math.max(0, event.get("xp").asInt());
 		event.context.gc.globalXp.set(xp);
 		event.respond("All channel XP set to " + xp);
 	}
@@ -168,7 +164,7 @@ public class ChannelCommands extends ApplicationCommands {
 					return false;
 				}
 
-				StatKey statKey = (StatKey) o;
+				var statKey = (StatKey) o;
 				return channel == statKey.channel && user == statKey.user && date.getTime() == statKey.date.getTime();
 			}
 
@@ -178,21 +174,21 @@ public class ChannelCommands extends ApplicationCommands {
 			}
 		}
 
-		long start = System.currentTimeMillis();
-		long total = 0L;
+		var start = System.currentTimeMillis();
+		var total = 0L;
 		Map<Long, MutableLong> totalCount = new HashMap<>();
 		Map<Long, MutableLong> totalXp = new HashMap<>();
 		Map<StatKey, MutableLong> dailyCount = new HashMap<>();
 		Map<StatKey, MutableLong> dailyXp = new HashMap<>();
 
-		for (ChannelInfo channelInfo : event.context.gc.getChannelList()) {
+		for (var channelInfo : event.context.gc.getChannelList()) {
 			event.edit().respond("1/4 Counting messages in " + channelInfo.getMention() + "...");
-			long channelId = channelInfo.id.asLong();
+			var channelId = channelInfo.id.asLong();
 
-			for (DiscordMessage m : event.context.gc.messages.query().eq("channel", channelId).projectionFields("timestamp", "user")) {
+			for (var m : event.context.gc.messages.query().eq("channel", channelId).projectionFields("timestamp", "user")) {
 				total++;
-				StatKey key = new StatKey();
-				Date date = m.getDate();
+				var key = new StatKey();
+				var date = m.getDate();
 				key.date = new Date(date.getYear(), date.getMonth(), date.getDate());
 				key.channel = channelId;
 				key.user = m.getUserID();
@@ -214,8 +210,8 @@ public class ChannelCommands extends ApplicationCommands {
 
 		event.edit().respond("2/4 Updating message counters...");
 
-		for (Map.Entry<StatKey, MutableLong> entry : dailyCount.entrySet()) {
-			Document doc = new Document();
+		for (var entry : dailyCount.entrySet()) {
+			var doc = new Document();
 			doc.put("date", entry.getKey().date);
 			doc.put("channel", entry.getKey().channel);
 			doc.put("user", entry.getKey().user);
@@ -225,8 +221,8 @@ public class ChannelCommands extends ApplicationCommands {
 
 		event.edit().respond("3/4 Updating message xp...");
 
-		for (Map.Entry<StatKey, MutableLong> entry : dailyXp.entrySet()) {
-			Document doc = new Document();
+		for (var entry : dailyXp.entrySet()) {
+			var doc = new Document();
 			doc.put("date", entry.getKey().date);
 			doc.put("channel", entry.getKey().channel);
 			doc.put("user", entry.getKey().user);
@@ -236,9 +232,9 @@ public class ChannelCommands extends ApplicationCommands {
 
 		event.edit().respond("4/4 Updating user data...");
 
-		for (DiscordMember member : event.context.gc.members.query()) {
-			long c = MutableLong.valueOf(totalCount.get(member.getUID()), 0L);
-			long xp = MutableLong.valueOf(totalXp.get(member.getUID()), 0L);
+		for (var member : event.context.gc.members.query()) {
+			var c = MutableLong.valueOf(totalCount.get(member.getUID()), 0L);
+			var xp = MutableLong.valueOf(totalXp.get(member.getUID()), 0L);
 
 			if (c != member.getTotalMessages() && xp != member.getTotalXp()) {
 				member.update(Updates.combine(Updates.set("total_messages", c), Updates.set("total_xp", xp)));
@@ -249,7 +245,7 @@ public class ChannelCommands extends ApplicationCommands {
 			}
 		}
 
-		long time = (System.currentTimeMillis() - start) / 1000L;
+		var time = (System.currentTimeMillis() - start) / 1000L;
 		event.edit().respond("XP refreshed from " + total + " messages in " + TimeUtils.prettyTimeString(time) + "!");
 	}
 
@@ -322,23 +318,23 @@ public class ChannelCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
 
-		ChannelInfo channel = event.get("channel").asChannelInfoOrCurrent();
-		Snowflake m1 = event.get("message_id_1").asSnowflake();
-		Snowflake m2 = event.get("message_id_2").asSnowflake();
+		var channel = event.get("channel").asChannelInfoOrCurrent();
+		var m1 = event.get("message_id_1").asSnowflake();
+		var m2 = event.get("message_id_2").asSnowflake();
 
-		long oldest = Utils.oldest(m1, m2).asLong();
-		long newest = Utils.newest(m1, m2).asLong();
+		var oldest = Utils.oldest(m1, m2).asLong();
+		var newest = Utils.newest(m1, m2).asLong();
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
-				ChannelService service = event.context.handler.client.getRestClient().getChannelService();
+				var service = event.context.handler.client.getRestClient().getChannelService();
 				// event.context.message.addReaction(Emojis.VOTENONE).block();
 
 				// FIXME: Change to bulk deletion
-				Iterable<MessageData> iterable = channel.getRest().getMessagesBefore(Snowflake.of(newest)).take(1000L, true).toIterable();
+				var iterable = channel.getRest().getMessagesBefore(Snowflake.of(newest)).take(1000L, true).toIterable();
 
-				for (MessageData message : iterable) {
-					long id = message.id().asLong();
+				for (var message : iterable) {
+					var id = message.id().asLong();
 
 					if (task.cancelled || id == oldest) {
 						break;

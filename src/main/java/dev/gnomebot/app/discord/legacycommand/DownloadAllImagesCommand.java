@@ -6,12 +6,10 @@ import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
-import dev.gnomebot.app.discord.UserCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.URLRequest;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.io.BufferedInputStream;
@@ -20,7 +18,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,29 +34,29 @@ public class DownloadAllImagesCommand {
 
 	@LegacyDiscordCommand(name = "download_all_images", help = "Downloads all images in current channel as .zip", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> context.gc.db.app.queueBlockingTask(task -> {
-		HashMap<String, ImageFile> linkMap = new HashMap<>();
-		UserCache userCache = context.handler.createUserCache();
+		var linkMap = new HashMap<String, ImageFile>();
+		var userCache = context.handler.createUserCache();
 
-		Path tempDir = AppPaths.GUILD_DATA
+		var tempDir = AppPaths.GUILD_DATA
 				.resolve("images-" + context.channelInfo.id.asString())
 				.resolve("images-" + context.channelInfo.id.asString() + "-" + Instant.now().toString().replace(':', '-'));
 
 		Files.createDirectories(tempDir);
 
-		for (DiscordMessage m : context.gc.messages.query().eq("channel", context.channelInfo.id.asLong()).filter(Filters.bitsAnySet("flags", DiscordMessage.FLAG_IMAGES))) {
+		for (var m : context.gc.messages.query().eq("channel", context.channelInfo.id.asLong()).filter(Filters.bitsAnySet("flags", DiscordMessage.FLAG_IMAGES))) {
 			if (task.cancelled) {
 				return;
 			}
 
-			for (String url : m.getImages()) {
-				ImageFile image = new ImageFile();
+			for (var url : m.getImages()) {
+				var image = new ImageFile();
 				image.originalFilename = url.substring(url.lastIndexOf('/') + 1);
 
 				if (image.originalFilename.endsWith(":large")) {
 					continue;
 				}
 
-				int extIndex = image.originalFilename.lastIndexOf('.');
+				var extIndex = image.originalFilename.lastIndexOf('.');
 
 				if (extIndex == -1) {
 					continue;
@@ -71,7 +68,7 @@ public class DownloadAllImagesCommand {
 				image.originalFilename = image.originalFilename.substring(0, extIndex);
 
 				image.filename = image.originalFilename + "." + image.ext;
-				int x = 0;
+				var x = 0;
 
 				while (linkMap.containsKey(image.filename)) {
 					x++;
@@ -79,8 +76,8 @@ public class DownloadAllImagesCommand {
 				}
 
 				image.url = url;
-				Snowflake userId = Snowflake.of(m.getUserID());
-				User u = userCache.get(userId).orElse(null);
+				var userId = Snowflake.of(m.getUserID());
+				var u = userCache.get(userId).orElse(null);
 				image.author = u == null ? userId.asString() : u.getTag();
 				image.timestamp = m.getDate().toInstant();
 
@@ -101,11 +98,11 @@ public class DownloadAllImagesCommand {
 			}
 		});
 
-		AtomicInteger remaining = new AtomicInteger(linkMap.size());
+		var remaining = new AtomicInteger(linkMap.size());
 
-		byte[] buffer = new byte[65536];
+		var buffer = new byte[65536];
 
-		for (ImageFile image : linkMap.values()) {
+		for (var image : linkMap.values()) {
 			if (task.cancelled) {
 				return;
 			}
@@ -122,7 +119,7 @@ public class DownloadAllImagesCommand {
 				ex.printStackTrace();
 			}
 
-			int i = remaining.decrementAndGet();
+			var i = remaining.decrementAndGet();
 			App.info("Downloaded " + image.url + ", " + i + " left");
 		}
 

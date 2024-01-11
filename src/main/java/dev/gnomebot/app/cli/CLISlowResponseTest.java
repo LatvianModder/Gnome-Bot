@@ -14,7 +14,7 @@ public class CLISlowResponseTest {
 		if (event instanceof CLIApplicationCommand.CLIEventFromCommand e) {
 			new Thread(() -> {
 				try {
-					for (int i = 0; i < 10; i++) {
+					for (var i = 0; i < 10; i++) {
 						e.event.edit().respond("Slow response: " + (10 - i));
 						Thread.sleep(1000L);
 					}

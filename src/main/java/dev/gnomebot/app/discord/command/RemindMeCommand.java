@@ -14,10 +14,10 @@ public class RemindMeCommand extends ApplicationCommands {
 			.run(RemindMeCommand::run);
 
 	private static void run(ChatInputInteractionEventWrapper event) {
-		String text = event.get("text").asString();
-		long timer = event.get("timer").asSeconds().orElse(60L * 60L);
-		boolean dm = event.get("private").asBoolean(true);
-		Instant instant = Instant.ofEpochSecond(Instant.now().getEpochSecond() + timer);
+		var text = event.get("text").asString();
+		var timer = event.get("timer").asSeconds().orElse(60L * 60L);
+		var dm = event.get("private").asBoolean(true);
+		var instant = Instant.ofEpochSecond(Instant.now().getEpochSecond() + timer);
 
 		if (dm) {
 			event.acknowledgeEphemeral();

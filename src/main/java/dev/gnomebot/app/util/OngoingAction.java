@@ -11,7 +11,7 @@ public class OngoingAction {
 
 	public static OngoingAction start(String id, Runnable onStopped) {
 		stop(id);
-		OngoingAction a = new OngoingAction(onStopped);
+		var a = new OngoingAction(onStopped);
 		MAP.put(id, a);
 		return a;
 	}
@@ -21,7 +21,7 @@ public class OngoingAction {
 	}
 
 	public static void stop(String id) {
-		OngoingAction action = MAP.remove(id);
+		var action = MAP.remove(id);
 
 		if (action != null && action.running) {
 			action.running = false;

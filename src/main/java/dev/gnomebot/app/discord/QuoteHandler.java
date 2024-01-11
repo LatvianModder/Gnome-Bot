@@ -24,24 +24,24 @@ public class QuoteHandler {
 	}
 
 	public static String getMessageURL(Snowflake guild, Snowflake channel, Snowflake message) {
-		StringBuilder builder = new StringBuilder();
+		var builder = new StringBuilder();
 		getMessageURL(builder, guild, channel, message);
 		return builder.toString();
 	}
 
 	public static String getChannelURL(Snowflake guild, Snowflake channel) {
-		StringBuilder builder = new StringBuilder();
+		var builder = new StringBuilder();
 		getChannelURL(builder, guild, channel);
 		return builder.toString();
 	}
 
 	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, Member member) {
 		var quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
-		int quotes = 0;
+		var quotes = 0;
 
-		boolean init = true;
+		var init = true;
 
-		boolean mentionsAdmin = false;
+		var mentionsAdmin = false;
 		ChannelService service = null;
 		ChannelInfo channel1 = null;
 		WebHook webHook = null;

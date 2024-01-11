@@ -1,11 +1,9 @@
 package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,30 +11,30 @@ import java.util.List;
 public class UpdateRegularRolesCommand {
 	@LegacyDiscordCommand(name = "update_regular_roles", help = "Adds or removes regular role. Use in case requirements are changed", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		boolean confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
+		var confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
 
 		if (!context.gc.regularRole.isSet() || context.gc.regularMessages.get() <= 0) {
 			throw new GnomeException("Regular role not set!");
 		}
 
-		final Snowflake role = context.gc.regularRole.get();
-		final Snowflake roleMember = Snowflake.of(748075791790637078L);
+		final var role = context.gc.regularRole.get();
+		final var roleMember = Snowflake.of(748075791790637078L);
 
 		context.handler.app.queueBlockingTask(task -> {
-			int added = 0;
-			int removed = 0;
-			int addedMember = 0;
-			int removedMember = 0;
+			var added = 0;
+			var removed = 0;
+			var addedMember = 0;
+			var removedMember = 0;
 
-			for (Member member : context.gc.getGuild().getMembers().filter(m -> !m.isBot()).toIterable()) {
+			for (var member : context.gc.getGuild().getMembers().filter(m -> !m.isBot()).toIterable()) {
 				if (task.cancelled) {
 					return;
 				}
 
-				DiscordMember m = context.gc.members.findFirst(member);
+				var m = context.gc.members.findFirst(member);
 
 				if (m != null) {
-					long totalMessages = m.getTotalMessages();
+					var totalMessages = m.getTotalMessages();
 
 					var n = Ansi.of(member.getTag());
 

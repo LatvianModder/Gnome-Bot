@@ -13,7 +13,7 @@ public record RecentUser(Snowflake id, String tag) {
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		RecentUser that = (RecentUser) o;
+		var that = (RecentUser) o;
 		return Objects.equals(id, that.id);
 	}
 

@@ -42,14 +42,14 @@ public class MapWrapper implements JSONSerializable {
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public <E> List<E> getList(String key) {
-		Object o = get(key, null);
+		var o = get(key, null);
 
 		if (o instanceof List) {
 			return (List) o;
 		} else if (o instanceof Iterable) {
 			List<E> list = new ArrayList<>();
 
-			for (E o1 : (Iterable<E>) o) {
+			for (var o1 : (Iterable<E>) o) {
 				list.add(o1);
 			}
 
@@ -74,12 +74,12 @@ public class MapWrapper implements JSONSerializable {
 
 	@Nullable
 	public Boolean getNullableBoolean(String key) {
-		Object o = get(key, null);
+		var o = get(key, null);
 		return o instanceof Boolean ? ((Boolean) o) : null;
 	}
 
 	public boolean getBoolean(String key, boolean def) {
-		Boolean o = getNullableBoolean(key);
+		var o = getNullableBoolean(key);
 		return o == null ? def : o;
 	}
 
@@ -88,7 +88,7 @@ public class MapWrapper implements JSONSerializable {
 	}
 
 	public Number getNumber(String key, Number def) {
-		Object o = get(key, def);
+		var o = get(key, def);
 		return o instanceof Number ? ((Number) o) : def;
 	}
 

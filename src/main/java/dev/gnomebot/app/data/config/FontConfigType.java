@@ -84,7 +84,7 @@ public class FontConfigType implements ConfigType<Font, FontConfigType.Holder> {
 			var font = ALL_FONTS.get(match.group(2));
 
 			if (font != null) {
-				int style = 0;
+				var style = 0;
 				var styleChars = match.group(1);
 
 				if (styleChars != null && !styleChars.isEmpty()) {

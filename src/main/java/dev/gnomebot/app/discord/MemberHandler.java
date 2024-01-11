@@ -17,11 +17,9 @@ import discord4j.core.event.domain.guild.MemberLeaveEvent;
 import discord4j.core.event.domain.guild.UnbanEvent;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.audit.AuditLogEntry;
-import discord4j.core.object.audit.AuditLogPart;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.AuditLogQuerySpec;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,8 +45,8 @@ public class MemberHandler {
 		memberUpdates.add(Updates.set("avatar", user.getAvatarUrl()));
 		memberUpdates.add(Updates.set("discriminator", user.getDiscriminator()));
 
-		BasicDBList roleList = new BasicDBList();
-		long memberFlags = 0L;
+		var roleList = new BasicDBList();
+		var memberFlags = 0L;
 
 		if (user.isBot()) {
 			memberFlags |= DiscordMember.FLAG_BOT;
@@ -66,7 +64,7 @@ public class MemberHandler {
 				memberUpdates.add(Updates.unset("nickname"));
 			}
 
-			for (Snowflake role : member.getRoleIds()) {
+			for (var role : member.getRoleIds()) {
 				roleList.add(role.asLong());
 			}
 		} else {
@@ -81,13 +79,13 @@ public class MemberHandler {
 	}
 
 	public static void joined(DiscordHandler handler, GuildCollections gc, MemberJoinEvent event) {
-		Member member = event.getMember();
-		long nowSecond = Instant.now().getEpochSecond();
+		var member = event.getMember();
+		var nowSecond = Instant.now().getEpochSecond();
 
-		long accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
+		var accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
 
 		if (accountAge <= 604800L && gc.logNewAccountsChannel.isSet()) {
-			String sb = member.getMention() +
+			var sb = member.getMention() +
 					" (" +
 					member.getTag() +
 					") is a new account: " +
@@ -120,8 +118,8 @@ public class MemberHandler {
 
 		gc.pushRecentUser(member.getId(), member.getTag());
 
-		long prevMessages = 0L;
-		Document mdoc = gc.members.query(member.getId().asLong()).firstDocument();
+		var prevMessages = 0L;
+		var mdoc = gc.members.query(member.getId().asLong()).firstDocument();
 
 		if (mdoc != null) {
 			prevMessages = mdoc.containsKey("total_messages") ? mdoc.getLong("total_messages") : 0L;
@@ -134,10 +132,10 @@ public class MemberHandler {
 		// App.info(Utils.ANSI_GREEN + member.getTag() + Utils.ANSI_RESET + " has joined the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server!");
 		App.LOGGER.event(BrainEvents.MEMBER_JOINED);
 
-		DiscordMember oldMember = gc.members.findFirst(member);
+		var oldMember = gc.members.findFirst(member);
 
 		if (oldMember != null) {
-			for (Long l : oldMember.getRoles()) {
+			for (var l : oldMember.getRoles()) {
 				try {
 					member.addRole(Snowflake.of(l)).block();
 				} catch (Exception ex) {
@@ -153,8 +151,8 @@ public class MemberHandler {
 	}
 
 	public static void left(DiscordHandler handler, GuildCollections gc, MemberLeaveEvent event) {
-		Member member = event.getMember().orElse(null);
-		long mems = member == null || member.getJoinTime().isEmpty() ? 0L : Instant.now().getEpochSecond() - member.getJoinTime().get().getEpochSecond();
+		var member = event.getMember().orElse(null);
+		var mems = member == null || member.getJoinTime().isEmpty() ? 0L : Instant.now().getEpochSecond() - member.getJoinTime().get().getEpochSecond();
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LEAVE)
 				.user(event.getUser())
@@ -198,7 +196,7 @@ public class MemberHandler {
 			return;
 		}
 
-		GuildCollections gc = handler.app.db.guild(event.getGuildId());
+		var gc = handler.app.db.guild(event.getGuildId());
 		updateMember(gc, event.getUser(), null, ACTION_BANNED, gc.members.findFirst(event.getUser()), null);
 
 		if (gc.adminLogChannel.isSet()) {
@@ -210,8 +208,8 @@ public class MemberHandler {
 			} catch (Exception ex) {
 			}
 
-			User responsible = entry == null || entry.getResponsibleUserId().isEmpty() ? null : handler.getUser(entry.getResponsibleUserId().get());
-			String reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
+			var responsible = entry == null || entry.getResponsibleUserId().isEmpty() ? null : handler.getUser(entry.getResponsibleUserId().get());
+			var reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
 
 			// App.info(Utils.ANSI_RED + event.getUser().getUsername() + Utils.ANSI_RESET + " was banned from " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server by " + (responsible == null ? "Unknown" : responsible.getTag()) + "! Reason: " + reason);
 			App.LOGGER.event(BrainEvents.MEMBER_BANNED);
@@ -243,11 +241,11 @@ public class MemberHandler {
 
 	@Nullable
 	private static AuditLogEntry findBanEntry(GuildCollections gc, Snowflake target) throws Exception {
-		for (AuditLogPart part : gc.getGuild().getAuditLog(AuditLogQuerySpec.builder()
+		for (var part : gc.getGuild().getAuditLog(AuditLogQuerySpec.builder()
 				.actionType(ActionType.MEMBER_BAN_ADD)
 				.build()
 		).take(10L, true).toIterable()) {
-			for (AuditLogEntry entry : part.getEntries()) {
+			for (var entry : part.getEntries()) {
 				if (entry.getTargetId().isPresent() && entry.getTargetId().get().equals(target)) {
 					return entry;
 				}
@@ -258,7 +256,7 @@ public class MemberHandler {
 	}
 
 	public static void unbanned(DiscordHandler handler, UnbanEvent event) {
-		GuildCollections gc = handler.app.db.guild(event.getGuildId());
+		var gc = handler.app.db.guild(event.getGuildId());
 		updateMember(gc, event.getUser(), null, ACTION_UNBANNED, gc.members.findFirst(event.getUser()), null);
 
 		gc.adminLogChannelEmbed(event.getUser().getUserData(), gc.adminLogChannel, spec -> {

@@ -43,7 +43,7 @@ public class CachedRole {
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		CachedRole that = (CachedRole) o;
+		var that = (CachedRole) o;
 		return Objects.equals(id, that.id);
 	}
 

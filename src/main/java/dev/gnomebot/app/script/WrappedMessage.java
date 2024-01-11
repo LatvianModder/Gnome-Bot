@@ -8,7 +8,6 @@ import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadSpec;
@@ -59,7 +58,7 @@ public class WrappedMessage extends DiscordObject {
 
 	@Nullable
 	public WrappedUser getAuthor() {
-		User u = message.getAuthor().orElse(null);
+		var u = message.getAuthor().orElse(null);
 		return u == null ? null : getGuild().getUser(u.getId().asString());
 	}
 
@@ -89,9 +88,9 @@ public class WrappedMessage extends DiscordObject {
 
 	public WrappedUser[] getMentionedUsers() {
 		var list = messageData.mentions();
-		WrappedUser[] array = new WrappedUser[list.size()];
+		var array = new WrappedUser[list.size()];
 
-		for (int i = 0; i < array.length; i++) {
+		for (var i = 0; i < array.length; i++) {
 			array[i] = channel.guild.getUser(list.get(i).id().asString());
 		}
 
@@ -108,9 +107,9 @@ public class WrappedMessage extends DiscordObject {
 
 	public WrappedRole[] getMentionedRoles() {
 		var list = messageData.mentionRoles();
-		WrappedRole[] array = new WrappedRole[list.size()];
+		var array = new WrappedRole[list.size()];
 
-		for (int i = 0; i < array.length; i++) {
+		for (var i = 0; i < array.length; i++) {
 			array[i] = channel.guild.roles.get(list.get(i));
 		}
 
@@ -135,7 +134,7 @@ public class WrappedMessage extends DiscordObject {
 
 	@Nullable
 	public WrappedMessage getReferencedMessage() {
-		Message m = message.getReferencedMessage().orElse(null);
+		var m = message.getReferencedMessage().orElse(null);
 		return m == null ? null : channel.getMessage(m);
 	}
 

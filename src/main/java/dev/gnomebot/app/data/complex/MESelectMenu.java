@@ -146,7 +146,7 @@ public class MESelectMenu extends MEComponent implements ComplexMessageContext.O
 			}
 		}
 
-		boolean isDefault = first.equals("#default");
+		var isDefault = first.equals("#default");
 		var value = isDefault ? reader.readString().orElse("") : first;
 		var label = reader.readString().orElse("Option " + (options.size() + 1));
 

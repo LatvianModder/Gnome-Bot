@@ -111,9 +111,9 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 	public T findFirst(@Nullable Object id) {
 		if (id == null) {
 			return null;
-		} else if (id instanceof Long && (Long) id == 0L) {
+		} else if (id instanceof Long l && l == 0L) {
 			return null;
-		} else if (id instanceof Snowflake && ((Snowflake) id).asLong() == 0L) {
+		} else if (id instanceof Snowflake s && s.asLong() == 0L) {
 			return null;
 		} else if (id instanceof String && id.toString().isEmpty()) {
 			return null;

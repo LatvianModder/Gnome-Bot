@@ -115,13 +115,13 @@ public class Databases {
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(MongoDatabase database, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
-		WrappedCollection<T> collection = new WrappedCollection<>(this, database, ci, w);
+		var collection = new WrappedCollection<T>(this, database, ci, w);
 		collections.put(ci, collection);
 		return collection;
 	}
 
 	public void createSelfToken() {
-		Document tokenDoc = new Document();
+		var tokenDoc = new Document();
 		tokenDoc.put("_id", Utils.createToken());
 		tokenDoc.put("user", app.discordHandler.selfId.asLong());
 		tokenDoc.put("name", "GnomeBot");
@@ -130,11 +130,11 @@ public class Databases {
 	}
 
 	public String getEncodedToken(long user, String name) {
-		WebToken token = webTokens.query().eq("user", user).first();
+		var token = webTokens.query().eq("user", user).first();
 
 		if (token == null) {
-			String tokenString = Utils.createToken();
-			Document document = new Document();
+			var tokenString = Utils.createToken();
+			var document = new Document();
 			document.put("_id", tokenString);
 			document.put("user", user);
 			document.put("name", name);
@@ -149,10 +149,10 @@ public class Databases {
 
 	@Nullable
 	public WebToken getToken(Context ctx) {
-		String a = ctx.header("Authorization");
+		var a = ctx.header("Authorization");
 
 		if (a != null && a.startsWith("Bearer ")) {
-			String token = a.substring(7);
+			var token = a.substring(7);
 
 			if (token.equals(selfToken.token)) {
 				return selfToken;
@@ -161,7 +161,7 @@ public class Databases {
 			return getToken(token);
 		}
 
-		String c = ctx.cookie("gnometoken");
+		var c = ctx.cookie("gnometoken");
 
 		if (c != null && !c.isEmpty()) {
 			if (c.equals(selfToken.token)) {
@@ -171,11 +171,11 @@ public class Databases {
 			return getToken(c);
 		}
 
-		String q = ctx.queryParam("logintoken");
+		var q = ctx.queryParam("logintoken");
 
 		if (q != null && !q.isEmpty()) {
-			String token = new String(Base64.getUrlDecoder().decode(q), StandardCharsets.UTF_8);
-			WebToken webToken = getToken(token);
+			var token = new String(Base64.getUrlDecoder().decode(q), StandardCharsets.UTF_8);
+			var webToken = getToken(token);
 
 			if (webToken != null) {
 				webToken.justLoggedIn = true;
@@ -189,10 +189,10 @@ public class Databases {
 
 	@Nullable
 	public WebToken getToken(WsConnectContext ctx) {
-		String a = ctx.header("Authorization");
+		var a = ctx.header("Authorization");
 
 		if (a != null && a.startsWith("Bearer ")) {
-			String token = a.substring(7);
+			var token = a.substring(7);
 
 			if (token.equals(selfToken.token)) {
 				return selfToken;
@@ -201,7 +201,7 @@ public class Databases {
 			return getToken(token);
 		}
 
-		String c = ctx.cookie("gnometoken");
+		var c = ctx.cookie("gnometoken");
 
 		if (c != null && !c.isEmpty()) {
 			if (c.equals(selfToken.token)) {

@@ -8,7 +8,6 @@ import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.common.util.TimestampFormat;
-import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.SelectMenu;
@@ -33,7 +32,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,10 +78,10 @@ public class Utils {
 	}
 
 	public static BufferedImage getAvatar(Snowflake id, int size) throws Exception {
-		Path path = AppPaths.AVATAR_CACHE.resolve(id.asString() + "-" + size + ".png");
+		var path = AppPaths.AVATAR_CACHE.resolve(id.asString() + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			BufferedImage img = internalRequest("api/info/avatar/" + id.asString() + "/" + size).toImage().block();
+			var img = internalRequest("api/info/avatar/" + id.asString() + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -92,10 +90,10 @@ public class Utils {
 	}
 
 	public static BufferedImage getEmoji(Snowflake id, int size) throws Exception {
-		Path path = AppPaths.EMOJI_CACHE.resolve(id.asString() + "-" + size + ".png");
+		var path = AppPaths.EMOJI_CACHE.resolve(id.asString() + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			BufferedImage img = internalRequest("api/info/emoji/" + id.asString() + "/" + size).toImage().block();
+			var img = internalRequest("api/info/emoji/" + id.asString() + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -117,7 +115,7 @@ public class Utils {
 		if (s.isEmpty() || s.equals("-")) {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
-			String[] s1 = s.substring(1, s.length() - 1).split(":", 3);
+			var s1 = s.substring(1, s.length() - 1).split(":", 3);
 			return ReactionEmoji.custom(Utils.snowflake(s1[2]), s1[1], s1[0].equals("a"));
 		} else {
 			return ReactionEmoji.unicode(s);
@@ -129,7 +127,7 @@ public class Utils {
 	}
 
 	public static void editComponents(@Nullable Message message, @Nullable List<ComponentData> c) {
-		EditMessageComponentsRequest request = new EditMessageComponentsRequest(c);
+		var request = new EditMessageComponentsRequest(c);
 
 		Routes.MESSAGE_EDIT.newRequest(message.getChannelId().asLong(), message.getId().asLong())
 				.body(request)
@@ -163,7 +161,7 @@ public class Utils {
 			return null;
 		}
 
-		Embed.Footer footer = m.getEmbeds().get(0).getFooter().orElse(null);
+		var footer = m.getEmbeds().get(0).getFooter().orElse(null);
 		return footer == null ? null : EmbedCreateFields.Footer.of(footer.getText(), footer.getIconUrl().orElse(null));
 	}
 
@@ -187,7 +185,7 @@ public class Utils {
 
 	public static String getAvatarUrl(User user, @Nullable Member member) {
 		if (member != null) {
-			boolean animated = member.hasAnimatedGuildAvatar();
+			var animated = member.hasAnimatedGuildAvatar();
 			return member.getGuildAvatarUrl(animated ? GIF : PNG).orElse(member.getAvatarUrl());
 		}
 
@@ -200,7 +198,7 @@ public class Utils {
 		}
 
 		try {
-			PermissionSet set = channel.getEffectivePermissions(member).block();
+			var set = channel.getEffectivePermissions(member).block();
 
 			if (set == null || set.isEmpty()) {
 				return PermissionSet.none();

@@ -19,7 +19,7 @@ public class CLIGuildIcon {
 			return;
 		}
 
-		String s = gc.getGuild().getIconUrl(Image.Format.GIF).orElse("");
+		var s = gc.getGuild().getIconUrl(Image.Format.GIF).orElse("");
 
 		if (!s.isEmpty()) {
 			try {

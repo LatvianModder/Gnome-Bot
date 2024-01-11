@@ -29,7 +29,7 @@ public class GnomeCommand extends ApplicationCommands {
 
 	private static void about(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		long s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
+		var s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
 
 		List<String> content = new ArrayList<>();
 		content.add("[Gnome Panel](<" + App.url("") + ">)");
@@ -46,7 +46,7 @@ public class GnomeCommand extends ApplicationCommands {
 
 	private static void login(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		String tokenString = event.context.gc.db.getEncodedToken(event.context.sender.getId().asLong(), event.context.sender.getUsername());
+		var tokenString = event.context.gc.db.getEncodedToken(event.context.sender.getId().asLong(), event.context.sender.getUsername());
 		event.respond("[Click here to open the panel!](<" + App.url("panel/login?logintoken=" + tokenString) + ">)");
 	}
 

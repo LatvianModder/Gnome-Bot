@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
@@ -27,7 +26,7 @@ public class MemberCache {
 
 	public Optional<Member> get(final User user, final boolean updateImporting) {
 		return map.computeIfAbsent(user.getId(), snowflake -> {
-			Member member = gc.getMember(snowflake);
+			var member = gc.getMember(snowflake);
 
 			if (updateImporting) {
 				MemberHandler.updateMember(gc, user, member, MemberHandler.ACTION_IMPORT_DATA, gc.members.findFirst(snowflake), null);
@@ -46,7 +45,7 @@ public class MemberCache {
 	}
 
 	public String getDisplayName(final Snowflake id) {
-		DiscordMember member = gc.members.findFirst(id);
+		var member = gc.members.findFirst(id);
 
 		if (member != null) {
 			return member.getDisplayName();

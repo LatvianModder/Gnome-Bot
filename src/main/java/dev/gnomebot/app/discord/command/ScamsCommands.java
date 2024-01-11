@@ -11,7 +11,7 @@ public class ScamsCommands extends ApplicationCommands {
 
 	public static void checkDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		String domain = event.get("domain").asString();
+		var domain = event.get("domain").asString();
 
 		if (ScamHandler.EXACT_DOMAIN.matcher(domain).matches()) {
 			event.respond("Domain type: " + ScamHandler.checkScamDomain(domain).commandName);
@@ -23,7 +23,7 @@ public class ScamsCommands extends ApplicationCommands {
 	public static void blockDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-		String domain = event.get("domain").asString();
+		var domain = event.get("domain").asString();
 
 		if (ScamHandler.EXACT_DOMAIN.matcher(domain).matches()) {
 			ScamHandler.setOverride(event.context.gc, event.context.sender.getTag(), domain, ScamHandler.Type.BLOCK);
@@ -36,7 +36,7 @@ public class ScamsCommands extends ApplicationCommands {
 	public static void allowDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-		String domain = event.get("domain").asString();
+		var domain = event.get("domain").asString();
 
 		if (ScamHandler.EXACT_DOMAIN.matcher(domain).matches()) {
 			ScamHandler.setOverride(event.context.gc, event.context.sender.getTag(), domain, ScamHandler.Type.ALLOW);
@@ -49,7 +49,7 @@ public class ScamsCommands extends ApplicationCommands {
 	public static void removeDomain(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-		String domain = event.get("domain").asString();
+		var domain = event.get("domain").asString();
 
 		if (ScamHandler.EXACT_DOMAIN.matcher(domain).matches()) {
 			ScamHandler.setOverride(event.context.gc, event.context.sender.getTag(), domain, ScamHandler.Type.DEFAULT);
@@ -62,9 +62,9 @@ public class ScamsCommands extends ApplicationCommands {
 	public static void test(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		event.context.checkSenderAdmin();
-		String text = event.get("text").asString();
+		var text = event.get("text").asString();
 
-		ScamHandler.Scam scam = ScamHandler.checkScam(text);
+		var scam = ScamHandler.checkScam(text);
 
 		if (scam == null) {
 			event.respond("This message is safe!");

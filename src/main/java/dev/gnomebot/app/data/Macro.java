@@ -88,7 +88,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 	}
 
 	public void rename(String rename) {
-		long l = setSlashCommand(false);
+		var l = setSlashCommand(false);
 
 		guild.getMacroMap().remove(stringId);
 		stringId = rename.toLowerCase();
@@ -104,7 +104,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 		if (b) {
 			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), buildCommand()).block();
 
-			long id = data == null ? 0L : Snowflake.of(data.id()).asLong();
+			var id = data == null ? 0L : Snowflake.of(data.id()).asLong();
 
 			if (data != null) {
 				slashCommand = id;
@@ -174,7 +174,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 
 	public ChatCommandSuggestion getChatCommandSuggestion() {
 		if (chatCommandSuggestion == null) {
-			chatCommandSuggestion = new ChatCommandSuggestion(name, name, stringId, 0);
+			chatCommandSuggestion = new ChatCommandSuggestion(name, id.toString(), stringId, 0);
 		}
 
 		return chatCommandSuggestion;

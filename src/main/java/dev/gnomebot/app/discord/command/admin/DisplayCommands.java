@@ -2,14 +2,9 @@ package dev.gnomebot.app.discord.command.admin;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.CollectionQuery;
-import dev.gnomebot.app.data.DiscordMember;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.data.complex.ComplexMessage;
-import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
@@ -23,11 +18,9 @@ import dev.latvian.apps.webutils.data.Pair;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import io.javalin.http.HttpStatus;
@@ -37,10 +30,8 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,7 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.MatchResult;
@@ -60,20 +50,20 @@ public class DisplayCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		List<Pair<String, String>> list = new ArrayList<>();
 		Predicate<Member> predicate = member -> true;
-		int length = 0;
+		var length = 0;
 
 		if (event.has("name-regex")) {
-			Pattern pattern = Pattern.compile(event.get("name-regex").asString(".*"), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+			var pattern = Pattern.compile(event.get("name-regex").asString(".*"), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 			predicate = predicate.and(m -> m.getNickname().isPresent() ? (pattern.matcher(m.getUsername()).find() || pattern.matcher(m.getNickname().get()).find()) : pattern.matcher(m.getUsername()).find());
 		}
 
 		if (event.has("role")) {
-			Snowflake role = event.get("role").asRole().get().id;
+			var role = event.get("role").asRole().get().id;
 			predicate = predicate.and(m -> m.getRoleIds().contains(role));
 		}
 
-		for (Member member : event.context.gc.getGuild().getMembers().filter(predicate).toIterable(5)) {
-			String s = member.getMention() + "(" + member.getTag() + ")";
+		for (var member : event.context.gc.getGuild().getMembers().filter(predicate).toIterable(5)) {
+			var s = member.getMention() + "(" + member.getTag() + ")";
 			list.add(Pair.of(s, member.getDisplayName()));
 			length += s.length() + 1;
 
@@ -93,14 +83,14 @@ public class DisplayCommands extends ApplicationCommands {
 	public static void messages(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
-		int length = 0;
+		var length = 0;
 
-		boolean activity = event.get("activity").asBoolean(false);
+		var activity = event.get("activity").asBoolean(false);
 
 		if (!event.get("recently-deleted").asBoolean(false)) {
-			CollectionQuery<DiscordMessage> messages = event.context.gc.messages.query().descending("timestamp").filter(Filters.gte("timestamp", new Date(System.currentTimeMillis() - 15778476000L))).limit(100);
+			var messages = event.context.gc.messages.query().descending("timestamp").filter(Filters.gte("timestamp", new Date(System.currentTimeMillis() - 15778476000L))).limit(100);
 
-			String contentRegex = event.get("content-regex").asString();
+			var contentRegex = event.get("content-regex").asString();
 
 			if (!contentRegex.isEmpty()) {
 				messages.regex("content", Pattern.compile(contentRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE));
@@ -114,10 +104,10 @@ public class DisplayCommands extends ApplicationCommands {
 				messages.filter(Filters.bitsAnySet("flags", event.get("flags").asInt()));
 			}
 
-			long count = messages.count();
+			var count = messages.count();
 
-			for (DiscordMessage message : messages) {
-				String s = message.getURLAsArrow(event.context.gc) + " <@" + Snowflake.of(message.getUserID()).asString() + "> " + message.getContent();
+			for (var message : messages) {
+				var s = message.getURLAsArrow(event.context.gc) + " <@" + Snowflake.of(message.getUserID()).asString() + "> " + message.getContent();
 				list.add(s);
 				length += s.length() + 1;
 
@@ -143,11 +133,11 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void quietMemberCount(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		int total = event.context.gc.getGuild().getMembers().count().block().intValue();
+		var total = event.context.gc.getGuild().getMembers().count().block().intValue();
 		event.context.gc.getGuild()
 				.getMembers()
 				.filter(m -> {
-					DiscordMember dm = event.context.gc.members.findFirst(m);
+					var dm = event.context.gc.members.findFirst(m);
 					return dm != null && dm.getTotalMessages() <= 0;
 				})
 				.count()
@@ -156,9 +146,9 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void messageHistoryExport(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		PrivateChannel c = DM.open(event.context.gc.db.app.discordHandler, event.context.sender.getId());
+		var c = DM.open(event.context.gc.db.app.discordHandler, event.context.sender.getId());
 
-		Snowflake memberId = event.get("member").asMember().orElse(event.context.sender).getId();
+		var memberId = event.get("member").asMember().orElse(event.context.sender).getId();
 
 		if (!memberId.equals(event.context.sender.getId())) {
 			event.context.checkSenderAdmin();
@@ -172,13 +162,13 @@ public class DisplayCommands extends ApplicationCommands {
 			throw new GnomeException("This command requires DMs to be enabled for this guild!");
 		}
 
-		LinkedList<ExportedMessage> list = new LinkedList<>();
+		var list = new LinkedList<ExportedMessage>();
 
-		Pattern channelPattern = Pattern.compile("<#(\\d+)>");
+		var channelPattern = Pattern.compile("<#(\\d+)>");
 		Map<Long, String> channelNameMap = new HashMap<>() {
 			@Override
 			public String get(Object key) {
-				String s = super.get(key);
+				var s = super.get(key);
 
 				if (s == null) {
 					s = "#" + key.toString();
@@ -197,8 +187,8 @@ public class DisplayCommands extends ApplicationCommands {
 
 		Function<MatchResult, String> channelNameReplacer = matchResult -> channelNameMap.get(Long.parseUnsignedLong(matchResult.group(1)));
 
-		for (DiscordMessage msg : event.context.gc.messages.query().eq("user", memberId.asLong())) {
-			ExportedMessage emessage = new ExportedMessage();
+		for (var msg : event.context.gc.messages.query().eq("user", memberId.asLong())) {
+			var emessage = new ExportedMessage();
 			emessage.timestamp = msg.getDate().getTime();
 			emessage.channel = msg.getChannelID();
 			emessage.channelName = channelNameMap.get(emessage.channel);
@@ -210,16 +200,16 @@ public class DisplayCommands extends ApplicationCommands {
 		m.edit(MessageEditSpec.builder().contentOrNull("Done gathering messages! Saving to file...").build()).block();
 		list.sort(ExportedMessage.COMPARATOR);
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		String[] row = new String[6];
-		StringBuilder sb = new StringBuilder();
+		var out = new ByteArrayOutputStream();
+		var row = new String[6];
+		var sb = new StringBuilder();
 
-		CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
-		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, encoder))) {
-			for (int i = 0; i < list.size(); i++) {
+		var encoder = StandardCharsets.UTF_8.newEncoder();
+		try (var writer = new BufferedWriter(new OutputStreamWriter(out, encoder))) {
+			for (var i = 0; i < list.size(); i++) {
 				list.get(i).toString(i, row);
 
-				for (int j = 0; j < row.length; j++) {
+				for (var j = 0; j < row.length; j++) {
 					if (j != 0) {
 						sb.append(',');
 					}
@@ -238,7 +228,7 @@ public class DisplayCommands extends ApplicationCommands {
 		m.edit(MessageEditSpec.builder().contentOrNull("Done!").build()).subscribe();
 
 		c.createMessage(MessageCreateSpec.builder().addFile(event.context.gc.guildId.asString() + "-" + memberId.asString() + "-" + Instant.now() + ".csv", new ByteArrayInputStream(out.toByteArray())).build()).flatMap(dm -> {
-			Attachment attachment = dm.getAttachments().get(0);
+			var attachment = dm.getAttachments().get(0);
 			Paste.createPaste(event.context.gc.db, dm.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getUsername());
 			return dm.edit(MessageEditSpec.builder().addComponent(ActionRow.of(Button.link(Paste.getUrl(attachment.getId().asString()), "View " + attachment.getFilename()))).build());
 		}).block();
@@ -248,15 +238,15 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void messageCountPerMonth(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		ChannelInfo channelInfo = event.get("channel").asChannelInfo().orElse(null);
+		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
 
 		if (channelInfo == null) {
-			long messages = event.context.gc.messages.count();
-			double months = (Instant.now().getEpochSecond() - event.context.gc.guildId.getTimestamp().getEpochSecond()) / 2592000D;
+			var messages = event.context.gc.messages.count();
+			var months = (Instant.now().getEpochSecond() - event.context.gc.guildId.getTimestamp().getEpochSecond()) / 2592000D;
 			event.respond(messages + " messages / " + months + " months = " + ((long) (messages / months)) + " messages per month");
 		} else {
-			long messages = event.context.gc.messages.count(Filters.eq("channel", channelInfo.id.asLong()));
-			double months = (Instant.now().getEpochSecond() - channelInfo.id.getTimestamp().getEpochSecond()) / 2592000D;
+			var messages = event.context.gc.messages.count(Filters.eq("channel", channelInfo.id.asLong()));
+			var months = (Instant.now().getEpochSecond() - channelInfo.id.getTimestamp().getEpochSecond()) / 2592000D;
 			event.respond(messages + " messages / " + months + " months = " + ((long) (messages / months)) + " messages per month");
 		}
 	}
@@ -268,20 +258,20 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void hourlyActivity(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		Member member = event.get("member").asMember().orElse(event.context.sender);
+		var member = event.get("member").asMember().orElse(event.context.sender);
 
 		if (!member.equals(event.context.sender)) {
 			event.context.checkSenderAdmin();
 		}
 
-		long ms = event.get("days").asDays().orElse(30L) * 1000L * 60L * 60L * 24L;
-		ZoneId zoneId = event.get("timezone").asZone();
+		var ms = event.get("days").asDays().orElse(30L) * 1000L * 60L * 60L * 24L;
+		var zoneId = event.get("timezone").asZone();
 
-		long[] activity = new long[24];
-		long total = 0L;
+		var activity = new long[24];
+		var total = 0L;
 		App.info("Starting... " + member.getTag());
 
-		for (DiscordMessage m : event.context.gc.messages.query().eq("user", member.getId().asLong()).filter(ms == 0L ? null : Filters.gt("timestamp", new Date(System.currentTimeMillis() - ms)))) {
+		for (var m : event.context.gc.messages.query().eq("user", member.getId().asLong()).filter(ms == 0L ? null : Filters.gt("timestamp", new Date(System.currentTimeMillis() - ms)))) {
 			activity[m.getDate().toInstant().atZone(zoneId).getHour()]++;
 			total++;
 		}
@@ -293,9 +283,9 @@ public class DisplayCommands extends ApplicationCommands {
 			return;
 		}
 
-		StringBuilder sb = new StringBuilder("Activity [" + total + " messages]: (" + zoneId + ")");
+		var sb = new StringBuilder("Activity [" + total + " messages]: (" + zoneId + ")");
 
-		for (int i = 0; i < 24; i++) {
+		for (var i = 0; i < 24; i++) {
 			sb.append('\n');
 
 			if (i < 10) {
@@ -315,10 +305,10 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void memberCount(ChatInputInteractionEventWrapper event) {
 		event.acknowledge();
-		Optional<CachedRole> role = event.get("role").asRole();
+		var role = event.get("role").asRole();
 
 		if (role.isPresent()) {
-			CachedRole wr = role.get();
+			var wr = role.get();
 			long count = event.context.gc.getGuild()
 					.getMembers()
 					.filter(member -> member.getRoleIds().contains(wr.id))
@@ -327,7 +317,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 			event.respond(FormattingUtils.format(count) + " members with role " + wr);
 		} else {
-			int max = event.context.gc.getGuild().getMaxMembers().orElse(0);
+			var max = event.context.gc.getGuild().getMaxMembers().orElse(0);
 
 			long count = event.context.gc.getGuild()
 					.getMembers()
@@ -356,9 +346,9 @@ public class DisplayCommands extends ApplicationCommands {
 			throw new GnomeException("Mention not found!");
 		}
 
-		long limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
+		var limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
 
-		long days = event.get("timespan").asDays().orElse(90L);
+		var days = event.get("timespan").asDays().orElse(90L);
 		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
 		var role = event.get("role").asRole().orElse(null);
 

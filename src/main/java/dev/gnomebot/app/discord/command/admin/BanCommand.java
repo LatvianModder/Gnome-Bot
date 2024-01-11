@@ -16,7 +16,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.User;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
@@ -28,7 +27,7 @@ public class BanCommand extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		event.context.checkGlobalPerms(Permission.BAN_MEMBERS);
 
-		User user = event.get("user").asUser().orElse(null);
+		var user = event.get("user").asUser().orElse(null);
 		Member member = null;
 
 		try {
@@ -36,9 +35,9 @@ public class BanCommand extends ApplicationCommands {
 		} catch (Exception ex) {
 		}
 
-		String reason0 = event.get("reason").asString();
-		String reason = reason0.isEmpty() ? "Not specified" : reason0;
-		boolean deleteMessages = event.get("delete-messages").asBoolean(false);
+		var reason0 = event.get("reason").asString();
+		var reason = reason0.isEmpty() ? "Not specified" : reason0;
+		var deleteMessages = event.get("delete-messages").asBoolean(false);
 
 		if (user == null) {
 			throw error("User not found!");
@@ -49,7 +48,7 @@ public class BanCommand extends ApplicationCommands {
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
 		event.context.reply(event.context.sender.getMention() + " banned " + user.getMention());
 
-		boolean dm = DM.send(event.context.handler, user, "You've been banned from " + event.context.gc + ", reason: " + reason, false).isPresent();
+		var dm = DM.send(event.context.handler, user, "You've been banned from " + event.context.gc + ", reason: " + reason, false).isPresent();
 
 		if (member != null) {
 			MemberHandler.ignoreNextBan = true;

@@ -5,12 +5,10 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PasteCommands extends ApplicationCommands {
@@ -44,16 +42,16 @@ public class PasteCommands extends ApplicationCommands {
 	}
 
 	private static void url(ChatInputInteractionEventWrapper event) {
-		String mu = event.get("attachment-url").asString();
+		var mu = event.get("attachment-url").asString();
 
-		Matcher urlm = URL_REGEX.matcher(mu);
+		var urlm = URL_REGEX.matcher(mu);
 
 		if (urlm.find()) {
 			event.acknowledge();
 
-			Snowflake channelId = Utils.snowflake(urlm.group(1));
-			Snowflake attachmentId = Utils.snowflake(urlm.group(2));
-			String filename = urlm.group(3);
+			var channelId = Utils.snowflake(urlm.group(1));
+			var attachmentId = Utils.snowflake(urlm.group(2));
+			var filename = urlm.group(3);
 
 			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename, "");
 			event.edit().respond(MessageBuilder.create("Paste version of `" + filename + "`").addComponentRow(Button.link(Paste.getUrl(attachmentId.asString()), "View " + filename)));

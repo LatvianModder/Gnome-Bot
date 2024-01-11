@@ -12,9 +12,9 @@ public class CursePointCalculatorCommand extends ApplicationCommands {
 
 	private static void run(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		Currency c = event.get("currency").asCurrency().orElse(Currency.USD);
-		double points = Math.min(Math.max(0D, event.get("daily-points").asDouble(0D)), 100000D);
-		double money = points * 0.05D * c.rate;
+		var c = event.get("currency").asCurrency().orElse(Currency.USD);
+		var points = Math.min(Math.max(0D, event.get("daily-points").asDouble(0D)), 100000D);
+		var money = points * 0.05D * c.rate;
 
 		var table = new Table("", "Day", "Month", "Year");
 		table.addRow("Points", String.format("%.2f", points), String.format("%.2f", points * 30D), String.format("%.2f", points * 365D));

@@ -4,7 +4,6 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.mods.rhino.util.DynamicMap;
 import dev.latvian.mods.rhino.util.HideFromJS;
-import discord4j.common.util.Snowflake;
 import discord4j.rest.service.GuildService;
 
 import java.util.Collections;
@@ -40,8 +39,8 @@ public class WrappedGuild extends DiscordObject {
 	}
 
 	public WrappedUser getUser(String id) {
-		WrappedMember m = members.get(id);
-		Snowflake snowflake = Utils.snowflake(id);
+		var m = members.get(id);
+		var snowflake = Utils.snowflake(id);
 
 		if (gc.getMember(snowflake) == null) {
 			return new WrappedUser(new WrappedId(snowflake), this);

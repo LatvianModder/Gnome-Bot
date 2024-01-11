@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.UserWebhook;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
@@ -52,7 +51,7 @@ public class CommandOption extends BasicOption {
 	}
 
 	public Optional<Member> asMember() {
-		Optional<User> u = asUser();
+		var u = asUser();
 
 		if (u.isPresent()) {
 			try {
@@ -66,7 +65,7 @@ public class CommandOption extends BasicOption {
 	}
 
 	public Optional<Member> asOptionalMember() {
-		Optional<User> u = asUser();
+		var u = asUser();
 
 		if (u.isPresent()) {
 			try {
@@ -84,15 +83,15 @@ public class CommandOption extends BasicOption {
 	}
 
 	public Optional<WebHook> asWebhook() {
-		ChannelInfo ci = asChannelInfo().orElse(null);
+		var ci = asChannelInfo().orElse(null);
 
 		if (ci != null) {
 			context.checkSenderOwner();
 			return ci.getWebHook();
 		}
 
-		String n = value.trim().toLowerCase();
-		UserWebhook webhook = context.gc.db.userWebhooks.query().eq("name", n).eq("user", context.sender.getId().asLong()).first();
+		var n = value.trim().toLowerCase();
+		var webhook = context.gc.db.userWebhooks.query().eq("name", n).eq("user", context.sender.getId().asLong()).first();
 		return Optional.ofNullable(webhook == null ? null : webhook.createWebhook());
 	}
 }

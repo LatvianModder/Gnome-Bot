@@ -19,13 +19,13 @@ public class RelayPingTask implements Runnable {
 	@Override
 	public void run() {
 		try {
-			long start = System.nanoTime();
+			var start = System.nanoTime();
 
 			if (targetId.asLong() == 0L || pingData.channel().canViewChannel(targetId)) {
 				destination.relayPing(targetId, pingData, ping);
 			}
 
-			long time = System.nanoTime() - start;
+			var time = System.nanoTime() - start;
 
 			if (time >= 1_000_000_000L) { // 1000.000 ms
 				App.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + destination);

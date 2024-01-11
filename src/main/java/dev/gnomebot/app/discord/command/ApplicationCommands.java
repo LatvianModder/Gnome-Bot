@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,7 +34,7 @@ public class ApplicationCommands {
 		}
 
 		public static boolean validData(ApplicationCommandData applicationCommandData) {
-			Optional<Integer> type = applicationCommandData.type().toOptional();
+			var type = applicationCommandData.type().toOptional();
 			return type.isPresent() && InteractionType.TYPES_BY_ID.containsKey(type.get());
 		}
 	}
@@ -158,14 +157,14 @@ public class ApplicationCommands {
 
 		InteractionType<?> currentType = null;
 
-		for (String line : lines) {
+		for (var line : lines) {
 			if (line.startsWith("> ")) {
 				currentType = InteractionType.TYPES.get(line.substring(2));
 			} else if (!line.isEmpty() && currentType != null) {
-				String[] s = line.split(":", 2);
+				var s = line.split(":", 2);
 
 				if (s.length == 2) {
-					UUID id = UUIDWrapper.fromString(s[0]);
+					var id = UUIDWrapper.fromString(s[0]);
 
 					if (id != null && !s[1].isBlank()) {
 						oldCommands.put(new ApplicationCommandKey(currentType, s[1]), id);
@@ -181,11 +180,11 @@ public class ApplicationCommands {
 				.filter(ApplicationCommandKey::validData)
 				.collect(Collectors.toMap(ApplicationCommandKey::new, data -> Snowflake.of(data.id())));
 
-		int changed = 0;
+		var changed = 0;
 
 		for (var entry : oldCommands.entrySet()) {
 			if (!newCommands.containsKey(entry.getKey())) {
-				Snowflake id = globalCommands.get(entry.getKey());
+				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
 					App.warn("Deleting " + entry.getKey() + "/" + id.asString());
@@ -205,7 +204,7 @@ public class ApplicationCommands {
 
 		for (var entry : newCommands.entrySet()) {
 			if (!entry.getValue().commandHash.equals(oldCommands.get(entry.getKey()))) {
-				Snowflake id = globalCommands.get(entry.getKey());
+				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
 					App.warn("Updating " + entry.getKey() + "/" + id.asString());
@@ -330,7 +329,7 @@ public class ApplicationCommands {
 
 	public static ChatInputInteractionBuilder currency(String id) {
 		return string(id).suggest(event -> {
-			for (Currency currency : Currency.ALL.getNonnull().values()) {
+			for (var currency : Currency.ALL.getNonnull().values()) {
 				event.suggest(currency.name, currency.id);
 			}
 		});

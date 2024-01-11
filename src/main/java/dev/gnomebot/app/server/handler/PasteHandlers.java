@@ -10,7 +10,6 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.data.Pair;
-import dev.latvian.apps.webutils.html.Tag;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
@@ -24,9 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.jar.JarInputStream;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -112,9 +109,9 @@ public class PasteHandlers {
 	public static final int TYPE_JAVA_AND_JS = 1;
 
 	public static Response file(ServerRequest request) throws Exception {
-		Snowflake channel = request.getSnowflake("channel");
-		Snowflake id = request.getSnowflake("id");
-		String filename = request.variable("filename");
+		var channel = request.getSnowflake("channel");
+		var id = request.getSnowflake("id");
+		var filename = request.variable("filename");
 		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename, "");
 		return Response.permanentRedirect(App.url("paste/" + id.asString()));
 	}
@@ -123,14 +120,14 @@ public class PasteHandlers {
 		var id0 = request.variable("id").split("!", 2);
 		var id = Utils.snowflake(id0[0]);
 
-		Paste paste = request.app.db.pastes.query(id.asLong()).first();
+		var paste = request.app.db.pastes.query(id.asLong()).first();
 
 		if (paste == null) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
 
-		Snowflake channel = Snowflake.of(paste.getChannelID());
-		String filename = paste.getFilename();
+		var channel = Snowflake.of(paste.getChannelID());
+		var filename = paste.getFilename();
 
 		byte[] contents;
 
@@ -145,7 +142,7 @@ public class PasteHandlers {
 		}
 
 		var type = MimeType.TEXT;
-		boolean download = false;
+		var download = false;
 
 		if (filename.endsWith(".pdf")) {
 			type = "application/pdf";
@@ -182,13 +179,13 @@ public class PasteHandlers {
 	public static Response paste(ServerRequest request) throws Exception {
 		var id0 = request.variable("id").split("!", 2);
 		var id = Utils.snowflake(id0[0]);
-		String subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
+		var subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 		byte[] contents;
 		String filename;
 		String user;
 
 		try {
-			URLRequest<byte[]> req = Utils.internalRequest("paste/" + id.asString() + "/raw").toBytes();
+			var req = Utils.internalRequest("paste/" + id.asString() + "/raw").toBytes();
 			contents = req.block();
 			filename = req.getHeader("Gnome-Paste-Filename");
 			user = req.getHeader("Gnome-Paste-User");
@@ -200,7 +197,7 @@ public class PasteHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
 		}
 
-		boolean archive = filename.endsWith(".zip") || filename.endsWith(".jar");
+		var archive = filename.endsWith(".zip") || filename.endsWith(".jar");
 
 		zipExit:
 		if (archive && !subfile.isEmpty()) {
@@ -284,8 +281,8 @@ public class PasteHandlers {
 				}
 			}
 
-			String lineFormat = "%0" + String.valueOf(lines.size()).length() + "d";
-			StringBuilder sb = new StringBuilder();
+			var lineFormat = "%0" + String.valueOf(lines.size()).length() + "d";
+			var sb = new StringBuilder();
 
 			int fileType;
 
@@ -295,10 +292,10 @@ public class PasteHandlers {
 				fileType = TYPE_NONE;
 			}
 
-			for (int i = 0; i < lines.size(); i++) {
+			for (var i = 0; i < lines.size(); i++) {
 				var s = lines.get(i);
-				String lineId = "L" + (i + 1);
-				Tag line = pasteText.span();
+				var lineId = "L" + (i + 1);
+				var line = pasteText.span();
 				line.id(lineId);
 
 				if (i < MAX_LINES && fileType == TYPE_NONE) {
@@ -322,19 +319,19 @@ public class PasteHandlers {
 				}
 
 				if (fileType == TYPE_JAVA_AND_JS) {
-					Matcher matcher = JAVA_AND_JS_PATTERN.matcher(s);
+					var matcher = JAVA_AND_JS_PATTERN.matcher(s);
 
 					while (matcher.find()) {
 						sb.setLength(0);
 						matcher.appendReplacement(sb, "");
 						line.string(sb.toString());
 
-						String string = matcher.group(1);
-						String number = matcher.group(3);
-						String keyword = matcher.group(4);
-						String symbol = matcher.group(5);
-						String bracketOpen = matcher.group(6);
-						String bracketClose = matcher.group(7);
+						var string = matcher.group(1);
+						var number = matcher.group(3);
+						var keyword = matcher.group(4);
+						var symbol = matcher.group(5);
+						var bracketOpen = matcher.group(6);
+						var bracketClose = matcher.group(7);
 
 						if (string != null) {
 							line.span("f-g").string(string);
@@ -355,18 +352,18 @@ public class PasteHandlers {
 					matcher.appendTail(sb);
 					line.string(sb.toString());
 				} else {
-					Matcher matcher = FormattingUtils.STACK_AT_PATTERN.matcher(s);
+					var matcher = FormattingUtils.STACK_AT_PATTERN.matcher(s);
 
 					while (matcher.find()) {
 						sb.setLength(0);
 						matcher.appendReplacement(sb, "");
 						line.string(sb.toString());
 
-						String at = matcher.group(1);
-						String packagePath = matcher.group(2);
-						String className = matcher.group(3);
-						String methodName = matcher.group(4);
-						String source = matcher.group(5);
+						var at = matcher.group(1);
+						var packagePath = matcher.group(2);
+						var className = matcher.group(3);
+						var methodName = matcher.group(4);
+						var source = matcher.group(5);
 
 						line.string(at);
 						line.span("f-o").string(packagePath);
@@ -376,9 +373,9 @@ public class PasteHandlers {
 						line.span("f-b").string(methodName);
 						line.string(":");
 
-						Set<String> sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
+						var sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
 
-						String[] sourceS = source.split(":", 2);
+						var sourceS = source.split(":", 2);
 
 						if (sourceS[0].equals("Native Method")) {
 							line.span("f-p").string("native");

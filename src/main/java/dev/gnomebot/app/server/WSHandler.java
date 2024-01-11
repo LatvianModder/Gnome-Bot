@@ -1,8 +1,6 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.WebToken;
-import discord4j.core.object.entity.User;
 import io.javalin.websocket.WsConfig;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
@@ -33,7 +31,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 			}
 
 			synchronized (sessions) {
-				for (WSSession session : sessions.values()) {
+				for (var session : sessions.values()) {
 					try {
 						session.session().getRemote().sendPing(null);
 					} catch (Exception ex) {
@@ -52,14 +50,14 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 				start();
 			}
 
-			WebToken token = App.instance.db.getToken(ctx);
+			var token = App.instance.db.getToken(ctx);
 
 			if (token == null) {
 				ctx.session.close(StatusCode.NORMAL, "Missing token!");
 				return;
 			}
 
-			User user = App.instance.discordHandler.getUser(token.userId);
+			var user = App.instance.discordHandler.getUser(token.userId);
 
 			if (user == null) {
 				ctx.session.close(StatusCode.NORMAL, "User not found!");
@@ -67,7 +65,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 			}
 
 			synchronized (sessions) {
-				WSSession session = new WSSession(this, ctx.session, token, user);
+				var session = new WSSession(this, ctx.session, token, user);
 				sessions.put(session.session(), session);
 				App.warn(getName() + " connected: " + session);
 				onLoggedIn(session);
@@ -76,7 +74,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 		ws.onMessage(ctx -> {
 			synchronized (sessions) {
-				WSSession session = sessions.get(ctx.session);
+				var session = sessions.get(ctx.session);
 
 				if (session != null) {
 					onMessage(session, ctx.message());
@@ -86,7 +84,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 		ws.onBinaryMessage(ctx -> {
 			synchronized (sessions) {
-				WSSession session = sessions.get(ctx.session);
+				var session = sessions.get(ctx.session);
 
 				if (session != null) {
 					onDataMessage(session, ctx.data());
@@ -96,7 +94,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 		ws.onClose(ctx -> {
 			synchronized (sessions) {
-				WSSession session = sessions.remove(ctx.session);
+				var session = sessions.remove(ctx.session);
 
 				if (session != null) {
 					App.warn(getName() + " closed: " + session + " [" + ctx.status() + (ctx.reason() == null ? "" : (" / " + ctx.reason())) + "]");
@@ -118,9 +116,9 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 	}
 
 	public void onDataMessage(WSSession session, byte[] data) {
-		StringBuilder sb = new StringBuilder(getName() + " binary message from " + session + ": [" + data.length + " bytes]");
+		var sb = new StringBuilder(getName() + " binary message from " + session + ": [" + data.length + " bytes]");
 
-		for (int i = 0; i < data.length; i++) {
+		for (var i = 0; i < data.length; i++) {
 			if (i % 40 == 0) {
 				sb.append('\n');
 			}
@@ -133,7 +131,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 	public void broadcast(String message) {
 		synchronized (sessions) {
-			for (WSSession session : sessions.values()) {
+			for (var session : sessions.values()) {
 				session.sendString(message);
 			}
 		}
@@ -141,7 +139,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 
 	public void closeAll(int code, String reason) {
 		synchronized (sessions) {
-			for (WSSession session : sessions.values()) {
+			for (var session : sessions.values()) {
 				session.close(code, reason);
 			}
 		}

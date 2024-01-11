@@ -25,7 +25,7 @@ public final class MessageId {
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		MessageId messageId = (MessageId) o;
+		var messageId = (MessageId) o;
 		return channel == messageId.channel && id == messageId.id;
 	}
 
