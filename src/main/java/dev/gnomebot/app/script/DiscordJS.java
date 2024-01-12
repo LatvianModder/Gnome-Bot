@@ -10,13 +10,13 @@ import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.NativeJavaClass;
 import dev.latvian.mods.rhino.NativeJavaObject;
 import dev.latvian.mods.rhino.Scriptable;
 import dev.latvian.mods.rhino.ScriptableObject;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.WebhookExecuteRequest;
 
@@ -51,8 +51,7 @@ public class DiscordJS {
 
 			try {
 				var typeWrappers = context.getTypeWrappers();
-				typeWrappers.register(Snowflake.class, o -> o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString()));
-				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number ? Snowflake.of(((Number) o).longValue()) : Utils.snowflake(o.toString())));
+				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number n ? n.longValue() : SnowFlake.num(o.toString())));
 				typeWrappers.register(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
 				typeWrappers.register(MessageBuilder.class, MessageBuilder::of);
 				typeWrappers.register(EmbedBuilder.class, EmbedBuilder::of);
@@ -65,7 +64,6 @@ public class DiscordJS {
 
 						ScriptableObject.putProperty(scope, "console", new NativeJavaClass(scope, ConsoleWrapper.class));
 						ScriptableObject.putProperty(scope, "Utils", new NativeJavaClass(scope, ScriptUtils.class));
-						ScriptableObject.putProperty(scope, "Snowflake", new NativeJavaClass(scope, Snowflake.class));
 						ScriptableObject.putProperty(scope, "WrappedId", new NativeJavaClass(scope, WrappedId.class));
 						ScriptableObject.putProperty(scope, "Discord", new NativeJavaObject(scope, this, DiscordJS.class));
 						ScriptableObject.putProperty(scope, "EmbedColor", new NativeJavaClass(scope, EmbedColor.class));

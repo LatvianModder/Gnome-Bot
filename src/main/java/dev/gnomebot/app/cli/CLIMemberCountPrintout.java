@@ -1,5 +1,6 @@
 package dev.gnomebot.app.cli;
 
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Table;
 
 import java.time.Instant;
@@ -15,12 +16,12 @@ public class CLIMemberCountPrintout {
 		var table = new Table("ID", "Tag");
 
 		for (var member : event.gc.getMembers()) {
-			if (role == null || member.getRoleIds().contains(role.id)) {
+			if (role == null || member.getRoleIds().contains(SnowFlake.convert(role.id))) {
 				table.addRow(member.getId().asString(), member.getTag());
 			}
 		}
 
 		event.respond("Done!");
-		event.response.addFile("role-export-" + event.gc.guildId.asString() + "-" + (role == null ? "all" : role.id.asString()) + "-" + Instant.now().toString().replace(':', '-') + ".csv", table.getCSVBytes(false));
+		event.response.addFile("role-export-" + event.gc.guildId + "-" + (role == null ? "all" : role.id) + "-" + Instant.now().toString().replace(':', '-') + ".csv", table.getCSVBytes(false));
 	}
 }

@@ -2,8 +2,7 @@ package dev.gnomebot.app.data.config;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import org.jetbrains.annotations.Nullable;
@@ -15,18 +14,18 @@ import java.util.Optional;
 public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder> {
 	public static final RoleConfigType DEFAULT = new RoleConfigType();
 
-	public static class Holder extends ConfigHolder<Snowflake> {
-		public Holder(GuildCollections gc, ConfigKey<Snowflake, Holder> key) {
+	public static class Holder extends ConfigHolder<Long> {
+		public Holder(GuildCollections gc, ConfigKey<Long, Holder> key) {
 			super(gc, key);
 		}
 
 		@Override
 		public String toString() {
-			return "<@&" + get().asString() + '>';
+			return "<@&" + get() + '>';
 		}
 
 		public boolean isSet() {
-			return get().asLong() != 0L;
+			return get() != 0L;
 		}
 
 		@Nullable
@@ -39,11 +38,11 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 		}
 
 		public boolean is(Member member) {
-			return isSet() && member.getRoleIds().contains(get());
+			return isSet() && member.getRoleIds().contains(SnowFlake.convert(get()));
 		}
 
 		public boolean isMentioned(Message message) {
-			return isSet() && message.getRoleMentionIds().contains(get());
+			return isSet() && message.getRoleMentionIds().contains(SnowFlake.convert(get()));
 		}
 	}
 
@@ -53,13 +52,13 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 	}
 
 	@Override
-	public Holder createHolder(GuildCollections gc, ConfigKey<Snowflake, Holder> key) {
+	public Holder createHolder(GuildCollections gc, ConfigKey<Long, Holder> key) {
 		return new Holder(gc, key);
 	}
 
 	@Override
 	public String validate(GuildCollections guild, int type, String value) {
-		return !value.isEmpty() && (!value.startsWith("@") && guild.getRoleMap().containsKey(Utils.snowflake(value)) || guild.getUniqueRoleNameMap().containsKey(value.substring(1))) ? "" : "Role not found!";
+		return !value.isEmpty() && (!value.startsWith("@") && guild.getRoleMap().containsKey(SnowFlake.num(value)) || guild.getUniqueRoleNameMap().containsKey(value.substring(1))) ? "" : "Role not found!";
 	}
 
 	@Override
@@ -72,16 +71,16 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 		var list = new ArrayList<EnumValue>();
 
 		for (var entry : guild.getUniqueRoleNameMap().entrySet()) {
-			list.add(new EnumValue(entry.getValue().id.asString(), "@" + entry.getKey()));
+			list.add(new EnumValue(SnowFlake.str(entry.getValue().id), "@" + entry.getKey()));
 		}
 
 		return list;
 	}
 
 	@Override
-	public String serialize(GuildCollections guild, int type, Snowflake value) {
+	public String serialize(GuildCollections guild, int type, Long value) {
 		for (var entry : guild.getUniqueRoleNameMap().entrySet()) {
-			if (entry.getValue().id.equals(value)) {
+			if (entry.getValue().id == value) {
 				return "@" + entry.getKey();
 			}
 		}
@@ -90,14 +89,14 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 	}
 
 	@Override
-	public Snowflake deserialize(GuildCollections guild, int type, String value) {
+	public Long deserialize(GuildCollections guild, int type, String value) {
 		if (value.isEmpty()) {
-			return Utils.NO_SNOWFLAKE;
+			return 0L;
 		} else if (value.startsWith("@")) {
 			var role = guild.getUniqueRoleNameMap().get(value.substring(1));
-			return role == null ? Utils.NO_SNOWFLAKE : role.id;
+			return role == null ? 0L : role.id;
 		} else {
-			return Utils.snowflake(value);
+			return SnowFlake.num(value);
 		}
 	}
 }

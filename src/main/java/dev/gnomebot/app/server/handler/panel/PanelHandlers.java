@@ -6,9 +6,9 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.server.handler.PanelGuildData;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.net.Response;
-import discord4j.common.util.Snowflake;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.NotFoundResponse;
 
@@ -42,8 +42,8 @@ public class PanelHandlers {
 
 		for (var data : guilds) {
 			var line = root.content.p().classes("withicon");
-			line.img("/api/guild/icon/" + data.gc().guildId.asString() + "/128").lazyLoading();
-			line.a("/panel/" + data.gc().guildId.asString()).string(data.gc().toString());
+			line.img("/api/guild/icon/" + data.gc().guildId + "/128").lazyLoading();
+			line.a("/panel/" + data.gc().guildId).string(data.gc().toString());
 		}
 
 		return root.asResponse();
@@ -69,12 +69,12 @@ public class PanelHandlers {
 
 	public static Response guild(ServerRequest request) {
 		var root = GnomeRootTag.createSimple(request.getPath(), request.gc.toString());
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/audit-log?level=1", "Audit Log");
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/audit-log?level=0&type=message_edited,message_deleted", "Audit Log (Deleted/Edited Messages)");
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/macros", "Macros");
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/bans", "Bans");
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/offenses", "Offenses");
-		root.content.h3().a("/panel/" + request.gc.guildId.asString() + "/scam-detection", "Scam Detection");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/audit-log?level=1", "Audit Log");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/audit-log?level=0&type=message_edited,message_deleted", "Audit Log (Deleted/Edited Messages)");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/macros", "Macros");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/bans", "Bans");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/offenses", "Offenses");
+		root.content.h3().a("/panel/" + request.gc.guildId + "/scam-detection", "Scam Detection");
 		// root.content.p().string("Uh... nothing for now...");
 		// root.content.p().a("/guild/" + request.gc.guildId.asString()).string("For now you can go to old page.");
 		return root.asResponse();
@@ -82,14 +82,14 @@ public class PanelHandlers {
 
 	public static Response macros(ServerRequest request) {
 		var root = GnomeRootTag.createSimple(request.getPath(), "Macros - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 
 		var slashMacros = root.content.section("macros-slash").classes("divborder").div().h3().string("Macros with Slash Command").end().ol();
 
-		var author = request.query("author").asSnowflake().asLong();
+		var author = request.query("author").asSnowflake();
 		var macros = request.gc.getMacroMap().values().stream().filter(m -> author == 0L || m.author == author).sorted().toList();
 
-		var guildCommands = request.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(request.gc.db.app.discordHandler.applicationId, request.gc.guildId.asLong())
+		var guildCommands = request.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(request.gc.db.app.discordHandler.selfId, request.gc.guildId)
 				.toStream()
 				.collect(Collectors.toMap(d -> d.id().asLong(), Function.identity()));
 
@@ -102,9 +102,9 @@ public class PanelHandlers {
 						throw new NullPointerException();
 					}
 
-					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name);
+					slashMacros.li().a("/panel/" + request.gc.guildId + "/macros/" + macro.id, macro.name);
 				} catch (Exception ex) {
-					slashMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
+					slashMacros.li().a("/panel/" + request.gc.guildId + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
 				}
 			}
 		}
@@ -112,7 +112,7 @@ public class PanelHandlers {
 		var allMacros = root.content.section("macros").classes("divborder").div().h3().string("All Macros").end().ol();
 
 		for (var macro : macros) {
-			allMacros.li().a("/panel/" + request.gc.guildId.asString() + "/macros/" + macro.id, macro.name);
+			allMacros.li().a("/panel/" + request.gc.guildId + "/macros/" + macro.id, macro.name);
 		}
 
 		return root.asResponse();
@@ -135,9 +135,9 @@ public class PanelHandlers {
 		}
 
 		var root = GnomeRootTag.createSimple(request.getPath(), macro.name + " - Macros - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString() + "/macros", "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId + "/macros", "< Back").classes("back");
 
-		var authorId = Snowflake.of(macro.author);
+		var authorId = macro.author;
 		var author = request.gc.getMember(authorId);
 		var authorName = author == null ? "" : author.getDisplayName();
 
@@ -150,7 +150,7 @@ public class PanelHandlers {
 		}
 
 		var table = root.content.section("info").table().tbody();
-		table.tr().td().string("Author").end().td().a("/panel/" + request.gc.guildId.asString() + "/members/" + authorId.asString(), authorName);
+		table.tr().td().string("Author").end().td().a("/panel/" + request.gc.guildId + "/members/" + authorId, authorName);
 
 		if (macro.created == null) {
 			table.tr().td().string("Created").end().td().string("Unknown");
@@ -181,20 +181,20 @@ public class PanelHandlers {
 		var user = request.gc.db.app.discordHandler.getUser(memberId);
 
 		if (user == null) {
-			throw new NotFoundResponse("User '" + memberId.asString() + "' not found!");
+			throw new NotFoundResponse("User '" + memberId + "' not found!");
 		}
 
 		var member = request.gc.getMember(memberId);
 		var name = member == null ? user.getGlobalName().orElse(user.getUsername()) : member.getDisplayName();
 
 		var root = GnomeRootTag.createSimple(request.getPath(), name + " - Members - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 		root.content.h3().string("ID");
-		root.content.p().string(memberId.asString());
+		root.content.p().string(memberId);
 
 		if (member == null) {
 			try {
-				var ban = request.gc.getGuild().getBan(memberId).block();
+				var ban = request.gc.getGuild().getBan(SnowFlake.convert(memberId)).block();
 
 				if (ban != null) {
 					var btag = root.content.div("divwithborder");

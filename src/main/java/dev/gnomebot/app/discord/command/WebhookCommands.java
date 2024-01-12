@@ -6,8 +6,7 @@ import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Message;
 import org.bson.Document;
@@ -42,13 +41,11 @@ public class WebhookCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		var n = event.get("name").asString().trim().toLowerCase();
 
-		try {
-			Snowflake.of(n);
+		if (SnowFlake.num(n) != 0L) {
 			throw new GnomeException("Invalid or taken name!");
-		} catch (Exception ex) {
 		}
 
-		if (n.isEmpty() || n.length() > 50 || event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first() != null) {
+		if (n.isEmpty() || n.length() > 50 || event.context.gc.db.userWebhooksDB.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first() != null) {
 			throw new GnomeException("Invalid or taken name!");
 		}
 
@@ -61,9 +58,9 @@ public class WebhookCommands extends ApplicationCommands {
 		var document = new Document();
 		document.put("user", event.context.sender.getId().asLong());
 		document.put("name", n);
-		document.put("webhook_id", matcher.group(1));
+		document.put("webhook_id", SnowFlake.num(matcher.group(1)));
 		document.put("webhook_token", matcher.group(2));
-		event.context.gc.db.userWebhooks.insert(document);
+		event.context.gc.db.userWebhooksDB.insert(document);
 
 		event.respond("Webhook '" + n + "' added!");
 		event.context.gc.db.app.pingHandler.update();
@@ -73,7 +70,7 @@ public class WebhookCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		var n = event.get("name").asString().trim().toLowerCase();
 
-		var webhook = event.context.gc.db.userWebhooks.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first();
+		var webhook = event.context.gc.db.userWebhooksDB.query().eq("name", n).eq("user", event.context.sender.getId().asLong()).first();
 
 		if (webhook == null) {
 			throw new GnomeException("Webhook not found! Try `/webhook list`");
@@ -88,7 +85,7 @@ public class WebhookCommands extends ApplicationCommands {
 		event.acknowledgeEphemeral();
 		List<String> list = new ArrayList<>();
 
-		for (var webhook : event.context.gc.db.userWebhooks.query().eq("user", event.context.sender.getId().asLong())) {
+		for (var webhook : event.context.gc.db.userWebhooksDB.query().eq("user", event.context.sender.getId().asLong())) {
 			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHook.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
 		}
 
@@ -99,14 +96,14 @@ public class WebhookCommands extends ApplicationCommands {
 		event.context.checkSenderOwner();
 		var ci = event.get("channel").asChannelInfoOrCurrent();
 
-		event.respondModal("webhook/" + ci.id.asString() + "/0", "Execute Webhook",
+		event.respondModal("webhook/" + ci.id + "/0", "Execute Webhook",
 				TextInput.paragraph("content", "Content", 0, 2000).required(false),
 				TextInput.small("username", "Username", 0, 100).required(false).placeholder("Override username"),
 				TextInput.small("avatar_url", "Avatar URL").required(false).placeholder("Override avatar")
 		);
 	}
 
-	public static void executeCallback(ModalEventWrapper event, Snowflake channelId, Snowflake editId) {
+	public static void executeCallback(ModalEventWrapper event, long channelId, long editId) {
 		event.context.checkSenderOwner();
 		var ci = event.context.gc.getOrMakeChannelInfo(channelId);
 		var webHook = ci.getWebHook().orElse(null);
@@ -116,21 +113,21 @@ public class WebhookCommands extends ApplicationCommands {
 		}
 
 		var content = ContentType.parse(event.context.gc, event.get("content").asString());
-		var message = content.a().render(event.context.gc, null, content.b(), Utils.NO_SNOWFLAKE);
+		var message = content.a().render(event.context.gc, null, content.b(), 0L);
 
-		if (editId.asLong() == 0L) {
+		if (editId == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));
 			message.webhookAvatarUrl(event.get("avatar_url").asString(event.context.gc.iconUrl));
 			var id = webHook.execute(message);
 
-			if (id.asLong() != 0L) {
+			if (id != 0L) {
 				event.respond("Done!");
 			} else {
 				throw new GnomeException("Failed to send webhook!");
 			}
 		} else {
 			try {
-				webHook.edit(editId.asString(), message).block();
+				webHook.edit(editId, message).block();
 				event.respond("Done!");
 			} catch (Exception ex) {
 				throw new GnomeException("Failed to edit webhook message!");
@@ -144,11 +141,11 @@ public class WebhookCommands extends ApplicationCommands {
 		if (ComplexMessage.has(message)) {
 			var lines = ComplexMessage.of(event.context.gc, message).getLines();
 
-			event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Edit Webhook Message",
+			event.respondModal("webhook/" + event.context.channelInfo.id + "/" + message.getId().asString(), "Edit Webhook Message",
 					TextInput.paragraph("content", "Content").required(true).prefilled(String.join("\n", lines)).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
 			);
 		} else {
-			event.respondModal("webhook/" + event.context.channelInfo.id.asString() + "/" + message.getId().asString(), "Edit Webhook Message",
+			event.respondModal("webhook/" + event.context.channelInfo.id + "/" + message.getId().asString(), "Edit Webhook Message",
 					TextInput.paragraph("content", "Content").required(true).prefilled(message.getContent()).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
 			);
 		}

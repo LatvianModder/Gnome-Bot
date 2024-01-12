@@ -2,8 +2,7 @@ package dev.gnomebot.app.data.config;
 
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -13,18 +12,18 @@ import java.util.Optional;
 public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.Holder> {
 	public static ChannelConfigType DEFAULT = new ChannelConfigType();
 
-	public static class Holder extends ConfigHolder<Snowflake> {
-		public Holder(GuildCollections gc, ConfigKey<Snowflake, Holder> key) {
+	public static class Holder extends ConfigHolder<Long> {
+		public Holder(GuildCollections gc, ConfigKey<Long, Holder> key) {
 			super(gc, key);
 		}
 
 		@Override
 		public String toString() {
-			return "<#" + get().asString() + '>';
+			return "<#" + get() + '>';
 		}
 
 		public boolean isSet() {
-			return get().asLong() != 0L;
+			return get() != 0L;
 		}
 
 		@Nullable
@@ -36,8 +35,8 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 			return isSet() ? Optional.ofNullable(getMessageChannel()) : Optional.empty();
 		}
 
-		public boolean is(Snowflake id) {
-			return isSet() && get().equals(id);
+		public boolean is(long id) {
+			return isSet() && get() == id;
 		}
 	}
 
@@ -47,13 +46,13 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 	}
 
 	@Override
-	public Holder createHolder(GuildCollections gc, ConfigKey<Snowflake, Holder> key) {
+	public Holder createHolder(GuildCollections gc, ConfigKey<Long, Holder> key) {
 		return new Holder(gc, key);
 	}
 
 	@Override
 	public String validate(GuildCollections guild, int type, String value) {
-		return !value.isEmpty() && (!value.startsWith("#") && guild.getRoleMap().containsKey(Utils.snowflake(value)) || guild.getUniqueChannelNameMap().containsKey(value.substring(1))) ? "" : "Channel not found!";
+		return !value.isEmpty() && (!value.startsWith("#") && guild.getRoleMap().containsKey(SnowFlake.num(value)) || guild.getUniqueChannelNameMap().containsKey(value.substring(1))) ? "" : "Channel not found!";
 	}
 
 	@Override
@@ -66,16 +65,16 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 		var list = new ArrayList<EnumValue>();
 
 		for (var entry : guild.getUniqueChannelNameMap().entrySet()) {
-			list.add(new EnumValue(entry.getValue().id.asString(), "#" + entry.getKey()));
+			list.add(new EnumValue(SnowFlake.str(entry.getValue().id), "#" + entry.getKey()));
 		}
 
 		return list;
 	}
 
 	@Override
-	public String serialize(GuildCollections guild, int type, Snowflake value) {
+	public String serialize(GuildCollections guild, int type, Long value) {
 		for (var entry : guild.getUniqueChannelNameMap().entrySet()) {
-			if (entry.getValue().id.equals(value)) {
+			if (entry.getValue().id == value) {
 				return "#" + entry.getKey();
 			}
 		}
@@ -84,14 +83,14 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 	}
 
 	@Override
-	public Snowflake deserialize(GuildCollections guild, int type, String value) {
+	public Long deserialize(GuildCollections guild, int type, String value) {
 		if (value.isEmpty()) {
-			return Utils.NO_SNOWFLAKE;
+			return 0L;
 		} else if (value.startsWith("#")) {
 			var channel = guild.getUniqueChannelNameMap().get(value.substring(1));
-			return channel == null ? Utils.NO_SNOWFLAKE : channel.id;
+			return channel == null ? 0L : channel.id;
 		} else {
-			return Utils.snowflake(value);
+			return SnowFlake.num(value);
 		}
 	}
 }

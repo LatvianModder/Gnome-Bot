@@ -31,7 +31,7 @@ public interface CustomInteractionTypes {
 			var c = TEMP.get(id);
 
 			if (c == null) {
-				var doc = db.interactions.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).first();
+				var doc = db.interactionsDB.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).first();
 
 				if (doc != null) {
 					var t = MAP.get(doc.getType());
@@ -53,7 +53,7 @@ public interface CustomInteractionTypes {
 		if (c != null) {
 			synchronized (TEMP_LOCK) {
 				if (TEMP.remove(id) != c) {
-					db.interactions.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).delete();
+					db.interactionsDB.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).delete();
 				}
 			}
 		}
@@ -69,7 +69,7 @@ public interface CustomInteractionTypes {
 			if (!c.getType().keep) {
 				synchronized (TEMP_LOCK) {
 					if (TEMP.remove(id) != c) {
-						db.interactions.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).delete();
+						db.interactionsDB.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).delete();
 					}
 				}
 			}
@@ -87,7 +87,7 @@ public interface CustomInteractionTypes {
 				doc.put("idm", callback.id.getMostSignificantBits());
 				doc.put("idl", callback.id.getLeastSignificantBits());
 				callback.save(doc);
-				db.interactions.insert(doc);
+				db.interactionsDB.insert(doc);
 			} else {
 				TEMP.put(callback.id, callback);
 			}

@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.config;
 
-import discord4j.common.util.Snowflake;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Font;
@@ -24,21 +23,21 @@ public interface GuildConfig {
 	ConfigKey<Integer, ConfigHolder<Integer>> GLOBAL_XP = key(IntConfigType.POSITIVE, "global_xp", "Global XP");
 	ConfigKey<Integer, ConfigHolder<Integer>> REGULAR_MESSAGES = key(IntConfigType.POSITIVE, "regular_messages", "Regular Messages");
 	ConfigKey<Integer, ConfigHolder<Integer>> REGULAR_XP = key(IntConfigType.POSITIVE, "regular_xp", "Regular XP");
-	ConfigKey<Snowflake, RoleConfigType.Holder> REGULAR_ROLE = key(RoleConfigType.DEFAULT, "regular_role", "Regular Role");
-	ConfigKey<Snowflake, RoleConfigType.Holder> ADMIN_ROLE = key(RoleConfigType.DEFAULT, "admin_role", "Admin Role");
-	ConfigKey<Snowflake, RoleConfigType.Holder> MUTED_ROLE = key(RoleConfigType.DEFAULT, "muted_role", "Muted Role");
-	ConfigKey<Snowflake, RoleConfigType.Holder> FEEDBACK_SUGGEST_ROLE = key(RoleConfigType.DEFAULT, "feedback_suggest_role", "Feedback Role for suggest command");
-	ConfigKey<Snowflake, RoleConfigType.Holder> FEEDBACK_VOTE_ROLE = key(RoleConfigType.DEFAULT, "feedback_vote_role", "Feedback Role for voting");
-	ConfigKey<Snowflake, RoleConfigType.Holder> REPORT_MENTION_ROLE = key(RoleConfigType.DEFAULT, "report_mention_role", "Message Report mention role");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> FEEDBACK_CHANNEL = key(ChannelConfigType.DEFAULT, "feedback_channel", "Feedback Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> ADMIN_LOG_CHANNEL = key(ChannelConfigType.DEFAULT, "admin_log_channel", "Admin Log Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> ADMIN_MESSAGES_CHANNEL = key(ChannelConfigType.DEFAULT, "admin_messages_channel", "Admin Messages Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> MUTE_APPEAL_CHANNEL = key(ChannelConfigType.DEFAULT, "mute_appeal_channel", "Mute Appeal Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> LOG_NEW_ACCOUNTS_CHANNEL = key(ChannelConfigType.DEFAULT, "log_new_accounts_channel", "Log New Accounts Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> LOG_LEAVING_CHANNEL = key(ChannelConfigType.DEFAULT, "log_leaving_channel", "Log Leaving Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> REPORT_CHANNEL = key(ChannelConfigType.DEFAULT, "report_channel", "Report Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> LOG_IP_ADDRESSES_CHANNEL = key(ChannelConfigType.DEFAULT, "log_ip_addresses_channel", "log IP Addresses Channel");
-	ConfigKey<Snowflake, ChannelConfigType.Holder> APPEAL_CHANNEL = key(ChannelConfigType.DEFAULT, "appeal_channel", "Appeal Channel");
+	ConfigKey<Long, RoleConfigType.Holder> REGULAR_ROLE = key(RoleConfigType.DEFAULT, "regular_role", "Regular Role");
+	ConfigKey<Long, RoleConfigType.Holder> ADMIN_ROLE = key(RoleConfigType.DEFAULT, "admin_role", "Admin Role");
+	ConfigKey<Long, RoleConfigType.Holder> MUTED_ROLE = key(RoleConfigType.DEFAULT, "muted_role", "Muted Role");
+	ConfigKey<Long, RoleConfigType.Holder> FEEDBACK_SUGGEST_ROLE = key(RoleConfigType.DEFAULT, "feedback_suggest_role", "Feedback Role for suggest command");
+	ConfigKey<Long, RoleConfigType.Holder> FEEDBACK_VOTE_ROLE = key(RoleConfigType.DEFAULT, "feedback_vote_role", "Feedback Role for voting");
+	ConfigKey<Long, RoleConfigType.Holder> REPORT_MENTION_ROLE = key(RoleConfigType.DEFAULT, "report_mention_role", "Message Report mention role");
+	ConfigKey<Long, ChannelConfigType.Holder> FEEDBACK_CHANNEL = key(ChannelConfigType.DEFAULT, "feedback_channel", "Feedback Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> ADMIN_LOG_CHANNEL = key(ChannelConfigType.DEFAULT, "admin_log_channel", "Admin Log Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> ADMIN_MESSAGES_CHANNEL = key(ChannelConfigType.DEFAULT, "admin_messages_channel", "Admin Messages Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> MUTE_APPEAL_CHANNEL = key(ChannelConfigType.DEFAULT, "mute_appeal_channel", "Mute Appeal Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> LOG_NEW_ACCOUNTS_CHANNEL = key(ChannelConfigType.DEFAULT, "log_new_accounts_channel", "Log New Accounts Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> LOG_LEAVING_CHANNEL = key(ChannelConfigType.DEFAULT, "log_leaving_channel", "Log Leaving Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> REPORT_CHANNEL = key(ChannelConfigType.DEFAULT, "report_channel", "Report Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> LOG_IP_ADDRESSES_CHANNEL = key(ChannelConfigType.DEFAULT, "log_ip_addresses_channel", "log IP Addresses Channel");
+	ConfigKey<Long, ChannelConfigType.Holder> APPEAL_CHANNEL = key(ChannelConfigType.DEFAULT, "appeal_channel", "Appeal Channel");
 	ConfigKey<String, ConfigHolder<String>> LEGACY_PREFIX = key(StringConfigType.DEFAULT, "legacy_prefix", "Legacy Command Prefix", "!");
 	ConfigKey<String, ConfigHolder<String>> MACRO_PREFIX = key(StringConfigType.DEFAULT, "macro_prefix", "Macro Prefix", "??");
 	ConfigKey<String, ConfigHolder<String>> INVITE_CODE = key(StringConfigType.DEFAULT, "invite_code", "Invite Code");

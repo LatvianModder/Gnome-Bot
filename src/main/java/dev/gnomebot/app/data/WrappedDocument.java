@@ -4,7 +4,6 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import dev.gnomebot.app.util.MapWrapper;
-import discord4j.common.util.Snowflake;
 import org.bson.conversions.Bson;
 
 import java.util.Date;
@@ -28,10 +27,6 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 		}
 
 		return uid;
-	}
-
-	public Snowflake getUIDSnowflake() {
-		return Snowflake.of(getUID());
 	}
 
 	public String getUIDString() {

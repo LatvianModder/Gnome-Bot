@@ -5,9 +5,8 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 
 import java.util.Arrays;
@@ -52,7 +51,7 @@ public class CommandReader extends SimpleStringReader {
 			var member = gc.members.query().eq("name", s0).eq("discriminator", s1).first();
 
 			if (member != null) {
-				var user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
+				var user = gc.db.app.discordHandler.getUser(member.getUID());
 
 				if (user != null) {
 					return Optional.of(user);
@@ -63,7 +62,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			return Optional.of(gc.db.app.discordHandler.getUser(Utils.snowflake(s)));
+			return Optional.of(gc.db.app.discordHandler.getUser(SnowFlake.num(s)));
 		} catch (Exception ex) {
 			var member = gc.members.query().eq("name", s).first();
 
@@ -76,7 +75,7 @@ public class CommandReader extends SimpleStringReader {
 			}
 
 			if (member != null) {
-				var user = gc.db.app.discordHandler.getUser(Snowflake.of(member.getUID()));
+				var user = gc.db.app.discordHandler.getUser(member.getUID());
 
 				if (user != null) {
 					return Optional.of(user);
@@ -101,14 +100,13 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			return Optional.of(gc.getOrMakeChannelInfo(Utils.snowflake(s)));
-		} catch (Exception ex) {
+			return Optional.of(gc.getOrMakeChannelInfo(SnowFlake.num(s)));
+		} catch (Exception ignored) {
+			throw new GnomeException("Channel not found!");
 		}
-
-		throw new GnomeException("Channel not found!");
 	}
 
-	public Optional<Pair<ChannelInfo, Snowflake>> readChannelAndMessage() {
+	public Optional<Pair<ChannelInfo, Long>> readChannelAndMessage() {
 		var ns = readString();
 
 		if (ns.isEmpty()) {
@@ -124,13 +122,13 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			var ci = gc.getChannelInfo(Utils.snowflake(s[0]));
-			var li = ci == null ? null : ci.getLastMessageId();
+			var ci = gc.getChannelInfo(SnowFlake.num(s[0]));
+			var li = ci == null ? 0L : ci.getLastMessageId();
 
-			if (li != null) {
-				return Optional.of(Pair.of(ci, s.length == 2 ? Utils.snowflake(s[1]) : li));
+			if (li != 0L) {
+				return Optional.of(Pair.of(ci, s.length == 2 ? SnowFlake.num(s[1]) : li));
 			}
-		} catch (Exception ex) {
+		} catch (Exception ignored) {
 		}
 
 		return Optional.empty();
@@ -150,9 +148,9 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			var snowflake = Utils.snowflake(s);
+			var snowflake = SnowFlake.num(s);
 
-			if (snowflake.asLong() == gc.guildId.asLong()) {
+			if (snowflake == gc.guildId) {
 				return Optional.empty();
 			}
 

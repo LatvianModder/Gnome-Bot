@@ -5,7 +5,7 @@ import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
-import dev.gnomebot.app.discord.command.FeedbackCommands;
+import dev.gnomebot.app.discord.command.FeedbackCommand;
 import dev.gnomebot.app.discord.command.GnomeMemberInteraction;
 import dev.gnomebot.app.discord.command.GnomeMessageInteraction;
 import dev.gnomebot.app.discord.command.InteractionType;
@@ -15,6 +15,7 @@ import dev.gnomebot.app.discord.command.ModmailCommand;
 import dev.gnomebot.app.discord.command.ModpackCommand;
 import dev.gnomebot.app.discord.command.PasteCommands;
 import dev.gnomebot.app.discord.command.PingsCommands;
+import dev.gnomebot.app.discord.command.PollCommand;
 import dev.gnomebot.app.discord.command.ReportCommand;
 import dev.gnomebot.app.discord.command.UserInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.WebhookCommands;
@@ -24,14 +25,12 @@ import dev.gnomebot.app.discord.command.admin.UnmuteCommand;
 import dev.gnomebot.app.discord.command.admin.WarnCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.discord.legacycommand.PollCommand;
 import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.OngoingAction;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.data.Confirm;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -85,7 +84,7 @@ public class InteractionHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					event.reply(macro.createMessage(gc, reader, w.context.sender.getId()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
+					event.reply(macro.createMessage(gc, reader, w.context.sender.getId().asLong()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
 				} else {
 					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
@@ -322,23 +321,24 @@ public class InteractionHandler {
 	private static void button(ComponentEventWrapper event) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
+			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
 			case "callback" -> callback(event, event.path[1]);
 			case "stop" -> stopOngoingAction(event, event.path[1]);
-			case "message-action" -> GnomeMessageInteraction.callback(event, Utils.snowflake(event.path[1]), event.path[2]);
-			case "member-action" -> GnomeMemberInteraction.callback(event, Utils.snowflake(event.path[1]), event.path[2]);
-			case "unmute" -> UnmuteCommand.unmuteButtonCallback(event, Utils.snowflake(event.path[1]));
-			case "macro" -> MacroCommands.macroButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], null);
-			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Utils.snowflake(event.path[3]));
-			case "feedback" -> FeedbackCommands.feedbackButtonCallback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
-			case "warn" -> WarnCommand.warnButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
-			case "kick" -> KickCommand.kickButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
-			case "ban" -> BanCommand.banButtonCallback(event, Utils.snowflake(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "message-action" -> GnomeMessageInteraction.callback(event, SnowFlake.num(event.path[1]), event.path[2]);
+			case "member-action" -> GnomeMemberInteraction.callback(event, SnowFlake.num(event.path[1]), event.path[2]);
+			case "unmute" -> UnmuteCommand.unmuteButtonCallback(event, SnowFlake.num(event.path[1]));
+			case "macro" -> MacroCommands.macroButtonCallback(event, SnowFlake.num(event.path[1]), event.path[2], 0L);
+			case "edit-macro", "edit_macro" -> MacroCommands.macroButtonCallback(event, SnowFlake.num(event.path[1]), event.path[2], SnowFlake.num(event.path[3]));
+			case "feedback" -> FeedbackCommand.feedbackButtonCallback(event, Integer.parseInt(event.path[1]), event.path[2].equals("upvote") ? Vote.UP : event.path[2].equals("downvote") ? Vote.DOWN : Vote.NONE);
+			case "poll-vote" -> PollCommand.buttonCallback(event, Integer.parseInt(event.path[1]), Integer.parseInt(event.path[2]));
+			case "warn" -> WarnCommand.warnButtonCallback(event, SnowFlake.num(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "kick" -> KickCommand.kickButtonCallback(event, SnowFlake.num(event.path[1]), event.path[2], Confirm.of(event.path, 3));
+			case "ban" -> BanCommand.banButtonCallback(event, SnowFlake.num(event.path[1]), event.path[2], Confirm.of(event.path, 3));
 			case "refresh_modpack" -> ModpackCommand.refreshCallback(event);
 			case "pings" -> PingsCommands.edit(event);
 			case "pings-help" -> PingsCommands.help(event);
 			case "regex-help" -> PingsCommands.regexHelp(event);
-			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, Utils.snowflake(event.path[1]));
+			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, SnowFlake.num(event.path[1]));
 			default -> {
 				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
@@ -349,10 +349,9 @@ public class InteractionHandler {
 	private static void selectMenu(ComponentEventWrapper event, List<String> values) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
-			case "poll" -> PollCommand.pollMenuCallback(event, Integer.parseInt(event.path[1]), values.get(0));
-			case "punish" -> punishMenu(event, Utils.snowflake(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
-			case "report" -> ReportHandler.report(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]), values.get(0));
+			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
+			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
+			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.get(0));
 			default -> {
 				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
@@ -363,16 +362,17 @@ public class InteractionHandler {
 	private static void modalSubmit(ModalEventWrapper event) {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
-			case "delete" -> deleteMessage(event, Utils.snowflake(event.path[1]));
+			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
 			case "modal-test" -> event.respond("Modal: " + event);
 			case "modmail" -> ModmailCommand.modmailCallback(event);
-			case "report" -> ReportCommand.reportCallback(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]));
-			case "feedback" -> FeedbackCommands.submitCallback(event);
-			case "ping-test" -> PingsCommands.testCallback(event, Utils.snowflake(event.path[1]));
+			case "report" -> ReportCommand.reportCallback(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]));
+			case "feedback" -> FeedbackCommand.submitCallback(event);
+			case "poll" -> PollCommand.submitCallback(event);
+			case "ping-test" -> PingsCommands.testCallback(event, SnowFlake.num(event.path[1]));
 			case "add-macro" -> MacroCommands.addMacroCallback(event, event.path[1]);
 			case "edit-macro" -> MacroCommands.editMacroCallback(event, event.path[1]);
 			case "pings" -> PingsCommands.editCallback(event);
-			case "webhook" -> WebhookCommands.executeCallback(event, Utils.snowflake(event.path[1]), Utils.snowflake(event.path[2]));
+			case "webhook" -> WebhookCommands.executeCallback(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]));
 			case "create-paste" -> PasteCommands.createCallback(event);
 			default -> {
 				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
@@ -383,8 +383,8 @@ public class InteractionHandler {
 
 	// Actions //
 
-	private static void deleteMessage(DeferrableInteractionEventWrapper<?> event, Snowflake owner) {
-		if (event.context.isAdmin() || event.context.sender.getId().asLong() == owner.asLong()) {
+	private static void deleteMessage(DeferrableInteractionEventWrapper<?> event, long owner) {
+		if (event.context.isAdmin() || event.context.sender.getId().asLong() == owner) {
 			event.getResponse().deleteInitialResponse().block();
 		} else if (event.requiresTextResponse()) {
 			event.respond("You can't delete this message!");
@@ -417,21 +417,21 @@ public class InteractionHandler {
 		}
 	}
 
-	private static void punishMenu(ComponentEventWrapper event, Snowflake userId, String reason, String type) {
+	private static void punishMenu(ComponentEventWrapper event, long userId, String reason, String type) {
 		event.context.checkSenderAdmin();
 
 		switch (type) {
 			case "kick" -> {
-				event.context.gc.getGuild().kick(userId, reason).subscribe();
-				event.respond("Kicked <@" + userId.asString() + ">");
+				event.context.gc.getGuild().kick(SnowFlake.convert(userId), reason).subscribe();
+				event.respond("Kicked <@" + userId + ">");
 			}
 			case "ban" -> {
-				event.context.gc.getGuild().ban(userId, BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
-				event.respond("Banned <@" + userId.asString() + ">");
+				event.context.gc.getGuild().ban(SnowFlake.convert(userId), BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
+				event.respond("Banned <@" + userId + ">");
 			}
 			case "unmute" -> {
 				event.context.gc.unmute(userId, 0L, "");
-				event.respond("Unmuted <@" + userId.asString() + ">");
+				event.respond("Unmuted <@" + userId + ">");
 			}
 			default -> event.respond("This action cannot be undone!");
 		}

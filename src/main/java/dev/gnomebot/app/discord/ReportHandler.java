@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.StartThreadSpec;
 
@@ -17,9 +16,9 @@ public class ReportHandler {
 		public int reports;
 	}
 
-	public static final Map<Snowflake, Report> REPORT_STACKS = new HashMap<>();
+	public static final Map<Long, Report> REPORT_STACKS = new HashMap<>();
 
-	public static void report(ComponentEventWrapper event, Snowflake channelId, Snowflake messageId, String reason) {
+	public static void report(ComponentEventWrapper event, long channelId, long messageId, String reason) {
 		if (reason.equals("-")) {
 			event.edit().respond(MessageBuilder.create("It's ok, everyone makes mistakes.").noComponents());
 			return;
@@ -55,7 +54,7 @@ public class ReportHandler {
 				.source(event.context.sender)
 		);
 
-		var quoteURL = QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, m.getId());
+		var quoteURL = QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, m.getId().asLong());
 		var reportEmbed = EmbedBuilder.create();
 		reportEmbed.color(EmbedColor.RED);
 		reportEmbed.author(author.getTag(), author.getAvatarUrl(), quoteURL);
@@ -64,7 +63,7 @@ public class ReportHandler {
 
 		var role = event.context.gc.reportMentionRole.getRole();
 
-		var report = REPORT_STACKS.get(author.getId());
+		var report = REPORT_STACKS.get(author.getId().asLong());
 		var now = System.currentTimeMillis();
 
 		if (report != null && now >= report.ttl) {
@@ -88,7 +87,7 @@ public class ReportHandler {
 			var msg = c.get().createMessage(reportMessage).block();
 			report.message = msg.startThread(StartThreadSpec.builder().name(author.getUsername()).build()).block();
 			report.ttl = now + 3600000L;
-			REPORT_STACKS.put(author.getId(), report);
+			REPORT_STACKS.put(author.getId().asLong(), report);
 		}
 
 		report.reports++;

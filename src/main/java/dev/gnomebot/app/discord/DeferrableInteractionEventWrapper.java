@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInteractionEvent> extends InteractionEventWrapper<T> {
-	protected boolean acknowledged;
+	public boolean acknowledged;
 	protected boolean edit = false;
 
 	public DeferrableInteractionEventWrapper(GuildCollections gc, T e) {

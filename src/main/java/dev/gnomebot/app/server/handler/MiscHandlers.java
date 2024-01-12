@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 public class MiscHandlers {
 	public static Response signOut(ServerRequest request) {
-		App.instance.db.invalidateToken(request.token.userId.asLong());
+		App.instance.db.invalidateToken(request.token.userId);
 		return JSONResponse.SUCCESS;
 	}
 

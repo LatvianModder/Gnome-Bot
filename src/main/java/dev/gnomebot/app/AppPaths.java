@@ -1,7 +1,5 @@
 package dev.gnomebot.app;
 
-import discord4j.common.util.Snowflake;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -40,9 +38,9 @@ public interface AppPaths {
 	Path CUSTOM_GUILD_IDS = DATA.resolve("custom_guild_ids.txt");
 	Path PINGS = makeDir(DATA.resolve("pings"));
 
-	Map<Snowflake, GuildPaths> GUILD_PATHS = new HashMap<>();
+	Map<Long, GuildPaths> GUILD_PATHS = new HashMap<>();
 
-	static GuildPaths getGuildPaths(Snowflake id) {
+	static GuildPaths getGuildPaths(long id) {
 		return GUILD_PATHS.computeIfAbsent(id, GuildPaths::new);
 	}
 }

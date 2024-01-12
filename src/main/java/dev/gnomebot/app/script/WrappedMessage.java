@@ -6,7 +6,7 @@ import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageEditSpec;
@@ -101,7 +101,7 @@ public class WrappedMessage extends DiscordObject {
 		return !messageData.mentionRoles().isEmpty();
 	}
 
-	public boolean isRoleMentioned(Snowflake id) {
+	public boolean isRoleMentioned(WrappedId id) {
 		return messageData.mentionRoles().contains(id.asString());
 	}
 
@@ -162,9 +162,9 @@ public class WrappedMessage extends DiscordObject {
 		message.removeSelfReaction(emoji).block();
 	}
 
-	public void removeReaction(ReactionEmoji emoji, Snowflake userId) {
+	public void removeReaction(ReactionEmoji emoji, long userId) {
 		channel.guild.discordJS.checkReadOnly();
-		message.removeReaction(emoji, userId).block();
+		message.removeReaction(emoji, SnowFlake.convert(userId)).block();
 	}
 
 	public void removeAllReactions(ReactionEmoji emoji) {
@@ -229,7 +229,7 @@ public class WrappedMessage extends DiscordObject {
 
 	public WrappedMessage reply(MessageBuilder message) {
 		channel.guild.discordJS.checkReadOnly();
-		message.messageReference(id.asSnowflake());
+		message.messageReference(id.asLong());
 		return new WrappedMessage(channel, new Message(channel.guild.gc.db.app.discordHandler.client, channel.getChannelService().createMessage(channel.id.asLong(), message.toMultipartMessageCreateRequest()).block()));
 	}
 }

@@ -4,7 +4,7 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
@@ -38,9 +38,9 @@ public class DeleteUserMessagesCommand {
 				count++;
 
 				try {
-					App.info("Deleting " + Snowflake.of(m.getUID()).asString());
-					var channel = context.gc.getChannelInfo(Snowflake.of(m.getChannelID()));
-					channel.getMessage(Snowflake.of(m.getUID())).delete().block();
+					App.info("Deleting " + SnowFlake.str(m.getUID()));
+					var channel = context.gc.getChannelInfo(m.getChannelID());
+					channel.getMessage(m.getUID()).delete().block();
 				} catch (Exception ex) {
 					App.info("Message not found!");
 				}

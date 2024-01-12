@@ -5,6 +5,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageId;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
@@ -35,11 +36,11 @@ public class Paste extends WrappedDocument<Paste> {
 		return document.getString("user", "Unknown");
 	}
 
-	public static String getOriginalUrl(String channelId, String attachmentId, String filename) {
-		return "https://cdn.discordapp.com/attachments/" + channelId + "/" + attachmentId + "/" + filename;
+	public static String getOriginalUrl(long channelId, long attachmentId, String filename) {
+		return "https://cdn.discordapp.com/attachments/" + SnowFlake.str(channelId) + "/" + SnowFlake.str(attachmentId) + "/" + filename;
 	}
 
-	public static String getUrl(String attachmentId) {
+	public static String getUrl(long attachmentId) {
 		return App.url("paste/" + attachmentId);
 	}
 
@@ -54,10 +55,10 @@ public class Paste extends WrappedDocument<Paste> {
 
 		for (var attachment : attachments) {
 			Paste.createPaste(db, m.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), user);
-			buttons.add(Button.link(getUrl(attachment.getId().asString()), "View " + attachment.getFilename()));
+			buttons.add(Button.link(getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()));
 		}
 
-		if (userData.id().asLong() == db.app.discordHandler.selfId.asLong() && (m.getData().components().isAbsent() || m.getData().components().get().isEmpty())) {
+		if (userData.id().asLong() == db.app.discordHandler.selfId && (m.getData().components().isAbsent() || m.getData().components().get().isEmpty())) {
 			m.edit(MessageEditSpec.builder()
 					.allowedMentions(DiscordMessage.noMentions())
 					.componentsOrNull(ActionRow.of(buttons))
@@ -69,7 +70,7 @@ public class Paste extends WrappedDocument<Paste> {
 					.content("Paste version of " + attachments.stream().map(a -> "`" + a.getFilename() + "`").collect(Collectors.joining(", ")) + " from <@" + userData.id().asString() + ">")
 					.addComponent(ActionRow.of(buttons))
 					.build().asRequest()
-			).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
+			).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId().asLong(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
 		}
 	}
 
@@ -82,6 +83,6 @@ public class Paste extends WrappedDocument<Paste> {
 			updates.add(Updates.set("user", user));
 		}
 
-		db.pastes.query(attachmentId).upsert(updates);
+		db.pastesDB.query(attachmentId).upsert(updates);
 	}
 }

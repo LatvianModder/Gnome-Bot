@@ -1,6 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
@@ -22,7 +23,7 @@ public class UserInteractionEventWrapper extends ApplicationCommandInteractionEv
 	@Nullable
 	public Member getMember() {
 		try {
-			return user.asMember(context.gc.guildId).block();
+			return user.asMember(SnowFlake.convert(context.gc.guildId)).block();
 		} catch (Exception ex) {
 			return null;
 		}

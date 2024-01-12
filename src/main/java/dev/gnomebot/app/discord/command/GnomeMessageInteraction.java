@@ -7,7 +7,6 @@ import dev.gnomebot.app.discord.command.admin.DisplayCommands;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
@@ -77,7 +76,7 @@ public class GnomeMessageInteraction extends ApplicationCommands {
 		}
 	}
 
-	public static void callback(ComponentEventWrapper event, Snowflake messageId, String actionId) throws Exception {
+	public static void callback(ComponentEventWrapper event, long messageId, String actionId) throws Exception {
 		var message = event.context.channelInfo.getUncachedMessage(messageId);
 
 		if (message == null) {

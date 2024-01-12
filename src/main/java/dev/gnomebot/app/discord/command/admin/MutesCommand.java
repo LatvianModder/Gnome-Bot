@@ -3,8 +3,8 @@ package dev.gnomebot.app.discord.command.admin;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,17 +18,17 @@ public class MutesCommand extends ApplicationCommands {
 
 		var list = new ArrayList<String>();
 		var i = new AtomicInteger();
-		var set = new ConcurrentHashMap<Snowflake, Snowflake>();
+		var set = new ConcurrentHashMap<Long, Long>();
 
 		for (var task : event.context.gc.db.app.scheduledTasks) {
 			if (task.type.equals(ScheduledTask.UNMUTE)) {
 				var m = event.context.gc.getMember(task.userId);
 
 				if (m != null) {
-					list.add(i.addAndGet(1) + ". <@" + task.userId.asString() + "> - " + Utils.formatRelativeDate(Instant.ofEpochMilli(task.end)) + " - " + task.content);
+					list.add(i.addAndGet(1) + ". <@" + task.userId + "> - " + Utils.formatRelativeDate(Instant.ofEpochMilli(task.end)) + " - " + task.content);
 				} else {
 					var user = event.context.gc.db.app.discordHandler.getUserData(task.userId);
-					list.add(i.addAndGet(1) + ". " + user.username() + "/" + task.userId.asString() + " - " + Utils.formatRelativeDate(Instant.ofEpochMilli(task.end)) + " - " + task.content);
+					list.add(i.addAndGet(1) + ". " + user.username() + "/" + task.userId + " - " + Utils.formatRelativeDate(Instant.ofEpochMilli(task.end)) + " - " + task.content);
 				}
 
 				set.put(task.userId, task.userId);
@@ -37,9 +37,9 @@ public class MutesCommand extends ApplicationCommands {
 
 		var muteRoleId = event.context.gc.mutedRole.get();
 
-		if (muteRoleId.asLong() != 0L) {
-			event.context.gc.getMemberStream().filter(m -> m.getRoleIds().contains(muteRoleId)).forEach(m -> {
-				if (!set.contains(m.getId())) {
+		if (muteRoleId != 0L) {
+			event.context.gc.getMemberStream().filter(m -> m.getRoleIds().contains(SnowFlake.convert(muteRoleId))).forEach(m -> {
+				if (!set.contains(m.getId().asLong())) {
 					list.add(i.addAndGet(1) + ". <@" + m.getId().asString() + "> - Doesn't Expire");
 				}
 			});

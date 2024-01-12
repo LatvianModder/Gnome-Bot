@@ -2,7 +2,6 @@ package dev.gnomebot.app.data.complex;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
@@ -14,7 +13,7 @@ public class MELayoutComponent implements ComplexMessageContext.PropertyHolder {
 	public List<MEComponent> components = new ArrayList<>();
 	public int type = 0; // 0 = row
 
-	public LayoutComponent toLayoutComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
+	public LayoutComponent toLayoutComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
 		return ActionRow.of(components.stream().map(c -> c.toActionComponent(sourceGuild, targetGuild, sender)).toList());
 	}
 

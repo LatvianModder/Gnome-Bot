@@ -1,8 +1,6 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.util.CharMap;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +38,7 @@ public class MessageFilter {
 	public Type type;
 	public String filter = "";
 	public List<String> actions = new ArrayList<>();
-	public Snowflake log = Utils.NO_SNOWFLAKE;
+	public long log = 0L;
 	public boolean cancel = false;
 	public boolean leftBoundary = true;
 	public boolean rightBoundary = false;
@@ -56,7 +54,7 @@ public class MessageFilter {
 		type = Type.MAP.getOrDefault(doc.getString("type"), Type.REGEX);
 		filter = doc.getString("filter");
 		actions = doc.getList("actions", String.class);
-		log = Snowflake.of(doc.getLong("log"));
+		log = doc.getLong("log");
 		cancel = doc.getBoolean("cancel");
 		leftBoundary = doc.getBoolean("left_boundary");
 		rightBoundary = doc.getBoolean("right_boundary");
@@ -68,7 +66,7 @@ public class MessageFilter {
 		doc.put("type", type.getId());
 		doc.put("filter", filter);
 		doc.put("actions", actions);
-		doc.put("log", log.asLong());
+		doc.put("log", log);
 		doc.put("cancel", cancel);
 		doc.put("left_boundary", leftBoundary);
 		doc.put("right_boundary", rightBoundary);

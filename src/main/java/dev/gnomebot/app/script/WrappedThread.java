@@ -16,6 +16,6 @@ public class WrappedThread extends WrappedChannel {
 	}
 
 	public String getMention() {
-		return "<#" + id.asString() + ">";
+		return "<#" + id + ">";
 	}
 }

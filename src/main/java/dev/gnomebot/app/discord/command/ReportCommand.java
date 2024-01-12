@@ -5,8 +5,6 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
 import org.jetbrains.annotations.Nullable;
@@ -24,22 +22,22 @@ public class ReportCommand extends ApplicationCommands {
 			.run(ReportCommand::memberInteraction);
 
 	private static void run(ChatInputInteractionEventWrapper event) {
-		presentModal(event, event.get("user").asMember().orElse(null), Utils.NO_SNOWFLAKE);
+		presentModal(event, event.get("user").asMember().orElse(null), 0L);
 	}
 
 	private static void memberInteraction(UserInteractionEventWrapper event) {
-		presentModal(event, event.getMember(), Utils.NO_SNOWFLAKE);
+		presentModal(event, event.getMember(), 0L);
 	}
 
 	private static void messageInteraction(MessageInteractionEventWrapper event) {
 		try {
-			presentModal(event, event.message.getAuthorAsMember().block(), event.message.getId());
+			presentModal(event, event.message.getAuthorAsMember().block(), event.message.getId().asLong());
 		} catch (Exception ex) {
 			throw new GnomeException("Can't report non-members!");
 		}
 	}
 
-	private static void presentModal(DeferrableInteractionEventWrapper<?> event, @Nullable Member member, Snowflake message) {
+	private static void presentModal(DeferrableInteractionEventWrapper<?> event, @Nullable Member member, long message) {
 		if (member == null) {
 			throw new GnomeException("Can't report non-members!");
 		} else if (!event.context.gc.reportChannel.isSet()) {
@@ -62,14 +60,14 @@ public class ReportCommand extends ApplicationCommands {
 		options.add(SelectMenu.Option.of("Other", "Other"));
 		 */
 
-		event.respondModal("report/" + member.getId().asString() + "/" + message.asString(), "Report " + member.getDisplayName(),
+		event.respondModal("report/" + member.getId().asString() + "/" + message, "Report " + member.getDisplayName(),
 				// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
 				TextInput.small("reason", "Reason", "spam/hacks/DMs/etc.").required(true),
 				TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
 		);
 	}
 
-	public static void reportCallback(ModalEventWrapper event, Snowflake userId, Snowflake messageId) {
+	public static void reportCallback(ModalEventWrapper event, long userId, long messageId) {
 		var member = event.context.gc.getMember(userId);
 
 		if (member == null) {
@@ -81,7 +79,7 @@ public class ReportCommand extends ApplicationCommands {
 		if (role == null) {
 			event.respond("Thank you for your report!");
 		} else {
-			event.respond("Thank you for your report! <@&" + role.id.asString() + "> have been notified.");
+			event.respond("Thank you for your report! <@&" + role.id + "> have been notified.");
 		}
 
 		var additionalInfo = event.get("additional_info").asString();
@@ -93,7 +91,7 @@ public class ReportCommand extends ApplicationCommands {
 				spec.field("Additional Info", additionalInfo);
 			}
 
-			if (messageId.asLong() != 0L) {
+			if (messageId != 0L) {
 				spec.field("Message", QuoteHandler.getMessageURL(event.context.gc.guildId, event.context.channelInfo.id, messageId));
 			}
 

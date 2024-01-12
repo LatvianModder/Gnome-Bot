@@ -48,7 +48,7 @@ public class MuteCommand extends ApplicationCommands {
 
 		if (user == null) {
 			throw error("User not found!");
-		} else if (user.isBot() || event.context.gc.getAuthLevel(user.getId()).is(AuthLevel.ADMIN)) {
+		} else if (user.isBot() || event.context.gc.getAuthLevel(user.getId().asLong()).is(AuthLevel.ADMIN)) {
 			throw error("Nice try.");
 		}
 
@@ -67,8 +67,8 @@ public class MuteCommand extends ApplicationCommands {
 			throw error("User not found!");
 		}
 
-		event.context.gc.mutedRole.role().ifPresent(r -> r.add(user.getId(), "Muted"));
-		event.context.gc.unmute(user.getId(), seconds, reason);
+		event.context.gc.mutedRole.role().ifPresent(r -> r.add(user.getId().asLong(), "Muted"));
+		event.context.gc.unmute(user.getId().asLong(), seconds, reason);
 
 		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
 			spec.description("Bad " + user.getMention());
@@ -100,7 +100,7 @@ public class MuteCommand extends ApplicationCommands {
 			discordMember.update(Updates.set("muted", expires));
 		}
 
-		context.gc.unmute(m.getId(), seconds, reason);
+		context.gc.unmute(m.getId().asLong(), seconds, reason);
 
 		Message contextMessage;
 
@@ -128,14 +128,14 @@ public class MuteCommand extends ApplicationCommands {
 		if (context.gc.mutedRole.is(m)) {
 			return;
 		} else {
-			context.gc.mutedRole.role().ifPresent(r -> r.add(m.getId(), "Muted"));
+			context.gc.mutedRole.role().ifPresent(r -> r.add(m.getId().asLong(), "Muted"));
 		}
 
 		List<LayoutComponent> adminButtons = new ArrayList<>();
 
 		if (auto.isEmpty()) {
 			if (contextMessage != null) {
-				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
+				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId().asLong()), "Context")));
 			}
 		} else {
 			adminButtons.add(ActionRow.of(SelectMenu.of(FormattingUtils.trim("punish/" + m.getId().asString() + "/" + ComponentEventWrapper.encode(reason), 100),
@@ -146,7 +146,7 @@ public class MuteCommand extends ApplicationCommands {
 			).withPlaceholder("Select Action").withMinValues(0).withMaxValues(1)));
 
 			if (contextMessage != null) {
-				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context")));
+				adminButtons.add(ActionRow.of(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId().asLong()), "Context")));
 			}
 		}
 
@@ -168,7 +168,7 @@ public class MuteCommand extends ApplicationCommands {
 				replyButtons.add(Button.link(QuoteHandler.getChannelURL(context.gc.guildId, context.gc.muteAppealChannel.get()), "Appeal"));
 			}
 
-			replyButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.gc.adminLogChannel.get(), m1.getId()), "Take Action"));
+			replyButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.gc.adminLogChannel.get(), m1.getId().asLong()), "Take Action"));
 
 			if (contextMessage != null) {
 				contextMessage.edit(MessageEditSpec.builder().componentsOrNull(List.of(ActionRow.of(replyButtons))).build()).subscribe();
@@ -178,7 +178,7 @@ public class MuteCommand extends ApplicationCommands {
 		List<ActionComponent> dmButtons = new ArrayList<>();
 
 		if (contextMessage != null) {
-			dmButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId()), "Context"));
+			dmButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.channelInfo.id, contextMessage.getId().asLong()), "Context"));
 		}
 
 		if (context.gc.muteAppealChannel.isSet()) {
@@ -192,7 +192,7 @@ public class MuteCommand extends ApplicationCommands {
 
 		context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.MUTE)
 				.user(m)
-				.source(context.handler.selfId.asLong())
+				.source(context.handler.selfId)
 				.content(reason)
 				.flags(GnomeAuditLogEntry.Flags.DM, dm)
 		);

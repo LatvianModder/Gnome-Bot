@@ -2,14 +2,21 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.SnowFlake;
 
 public class UserWebhook extends WrappedDocument<UserWebhook> {
 	public UserWebhook(WrappedCollection<UserWebhook> c, MapWrapper d) {
 		super(c, d);
 	}
 
-	public String getWebhookID() {
-		return document.getString("webhook_id");
+	public long getWebhookID() {
+		var o = document.get("webhook_id", 0L);
+
+		if (o instanceof Number n) {
+			return n.longValue();
+		}
+
+		return SnowFlake.num(String.valueOf(o));
 	}
 
 	public String getWebhookToken() {

@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command.admin;
 
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.entity.Member;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
@@ -16,7 +17,7 @@ public class UnbanCommand extends ApplicationCommands {
 		Member member = null;
 
 		try {
-			member = user == null ? null : user.asMember(event.context.gc.guildId).block();
+			member = user == null ? null : user.asMember(SnowFlake.convert(event.context.gc.guildId)).block();
 		} catch (Exception ex) {
 		}
 

@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionBuilder;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
-import dev.gnomebot.app.discord.command.FeedbackCommands;
+import dev.gnomebot.app.discord.command.FeedbackCommand;
 import dev.gnomebot.app.discord.command.ScamsCommands;
 import dev.gnomebot.app.discord.command.VerifyMinecraftCommand;
 import discord4j.discordjson.json.ApplicationCommandData;
@@ -177,23 +177,23 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.description("Approves feedback")
 							.add(string("reason"))
 							.add(integer("id"))
-							.run(FeedbackCommands::approve)
+							.run(FeedbackCommand::approve)
 					)
 					.add(sub("deny")
 							.description("Denies feedback")
 							.add(string("reason"))
 							.add(integer("id"))
-							.run(FeedbackCommands::deny)
+							.run(FeedbackCommand::deny)
 					)
 					.add(sub("consider")
 							.description("Considers feedback")
 							.add(string("reason"))
 							.add(integer("id"))
-							.run(FeedbackCommands::consider)
+							.run(FeedbackCommand::consider)
 					)
 					.add(sub("cleanup")
 							.description("Removes all approved and denied suggestions")
-							.run(FeedbackCommands::cleanup)
+							.run(FeedbackCommand::cleanup)
 					)
 			)
 			.add(subGroup("scam-domains")
@@ -251,7 +251,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 
 		var broken = new ArrayList<ApplicationCommandData>();
 
-		for (var command : event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(event.context.gc.db.app.discordHandler.applicationId, event.context.gc.guildId.asLong()).toIterable()) {
+		for (var command : event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(event.context.gc.db.app.discordHandler.selfId, event.context.gc.guildId).toIterable()) {
 			var macro = event.context.gc.getMacro(command.name());
 
 			if (macro == null || macro.slashCommand != command.id().asLong()) {
@@ -262,7 +262,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 		event.respond("Found " + broken.size() + " broken commands: " + broken.stream().map(c -> "</" + c.name() + ":" + c.id().asString() + ">").toList());
 
 		for (var command : broken) {
-			event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(event.context.gc.db.app.discordHandler.applicationId, event.context.gc.guildId.asLong(), command.id().asLong()).subscribe();
+			event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(event.context.gc.db.app.discordHandler.selfId, event.context.gc.guildId, command.id().asLong()).subscribe();
 		}
 	}
 }

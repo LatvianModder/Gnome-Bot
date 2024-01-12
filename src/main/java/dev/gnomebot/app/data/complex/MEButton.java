@@ -3,7 +3,6 @@ package dev.gnomebot.app.data.complex;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 
@@ -70,7 +69,7 @@ public class MEButton extends MEButtonBase {
 	}
 
 	@Override
-	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
+	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
 		var l = label.isEmpty() ? null : label;
 		var id = target;
 
@@ -80,7 +79,7 @@ public class MEButton extends MEButtonBase {
 			if (macro == null) {
 				id = "none/" + UUID.randomUUID();
 			} else {
-				id = (type == 2 ? "edit-macro/" : "macro/") + macro.guild.guildId.asString() + "/" + target + "/" + sender.asString();
+				id = (type == 2 ? "edit-macro/" : "macro/") + macro.guild.guildId + "/" + target + "/" + sender;
 			}
 		}
 

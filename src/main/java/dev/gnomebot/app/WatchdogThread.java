@@ -1,7 +1,7 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,7 +49,7 @@ public class WatchdogThread extends Thread {
 				if (app.blockingTasks.isEmpty()) {
 					try {
 						// TODO: Remove hardcoded
-						app.db.guild(Snowflake.of(720671115336220693L)).getChannelInfo(Snowflake.of(849420356237656074L)).createMessage("SOS!").block().delete().block();
+						app.db.guild(SnowFlake.convert(720671115336220693L)).getChannelInfo(849420356237656074L).createMessage("SOS!").block().delete().block();
 						update();
 					} catch (Exception ex) {
 						ex.printStackTrace();

@@ -36,7 +36,7 @@ public class WrappedUser extends DiscordObject {
 
 	@HideFromJS
 	public User getDiscordUser() {
-		return Objects.requireNonNull(guild.gc.db.app.discordHandler.getUser(id.asSnowflake()));
+		return Objects.requireNonNull(guild.gc.db.app.discordHandler.getUser(id.asLong()));
 	}
 
 	public boolean isMember() {
@@ -44,11 +44,11 @@ public class WrappedUser extends DiscordObject {
 	}
 
 	public boolean isSelf() {
-		return id.asLong() == guild.gc.db.app.discordHandler.selfId.asLong();
+		return id.asLong() == guild.gc.db.app.discordHandler.selfId;
 	}
 
 	public String getMention() {
-		return "<@" + id.asString() + ">";
+		return "<@" + id + ">";
 	}
 
 	public boolean isBot() {
@@ -105,7 +105,7 @@ public class WrappedUser extends DiscordObject {
 			return getDefaultAvatarUrl();
 		}
 
-		return ImageUtil.getUrl("avatars/" + id.asString() + "/" + getAvatarId().get(), Image.Format.PNG);
+		return ImageUtil.getUrl("avatars/" + id + "/" + getAvatarId().get(), Image.Format.PNG);
 	}
 
 	public String getAvatarUrl() {
@@ -113,6 +113,6 @@ public class WrappedUser extends DiscordObject {
 			return getDefaultAvatarUrl();
 		}
 
-		return ImageUtil.getUrl("avatars/" + id.asString() + "/" + getAvatarId().get(), hasAnimatedAvatar() ? GIF : Image.Format.PNG);
+		return ImageUtil.getUrl("avatars/" + id + "/" + getAvatarId().get(), hasAnimatedAvatar() ? GIF : Image.Format.PNG);
 	}
 }

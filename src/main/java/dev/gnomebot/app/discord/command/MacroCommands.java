@@ -8,10 +8,9 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.TextInput;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -185,7 +184,7 @@ public class MacroCommands extends ApplicationCommands {
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
 
-		var preview = macro.createMessage(event.context.gc, null, event.context.sender.getId());
+		var preview = macro.createMessage(event.context.gc, null, event.context.sender.getId().asLong());
 		preview.content("Preview:\n\n" + preview.getContent());
 		preview.ephemeral(true);
 		event.respond(preview);
@@ -259,17 +258,17 @@ public class MacroCommands extends ApplicationCommands {
 
 		event.acknowledge();
 		var list = new ArrayList<String>();
-		list.add("Author: <@" + Snowflake.of(macro.author).asString() + ">");
+		list.add("Author: <@" + SnowFlake.str(macro.author) + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
-		event.respond(EmbedBuilder.create().url(App.url("panel/" + event.context.gc.guildId.asString() + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
+		event.respond(EmbedBuilder.create().url(App.url("panel/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 
-	public static void macroButtonCallback(ComponentEventWrapper event, Snowflake guildId, String name, @Nullable Snowflake owner) {
-		var macro = (guildId.asLong() == event.context.gc.guildId.asLong() ? event.context.gc : event.context.gc.db.guild(guildId)).getMacroFromCommand(name);
+	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long owner) {
+		var macro = (guildId == event.context.gc.guildId ? event.context.gc : event.context.gc.db.guild(guildId)).getMacroFromCommand(name);
 
-		if (owner != null) {
-			if (owner.asLong() != event.context.sender.getId().asLong()) {
+		if (owner != 0L) {
+			if (owner != event.context.sender.getId().asLong()) {
 				event.acknowledge();
 			} else {
 				macro.addUse();
@@ -277,7 +276,7 @@ public class MacroCommands extends ApplicationCommands {
 			}
 		} else {
 			macro.addUse();
-			event.respond(macro.createMessage(event.context.gc, null, event.context.sender.getId()).ephemeral(true));
+			event.respond(macro.createMessage(event.context.gc, null, event.context.sender.getId().asLong()).ephemeral(true));
 		}
 	}
 }

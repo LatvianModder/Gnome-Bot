@@ -5,7 +5,6 @@ import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -83,7 +82,7 @@ public class GnomeMemberInteraction extends ApplicationCommands {
 		}
 	}
 
-	public static void callback(ComponentEventWrapper event, Snowflake memberId, String actionId) throws Exception {
+	public static void callback(ComponentEventWrapper event, long memberId, String actionId) throws Exception {
 		var member = event.context.gc.getMember(memberId);
 
 		if (member == null) {

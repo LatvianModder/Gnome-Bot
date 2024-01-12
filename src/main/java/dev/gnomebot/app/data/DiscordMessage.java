@@ -4,7 +4,7 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.rest.util.AllowedMentions;
 import org.bson.conversions.Bson;
 
@@ -82,7 +82,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	}
 
 	public String getURL(GuildCollections gc) {
-		return "https://discord.com/channels/" + gc.guildId.asString() + "/" + Snowflake.of(getChannelID()).asString() + "/" + getUIDSnowflake().asString();
+		return "https://discord.com/channels/" + gc.guildId + "/" + SnowFlake.str(getChannelID()) + "/" + SnowFlake.str(getUID());
 	}
 
 	public String getURLAsArrow(GuildCollections gc) {
@@ -129,6 +129,6 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	}
 
 	public void appendMessageURL(StringBuilder sb) {
-		QuoteHandler.getMessageURL(sb, collection.gc.guildId, Snowflake.of(getChannelID()), Snowflake.of(getUID()));
+		QuoteHandler.getMessageURL(sb, collection.gc.guildId, getChannelID(), getUID());
 	}
 }

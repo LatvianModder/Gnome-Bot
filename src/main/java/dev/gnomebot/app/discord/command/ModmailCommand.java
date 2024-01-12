@@ -26,7 +26,7 @@ public class ModmailCommand extends ApplicationCommands {
 		event.context.gc.adminMessagesChannel.messageChannel().flatMap(ChannelInfo::getWebHook).ifPresent(w -> w.execute(MessageBuilder.create()
 				.webhookName("Modmail from " + event.context.sender.getTag())
 				.webhookAvatarUrl(event.context.sender.getAvatarUrl())
-				.allowUserMentions(event.context.sender.getId())
+				.allowUserMentions(event.context.sender.getId().asLong())
 				.content(event.context.sender.getMention() + ":\n" + message)
 		));
 	}

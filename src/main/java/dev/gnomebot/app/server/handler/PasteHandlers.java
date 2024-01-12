@@ -5,6 +5,7 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.CodingUtils;
@@ -13,7 +14,6 @@ import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
-import discord4j.common.util.Snowflake;
 import io.javalin.http.HttpStatus;
 
 import java.io.BufferedReader;
@@ -112,27 +112,27 @@ public class PasteHandlers {
 		var channel = request.getSnowflake("channel");
 		var id = request.getSnowflake("id");
 		var filename = request.variable("filename");
-		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), filename, "");
-		return Response.permanentRedirect(App.url("paste/" + id.asString()));
+		Paste.createPaste(request.app.db, channel, id, filename, "");
+		return Response.permanentRedirect(App.url("paste/" + SnowFlake.str(id)));
 	}
 
 	public static Response pasteRaw(ServerRequest request) throws Exception {
 		var id0 = request.variable("id").split("!", 2);
-		var id = Utils.snowflake(id0[0]);
+		var id = SnowFlake.num(id0[0]);
 
-		var paste = request.app.db.pastes.query(id.asLong()).first();
+		var paste = request.app.db.pastesDB.query(id).first();
 
 		if (paste == null) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
 
-		var channel = Snowflake.of(paste.getChannelID());
+		var channel = paste.getChannelID();
 		var filename = paste.getFilename();
 
 		byte[] contents;
 
 		try {
-			contents = URLRequest.of(Paste.getOriginalUrl(channel.asString(), id.asString(), filename)).toBytes().block();
+			contents = URLRequest.of(Paste.getOriginalUrl(channel, id, filename)).toBytes().block();
 		} catch (Exception ex) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
@@ -157,7 +157,7 @@ public class PasteHandlers {
 		var response = FileResponse.of(HttpStatus.OK, type, contents)
 				.withHeader("Gnome-Paste-Bytes", String.valueOf(contents.length))
 				.withHeader("Gnome-Paste-Filename", filename)
-				.withHeader("Gnome-Paste-Channel", channel.asString())
+				.withHeader("Gnome-Paste-Channel", SnowFlake.str(channel))
 				.withHeader("Gnome-Paste-User", paste.getUser());
 
 		if (download) {
@@ -172,20 +172,20 @@ public class PasteHandlers {
 		var id = request.getSnowflake("id");
 		var name = request.variable("name");
 		var author = request.variable("author");
-		Paste.createPaste(request.app.db, channel.asLong(), id.asLong(), name, author);
-		return Response.redirect("/paste/" + id.asString());
+		Paste.createPaste(request.app.db, channel, id, name, author);
+		return Response.redirect("/paste/" + SnowFlake.str(id));
 	}
 
 	public static Response paste(ServerRequest request) throws Exception {
 		var id0 = request.variable("id").split("!", 2);
-		var id = Utils.snowflake(id0[0]);
+		var id = id0[0];
 		var subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 		byte[] contents;
 		String filename;
 		String user;
 
 		try {
-			var req = Utils.internalRequest("paste/" + id.asString() + "/raw").toBytes();
+			var req = Utils.internalRequest("paste/" + id + "/raw").toBytes();
 			contents = req.block();
 			filename = req.getHeader("Gnome-Paste-Filename");
 			user = req.getHeader("Gnome-Paste-User");
@@ -224,9 +224,9 @@ public class PasteHandlers {
 			return FileResponse.of(HttpStatus.OK, "application/pdf", contents);
 		}
 
-		var root = GnomeRootTag.createSimple("/paste/" + id.asString(), filename);
+		var root = GnomeRootTag.createSimple("/paste/" + id, filename);
 
-		root.content.h3().string(filename + " by " + user).a("/paste/" + id.asString() + "/raw").string(archive ? " [Download]" : " [Raw]").end();
+		root.content.h3().string(filename + " by " + user).a("/paste/" + id + "/raw").string(archive ? " [Download]" : " [Raw]").end();
 		root.content.br();
 		root.content.classes("paste");
 
@@ -242,7 +242,7 @@ public class PasteHandlers {
 				if (zipEntry.isDirectory() || zipEntry.getName().endsWith(".zip") || zipEntry.getName().endsWith(".jar")) {
 					zipList.add(Pair.of(zipEntry.getName(), ""));
 				} else {
-					zipList.add(Pair.of(zipEntry.getName(), "/paste/" + id.asString() + "!" + CodingUtils.encodeURL(zipEntry.getName())));
+					zipList.add(Pair.of(zipEntry.getName(), "/paste/" + id + "!" + CodingUtils.encodeURL(zipEntry.getName())));
 				}
 			}
 

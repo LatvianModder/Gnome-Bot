@@ -7,7 +7,6 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AppTaskCancelledException;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 
 import java.time.Duration;
@@ -18,9 +17,9 @@ import java.util.stream.Collectors;
 public class ImportMessagesCommand {
 	@LegacyDiscordCommand(name = "import_messages", help = "Imports messages from all channels into DB", arguments = "[channel|channel:message]", permissionLevel = AuthLevel.OWNER)
 	public static final CommandCallback COMMAND = (context, reader) -> {
-		var messageChannels = new ArrayList<Pair<ChannelInfo, Snowflake>>();
+		var messageChannels = new ArrayList<Pair<ChannelInfo, Long>>();
 
-		Optional<Pair<ChannelInfo, Snowflake>> c;
+		Optional<Pair<ChannelInfo, Long>> c;
 
 		while ((c = reader.readChannelAndMessage()).isPresent()) {
 			messageChannels.add(c.get());
@@ -31,7 +30,7 @@ public class ImportMessagesCommand {
 				if (channel.getChannelData() != null) {
 					var lm = channel.getLastMessageId();
 
-					if (lm != null) {
+					if (lm != 0L) {
 						messageChannels.add(Pair.of(channel, lm));
 					}
 				}
@@ -40,7 +39,7 @@ public class ImportMessagesCommand {
 
 		context.handler.app.queueBlockingTask(task -> {
 			var channelNames = messageChannels.stream().map(mc -> mc.a().getMention()).collect(Collectors.joining(" "));
-			App.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a().getName() + ":" + mc.b().asString()).collect(Collectors.joining(" ")));
+			App.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a().getName() + ":" + mc.b()).collect(Collectors.joining(" ")));
 			context.reply("Importing messages from " + channelNames);
 
 			var mId = 0;
@@ -62,7 +61,7 @@ public class ImportMessagesCommand {
 							.filter(m -> m.getType() == Message.Type.DEFAULT && m.getAuthor().isPresent())
 							.toIterable()) {
 						mId++;
-						lastId = message.getId();
+						lastId = message.getId().asLong();
 						var user = message.getAuthor().get();
 						MessageHandler.messageCreated(context.handler, ch, message, user, memberCache.getAndUpdate(user).orElse(null), true);
 
@@ -89,7 +88,7 @@ public class ImportMessagesCommand {
 			context.reply("Imported " + count + " messages from " + channelNames + " from " + memberCache.getCacheSize() + " members in " + TimeUtils.prettyTimeString(totalTime) + " @ " + (int) (count / (double) totalTime) + " m/s");
 
 			if (task.cancelled) {
-				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a().id.asString() + ":" + ch.b().asString()).collect(Collectors.joining(" ")) + "```");
+				context.reply("Importing was cancelled! To continue run\n```" + context.gc.legacyPrefix + "import_messages " + channelsLeft.stream().map(ch -> ch.a().id + ":" + ch.b()).collect(Collectors.joining(" ")) + "```");
 			}
 		});
 	};

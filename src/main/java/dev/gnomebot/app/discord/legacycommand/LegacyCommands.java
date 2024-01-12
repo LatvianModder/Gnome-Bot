@@ -75,7 +75,7 @@ public final class LegacyCommands {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to use this command!").reaction(Emojis.POLICE_CAR);
 		} else {
 			context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.COMMAND)
-					.channel(context.channelInfo.id.asLong())
+					.channel(context.channelInfo.id)
 					.message(context.message)
 					.user(context.sender)
 					.oldContent(command.name)
@@ -123,7 +123,7 @@ public final class LegacyCommands {
 		} else if (permissionLevel == AuthLevel.MEMBER) {
 			return true;
 		} else if (permissionLevel == AuthLevel.OWNER) {
-			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.checkPermissions(context.sender.getId(), Permission.ADMINISTRATOR));
+			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.checkPermissions(context.sender.getId().asLong(), Permission.ADMINISTRATOR));
 		}
 
 		return context.sender != null && context.gc.adminRole.is(context.sender);

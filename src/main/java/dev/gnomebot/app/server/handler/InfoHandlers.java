@@ -4,6 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.webutils.ImageUtils;
 import dev.latvian.apps.webutils.json.JSONArray;
@@ -42,18 +43,18 @@ public class InfoHandlers {
 		// App.info("Getting info for " + id.asString());
 
 		var json = JSONObject.of();
-		json.put("id", id.asString());
+		json.put("id", SnowFlake.str(id));
 		var userData = request.app.discordHandler.getUserData(id);
 
 		if (userData != null) {
 			json.put("name", userData.username());
 			json.put("discriminator", userData.discriminator());
-			json.put("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
+			json.put("avatar_url", App.url("api/info/avatar/" + id + "/" + size));
 			json.put("bot", userData.bot().toOptional().orElse(false));
 		} else {
 			json.put("name", "Deleted User");
 			json.put("discriminator", "0000");
-			json.put("avatar_url", App.url("api/info/avatar/" + id.asString() + "/" + size));
+			json.put("avatar_url", App.url("api/info/avatar/" + id + "/" + size));
 			json.put("bot", false);
 		}
 
@@ -82,9 +83,9 @@ public class InfoHandlers {
 		var avatar = userData == null ? null : userData.avatar().orElse(null);
 
 		if (avatar != null && avatar.startsWith("a_")) {
-			url = ImageUtil.getUrl("avatars/" + id.asString() + "/" + avatar, GIF) + "?size=" + sizeToRetrieve;
+			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar, GIF) + "?size=" + sizeToRetrieve;
 		} else if (avatar != null) {
-			url = ImageUtil.getUrl("avatars/" + id.asString() + "/" + avatar, PNG) + "?size=" + sizeToRetrieve;
+			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar, PNG) + "?size=" + sizeToRetrieve;
 		} else {
 			url = ImageUtil.getUrl("embed/avatars/" + (userData == null ? 0 : (Integer.parseInt(userData.discriminator()) % 5)), PNG) + "?size=" + sizeToRetrieve;
 		}
@@ -114,7 +115,7 @@ public class InfoHandlers {
 		}
 
 		var id = request.getSnowflake("emoji");
-		var url = ImageUtil.getUrl("emojis/" + id.asString(), Image.Format.PNG);
+		var url = ImageUtil.getUrl("emojis/" + id, Image.Format.PNG);
 
 		var sizeToRetrieve = 4096;
 
@@ -200,7 +201,7 @@ public class InfoHandlers {
 	}
 
 	public static Response videoThumbnail(ServerRequest request) throws Exception {
-		var message = request.app.discordHandler.client.getMessageById(request.getSnowflake("channel"), request.getSnowflake("message")).block();
+		var message = request.app.discordHandler.client.getMessageById(SnowFlake.convert(request.getSnowflake("channel")), SnowFlake.convert(request.getSnowflake("message"))).block();
 		var attachmentId = request.getSnowflake("attachment");
 
 		for (var a : message.getAttachments()) {

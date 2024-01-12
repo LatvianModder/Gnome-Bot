@@ -10,12 +10,9 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
-import discord4j.core.object.entity.User;
 
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -166,7 +163,7 @@ public class PingsCommands extends ApplicationCommands {
 				return;
 			}
 
-			var pings = PingBuilder.compile(event.context.gc.db, event.context.sender.getId(), config, true);
+			var pings = PingBuilder.compile(event.context.gc.db, event.context.sender.getId().asLong(), config, true);
 
 			App.success(event.context.sender.getUsername() + " updated their pings:");
 
@@ -218,17 +215,17 @@ public class PingsCommands extends ApplicationCommands {
 
 	public static void test(ChatInputInteractionEventWrapper event) {
 		var s = event.get("test-text").asString().trim();
-		var from = event.get("from").asUser().map(User::getId).orElse(Utils.NO_SNOWFLAKE);
+		var from = event.get("from").asUser().map(u -> u.getId().asLong()).orElse(0L);
 
 		if (s.isEmpty()) {
-			event.respondModal("ping-test/" + from.asString(), "Test Pings", TextInput.paragraph("text", "Text to Test", 1, 2000).placeholder("Write your test text here. Each line will be treated as its own check."));
+			event.respondModal("ping-test/" + from, "Test Pings", TextInput.paragraph("text", "Text to Test", 1, 2000).placeholder("Write your test text here. Each line will be treated as its own check."));
 		} else {
 			event.acknowledgeEphemeral();
 			event.respond(testResponse(event.context, from, s.split("\n")));
 		}
 	}
 
-	private static String testResponse(CommandContext ctx, Snowflake from, String[] input) {
+	private static String testResponse(CommandContext ctx, long from, String[] input) {
 		var lines = new ArrayList<String>();
 
 		loop:
@@ -241,10 +238,10 @@ public class PingsCommands extends ApplicationCommands {
 
 			PingData pingData;
 
-			if (from.asLong() == 0L) {
+			if (from == 0L) {
 				var member = ctx.gc.getMember(ctx.gc.db.app.discordHandler.selfId);
 
-				var userId = member.getId();
+				var userId = member.getId().asLong();
 				var username = member.getDisplayName();
 				var avatar = member.getAvatarUrl();
 				var bot = false;
@@ -256,7 +253,7 @@ public class PingsCommands extends ApplicationCommands {
 					throw new GnomeException("User not found!");
 				}
 
-				var userId = member.getId();
+				var userId = member.getId().asLong();
 				var username = member.getDisplayName();
 				var avatar = member.getAvatarUrl();
 				var bot = member.isBot();
@@ -264,7 +261,7 @@ public class PingsCommands extends ApplicationCommands {
 			}
 
 			for (var data : ctx.gc.db.app.pingHandler.getPings()) {
-				if (data.user().equals(ctx.sender.getId())) {
+				if (data.user() == ctx.sender.getId().asLong()) {
 					var ping = data.test(pingData);
 
 					if (ping != null) {
@@ -280,7 +277,7 @@ public class PingsCommands extends ApplicationCommands {
 		return String.join("\n", lines);
 	}
 
-	public static void testCallback(ModalEventWrapper event, Snowflake from) {
+	public static void testCallback(ModalEventWrapper event, long from) {
 		event.respond(testResponse(event.context, from, event.get("text").asString().split("\n")));
 	}
 }

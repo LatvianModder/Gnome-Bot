@@ -8,9 +8,9 @@ import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.guild.BanEvent;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.guild.MemberLeaveEvent;
@@ -37,7 +37,7 @@ public class MemberHandler {
 
 	public static boolean ignoreNextBan = false;
 
-	public static final HashSet<Snowflake> lockdownKicks = new HashSet<>();
+	public static final HashSet<Long> lockdownKicks = new HashSet<>();
 
 	public static void updateMember(GuildCollections gc, User user, @Nullable Member member, int action, @Nullable DiscordMember discordMember, @Nullable DiscordMessage discordMessage) {
 		var memberUpdates = new ArrayList<Bson>();
@@ -101,14 +101,14 @@ public class MemberHandler {
 
 		if (gc.lockdownMode.get()) {
 			if (gc.logLeavingChannel.isSet()) {
-				lockdownKicks.add(member.getId());
+				lockdownKicks.add(member.getId().asLong());
 			}
 
 			member.kick("Lockdown Mode").subscribe();
 			return;
 		} else if (gc.kickNewAccounts.get() > 0 && accountAge < gc.kickNewAccounts.get()) {
 			if (gc.logLeavingChannel.isSet()) {
-				lockdownKicks.add(member.getId());
+				lockdownKicks.add(member.getId().asLong());
 			}
 
 			DM.send(handler, member, "Your account is too new! You can return " + Utils.formatRelativeDate(Instant.ofEpochSecond(member.getId().getTimestamp().getEpochSecond() + gc.kickNewAccounts.get())), false);
@@ -116,7 +116,7 @@ public class MemberHandler {
 			return;
 		}
 
-		gc.pushRecentUser(member.getId(), member.getTag());
+		gc.pushRecentUser(member.getId().asLong(), member.getTag());
 
 		var prevMessages = 0L;
 		var mdoc = gc.members.query(member.getId().asLong()).firstDocument();
@@ -137,7 +137,7 @@ public class MemberHandler {
 		if (oldMember != null) {
 			for (var l : oldMember.getRoles()) {
 				try {
-					member.addRole(Snowflake.of(l)).block();
+					member.addRole(SnowFlake.convert(l)).block();
 				} catch (Exception ex) {
 				}
 			}
@@ -175,7 +175,7 @@ public class MemberHandler {
 				sb.append(member.getNickname().get());
 			}
 
-			if (lockdownKicks.remove(event.getUser().getId())) {
+			if (lockdownKicks.remove(event.getUser().getId().asLong())) {
 				sb.append(") was kicked by lockdown after ");
 			} else {
 				sb.append(") has left the server after ");
@@ -204,11 +204,11 @@ public class MemberHandler {
 
 			try {
 				Thread.sleep(3000L);
-				entry = findBanEntry(gc, event.getUser().getId());
+				entry = findBanEntry(gc, event.getUser().getId().asLong());
 			} catch (Exception ex) {
 			}
 
-			var responsible = entry == null || entry.getResponsibleUserId().isEmpty() ? null : handler.getUser(entry.getResponsibleUserId().get());
+			var responsible = entry == null || entry.getResponsibleUserId().isEmpty() ? null : handler.getUser(entry.getResponsibleUserId().get().asLong());
 			var reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
 
 			// App.info(Utils.ANSI_RED + event.getUser().getUsername() + Utils.ANSI_RESET + " was banned from " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server by " + (responsible == null ? "Unknown" : responsible.getTag()) + "! Reason: " + reason);
@@ -240,13 +240,13 @@ public class MemberHandler {
 	}
 
 	@Nullable
-	private static AuditLogEntry findBanEntry(GuildCollections gc, Snowflake target) throws Exception {
+	private static AuditLogEntry findBanEntry(GuildCollections gc, long target) throws Exception {
 		for (var part : gc.getGuild().getAuditLog(AuditLogQuerySpec.builder()
 				.actionType(ActionType.MEMBER_BAN_ADD)
 				.build()
 		).take(10L, true).toIterable()) {
 			for (var entry : part.getEntries()) {
-				if (entry.getTargetId().isPresent() && entry.getTargetId().get().equals(target)) {
+				if (entry.getTargetId().isPresent() && entry.getTargetId().get().asLong() == target) {
 					return entry;
 				}
 			}

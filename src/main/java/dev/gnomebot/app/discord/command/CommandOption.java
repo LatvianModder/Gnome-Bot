@@ -55,7 +55,7 @@ public class CommandOption extends BasicOption {
 
 		if (u.isPresent()) {
 			try {
-				return Optional.of(Objects.requireNonNull(context.gc.getMember(u.get().getId())));
+				return Optional.of(Objects.requireNonNull(context.gc.getMember(u.get().getId().asLong())));
 			} catch (Exception ex) {
 				throw new GnomeException("Too late! They're gone already.");
 			}
@@ -69,7 +69,7 @@ public class CommandOption extends BasicOption {
 
 		if (u.isPresent()) {
 			try {
-				return Optional.ofNullable(context.gc.getMember(u.get().getId()));
+				return Optional.ofNullable(context.gc.getMember(u.get().getId().asLong()));
 			} catch (Exception ex) {
 				return Optional.empty();
 			}
@@ -91,7 +91,7 @@ public class CommandOption extends BasicOption {
 		}
 
 		var n = value.trim().toLowerCase();
-		var webhook = context.gc.db.userWebhooks.query().eq("name", n).eq("user", context.sender.getId().asLong()).first();
+		var webhook = context.gc.db.userWebhooksDB.query().eq("name", n).eq("user", context.sender.getId().asLong()).first();
 		return Optional.ofNullable(webhook == null ? null : webhook.createWebhook());
 	}
 }

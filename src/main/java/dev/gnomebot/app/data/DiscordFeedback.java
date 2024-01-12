@@ -7,9 +7,8 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.json.JSONObject;
-import discord4j.common.util.Snowflake;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
@@ -138,7 +137,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 			builder.title("Suggestion #" + getNumber() + " - " + status.titleSuffix);
 		}
 
-		builder.url(App.url("guild/feedback/" + gc.guildId.asString() + "/" + getNumber()));
+		builder.url(App.url("guild/feedback/" + gc.guildId + "/" + getNumber()));
 		builder.description(getContent());
 		builder.addField(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.addField(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
@@ -174,17 +173,17 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 			}
 		}
 
-		json.put("id", Snowflake.asString(getUID()));
+		json.put("id", SnowFlake.str(getUID()));
 		json.put("number", getNumber());
 		json.put("content", getContent());
-		json.put("author", canSee ? Snowflake.asString(getAuthor()) : "0");
-		json.put("author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getAuthor())) : "Anonymous");
+		json.put("author", canSee ? SnowFlake.str(getAuthor()) : "0");
+		json.put("author_name", canSee ? memberCache.getDisplayName(getAuthor()) : "Anonymous");
 		json.put("status", getStatus().name.toLowerCase());
 
 		if (getReasonAuthor() != 0L) {
 			json.put("reason", getReason());
-			json.put("reason_author", canSee ? Snowflake.asString(getReasonAuthor()) : "0");
-			json.put("reason_author_name", canSee ? memberCache.getDisplayName(Snowflake.of(getReasonAuthor())) : "Anonymous");
+			json.put("reason_author", canSee ? SnowFlake.str(getReasonAuthor()) : "0");
+			json.put("reason_author_name", canSee ? memberCache.getDisplayName(getReasonAuthor()) : "Anonymous");
 		}
 
 		json.put("created", getDate().toInstant().toString());
@@ -198,9 +197,9 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 
 			for (var o : voteMap.map.entrySet()) {
 				if (Boolean.TRUE.equals(o.getValue())) {
-					upTags.add(memberCache.getDisplayName(Utils.snowflake(o.getKey())));
+					upTags.add(memberCache.getDisplayName(SnowFlake.num(o.getKey())));
 				} else {
-					downTags.add(memberCache.getDisplayName(Utils.snowflake(o.getKey())));
+					downTags.add(memberCache.getDisplayName(SnowFlake.num(o.getKey())));
 				}
 			}
 		}

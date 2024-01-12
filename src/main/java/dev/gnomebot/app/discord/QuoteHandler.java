@@ -6,8 +6,8 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -15,21 +15,21 @@ import discord4j.discordjson.json.MessageData;
 import discord4j.rest.service.ChannelService;
 
 public class QuoteHandler {
-	public static void getMessageURL(StringBuilder builder, Snowflake guild, Snowflake channel, Snowflake message) {
-		builder.append("https://discord.com/channels/").append(guild.asString()).append('/').append(channel.asString()).append('/').append(message.asString());
+	public static void getMessageURL(StringBuilder builder, long guild, long channel, long message) {
+		builder.append("https://discord.com/channels/").append(SnowFlake.str(guild)).append('/').append(SnowFlake.str(channel)).append('/').append(SnowFlake.str(message));
 	}
 
-	public static void getChannelURL(StringBuilder builder, Snowflake guild, Snowflake channel) {
-		builder.append("https://discord.com/channels/").append(guild.asString()).append('/').append(channel.asString());
+	public static void getChannelURL(StringBuilder builder, long guild, long channel) {
+		builder.append("https://discord.com/channels/").append(SnowFlake.str(guild)).append('/').append(SnowFlake.str(channel));
 	}
 
-	public static String getMessageURL(Snowflake guild, Snowflake channel, Snowflake message) {
+	public static String getMessageURL(long guild, long channel, long message) {
 		var builder = new StringBuilder();
 		getMessageURL(builder, guild, channel, message);
 		return builder.toString();
 	}
 
-	public static String getChannelURL(Snowflake guild, Snowflake channel) {
+	public static String getChannelURL(long guild, long channel) {
 		var builder = new StringBuilder();
 		getChannelURL(builder, guild, channel);
 		return builder.toString();
@@ -51,9 +51,9 @@ public class QuoteHandler {
 
 		while (quoteMatcher.find()) {
 			var url = quoteMatcher.group();
-			var qguildId = Utils.snowflake(quoteMatcher.group(1));
-			var qchannelId = Utils.snowflake(quoteMatcher.group(2));
-			var qmessageId = Utils.snowflake(quoteMatcher.group(3));
+			var qguildId = SnowFlake.num(quoteMatcher.group(1));
+			var qchannelId = SnowFlake.num(quoteMatcher.group(2));
+			var qmessageId = SnowFlake.num(quoteMatcher.group(3));
 
 			if (init) {
 				mentionsAdmin = gc.adminLogChannel.isSet() && gc.adminRole.isSet() && gc.adminRole.isMentioned(message);
@@ -82,7 +82,7 @@ public class QuoteHandler {
 			MessageData m = null;
 
 			try {
-				m = service.getMessage(qchannelId.asLong(), qmessageId.asLong()).block();
+				m = service.getMessage(qchannelId, qmessageId).block();
 			} catch (Exception ignore) {
 			}
 
@@ -96,7 +96,7 @@ public class QuoteHandler {
 
 			for (var a : m.attachments()) {
 				if (!a.filename().startsWith(Attachment.SPOILER_PREFIX) && AttachmentType.get(a.filename(), a.contentType().toOptional().orElse("")) == AttachmentType.VIDEO) {
-					thumbnailUrl = "https://gnomebot.dev/api/info/video-thumbnail/" + qchannelId.asString() + "/" + qmessageId.asString() + "/" + a.id().asString();
+					thumbnailUrl = "https://gnomebot.dev/api/info/video-thumbnail/" + SnowFlake.str(qchannelId) + "/" + SnowFlake.str(qmessageId) + "/" + a.id().asString();
 					break;
 				}
 			}
@@ -143,7 +143,7 @@ public class QuoteHandler {
 			}
 
 			var author = m.author();
-			var authorMember = member.getId().asLong() == author.id().asLong() ? member : gc.getMember(Snowflake.of(author.id().asLong()));
+			var authorMember = member.getId().asLong() == author.id().asLong() ? member : gc.getMember(author.id().asLong());
 
 			if (authorMember != null) {
 				quoteEmbed.author("➤ " + authorMember.getDisplayName(), authorMember.getAvatarUrl(), quoteURL);

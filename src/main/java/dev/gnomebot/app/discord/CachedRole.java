@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public class CachedRole {
 	public final GuildCollections gc;
-	public final Snowflake id;
+	public final long id;
 	public final String name;
 	public final int index;
 	public final int rawPosition;
@@ -26,7 +26,7 @@ public class CachedRole {
 
 	public CachedRole(GuildCollections g, Role role, int index) {
 		this.gc = g;
-		this.id = role.getId();
+		this.id = role.getId().asLong();
 		this.name = role.getName();
 		this.index = index;
 		this.rawPosition = role.getRawPosition();
@@ -54,37 +54,37 @@ public class CachedRole {
 
 	@Override
 	public String toString() {
-		return "<@&" + id.asString() + '>';
+		return "<@&" + SnowFlake.str(id) + '>';
 	}
 
 	@Nullable
 	public Role getRole() {
 		try {
-			return gc.getGuild().getRoleById(id).block();
+			return gc.getGuild().getRoleById(SnowFlake.convert(id)).block();
 		} catch (Exception ex) {
 			return null;
 		}
 	}
 
 	public boolean is(Member member) {
-		return member.getRoleIds().contains(id);
+		return member.getRoleIds().contains(SnowFlake.convert(id));
 	}
 
 	public boolean isMentioned(Message message) {
-		return message.getRoleMentionIds().contains(id);
+		return message.getRoleMentionIds().contains(SnowFlake.convert(id));
 	}
 
 	public boolean add(Member member, @Nullable String reason) {
-		return member.getRoleIds().contains(id) || add(member.getId(), reason);
+		return is(member) || add(member.getId().asLong(), reason);
 	}
 
-	public boolean add(@Nullable Snowflake member, @Nullable String reason) {
-		if (member != null) {
+	public boolean add(long member, @Nullable String reason) {
+		if (member != 0L) {
 			try {
-				gc.getClient().getRestClient().getGuildService().addGuildMemberRole(gc.guildId.asLong(), member.asLong(), id.asLong(), reason).block();
+				gc.getClient().getRestClient().getGuildService().addGuildMemberRole(gc.guildId, member, id, reason).block();
 				return true;
 			} catch (Exception ex) {
-				App.warn("Can't assign role " + id.asString() + " to " + member.asString() + " in " + gc);
+				App.warn("Can't assign role " + SnowFlake.str(id) + " to " + SnowFlake.str(member) + " in " + gc);
 				App.warn(ex);
 			}
 		}
@@ -93,16 +93,16 @@ public class CachedRole {
 	}
 
 	public boolean remove(Member member, @Nullable String reason) {
-		return !member.getRoleIds().contains(id) || remove(member.getId(), reason);
+		return !is(member) || remove(member.getId().asLong(), reason);
 	}
 
-	public boolean remove(@Nullable Snowflake member, @Nullable String reason) {
-		if (member != null) {
+	public boolean remove(long member, @Nullable String reason) {
+		if (member != 0L) {
 			try {
-				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId.asLong(), member.asLong(), id.asLong(), reason).block();
+				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId, member, id, reason).block();
 				return true;
 			} catch (Exception ex) {
-				App.warn("Can't remove role " + id.asString() + " from " + member.asString() + " in " + gc);
+				App.warn("Can't remove role " + SnowFlake.str(id) + " from " + SnowFlake.str(member) + " in " + gc);
 				App.warn(ex);
 			}
 		}

@@ -17,6 +17,6 @@ public class VerifyMinecraftCommand extends ApplicationCommands {
 	public static MessageBuilder message(User user) {
 		return MessageBuilder.create(user.getMention() + ", click the `Verify` button below to prove that you own Minecraft!")
 				.addComponentRow(Button.success("verify-minecraft/" + user.getId().asString(), "Verify"))
-				.allowUserMentions(user.getId());
+				.allowUserMentions(user.getId().asLong());
 	}
 }

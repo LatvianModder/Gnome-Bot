@@ -1,5 +1,6 @@
 package dev.gnomebot.app.script;
 
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.mods.rhino.util.SpecialEquality;
 import discord4j.common.util.Snowflake;
 
@@ -10,7 +11,7 @@ public interface WithId extends SpecialEquality {
 	WrappedId getWrappedId();
 
 	default long getCreatedTimestampMilli() {
-		return Snowflake.DISCORD_EPOCH + (getWrappedId().asLong() >>> 22);
+		return SnowFlake.timestamp(getWrappedId().asLong());
 	}
 
 	default Date getCreatedTimestamp() {

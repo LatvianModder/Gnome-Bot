@@ -2,9 +2,8 @@ package dev.gnomebot.app;
 
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.ConfigFile;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -33,9 +32,9 @@ public class Config {
 	public final WebHook gnome_mention_webhook;
 	public final WebHook gnome_dm_webhook;
 	public final WebHook rust_plus_webhook;
-	public final Snowflake gnome_dm_channel_id;
-	public final Snowflake owner;
-	public final Set<Snowflake> trusted;
+	public final long gnome_dm_channel_id;
+	public final long owner;
+	public final Set<Long> trusted;
 	public final String wolfram_alpha_token;
 	public final boolean require_cloudflare;
 	public final String microsoft_client_id;
@@ -71,9 +70,9 @@ public class Config {
 
 		for (var s : c.getStringList("trusted")) {
 			try {
-				var id = Utils.snowflake(s);
+				var id = SnowFlake.num(s);
 
-				if (id.asLong() != 0L) {
+				if (id != 0L) {
 					trusted.add(id);
 				}
 			} catch (Exception ex) {
@@ -94,7 +93,7 @@ public class Config {
 		App.success("Loaded Gnome config with panel URL: " + panel_url);
 	}
 
-	public boolean isTrusted(Snowflake id) {
-		return owner.asLong() == id.asLong() || trusted.contains(id);
+	public boolean isTrusted(long id) {
+		return owner == id || trusted.contains(id);
 	}
 }

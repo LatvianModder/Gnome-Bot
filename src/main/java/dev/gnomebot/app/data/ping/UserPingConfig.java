@@ -1,18 +1,15 @@
 package dev.gnomebot.app.data.ping;
 
-import discord4j.common.util.Snowflake;
-
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
-public record UserPingConfig(Set<Snowflake> ignoredGuilds, Set<Snowflake> ignoredChannels, Set<Snowflake> ignoredUsers, boolean bots, boolean self) {
+public record UserPingConfig(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self) {
 	public static final UserPingConfig DEFAULT = new UserPingConfig(true, false);
 	public static final UserPingConfig DEFAULT_NO_BOTS = new UserPingConfig(false, false);
 	public static final UserPingConfig DEFAULT_SELF = new UserPingConfig(true, true);
 	public static final UserPingConfig DEFAULT_NO_BOTS_SELF = new UserPingConfig(false, true);
 
-	public static UserPingConfig get(Set<Snowflake> ignoredGuilds, Set<Snowflake> ignoredChannels, Set<Snowflake> ignoredUsers, boolean bots, boolean self) {
+	public static UserPingConfig get(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self) {
 		if (ignoredGuilds.isEmpty() && ignoredChannels.isEmpty() && ignoredUsers.isEmpty()) {
 			if (self) {
 				return bots ? DEFAULT_SELF : DEFAULT_NO_BOTS_SELF;
@@ -21,17 +18,14 @@ public record UserPingConfig(Set<Snowflake> ignoredGuilds, Set<Snowflake> ignore
 			}
 		}
 
-		Set<Snowflake> g = ignoredGuilds.isEmpty() ? Collections.emptySet() : new HashSet<>(ignoredGuilds);
-		Set<Snowflake> c = ignoredChannels.isEmpty() ? Collections.emptySet() : new HashSet<>(ignoredChannels);
-		Set<Snowflake> u = ignoredUsers.isEmpty() ? Collections.emptySet() : new HashSet<>(ignoredUsers);
-		return new UserPingConfig(g, c, u, bots, self);
+		return new UserPingConfig(Set.copyOf(ignoredGuilds), Set.copyOf(ignoredChannels), Set.copyOf(ignoredUsers), bots, self);
 	}
 
 	private UserPingConfig(boolean bots, boolean self) {
 		this(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), bots, self);
 	}
 
-	public boolean match(Snowflake guildId, Snowflake channelId, Snowflake userId, boolean bot) {
+	public boolean match(long guildId, long channelId, long userId, boolean bot) {
 		if (!bots && bot) {
 			return false;
 		} else if (ignoredGuilds.contains(guildId)) {

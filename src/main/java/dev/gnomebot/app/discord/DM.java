@@ -5,8 +5,7 @@ import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -26,15 +25,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class DM {
-	public record DMChannel(Snowflake userId, Snowflake messageId, Snowflake channelId) {
+	public record DMChannel(long userId, long messageId, long channelId) {
 		@Override
 		public String toString() {
-			return userId.asString() + ":" + messageId.asString() + ":" + channelId.asString();
+			return userId + ":" + messageId + ":" + channelId;
 		}
 	}
 
-	private static final Map<Snowflake, DMChannel> DM_CHANNELS_USER = new HashMap<>();
-	private static final Map<Snowflake, DMChannel> DM_CHANNELS_MESSAGE = new HashMap<>();
+	private static final Map<Long, DMChannel> DM_CHANNELS_USER = new HashMap<>();
+	private static final Map<Long, DMChannel> DM_CHANNELS_MESSAGE = new HashMap<>();
 
 	public static void loadDmChannels() {
 		DM_CHANNELS_USER.clear();
@@ -44,10 +43,10 @@ public class DM {
 			try {
 				for (var line : Files.readAllLines(AppPaths.DM_CHANNELS)) {
 					var split = line.split(":", 3);
-					var userId = Utils.snowflake(split[0].trim());
-					var messageId = Utils.snowflake(split[1].trim());
-					var channelId = split.length == 3 ? Utils.snowflake(split[2].trim()) : Utils.NO_SNOWFLAKE;
-					var dm = new DMChannel(userId, messageId, channelId.asLong() == 0L ? Utils.NO_SNOWFLAKE : channelId);
+					var userId = SnowFlake.num(split[0].trim());
+					var messageId = SnowFlake.num(split[1].trim());
+					var channelId = split.length == 3 ? SnowFlake.num(split[2].trim()) : 0L;
+					var dm = new DMChannel(userId, messageId, channelId);
 					DM_CHANNELS_USER.put(userId, dm);
 					DM_CHANNELS_MESSAGE.put(messageId, dm);
 				}
@@ -66,28 +65,28 @@ public class DM {
 	}
 
 	@Nullable
-	public static DMChannel getChannelFromUser(Snowflake userId) {
+	public static DMChannel getChannelFromUser(long userId) {
 		return DM_CHANNELS_USER.get(userId);
 	}
 
 	@Nullable
-	public static DMChannel getChannelFromMessage(Snowflake id) {
+	public static DMChannel getChannelFromMessage(long id) {
 		return DM_CHANNELS_MESSAGE.get(id);
 	}
 
-	public static long openId(DiscordHandler handler, Snowflake userId) {
+	public static long openId(DiscordHandler handler, long userId) {
 		var c = DM_CHANNELS_USER.get(userId);
 
-		if (c != null && c.channelId.asLong() != 0L) {
+		if (c != null && c.channelId != 0L) {
 			try {
-				return c.channelId.asLong();
+				return c.channelId;
 			} catch (Exception ex) {
 			}
 		}
 
 		try {
 			return Objects.requireNonNull(handler.client.getRestClient().getUserService()
-					.createDM(DMCreateRequest.builder().recipientId(userId.asString()).build())
+					.createDM(DMCreateRequest.builder().recipientId(SnowFlake.str(userId)).build())
 					.map(ChannelData::id)
 					.map(Id::asLong)
 					.block());
@@ -96,19 +95,19 @@ public class DM {
 		}
 	}
 
-	public static PrivateChannel open(DiscordHandler handler, Snowflake userId) {
+	public static PrivateChannel open(DiscordHandler handler, long userId) {
 		try {
 			var c = DM_CHANNELS_USER.get(userId);
 
-			if (c != null && c.channelId.asLong() != 0L) {
+			if (c != null && c.channelId != 0L) {
 				try {
-					return new PrivateChannel(handler.client, handler.client.getRestClient().getChannelService().getChannel(c.channelId.asLong()).block());
+					return new PrivateChannel(handler.client, handler.client.getRestClient().getChannelService().getChannel(c.channelId).block());
 				} catch (Exception ex) {
 				}
 			}
 
 			return Objects.requireNonNull(handler.client.getRestClient().getUserService()
-					.createDM(DMCreateRequest.builder().recipientId(userId.asString()).build())
+					.createDM(DMCreateRequest.builder().recipientId(SnowFlake.str(userId)).build())
 					.map(data -> EntityUtil.getChannel(handler.client, data))
 					.cast(PrivateChannel.class)
 					.block()
@@ -120,24 +119,24 @@ public class DM {
 
 	// async this
 	private static void sendInDmChannel(DiscordHandler handler, @Nullable PrivateChannel privateChannel, User user, MessageBuilder message) {
-		var dmChannelId = Config.get().gnome_dm_channel_id.asLong();
+		var dmChannelId = Config.get().gnome_dm_channel_id;
 
 		if (dmChannelId == 0L) {
 			Config.get().gnome_dm_webhook.execute(message);
 		} else {
-			var dmChannel = DM_CHANNELS_USER.get(user.getId());
+			var dmChannel = DM_CHANNELS_USER.get(user.getId().asLong());
 			var save = false;
 
 			if (dmChannel == null) {
 				var channelService = handler.app.discordHandler.client.getRestClient().getChannelService();
-				var messageId = Snowflake.of(channelService.createMessage(dmChannelId, MessageCreateSpec.builder().content(user.getUsername() + " [" + user.getId().asString() + "]").build().asRequest()).block().id());
-				channelService.startThreadWithMessage(dmChannelId, messageId.asLong(), ImmutableStartThreadRequest.builder().name("DMs of " + user.getUsername()).autoArchiveDuration(1440).build()).block();
-				dmChannel = new DMChannel(user.getId(), messageId, Utils.NO_SNOWFLAKE);
+				var messageId = channelService.createMessage(dmChannelId, MessageCreateSpec.builder().content(user.getUsername() + " [" + user.getId().asString() + "]").build().asRequest()).block().id().asLong();
+				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadRequest.builder().name("DMs of " + user.getUsername()).autoArchiveDuration(1440).build()).block();
+				dmChannel = new DMChannel(user.getId().asLong(), messageId, 0L);
 				save = true;
 			}
 
-			if (dmChannel.channelId.asLong() == 0L && privateChannel != null) {
-				dmChannel = new DMChannel(dmChannel.userId, dmChannel.messageId, privateChannel.getId());
+			if (dmChannel.channelId == 0L && privateChannel != null) {
+				dmChannel = new DMChannel(dmChannel.userId, dmChannel.messageId, privateChannel.getId().asLong());
 				save = true;
 			}
 
@@ -147,13 +146,13 @@ public class DM {
 				saveDmChannels();
 			}
 
-			Config.get().gnome_dm_webhook.withThread(null, dmChannel.messageId.asString()).execute(message);
+			Config.get().gnome_dm_webhook.withThread(null, dmChannel.messageId).execute(message);
 		}
 	}
 
 	public static Optional<Message> send(DiscordHandler handler, User user, MessageBuilder message, boolean log) {
 		try {
-			var m = Optional.of(open(handler, user.getId()).createMessage(message.toMessageCreateSpec()).block());
+			var m = Optional.of(open(handler, user.getId().asLong()).createMessage(message.toMessageCreateSpec()).block());
 
 			if (log && message.getContent() != null) {
 				sendInDmChannel(handler, null, user, MessageBuilder.create()

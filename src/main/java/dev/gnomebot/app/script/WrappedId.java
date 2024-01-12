@@ -1,23 +1,33 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.Id;
 
 public final class WrappedId implements WithId {
-	public static final WrappedId NONE = new WrappedId(Utils.NO_SNOWFLAKE);
+	public static final WrappedId NONE = new WrappedId(0L);
 
-	private final String asString;
 	private final long asLong;
+	private final String asString;
 
 	public WrappedId(Snowflake id) {
-		asString = id.asString();
 		asLong = id.asLong();
+		asString = id.asString();
+	}
+
+	public WrappedId(long id) {
+		asLong = id;
+		asString = SnowFlake.str(id);
+	}
+
+	public WrappedId(String id) {
+		asLong = SnowFlake.num(id);
+		asString = id;
 	}
 
 	public WrappedId(Id id) {
-		asString = id.asString();
 		asLong = id.asLong();
+		asString = id.asString();
 	}
 
 	public long asLong() {
@@ -28,14 +38,6 @@ public final class WrappedId implements WithId {
 		return asString;
 	}
 
-	public Snowflake asSnowflake() {
-		return Snowflake.of(asLong);
-	}
-
-	public Id asId() {
-		return Id.of(asLong);
-	}
-
 	@Override
 	public WrappedId getWrappedId() {
 		return this;
@@ -43,7 +45,17 @@ public final class WrappedId implements WithId {
 
 	@Override
 	public boolean equals(Object o) {
-		return o == this || o instanceof WrappedId && asLong == ((WrappedId) o).asLong;
+		if (o == this) {
+			return true;
+		} else if (o instanceof WrappedId id) {
+			return asLong == id.asLong;
+		} else if (o instanceof Number n) {
+			return asLong == n.longValue();
+		} else if (o instanceof CharSequence) {
+			return asString.equals(o.toString());
+		} else {
+			return false;
+		}
 	}
 
 	@Override

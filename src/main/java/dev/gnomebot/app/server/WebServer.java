@@ -376,10 +376,10 @@ public class WebServer implements Consumer<JavalinConfig> {
 				document.put("status", status);
 				document.put("method", method.name().toLowerCase());
 				document.put("url", p);
-				document.put("user", token == null ? 0L : token.userId.asLong());
+				document.put("user", token == null ? 0L : token.userId);
 				document.put("timestamp", date);
 				document.put("auth_level", (token == null ? AuthLevel.NO_AUTH : token.authLevel).name);
-				webServer.app.db.webLog.insert(document);
+				webServer.app.db.webLogDB.insert(document);
 			});
 		}
 	}

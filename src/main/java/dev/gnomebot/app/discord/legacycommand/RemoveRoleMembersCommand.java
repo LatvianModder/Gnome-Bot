@@ -2,15 +2,15 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Ansi;
-import discord4j.common.util.Snowflake;
 
 public class RemoveRoleMembersCommand {
 	@LegacyDiscordCommand(name = "remove_role_members", help = "Removes members from role", arguments = "<role>", permissionLevel = AuthLevel.ADMIN)
 	public static final CommandCallback COMMAND = (context, reader) -> {
 		var confirm = reader.readString().orElse("").equalsIgnoreCase("confirm");
 
-		final var role = Snowflake.of(reader.readLong().orElse(0L));
+		final var role = SnowFlake.convert(reader.readLong().orElse(0L));
 
 		context.handler.app.queueBlockingTask(task -> {
 			var removed = 0;

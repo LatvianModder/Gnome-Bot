@@ -2,15 +2,14 @@ package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.TimeLimitedCharSequence;
-import discord4j.common.util.Snowflake;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
-public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination destination, UserPingConfig config) {
+public record UserPingInstance(Ping[] pings, long user, PingDestination destination, UserPingConfig config) {
 	public void handle(PingData pingData) {
-		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
+		if ((config.self() || pingData.userId() != user) && config.match(pingData)) {
 			var start = System.nanoTime();
 			var ping = match(pingData.content());
 
@@ -28,7 +27,7 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 
 	@Nullable
 	public Ping test(PingData pingData) {
-		if ((config.self() || pingData.userId().asLong() != user.asLong()) && config.match(pingData)) {
+		if ((config.self() || pingData.userId() != user) && config.match(pingData)) {
 			var start = System.nanoTime();
 			var ping = match(pingData.content());
 
@@ -63,7 +62,7 @@ public record UserPingInstance(Ping[] pings, Snowflake user, PingDestination des
 	@Override
 	public String toString() {
 		return "{pings=" + Arrays.toString(pings) +
-				", user=" + user.asString() +
+				", user=" + user +
 				", destination=" + destination +
 				", config=" + config +
 				'}';

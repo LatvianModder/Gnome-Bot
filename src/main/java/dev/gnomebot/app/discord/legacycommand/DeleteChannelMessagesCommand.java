@@ -12,7 +12,7 @@ public class DeleteChannelMessagesCommand {
 		var m = Math.min(reader.readLong().orElse(0L), 1000L);
 
 		cm.ifPresent(pair -> context.handler.app.queueBlockingTask(task -> {
-			App.info("Deleting starting from " + pair.a().getMention() + "/" + pair.b().asString());
+			App.info("Deleting starting from " + pair.a().getMention() + "/" + pair.b());
 			context.message.addReaction(Emojis.VOTENONE).block();
 
 			Iterable<Message> iterable;

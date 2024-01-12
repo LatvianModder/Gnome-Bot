@@ -14,7 +14,6 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.rest.http.client.ClientException;
@@ -66,7 +65,7 @@ public class CommandContext {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
 		}
 
-		if (!gc.getEffectiveGlobalPermissions(sender.getId()).containsAll(PermissionSet.of(perms))) {
+		if (!gc.getEffectiveGlobalPermissions(sender.getId().asLong()).containsAll(PermissionSet.of(perms))) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
 		}
 	}
@@ -76,7 +75,7 @@ public class CommandContext {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nChannel info can't be loaded").reaction(Emojis.RAGE).ephemeral();
 		}
 
-		if (!channelInfo.checkPermissions(sender.getId(), perms)) {
+		if (!channelInfo.checkPermissions(sender.getId().asLong(), perms)) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
 		}
 	}
@@ -106,7 +105,7 @@ public class CommandContext {
 	public Message reply(MessageBuilder msg) {
 		try {
 			if (referenceMessage && message != null) {
-				msg.messageReference(message.getId());
+				msg.messageReference(message.getId().asLong());
 			}
 
 			msg.allowedMentions(allowedMentions);
@@ -114,7 +113,7 @@ public class CommandContext {
 			var m = Objects.requireNonNull(channelInfo.createMessage(msg).block());
 
 			if (referenceMessage && message != null) {
-				MessageHandler.addAutoDelete(message.getId(), new MessageId(m));
+				MessageHandler.addAutoDelete(message.getId().asLong(), new MessageId(m));
 			}
 
 			return m;
@@ -141,12 +140,12 @@ public class CommandContext {
 		return reply(MessageBuilder.create(content));
 	}
 
-	public Optional<Message> findMessage(Snowflake id) {
+	public Optional<Message> findMessage(long id) {
 		return gc.findMessage(id, channelInfo);
 	}
 
 	public boolean isTrusted() {
-		return Config.get().isTrusted(sender.getId());
+		return Config.get().isTrusted(sender.getId().asLong());
 	}
 
 	public boolean isAdmin() {

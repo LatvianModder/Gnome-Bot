@@ -8,7 +8,6 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.data.Lazy;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
@@ -83,7 +82,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 
 	}
 
-	public MessageBuilder createMessage(GuildCollections gc, @Nullable CommandReader reader, Snowflake sender) {
+	public MessageBuilder createMessage(GuildCollections gc, @Nullable CommandReader reader, long sender) {
 		return getCachedContent().a().render(gc, reader, getCachedContent().b(), sender);
 	}
 
@@ -102,9 +101,9 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 
 	public long setSlashCommand(boolean b) {
 		if (b) {
-			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), buildCommand()).block();
+			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.selfId, guild.guildId, buildCommand()).block();
 
-			var id = data == null ? 0L : Snowflake.of(data.id()).asLong();
+			var id = data == null ? 0L : data.id().asLong();
 
 			if (data != null) {
 				slashCommand = id;
@@ -114,7 +113,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 		} else {
 			if (slashCommand != 0L) {
 				try {
-					guild.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(guild.db.app.discordHandler.applicationId, guild.guildId.asLong(), slashCommand).block();
+					guild.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(guild.db.app.discordHandler.selfId, guild.guildId, slashCommand).block();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -128,7 +127,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 
 	public String getDescription() {
 		if (description == null) {
-			description = "Macro created by " + guild.db.app.discordHandler.getUserName(Snowflake.of(this.author)).orElse("Deleted User");
+			description = "Macro created by " + guild.db.app.discordHandler.getUserName(this.author).orElse("Deleted User");
 		}
 
 		return description;

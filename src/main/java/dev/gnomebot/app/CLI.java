@@ -1,19 +1,20 @@
 package dev.gnomebot.app;
 
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.channel.ThreadChannel;
+import org.bson.Document;
 
 import java.lang.management.ManagementFactory;
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -46,15 +47,12 @@ public class CLI extends Thread {
 					case "debug" -> debug();
 					case "token" -> App.info(Utils.createToken());
 					case "short_token" -> App.info(Utils.createShortToken());
-					case "leave_guild" -> leaveGuild(Utils.snowflake(input[1]));
+					case "leave_guild" -> leaveGuild(SnowFlake.num(input[1]));
 					case "remove_modifiers" -> App.info(CharMap.MODIFIER_PATTERN.matcher(nonInput).replaceAll(""));
 					case "colors" -> colors();
 					case "echo_cli" -> echoCli(nonInput);
 					case "guilds" -> printGuilds();
-					case "tt1" -> testThread1(Utils.snowflake(input[1]));
-					case "tt2" -> testThread2(nonInput);
 					case "scheduled" -> app.printScheduled();
-					case "close_thread" -> closeThread(Utils.snowflake(input[1]), Integer.parseInt(input[2]));
 					default -> Ansi.log("Unknown command: " + input[0]);
 				}
 			} catch (IllegalArgumentException ex) {
@@ -112,6 +110,19 @@ public class CLI extends Thread {
 			App.info("Porting " + gc);
 		}
 
+		app.db.channelSettingsDB.getCollection().updateMany(Filters.exists("guild"), Updates.unset("guild"));
+		app.db.channelSettingsDB.getCollection().updateMany(Filters.exists("name"), Updates.unset("name"));
+
+		var docs = new ArrayList<Document>();
+		app.db.channelSettingsDB.getCollection().find().forEach(docs::add);
+
+		for (var doc : docs) {
+			if (doc.size() == 1) {
+				app.db.channelSettingsDB.getCollection().deleteOne(Filters.eq(doc.get("_id")));
+				count++;
+			}
+		}
+
 		App.info("+ Done " + count);
 	}
 
@@ -150,8 +161,8 @@ public class CLI extends Thread {
 		App.success("Debug mode: " + (App.debug ? "enabled" : "disabled"));
 	}
 
-	private void leaveGuild(Snowflake id) {
-		app.discordHandler.client.getGuildById(id).flatMap(Guild::leave).subscribe();
+	private void leaveGuild(long id) {
+		app.discordHandler.client.getGuildById(SnowFlake.convert(id)).flatMap(Guild::leave).subscribe();
 	}
 
 	private void printGuilds() {
@@ -161,7 +172,7 @@ public class CLI extends Thread {
 			App.info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
 			var gc = app.db.guild(g.getId());
 
-			table.addRow(FormattingUtils.trim(g.getName(), 70), gc.getMember(g.getOwnerId()).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", app.discordHandler.selfId.asLong()).count(), g.getId().asString());
+			table.addRow(FormattingUtils.trim(g.getName(), 70), gc.getMember(gc.ownerId).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", app.discordHandler.selfId).count(), g.getId().asString());
 		}
 
 		table.print();
@@ -193,26 +204,5 @@ public class CLI extends Thread {
 	private void echoCli(String message) {
 		App.info("Sending to all CLI clients: " + message);
 		WSHandler.CLI.broadcast(message);
-	}
-
-	private ThreadChannel threadChannel = null;
-
-	private void testThread1(Snowflake id) {
-		var gc = app.db.guild(Snowflake.of(166630061217153024L));
-		var userData = app.discordHandler.getUserData(id);
-		threadChannel = app.discordHandler.client.getChannelById(gc.memberAuditLogThread(userData)).cast(ThreadChannel.class).block();
-		App.info(threadChannel.getName());
-	}
-
-	private void testThread2(String msg) {
-		threadChannel.createMessage(msg).subscribe();
-	}
-
-	private void closeThread(Snowflake threadId, int seconds) {
-		// close_thread 1111610188584198145 60
-
-		var channel = app.discordHandler.client.getChannelById(threadId).cast(ThreadChannel.class).block();
-		var gc = app.db.guild(channel.getGuildId());
-		gc.closeThread(threadId, Duration.ofSeconds(seconds));
 	}
 }

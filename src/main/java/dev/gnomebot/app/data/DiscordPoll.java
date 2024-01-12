@@ -75,7 +75,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 		}
 
 		builder.title("Poll #" + getNumber());
-		builder.url(App.url("poll/" + gc.guildId.asString() + "/" + getNumber()));
+		builder.url(App.url("poll/" + gc.guildId + "/" + getNumber()));
 		builder.description(getContent());
 
 		var sum = 0;

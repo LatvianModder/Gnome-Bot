@@ -30,14 +30,14 @@ public class LeaderboardCommand extends ApplicationCommands {
 		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
 		var role = event.get("role").asRole().orElse(null);
 
-		var url = "api/guild/activity/leaderboard-image/" + event.context.gc.guildId.asString() + "/" + days + "?limit=" + limit;
+		var url = "api/guild/activity/leaderboard-image/" + event.context.gc.guildId + "/" + days + "?limit=" + limit;
 
 		if (channelInfo != null) {
-			url += "&channel=" + channelInfo.id.asString();
+			url += "&channel=" + channelInfo.id;
 		}
 
 		if (role != null) {
-			url += "&role=" + role.id.asString();
+			url += "&role=" + role.id;
 		}
 
 		var req = Utils.internalRequest(url).timeout(30000).toImage();

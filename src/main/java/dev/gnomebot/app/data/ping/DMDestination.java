@@ -4,7 +4,6 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
 
 import java.time.Duration;
 
@@ -12,7 +11,7 @@ public class DMDestination implements PingDestination {
 	public static final DMDestination INSTANCE = new DMDestination();
 
 	@Override
-	public void relayPing(Snowflake targetId, PingData pingData, Ping ping) {
+	public void relayPing(long targetId, PingData pingData, Ping ping) {
 		try {
 			var app = pingData.gc().db.app;
 			var dmChannel = DM.openId(app.discordHandler, targetId);

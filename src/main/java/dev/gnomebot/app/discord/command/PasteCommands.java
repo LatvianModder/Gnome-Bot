@@ -4,7 +4,7 @@ import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 
@@ -49,12 +49,12 @@ public class PasteCommands extends ApplicationCommands {
 		if (urlm.find()) {
 			event.acknowledge();
 
-			var channelId = Utils.snowflake(urlm.group(1));
-			var attachmentId = Utils.snowflake(urlm.group(2));
+			var channelId = SnowFlake.num(urlm.group(1));
+			var attachmentId = SnowFlake.num(urlm.group(2));
 			var filename = urlm.group(3);
 
-			Paste.createPaste(event.context.gc.db, channelId.asLong(), attachmentId.asLong(), filename, "");
-			event.edit().respond(MessageBuilder.create("Paste version of `" + filename + "`").addComponentRow(Button.link(Paste.getUrl(attachmentId.asString()), "View " + filename)));
+			Paste.createPaste(event.context.gc.db, channelId, attachmentId, filename, "");
+			event.edit().respond(MessageBuilder.create("Paste version of `" + filename + "`").addComponentRow(Button.link(Paste.getUrl(attachmentId), "View " + filename)));
 		}
 
 		throw new GnomeException("Invalid attachment url!");

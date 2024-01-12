@@ -4,10 +4,9 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.data.MutableLong;
-import discord4j.common.util.Snowflake;
 import org.bson.Document;
 
 import java.time.Instant;
@@ -100,8 +99,8 @@ public class ChannelCommands extends ApplicationCommands {
 		sb.append("Channel XP:");
 
 		for (var ch : channelsWithXp) {
-			if (ch.canViewChannel(event.context.sender.getId())) {
-				sb.append("\n<#").append(ch.id.asString()).append(">: ").append(ch.getXp());
+			if (ch.canViewChannel(event.context.sender.getId().asLong())) {
+				sb.append("\n<#").append(SnowFlake.str(ch.id)).append(">: ").append(ch.getXp());
 			}
 		}
 
@@ -131,8 +130,7 @@ public class ChannelCommands extends ApplicationCommands {
 
 		var xp = Math.max(-1, event.get("xp").asInt());
 
-		info.settings.xp = xp;
-		info.settings.update("xp", xp);
+		info.settings.setXp(xp);
 
 		event.respond(info.getMention() + " XP set to " + info.settings.xp + " (Actual: " + info.getXp() + ")");
 	}
@@ -183,7 +181,7 @@ public class ChannelCommands extends ApplicationCommands {
 
 		for (var channelInfo : event.context.gc.getChannelList()) {
 			event.edit().respond("1/4 Counting messages in " + channelInfo.getMention() + "...");
-			var channelId = channelInfo.id.asLong();
+			var channelId = channelInfo.id;
 
 			for (var m : event.context.gc.messages.query().eq("channel", channelId).projectionFields("timestamp", "user")) {
 				total++;
@@ -259,8 +257,7 @@ public class ChannelCommands extends ApplicationCommands {
 		if (enabled == null) {
 			event.respond("Auto-threading in " + ci.getMention() + " is " + (ci.settings.autoThread ? "enabled" : "disabled"));
 		} else {
-			ci.settings.autoThread = enabled;
-			ci.settings.update("auto_thread", ci.settings.autoThread);
+			ci.settings.setAutoThread(enabled);
 			event.respond("Auto-threading in " + ci.getMention() + " has been " + (ci.settings.autoThread ? "enabled" : "disabled"));
 		}
 	}
@@ -275,8 +272,7 @@ public class ChannelCommands extends ApplicationCommands {
 		if (enabled == null) {
 			event.respond("Auto-upvoting in " + ci.getMention() + " is " + (ci.settings.autoUpvote ? "enabled" : "disabled"));
 		} else {
-			ci.settings.autoUpvote = enabled;
-			ci.settings.update("auto_upvote", ci.settings.autoUpvote);
+			ci.settings.setAutoUpvote(enabled);
 			event.respond("Auto-upvoting in " + ci.getMention() + " has been " + (ci.settings.autoUpvote ? "enabled" : "disabled"));
 		}
 	}
@@ -322,8 +318,8 @@ public class ChannelCommands extends ApplicationCommands {
 		var m1 = event.get("message_id_1").asSnowflake();
 		var m2 = event.get("message_id_2").asSnowflake();
 
-		var oldest = Utils.oldest(m1, m2).asLong();
-		var newest = Utils.newest(m1, m2).asLong();
+		var oldest = SnowFlake.oldest(m1, m2);
+		var newest = SnowFlake.newest(m1, m2);
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
@@ -331,7 +327,7 @@ public class ChannelCommands extends ApplicationCommands {
 				// event.context.message.addReaction(Emojis.VOTENONE).block();
 
 				// FIXME: Change to bulk deletion
-				var iterable = channel.getRest().getMessagesBefore(Snowflake.of(newest)).take(1000L, true).toIterable();
+				var iterable = channel.getRest().getMessagesBefore(SnowFlake.convert(newest)).take(1000L, true).toIterable();
 
 				for (var message : iterable) {
 					var id = message.id().asLong();
@@ -341,7 +337,7 @@ public class ChannelCommands extends ApplicationCommands {
 					}
 
 					App.info("Deleting " + id);
-					service.deleteMessage(channel.id.asLong(), id, null).block();
+					service.deleteMessage(channel.id, id, null).block();
 				}
 
 				event.edit().respond("Done!");

@@ -3,7 +3,6 @@ package dev.gnomebot.app.data.complex;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
@@ -217,7 +216,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return lines;
 	}
 
-	public void apply(GuildCollections targetGuild, MessageBuilder builder, Snowflake sender) {
+	public void apply(GuildCollections targetGuild, MessageBuilder builder, long sender) {
 		builder.content(content);
 
 		if (embeds.isEmpty()) {

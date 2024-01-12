@@ -1,21 +1,20 @@
 package dev.gnomebot.app.data.config;
 
-import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 
-public interface SnowflakeConfigType<H extends ConfigHolder<Snowflake>> extends ConfigType<Snowflake, H> {
+public interface SnowflakeConfigType<H extends ConfigHolder<Long>> extends ConfigType<Long, H> {
 	@Override
-	default Snowflake defaultKeyValue() {
-		return Utils.NO_SNOWFLAKE;
+	default Long defaultKeyValue() {
+		return 0L;
 	}
 
 	@Override
-	default Object write(Snowflake value) {
-		return value.asString();
+	default Object write(Long value) {
+		return SnowFlake.str(value);
 	}
 
 	@Override
-	default Snowflake read(Object value) {
-		return Utils.snowflake(String.valueOf(value));
+	default Long read(Object value) {
+		return SnowFlake.num(String.valueOf(value));
 	}
 }

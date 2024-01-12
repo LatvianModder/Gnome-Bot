@@ -3,7 +3,6 @@ package dev.gnomebot.app.cli;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.latvian.apps.webutils.data.MutableInt;
-import discord4j.common.util.Snowflake;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -26,14 +25,14 @@ public class CLIRoleMentionChart {
 		for (var msg : event.gc.messages.query()
 				.filter(Filters.bitsAllSet("flags", DiscordMessage.FLAG_MENTIONS_ROLES))
 				.filter(Filters.bitsAllClear("flags", DiscordMessage.FLAG_BOT))
-				.filter(Filters.eq("role_mentions", role.id.asLong()))
+				.filter(Filters.eq("role_mentions", role.id))
 				.projectionFields("channel")
 		) {
 			map.computeIfAbsent(msg.getChannelID(), MutableInt.MAP_VALUE).add(1);
 		}
 
 		event.respond(map.entrySet().stream()
-				.map(e -> new AbstractMap.SimpleEntry<>(event.gc.getChannelMap().get(Snowflake.of(e.getKey())), e.getValue()))
+				.map(e -> new AbstractMap.SimpleEntry<>(event.gc.getChannelMap().get(e.getKey()), e.getValue()))
 				.filter(e -> e.getKey() != null && e.getValue().value > 0)
 				.sorted((o1, o2) -> Integer.compare(o2.getValue().value, o1.getValue().value))
 				.map(e -> e.getKey().getMention() + "," + e.getValue().value)

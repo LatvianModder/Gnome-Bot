@@ -48,7 +48,7 @@ public class LockdownCommand extends ApplicationCommands {
 
 				list.forEach(m -> {
 					if (event.context.gc.logLeavingChannel.isSet()) {
-						MemberHandler.lockdownKicks.add(m.getId());
+						MemberHandler.lockdownKicks.add(m.getId().asLong());
 					}
 
 					m.kick("Lockdown Mode").subscribe();

@@ -2,8 +2,8 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Ansi;
-import discord4j.common.util.Snowflake;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +17,8 @@ public class UpdateRegularRolesCommand {
 			throw new GnomeException("Regular role not set!");
 		}
 
-		final var role = context.gc.regularRole.get();
-		final var roleMember = Snowflake.of(748075791790637078L);
+		final var role = SnowFlake.convert(context.gc.regularRole.get());
+		final var roleMember = SnowFlake.convert(748075791790637078L);
 
 		context.handler.app.queueBlockingTask(task -> {
 			var added = 0;

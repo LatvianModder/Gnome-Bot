@@ -3,9 +3,8 @@ package dev.gnomebot.app.data.ping;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
-import discord4j.common.util.Snowflake;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -14,16 +13,16 @@ import java.util.regex.Pattern;
 
 public class PingBuilder {
 	public String name;
-	public final LinkedHashSet<Snowflake> ignoredGuilds = new LinkedHashSet<>();
-	public final LinkedHashSet<Snowflake> ignoredChannels = new LinkedHashSet<>();
-	public final LinkedHashSet<Snowflake> ignoredUsers = new LinkedHashSet<>();
+	public final LinkedHashSet<Long> ignoredGuilds = new LinkedHashSet<>();
+	public final LinkedHashSet<Long> ignoredChannels = new LinkedHashSet<>();
+	public final LinkedHashSet<Long> ignoredUsers = new LinkedHashSet<>();
 	public boolean bots = true;
 	public boolean self = false;
 	public final List<Ping> pings = new ArrayList<>();
 
-	private void set(LinkedHashSet<Snowflake> list, boolean add, String id) {
+	private void set(LinkedHashSet<Long> list, boolean add, String id) {
 		try {
-			var s = Utils.snowflake(id);
+			var s = SnowFlake.num(id);
 
 			if (add) {
 				list.add(s);
@@ -49,7 +48,7 @@ public class PingBuilder {
 		return UserPingConfig.get(ignoredGuilds, ignoredChannels, ignoredUsers, bots, self);
 	}
 
-	public UserPingInstance buildInstance(Snowflake user, PingDestination destination) {
+	public UserPingInstance buildInstance(long user, PingDestination destination) {
 		return new UserPingInstance(pings.toArray(Ping.NO_PINGS), user, destination, buildConfig());
 	}
 
@@ -62,7 +61,7 @@ public class PingBuilder {
 				'}';
 	}
 
-	public static List<PingBuilder> compile(Databases db, Snowflake userId, String config, boolean checkDM) {
+	public static List<PingBuilder> compile(Databases db, long userId, String config, boolean checkDM) {
 		var lineno = 0;
 		var list = new ArrayList<PingBuilder>();
 
@@ -145,9 +144,9 @@ public class PingBuilder {
 							try {
 								DM.openId(db.app.discordHandler, userId);
 							} catch (Exception ignored) {
-								throw new GnomeException("You must message <@" + db.app.discordHandler.selfId.asString() + "> first before you can use DM channel!");
+								throw new GnomeException("You must message <@" + db.app.discordHandler.selfId + "> first before you can use DM channel!");
 							}
-						} else if (db.userWebhooks.query().eq("user", userId.asLong()).eq("name", group.name).first() == null) {
+						} else if (db.userWebhooksDB.query().eq("user", userId).eq("name", group.name).first() == null) {
 							throw new GnomeException("Unknown webhook '" + group.name + "'! Set it up with `/webhook add`");
 						}
 					}

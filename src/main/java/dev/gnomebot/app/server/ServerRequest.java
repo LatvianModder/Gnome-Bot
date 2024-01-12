@@ -5,9 +5,8 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.discord.command.CommandOption;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.CodingUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
@@ -179,10 +178,10 @@ public class ServerRequest {
 		return bodyList;
 	}
 
-	public Snowflake getSnowflake(String var) {
-		var s = Utils.snowflake(variable(var));
+	public long getSnowflake(String var) {
+		var s = SnowFlake.num(variable(var));
 
-		if (s.asLong() == 0L) {
+		if (s == 0L) {
 			throw new BadRequestResponse("Invalid Snowflake: " + var + " / " + variable(var));
 		} else {
 			return s;

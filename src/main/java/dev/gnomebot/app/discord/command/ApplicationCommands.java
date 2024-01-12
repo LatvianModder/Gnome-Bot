@@ -7,7 +7,6 @@ import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.command.admin.GnomeAdminCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.latvian.mods.rhino.mod.wrapper.UUIDWrapper;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
@@ -75,7 +74,8 @@ public class ApplicationCommands {
 		add(CursePointCalculatorCommand.COMMAND);
 		add(DecideCommand.COMMAND);
 		add(DefineCommand.COMMAND);
-		add(FeedbackCommands.COMMAND);
+		add(FeedbackCommand.COMMAND);
+		add(PollCommand.COMMAND);
 		add(LeaderboardCommand.COMMAND);
 		add(MacroCommands.COMMAND);
 		add(MathCommand.COMMAND);
@@ -138,7 +138,7 @@ public class ApplicationCommands {
 
 		handler.client.getRestClient()
 				.getApplicationService()
-				.bulkOverwriteGlobalApplicationCommand(handler.applicationId, list)
+				.bulkOverwriteGlobalApplicationCommand(handler.selfId, list)
 				.blockFirst()
 		;
 
@@ -175,10 +175,10 @@ public class ApplicationCommands {
 
 		var globalCommands = handler.client.getRestClient()
 				.getApplicationService()
-				.getGlobalApplicationCommands(handler.applicationId)
+				.getGlobalApplicationCommands(handler.selfId)
 				.toStream()
 				.filter(ApplicationCommandKey::validData)
-				.collect(Collectors.toMap(ApplicationCommandKey::new, data -> Snowflake.of(data.id())));
+				.collect(Collectors.toMap(ApplicationCommandKey::new, data -> data.id().asLong()));
 
 		var changed = 0;
 
@@ -187,11 +187,11 @@ public class ApplicationCommands {
 				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
-					App.warn("Deleting " + entry.getKey() + "/" + id.asString());
+					App.warn("Deleting " + entry.getKey() + "/" + id);
 
 					handler.client.getRestClient()
 							.getApplicationService()
-							.deleteGlobalApplicationCommand(handler.applicationId, id.asLong())
+							.deleteGlobalApplicationCommand(handler.selfId, id)
 							.block()
 					;
 				} else {
@@ -207,14 +207,14 @@ public class ApplicationCommands {
 				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
-					App.warn("Updating " + entry.getKey() + "/" + id.asString());
+					App.warn("Updating " + entry.getKey() + "/" + id);
 				} else {
 					App.warn("Creating " + entry.getKey());
 				}
 
 				handler.client.getRestClient()
 						.getApplicationService()
-						.createGlobalApplicationCommand(handler.applicationId, entry.getValue().createRootRequest())
+						.createGlobalApplicationCommand(handler.selfId, entry.getValue().createRootRequest())
 						.block()
 				;
 

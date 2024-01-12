@@ -24,7 +24,7 @@ public class RankCommand extends ApplicationCommands {
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
-				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJsonArray().block();
+				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId + "/" + days).timeout(5000).toJsonArray().block();
 				var id = m.getId().asString();
 
 				for (var e : leaderboardJson) {

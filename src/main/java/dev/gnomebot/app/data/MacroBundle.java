@@ -3,7 +3,6 @@ package dev.gnomebot.app.data;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
-import discord4j.common.util.Snowflake;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -40,7 +39,7 @@ public class MacroBundle {
 
 	public final Map<String, Item> macros = new LinkedHashMap<>();
 
-	public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Snowflake sender) {
+	public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, long sender) {
 		if (reader == null) {
 			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}

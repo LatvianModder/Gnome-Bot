@@ -28,7 +28,6 @@ import dev.gnomebot.app.util.CharMap;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Table;
-import discord4j.common.util.Snowflake;
 import discord4j.rest.http.client.ClientException;
 import org.jetbrains.annotations.Nullable;
 
@@ -299,9 +298,9 @@ public class App implements Runnable {
 	}
 
 	@Nullable
-	public ScheduledTask findScheduledGuildTask(Snowflake guildId, Predicate<ScheduledTask> predicate) {
+	public ScheduledTask findScheduledGuildTask(long guildId, Predicate<ScheduledTask> predicate) {
 		for (var task : scheduledTasks) {
-			if (task.guildId.asLong() == guildId.asLong() && predicate.test(task)) {
+			if (task.guildId == guildId && predicate.test(task)) {
 				return task;
 			}
 		}
@@ -350,8 +349,8 @@ public class App implements Runnable {
 	}
 
 	public void schedule(long end, String type, long guild, long channel, long user, String content) {
-		var task = new ScheduledTask(db.scheduledTasks, type, end, guild, channel, user, content);
-		db.scheduledTasks.insert(task.document.toDocument());
+		var task = new ScheduledTask(db.scheduledTasksDB, type, end, guild, channel, user, content);
+		db.scheduledTasksDB.insert(task.document.toDocument());
 
 		if (running) {
 			scheduledTasks.add(task);

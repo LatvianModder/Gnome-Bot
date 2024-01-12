@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord;
 
-import discord4j.common.util.Snowflake;
+import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.util.regex.Pattern;
@@ -9,29 +9,37 @@ public interface Emojis {
 	Pattern GUILD_EMOJI_PATTERN = Pattern.compile("<a?:\\w+:\\d+>");
 	Pattern GUILD_EMOJI_PATTERN_GROUPS = Pattern.compile("<a?:(\\w+):(\\d+)>");
 
-	ReactionEmoji.Custom YES = ReactionEmoji.custom(Snowflake.of(1183755303079125002L), "yes", false);
-	ReactionEmoji.Custom NO = ReactionEmoji.custom(Snowflake.of(1183755305037869157L), "no", false);
+	static ReactionEmoji.Custom custom(long id, String name, boolean animated) {
+		return ReactionEmoji.custom(SnowFlake.convert(id), name, animated);
+	}
 
-	ReactionEmoji.Unicode POLICE_CAR = ReactionEmoji.unicode("🚓");
-	ReactionEmoji.Unicode NO_ENTRY = ReactionEmoji.unicode("🚫");
-	ReactionEmoji.Unicode STAR = ReactionEmoji.unicode("⭐");
-	ReactionEmoji.Unicode BOOT = ReactionEmoji.unicode("\uD83D\uDC62");
-	ReactionEmoji.Unicode WARNING = ReactionEmoji.unicode("⚠️");
-	ReactionEmoji.Unicode DOOR = ReactionEmoji.unicode("\uD83D\uDEAA");
-	ReactionEmoji.Custom VOTENONE = ReactionEmoji.custom(Snowflake.of(873933804383928411L), "votenone", false);
-	ReactionEmoji.Custom VOTEUP = ReactionEmoji.custom(Snowflake.of(873933822381678612L), "voteup", false);
-	ReactionEmoji.Custom VOTEDOWN = ReactionEmoji.custom(Snowflake.of(873933788751753237L), "votedown", false);
-	ReactionEmoji.Custom DOWNLOAD = ReactionEmoji.custom(Snowflake.of(873934864217419837L), "download", false);
-	ReactionEmoji.Unicode CHECKMARK = ReactionEmoji.unicode("✅");
-	ReactionEmoji.Custom GNOME_PING = ReactionEmoji.custom(Snowflake.of(873937057553215538L), "GnomePing", false);
-	ReactionEmoji.Custom GNOME_HAHA_YES = ReactionEmoji.custom(Snowflake.of(720018305963917383L), "GnomeHahaYes", false);
-	ReactionEmoji.Custom GNOME_HAHA_NO = ReactionEmoji.custom(Snowflake.of(736853401131810826L), "GnomeHahaNo", false);
-	ReactionEmoji.Custom GNOME_SHERLOCK = ReactionEmoji.custom(Snowflake.of(750360232357658668L), "SherlockGnome", false);
-	ReactionEmoji.Unicode RAGE = ReactionEmoji.unicode("\uD83D\uDE21");
-	ReactionEmoji.Unicode STOP = ReactionEmoji.unicode("\uD83D\uDED1");
-	ReactionEmoji.Unicode REFRESH = ReactionEmoji.unicode("\uD83D\uDD04");
-	ReactionEmoji.Custom ALERT = ReactionEmoji.custom(Snowflake.of(660111101605969940L), "alert", true);
-	ReactionEmoji.Unicode PENCIL = ReactionEmoji.unicode("\uD83D\uDCDD");
+	static ReactionEmoji.Unicode unicode(String name) {
+		return ReactionEmoji.unicode(name);
+	}
+
+	ReactionEmoji.Custom YES = custom(1183755303079125002L, "yes", false);
+	ReactionEmoji.Custom NO = custom(1183755305037869157L, "no", false);
+
+	ReactionEmoji.Unicode POLICE_CAR = unicode("🚓");
+	ReactionEmoji.Unicode NO_ENTRY = unicode("🚫");
+	ReactionEmoji.Unicode STAR = unicode("⭐");
+	ReactionEmoji.Unicode BOOT = unicode("\uD83D\uDC62");
+	ReactionEmoji.Unicode WARNING = unicode("⚠️");
+	ReactionEmoji.Unicode DOOR = unicode("\uD83D\uDEAA");
+	ReactionEmoji.Custom VOTENONE = custom(873933804383928411L, "votenone", false);
+	ReactionEmoji.Custom VOTEUP = custom(873933822381678612L, "voteup", false);
+	ReactionEmoji.Custom VOTEDOWN = custom(873933788751753237L, "votedown", false);
+	ReactionEmoji.Custom DOWNLOAD = custom(873934864217419837L, "download", false);
+	ReactionEmoji.Unicode CHECKMARK = unicode("✅");
+	ReactionEmoji.Custom GNOME_PING = custom(873937057553215538L, "GnomePing", false);
+	ReactionEmoji.Custom GNOME_HAHA_YES = custom(720018305963917383L, "GnomeHahaYes", false);
+	ReactionEmoji.Custom GNOME_HAHA_NO = custom(736853401131810826L, "GnomeHahaNo", false);
+	ReactionEmoji.Custom GNOME_SHERLOCK = custom(750360232357658668L, "SherlockGnome", false);
+	ReactionEmoji.Unicode RAGE = unicode("\uD83D\uDE21");
+	ReactionEmoji.Unicode STOP = unicode("\uD83D\uDED1");
+	ReactionEmoji.Unicode REFRESH = unicode("\uD83D\uDD04");
+	ReactionEmoji.Custom ALERT = custom(660111101605969940L, "alert", true);
+	ReactionEmoji.Unicode PENCIL = unicode("\uD83D\uDCDD");
 
 	ReactionEmoji.Unicode[] NUMBERS = {
 			ReactionEmoji.unicode("1️⃣"),

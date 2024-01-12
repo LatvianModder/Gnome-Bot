@@ -27,7 +27,7 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 		context = createContext();
 		context.handler = gc == null ? App.instance.discordHandler : gc.db.app.discordHandler;
 		context.gc = gc;
-		context.channelInfo = gc.getOrMakeChannelInfo(e.getInteraction().getChannelId());
+		context.channelInfo = gc.getOrMakeChannelInfo(e.getInteraction().getChannelId().asLong());
 		context.message = event.getInteraction().getMessage().orElse(null);
 		context.sender = event.getInteraction().getMember().get();
 		context.interaction = this;

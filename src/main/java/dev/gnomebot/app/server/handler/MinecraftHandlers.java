@@ -14,9 +14,8 @@ import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
-import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import io.javalin.http.BadRequestResponse;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,13 +40,13 @@ public class MinecraftHandlers {
 	private static final class VerifyData implements Runnable {
 		private final GuildCollections gc;
 		private final String token;
-		private final User user;
+		private final Member user;
 		private final Instant expires;
 		private Message message;
 		private ComponentEventWrapper event;
 		private int stage;
 
-		public VerifyData(GuildCollections gc, String token, User user) {
+		public VerifyData(GuildCollections gc, String token, Member user) {
 			this.gc = gc;
 			this.token = token;
 			this.user = user;
@@ -98,13 +97,13 @@ public class MinecraftHandlers {
 							.toEmbedCreateSpec()
 			)).subscribe();
 
-			gc.unmute(user.getId(), 0L, user.getMention() + " Verified Minecraft");
+			gc.unmute(user.getId().asLong(), 0L, user.getMention() + " Verified Minecraft");
 
 			if (gc.isMM()) {
-				var role = gc.getRoleMap().get(Snowflake.of(1119549049717149808L));
+				var role = gc.getRoleMap().get(1119549049717149808L);
 
 				if (role != null) {
-					role.add(user.getId(), "Verified Minecraft");
+					role.add(user, "Verified Minecraft");
 				}
 			}
 		}
@@ -159,12 +158,12 @@ public class MinecraftHandlers {
 	public static final URI MC_XBOX_AUTH_URI = URI.create("https://api.minecraftservices.com/authentication/login_with_xbox");
 	public static final URI MC_PROFILE_URI = URI.create("https://api.minecraftservices.com/minecraft/profile");
 
-	public static void verifyCallback(ComponentEventWrapper event, Snowflake userId) {
+	public static void verifyCallback(ComponentEventWrapper event, long userId) {
 		if (!event.context.sender.getId().equals(userId)) {
 			event.respond("You can't verify account of someone else!");
 			return;
 		} else {
-			var prev = checkButton(userId.asLong());
+			var prev = checkButton(userId);
 
 			if (prev != null) {
 				event.respond("Finish verifying the [previously opened page](https://gnomebot.dev/minecraft/verify?state=" + prev.token + ")!");

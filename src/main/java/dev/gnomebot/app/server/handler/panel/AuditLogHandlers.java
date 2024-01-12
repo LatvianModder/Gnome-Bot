@@ -8,7 +8,6 @@ import dev.latvian.apps.webutils.ansi.Table;
 import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.Response;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 public class AuditLogHandlers {
 	public static Response offenses(ServerRequest request) {
 		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 		root.content.p().string("Uh... nothing for now...");
 		return root.asResponse();
 	}
@@ -35,7 +34,7 @@ public class AuditLogHandlers {
 		var userId = request.getSnowflake("user");
 		var user = request.app.discordHandler.getUser(userId);
 		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses of " + (user == null ? "Unknown User" : user.getUsername()) + " - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString() + "/offenses", "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId + "/offenses", "< Back").classes("back");
 
 		if (user == null) {
 			root.content.p().classes("red").string("User not found!");
@@ -57,11 +56,11 @@ public class AuditLogHandlers {
 		var level = request.query("level").asInt();
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Audit Log - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 
 		var userCache = request.app.discordHandler.createUserCache();
 		var entryQuery = request.gc.auditLog.query();
-		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId())).map(ci -> ci.id).collect(Collectors.toSet());
+		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
@@ -98,7 +97,7 @@ public class AuditLogHandlers {
 		for (var entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
 			var t = entry.getType();
 
-			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(Snowflake.of(entry.getUser())).map(User::isBot).orElse(false)) {
+			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(entry.getUser()).map(User::isBot).orElse(false)) {
 				continue;
 			}
 
@@ -108,7 +107,7 @@ public class AuditLogHandlers {
 			cells[1].value(t.name);
 
 			if (entry.getChannel() != 0L) {
-				var channelId = Snowflake.of(entry.getChannel());
+				var channelId = entry.getChannel();
 
 				if (!availableChannels.contains(channelId)) {
 					continue;
@@ -118,7 +117,7 @@ public class AuditLogHandlers {
 			}
 
 			if (entry.getUser() != 0L) {
-				cells[3].value(userCache.getUsername(Snowflake.of(entry.getUser())));
+				cells[3].value(userCache.getUsername(entry.getUser()));
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.OLD_CONTENT)) {
@@ -130,7 +129,7 @@ public class AuditLogHandlers {
 			}
 
 			if (entry.getSource() != 0L) {
-				cells[6].value(userCache.getUsername(Snowflake.of(entry.getSource())));
+				cells[6].value(userCache.getUsername(entry.getSource()));
 			}
 		}
 
@@ -173,7 +172,7 @@ public class AuditLogHandlers {
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Bans - " + request.gc);
 		root.content.style("width:100%");
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 
 		var spamList = new ArrayList<BanEntry>();
 		var hackList = new ArrayList<BanEntry>();
@@ -223,7 +222,7 @@ public class AuditLogHandlers {
 				var name = badNamePattern.matcher(entry.name).find() ? "(Cringe Name)" : entry.name;
 				var displayName = entry.displayName.isEmpty() ? "" : badNamePattern.matcher(entry.displayName).find() ? "(Cringe Name)" : entry.displayName;
 
-				var nameTag = cells[1].tag().a("/panel/" + request.gc.guildId.asString() + "/members/" + entry.id);
+				var nameTag = cells[1].tag().a("/panel/" + request.gc.guildId + "/members/" + entry.id);
 
 				if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
 					nameTag.string("(Cringe Name)");

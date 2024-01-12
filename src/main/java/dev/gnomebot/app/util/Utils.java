@@ -6,7 +6,6 @@ import dev.gnomebot.app.AppPaths;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -21,7 +20,6 @@ import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.json.PartialMemberData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.http.client.ClientException;
-import discord4j.rest.route.Route;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
@@ -43,10 +41,6 @@ import static discord4j.rest.util.Image.Format.GIF;
 import static discord4j.rest.util.Image.Format.PNG;
 
 public class Utils {
-	public static final Snowflake NO_SNOWFLAKE = Snowflake.of(0L);
-	public static final Route GUILD_PROFILE_ROUTE = Route.patch("/guilds/{guild.id}/members/@me");
-	public static final Route GET_DM_CHANNELS = Route.get("/users/@me/channels");
-
 	@SuppressWarnings("unchecked")
 	public static <T> T cast(Object value) {
 		return (T) value;
@@ -77,11 +71,11 @@ public class Utils {
 		}
 	}
 
-	public static BufferedImage getAvatar(Snowflake id, int size) throws Exception {
-		var path = AppPaths.AVATAR_CACHE.resolve(id.asString() + "-" + size + ".png");
+	public static BufferedImage getAvatar(long id, int size) throws Exception {
+		var path = AppPaths.AVATAR_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest("api/info/avatar/" + id.asString() + "/" + size).toImage().block();
+			var img = internalRequest("api/info/avatar/" + SnowFlake.str(id) + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -89,11 +83,11 @@ public class Utils {
 		return ImageIO.read(path.toFile());
 	}
 
-	public static BufferedImage getEmoji(Snowflake id, int size) throws Exception {
-		var path = AppPaths.EMOJI_CACHE.resolve(id.asString() + "-" + size + ".png");
+	public static BufferedImage getEmoji(long id, int size) throws Exception {
+		var path = AppPaths.EMOJI_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest("api/info/emoji/" + id.asString() + "/" + size).toImage().block();
+			var img = internalRequest("api/info/emoji/" + SnowFlake.str(id) + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -116,7 +110,7 @@ public class Utils {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
 			var s1 = s.substring(1, s.length() - 1).split(":", 3);
-			return ReactionEmoji.custom(Utils.snowflake(s1[2]), s1[1], s1[0].equals("a"));
+			return ReactionEmoji.custom(SnowFlake.convert(s1[2]), s1[1], s1[0].equals("a"));
 		} else {
 			return ReactionEmoji.unicode(s);
 		}
@@ -165,14 +159,6 @@ public class Utils {
 		return footer == null ? null : EmbedCreateFields.Footer.of(footer.getText(), footer.getIconUrl().orElse(null));
 	}
 
-	public static Snowflake oldest(Snowflake a, Snowflake b) {
-		return a.getTimestamp().toEpochMilli() < b.getTimestamp().toEpochMilli() ? a : b;
-	}
-
-	public static Snowflake newest(Snowflake a, Snowflake b) {
-		return a.getTimestamp().toEpochMilli() > b.getTimestamp().toEpochMilli() ? a : b;
-	}
-
 	@Nullable
 	public static String getAvatarUrl(UserData data) {
 		return data.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + data.avatar().get() + ".png?size=128") : null;
@@ -192,13 +178,13 @@ public class Utils {
 		return user.getAvatarUrl();
 	}
 
-	public static PermissionSet getEffectivePermissions(@Nullable GuildChannel channel, Snowflake member) {
+	public static PermissionSet getEffectivePermissions(@Nullable GuildChannel channel, long member) {
 		if (channel == null) {
 			return PermissionSet.none();
 		}
 
 		try {
-			var set = channel.getEffectivePermissions(member).block();
+			var set = channel.getEffectivePermissions(SnowFlake.convert(member)).block();
 
 			if (set == null || set.isEmpty()) {
 				return PermissionSet.none();
@@ -209,10 +195,10 @@ public class Utils {
 			return set;
 		} catch (ClientException ex) {
 			if (ex.getStatus().code() != 404) {
-				App.error("Failed to get permissions for " + member.asString() + " in " + channel.getName() + ": " + ex);
+				App.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
 			}
 		} catch (Exception ex) {
-			App.error("Failed to get permissions for " + member.asString() + " in " + channel.getName() + ": " + ex);
+			App.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
 			ex.printStackTrace();
 		}
 
@@ -235,16 +221,5 @@ public class Utils {
 
 	public static String permsToString(Permission[] perms) {
 		return Arrays.stream(perms).map(Utils::permName).collect(Collectors.joining(", "));
-	}
-
-	public static Snowflake snowflake(String string) {
-		if (!string.isEmpty() && !string.equals("0")) {
-			try {
-				return Snowflake.of(string);
-			} catch (Exception ignore) {
-			}
-		}
-
-		return NO_SNOWFLAKE;
 	}
 }

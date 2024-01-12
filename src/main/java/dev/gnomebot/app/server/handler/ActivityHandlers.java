@@ -7,6 +7,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
@@ -16,8 +17,6 @@ import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.json.JSONResponse;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.Response;
-import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.User;
 import org.bson.conversions.Bson;
 
 import java.awt.Color;
@@ -55,10 +54,10 @@ public class ActivityHandlers {
 		}
 
 		var limit = request.query("limit").asInt();
-		var channel = request.query("channel").asLong();
-		var role = Snowflake.of(request.query("role").asLong());
+		var channel = request.query("channel").asSnowflake();
+		var role = SnowFlake.convert(request.query("role").asSnowflake());
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -92,7 +91,7 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(entry.userId);
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
@@ -124,10 +123,10 @@ public class ActivityHandlers {
 		}
 
 		var limit = request.query("limit").asInt(20);
-		var channel = request.query("channel").asLong();
-		var role = Snowflake.of(request.query("role").asLong());
+		var channel = request.query("channel").asSnowflake();
+		var role = SnowFlake.convert(request.query("role").asSnowflake());
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -161,14 +160,14 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(entry.userId);
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
 				}
 
 				var e = new LeaderboardCommandEntry();
-				e.id = member.getId();
+				e.id = member.getId().asLong();
 				e.name = member.getDisplayName();
 				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;
@@ -270,12 +269,12 @@ public class ActivityHandlers {
 			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
 		}
 
-		var member = Utils.snowflake(request.variable("member")).asLong();
+		var member = SnowFlake.num(request.variable("member"));
 		var channel = request.query("channel").asLong();
 
 		var json = JSONObject.of();
 
-		json.put("id", Snowflake.asString(member));
+		json.put("id", SnowFlake.str(member));
 		json.put("name", "Unknown");
 		json.put("xp", 0);
 		json.put("rank", 0);
@@ -340,7 +339,7 @@ public class ActivityHandlers {
 
 	private static class MessageInfo {
 		public int index;
-		public String id;
+		public long id;
 		public String name;
 		public int totalMessages;
 		public int[] messages;
@@ -349,7 +348,7 @@ public class ActivityHandlers {
 	public static Response channels(ServerRequest request) throws Exception {
 		var fast = request.query("fast").asBoolean(false);
 
-		Map<Snowflake, MessageInfo> channels = new LinkedHashMap<>();
+		Map<Long, MessageInfo> channels = new LinkedHashMap<>();
 
 		try {
 			request.gc.getChannelList()
@@ -358,7 +357,7 @@ public class ActivityHandlers {
 					.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
 					.forEach(c -> {
 						var mi = new MessageInfo();
-						mi.id = c.id.asString();
+						mi.id = c.id;
 						mi.name = c.getName();
 						channels.put(c.id, mi);
 					});
@@ -371,7 +370,7 @@ public class ActivityHandlers {
 		}
 
 		final var now = System.currentTimeMillis();
-		final var oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
+		final var oldestMessage = SnowFlake.timestamp(request.gc.guildId);
 		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
@@ -383,14 +382,14 @@ public class ActivityHandlers {
 		for (var mi : channels.values()) {
 			mi.messages = new int[weeks];
 			mi.totalMessages = 0;
-			filter.add(Filters.eq("channel", Utils.snowflake(mi.id).asLong()));
+			filter.add(Filters.eq("channel", mi.id));
 		}
 
 		for (var mc : request.gc.messageCount.query().filter(Filters.or(filter))) {
 			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
-				var mi = channels.get(Snowflake.of(mc.getChannel()));
+				var mi = channels.get(mc.getChannel());
 
 				if (mi != null) {
 					var m = mc.getCount();
@@ -413,7 +412,7 @@ public class ActivityHandlers {
 		var w = weeks;
 
 		var json = JSONObject.of();
-		json.put("id", request.gc.guildId.asString());
+		json.put("id", SnowFlake.str(request.gc.guildId));
 		json.put("name", request.gc.name);
 		json.put("weeks", w);
 
@@ -462,7 +461,7 @@ public class ActivityHandlers {
 	public static Response members(ServerRequest request) throws Exception {
 		var fast = request.query("fast").asBoolean(false);
 
-		Map<Snowflake, MessageInfo> members = new LinkedHashMap<>();
+		Map<Long, MessageInfo> members = new LinkedHashMap<>();
 
 		try {
 			var channelList = request.gc.getGuild().getMembers()
@@ -471,9 +470,9 @@ public class ActivityHandlers {
 
 			for (var m : channelList) {
 				var mi = new MessageInfo();
-				mi.id = m.getId().asString();
+				mi.id = m.getId().asLong();
 				mi.name = m.getDisplayName();
-				members.put(m.getId(), mi);
+				members.put(mi.id, mi);
 			}
 		} catch (Exception ex) {
 			throw HTTPResponseCode.NOT_FOUND.error("Member not found!");
@@ -484,7 +483,7 @@ public class ActivityHandlers {
 		}
 
 		final var now = System.currentTimeMillis();
-		final var oldestMessage = Date.from(request.gc.guildId.getTimestamp()).getTime();
+		final var oldestMessage = SnowFlake.timestamp(request.gc.guildId);
 		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
@@ -500,7 +499,7 @@ public class ActivityHandlers {
 			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
-				var mi = members.get(Snowflake.of(mc.getUser()));
+				var mi = members.get(mc.getUser());
 
 				if (mi != null) {
 					var m = mc.getCount();
@@ -525,7 +524,7 @@ public class ActivityHandlers {
 		var w = weeks;
 
 		var json = JSONObject.of();
-		json.put("id", request.gc.guildId.asString());
+		json.put("id", SnowFlake.str(request.gc.guildId));
 		json.put("name", request.gc.name);
 		json.put("weeks", w);
 
@@ -590,7 +589,7 @@ public class ActivityHandlers {
 		var limit = request.query("limit").asInt(20);
 		var channel = request.query("channel").asLong();
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(User::getId, member -> member));
+		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -625,14 +624,14 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(Snowflake.of(entry.userId));
+				var member = memberMap.get(entry.userId);
 
 				if (member == null) {
 					continue;
 				}
 
 				var e = new LeaderboardCommandEntry();
-				e.id = member.getId();
+				e.id = member.getId().asLong();
 				e.name = member.getDisplayName();
 				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;

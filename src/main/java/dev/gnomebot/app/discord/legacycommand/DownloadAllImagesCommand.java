@@ -7,8 +7,8 @@ import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.reaction.ReactionEmoji;
 
@@ -38,12 +38,12 @@ public class DownloadAllImagesCommand {
 		var userCache = context.handler.createUserCache();
 
 		var tempDir = AppPaths.GUILD_DATA
-				.resolve("images-" + context.channelInfo.id.asString())
-				.resolve("images-" + context.channelInfo.id.asString() + "-" + Instant.now().toString().replace(':', '-'));
+				.resolve("images-" + context.channelInfo.id)
+				.resolve("images-" + context.channelInfo.id + "-" + Instant.now().toString().replace(':', '-'));
 
 		Files.createDirectories(tempDir);
 
-		for (var m : context.gc.messages.query().eq("channel", context.channelInfo.id.asLong()).filter(Filters.bitsAnySet("flags", DiscordMessage.FLAG_IMAGES))) {
+		for (var m : context.gc.messages.query().eq("channel", context.channelInfo.id).filter(Filters.bitsAnySet("flags", DiscordMessage.FLAG_IMAGES))) {
 			if (task.cancelled) {
 				return;
 			}
@@ -76,9 +76,9 @@ public class DownloadAllImagesCommand {
 				}
 
 				image.url = url;
-				var userId = Snowflake.of(m.getUserID());
+				var userId = m.getUserID();
 				var u = userCache.get(userId).orElse(null);
-				image.author = u == null ? userId.asString() : u.getTag();
+				image.author = u == null ? SnowFlake.str(userId) : u.getTag();
 				image.timestamp = m.getDate().toInstant();
 
 				linkMap.put(image.filename, image);
@@ -91,7 +91,7 @@ public class DownloadAllImagesCommand {
 			public boolean onReaction(Member member, ReactionEmoji emoji) throws Exception {
 				if (member.getId().equals(context.sender.getId())) {
 					task.cancelled = true;
-					ReactionHandler.removeListener(message.getId());
+					ReactionHandler.removeListener(message.getId().asLong());
 				}
 
 				return true;
@@ -124,7 +124,7 @@ public class DownloadAllImagesCommand {
 		}
 
 		context.reply("Done!");
-		ReactionHandler.removeListener(context.message.getId());
+		ReactionHandler.removeListener(context.message.getId().asLong());
 		context.message.removeReactions(Emojis.VOTENONE).subscribe();
 	});
 }

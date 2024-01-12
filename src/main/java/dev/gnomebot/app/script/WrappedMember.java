@@ -1,8 +1,8 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.mods.rhino.util.HideFromJS;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.core.spec.GuildMemberEditSpec;
@@ -31,7 +31,7 @@ public class WrappedMember extends WrappedUser {
 
 	@HideFromJS
 	public Member getDiscordMember() {
-		return Objects.requireNonNull(guild.gc.getMember(id.asSnowflake()));
+		return Objects.requireNonNull(guild.gc.getMember(id.asLong()));
 	}
 
 	public String getNickname() {
@@ -60,8 +60,8 @@ public class WrappedMember extends WrappedUser {
 		return !getDiscordMember().getMemberData().roles().isEmpty();
 	}
 
-	public boolean hasRole(Snowflake id) {
-		return getDiscordMember().getRoleIds().contains(id);
+	public boolean hasRole(WrappedId id) {
+		return getDiscordMember().getRoleIds().contains(SnowFlake.convert(id.asLong()));
 	}
 
 	public WrappedRole[] getRoles() {
@@ -99,47 +99,47 @@ public class WrappedMember extends WrappedUser {
 		getDiscordMember().ban(BanQuerySpec.builder().reason(reason == null || reason.isBlank() ? null : reason).deleteMessageDays(deleteMessages ? 1 : null).build()).block();
 	}
 
-	public boolean addRole(Snowflake roleId, @Nullable String reason) {
+	public boolean addRole(WrappedId roleId, @Nullable String reason) {
 		guild.discordJS.checkReadOnly();
-		var role = guild.gc.getRoleMap().get(roleId);
+		var role = guild.gc.getRoleMap().get(roleId.asLong());
 
 		if (role != null) {
-			return role.add(id.asSnowflake(), reason);
+			return role.add(id.asLong(), reason);
 		} else {
 			App.warn("Unknown role " + roleId.asString());
 			return false;
 		}
 	}
 
-	public boolean addRole(Snowflake id) {
+	public boolean addRole(WrappedId id) {
 		return addRole(id, null);
 	}
 
-	public boolean removeRole(Snowflake roleId, @Nullable String reason) {
+	public boolean removeRole(WrappedId roleId, @Nullable String reason) {
 		guild.discordJS.checkReadOnly();
-		var role = guild.gc.getRoleMap().get(roleId);
+		var role = guild.gc.getRoleMap().get(roleId.asLong());
 
 		if (role != null) {
-			return role.remove(id.asSnowflake(), reason);
+			return role.remove(id.asLong(), reason);
 		} else {
 			App.warn("Unknown role " + roleId.asString());
 			return false;
 		}
 	}
 
-	public boolean removeRole(Snowflake id) {
+	public boolean removeRole(WrappedId id) {
 		return removeRole(id, null);
 	}
 
-	public boolean toggleRole(Snowflake id, @Nullable String reason) {
-		if (getDiscordMember().getRoleIds().contains(id)) {
+	public boolean toggleRole(WrappedId id, @Nullable String reason) {
+		if (getDiscordMember().getRoleIds().contains(SnowFlake.convert(id.asLong()))) {
 			return removeRole(id, reason);
 		} else {
 			return addRole(id, reason);
 		}
 	}
 
-	public boolean toggleRole(Snowflake id) {
+	public boolean toggleRole(WrappedId id) {
 		return toggleRole(id, null);
 	}
 
@@ -159,9 +159,9 @@ public class WrappedMember extends WrappedUser {
 		getDiscordMember().edit(GuildMemberEditSpec.builder().mute(b).build()).block();
 	}
 
-	public void move(Snowflake channel) {
+	public void move(WrappedId channel) {
 		guild.discordJS.checkReadOnly();
-		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(channel).build()).block();
+		getDiscordMember().edit(GuildMemberEditSpec.builder().newVoiceChannelOrNull(SnowFlake.convert(channel.asLong())).build()).block();
 	}
 
 	public void disconnect() {

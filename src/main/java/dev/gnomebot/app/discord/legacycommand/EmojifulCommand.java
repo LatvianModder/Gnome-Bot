@@ -66,7 +66,7 @@ public class EmojifulCommand {
 					var custom = emoji.asCustomEmoji().orElse(null);
 					if (custom != null) {
 						if (custom.equals(Emojis.VOTEUP)) {
-							ReactionHandler.removeListener(message.getId());
+							ReactionHandler.removeListener(message.getId().asLong());
 						} else {
 							return false;
 						}
@@ -78,7 +78,7 @@ public class EmojifulCommand {
 
 			@Override
 			public void onRemoved(boolean shutdown) throws Exception {
-				var reactions = context.channelInfo.getMessage(message.getId()).getReactions().stream().filter(r -> r.getEmoji().asCustomEmoji().isPresent()).map(r -> r.getEmoji().asCustomEmoji().get()).collect(Collectors.toSet());
+				var reactions = context.channelInfo.getMessage(message.getId().asLong()).getReactions().stream().filter(r -> r.getEmoji().asCustomEmoji().isPresent()).map(r -> r.getEmoji().asCustomEmoji().get()).collect(Collectors.toSet());
 				reactions.remove(Emojis.VOTEUP);
 
 				var out = new ByteArrayOutputStream();

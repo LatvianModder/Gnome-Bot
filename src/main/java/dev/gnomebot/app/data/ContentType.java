@@ -4,20 +4,19 @@ import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class ContentType {
 	public static final ContentType TEXT = new ContentType() {
 		@Override
-		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
 	public static final ContentType COMPLEX = new ContentType() {
 		@Override
-		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			var msg = MessageBuilder.create();
 			((ComplexMessage) cached).apply(gc, msg, sender);
 			return msg;
@@ -26,19 +25,19 @@ public abstract class ContentType {
 
 	public static final ContentType JS = new ContentType() {
 		@Override
-		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
 	public static final ContentType MACRO_BUNDLE = new ContentType() {
 		@Override
-		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender) {
+		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return ((MacroBundle) cached).render(gc, reader, sender);
 		}
 	};
 
-	public abstract MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, Snowflake sender);
+	public abstract MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender);
 
 	public static String encodeMentions(String content) {
 		return content
@@ -66,15 +65,12 @@ public abstract class ContentType {
 		} else {
 			var first = content.substring(0, content.indexOf('\n')).replace(" ", "");
 
-			if (first.equals("//cpx") || first.equals("//complex")) {
-				return Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
-			} else if (first.equals("//js") || first.equals("//javascript")) {
-				return Pair.of(JS, content);
-			} else if (first.equals("//macro-bundle")) {
-				return Pair.of(MACRO_BUNDLE, MacroBundle.parse(gc, content));
-			} else {
-				return Pair.of(TEXT, content);
-			}
+			return switch (first) {
+				case "//cpx", "//complex" -> Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
+				case "//js", "//javascript" -> Pair.of(JS, content);
+				case "//macro-bundle" -> Pair.of(MACRO_BUNDLE, MacroBundle.parse(gc, content));
+				default -> Pair.of(TEXT, content);
+			};
 		}
 	}
 }

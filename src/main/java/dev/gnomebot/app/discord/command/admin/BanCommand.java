@@ -10,9 +10,9 @@ import dev.gnomebot.app.discord.MemberHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Confirm;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -31,7 +31,7 @@ public class BanCommand extends ApplicationCommands {
 		Member member = null;
 
 		try {
-			member = user == null ? null : user.asMember(event.context.gc.guildId).block();
+			member = user == null ? null : user.asMember(SnowFlake.convert(event.context.gc.guildId)).block();
 		} catch (Exception ex) {
 		}
 
@@ -85,10 +85,10 @@ public class BanCommand extends ApplicationCommands {
 		event.respond("Banned! DM successful: " + dm);
 	}
 
-	public static void banButtonCallback(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
+	public static void banButtonCallback(ComponentEventWrapper event, long other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
-		event.context.gc.getGuild().ban(other, BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
+		event.context.gc.getGuild().ban(SnowFlake.convert(other), BanQuerySpec.builder().deleteMessageDays(1).reason(reason).build()).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Banned by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Banned <@" + other.asString() + ">");
+		event.respond("Banned <@" + other + ">");
 	}
 }

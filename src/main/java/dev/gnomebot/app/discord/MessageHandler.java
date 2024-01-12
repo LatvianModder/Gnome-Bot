@@ -24,9 +24,9 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.net.IPUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
@@ -80,13 +80,13 @@ public class MessageHandler {
 		VALID_MESSAGE_TYPES.add(Message.Type.CONTEXT_MENU_COMMAND.getValue());
 	}
 
-	public static final HashMap<Snowflake, List<MessageId>> AUTO_DELETE = new HashMap<>();
+	public static final HashMap<Long, List<MessageId>> AUTO_DELETE = new HashMap<>();
 
-	public static void addAutoDelete(Snowflake original, MessageId m) {
+	public static void addAutoDelete(long original, MessageId m) {
 		AUTO_DELETE.computeIfAbsent(original, s -> new ArrayList<>()).add(m);
 	}
 
-	public static void autoDelete(RestClient client, Snowflake original) {
+	public static void autoDelete(RestClient client, long original) {
 		var ids = AUTO_DELETE.remove(original);
 
 		if (ids != null && !ids.isEmpty()) {
@@ -157,16 +157,16 @@ public class MessageHandler {
 				var threadChannel = gchannel instanceof ThreadChannel t ? t : null;
 
 				var topLevelChannelId = gc == null ? null : threadChannel != null ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
-				var channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId);
+				var channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId.asLong());
 
 				if (channelInfo != null && threadChannel != null) {
-					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
+					channelInfo = channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName());
 				}
 
 				// Temp fix until D4J supports forum channels
 				if (channelInfo == null && threadChannel != null) {
-					channelInfo = new ChannelInfo(gc, threadChannel.getParentId().get(), new ChannelSettings(gc.db.channelSettings, MapWrapper.wrap(new Document("_id", threadChannel.getParentId().get()))));
-					channelInfo = channelInfo.thread(threadChannel.getId(), threadChannel.getName());
+					channelInfo = new ChannelInfo(gc, threadChannel.getParentId().get().asLong(), new ChannelSettings(gc.db.channelSettingsDB, MapWrapper.wrap(new Document("_id", threadChannel.getParentId().get()))));
+					channelInfo = channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName());
 				}
 
 				/* testing forum channels
@@ -204,7 +204,7 @@ public class MessageHandler {
 					App.LOGGER.event(BrainEvents.MESSAGE_DELETED);
 				}
 
-				autoDelete(event.getClient().getRestClient(), event.getMessageId());
+				autoDelete(event.getClient().getRestClient(), event.getMessageId().asLong());
 			});
 		}
 	}
@@ -260,7 +260,7 @@ public class MessageHandler {
 
 		List<Bson> updates = new ArrayList<>();
 		updates.add(Updates.set("timestamp", message.getTimestamp()));
-		updates.add(Updates.set("channel", channelInfo.id.asLong()));
+		updates.add(Updates.set("channel", channelInfo.id));
 		updates.add(Updates.set("user", user.getId().asLong()));
 		updates.add(Updates.set("content", content));
 
@@ -406,7 +406,7 @@ public class MessageHandler {
 			try {
 				var xpDoc = gc.messageCount.query()
 						.eq("date", d)
-						.eq("channel", channelInfo.id.asLong())
+						.eq("channel", channelInfo.id)
 						.eq("user", user.getId().asLong())
 						.firstDocument();
 
@@ -415,7 +415,7 @@ public class MessageHandler {
 				} else {
 					xpDoc = new Document();
 					xpDoc.put("date", d);
-					xpDoc.put("channel", channelInfo.id.asLong());
+					xpDoc.put("channel", channelInfo.id);
 					xpDoc.put("user", user.getId().asLong());
 					xpDoc.put("count", 1L);
 					gc.messageCount.insert(xpDoc);
@@ -432,7 +432,7 @@ public class MessageHandler {
 				try {
 					var xpDoc = gc.messageXp.query()
 							.eq("date", d)
-							.eq("channel", channelInfo.id.asLong())
+							.eq("channel", channelInfo.id)
 							.eq("user", user.getId().asLong())
 							.firstDocument();
 
@@ -441,7 +441,7 @@ public class MessageHandler {
 					} else {
 						xpDoc = new Document();
 						xpDoc.put("date", d);
-						xpDoc.put("channel", channelInfo.id.asLong());
+						xpDoc.put("channel", channelInfo.id);
 						xpDoc.put("user", user.getId().asLong());
 						xpDoc.put("xp", xp);
 						gc.messageXp.insert(xpDoc);
@@ -474,10 +474,10 @@ public class MessageHandler {
 		}
 
 		if (!user.isBot()) {
-			gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
+			gc.pushRecentUser(member.getId().asLong(), member.getDisplayName() + "#" + member.getDiscriminator());
 
 			for (var mention : message.getUserMentionIds()) {
-				handler.getUserTag(mention).ifPresent(tag -> gc.pushRecentUser(mention, tag));
+				handler.getUserTag(mention.asLong()).ifPresent(tag -> gc.pushRecentUser(mention.asLong(), tag));
 			}
 		}
 
@@ -517,7 +517,7 @@ public class MessageHandler {
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
-						.channel(channelInfo.id.asLong())
+						.channel(channelInfo.id)
 						.message(message)
 						.user(member)
 						.content(content)
@@ -544,7 +544,7 @@ public class MessageHandler {
 				}
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.URL_SHORTENER)
-						.channel(channelInfo.id.asLong())
+						.channel(channelInfo.id)
 						.message(message)
 						.user(member)
 						.content(content)
@@ -555,7 +555,7 @@ public class MessageHandler {
 				handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Suspicious Invite", null);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.DISCORD_INVITE)
-						.channel(channelInfo.id.asLong())
+						.channel(channelInfo.id)
 						.message(message)
 						.user(member)
 						.content(content)
@@ -566,7 +566,7 @@ public class MessageHandler {
 				handler.suspiciousMessageModLog(gc, gc.logIpAddressesChannel, discordMessage, member, "IP Address", null);
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.IP_ADDRESS)
-						.channel(channelInfo.id.asLong())
+						.channel(channelInfo.id)
 						.message(message)
 						.user(member)
 						.content(content)
@@ -589,7 +589,7 @@ public class MessageHandler {
 			return;
 		} else if (handleQuotes == 0 && adminRoleMentioned && gc.adminLogChannel.isSet() && !member.isBot()) {
 			var builder = new StringBuilder("[Admin ping:](");
-			QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId());
+			QuoteHandler.getMessageURL(builder, gc.guildId, channelInfo.id, message.getId().asLong());
 			builder.append(")\n\n");
 			builder.append(content);
 
@@ -629,7 +629,7 @@ public class MessageHandler {
 			}
 
 			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.ADMIN_PING)
-					.channel(channelInfo.id.asLong())
+					.channel(channelInfo.id)
 					.message(message)
 					.user(referenceMessage != null ? referenceMessage.getUserData().id().asLong() : 0L)
 					.source(member)
@@ -640,7 +640,7 @@ public class MessageHandler {
 		var macroPrefix = context.gc.macroPrefix.get();
 
 		if (gc.discordJS.onMessage.hasListeners() || !gc.discordJS.customMacros.isEmpty()) {
-			var messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp);
+			var messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(SnowFlake.str(channelInfo.id)).getMessage(message), totalMessages, totalXp);
 
 			if (content.length() > macroPrefix.length() && content.startsWith(macroPrefix)) {
 				var reader = new CommandReader(context.gc, content.substring(macroPrefix.length()));
@@ -759,7 +759,7 @@ public class MessageHandler {
 			gc.db.app.pingHandler.handle(gc, channelInfo, user, contentNoEmojis, content, discordMessage.getURL(gc));
 		}
 
-		var task = gc.db.app.findScheduledGuildTask(gc.guildId, t -> t.type.equals(ScheduledTask.CLOSE_THREAD) && t.channelId.asLong() == channelInfo.id.asLong());
+		var task = gc.db.app.findScheduledGuildTask(gc.guildId, t -> t.type.equals(ScheduledTask.CLOSE_THREAD) && t.channelId == channelInfo.id);
 
 		if (task != null) {
 			task.changeEnd(System.currentTimeMillis() + Duration.ofHours(1L).toMillis());
@@ -767,7 +767,7 @@ public class MessageHandler {
 		}
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {
-			gc.discordJS.onAfterMessage.post("", new MessageEventJS(gc.getWrappedGuild().channels.get(channelInfo.id.asString()).getMessage(message), totalMessages, totalXp));
+			gc.discordJS.onAfterMessage.post("", new MessageEventJS(gc.getWrappedGuild().channels.get(SnowFlake.str(channelInfo.id)).getMessage(message), totalMessages, totalXp));
 		}
 	}
 
@@ -836,7 +836,7 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					context.reply(macro.createMessage(context.gc, reader, context.sender.getId()));
+					context.reply(macro.createMessage(context.gc, reader, context.sender.getId().asLong()));
 					App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
 					return true;
 				}

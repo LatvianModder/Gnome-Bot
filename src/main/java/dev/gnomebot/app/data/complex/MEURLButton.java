@@ -3,7 +3,6 @@ package dev.gnomebot.app.data.complex;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 
@@ -30,7 +29,7 @@ public class MEURLButton extends MEButtonBase {
 	}
 
 	@Override
-	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
+	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
 		return Button.link(target, emoji, label.isEmpty() ? null : label);
 	}
 }

@@ -5,7 +5,6 @@ import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.rest.util.Permission;
 
 import java.util.ArrayList;
@@ -20,7 +19,7 @@ public class WarnsCommand extends ApplicationCommands {
 			var cache = event.context.gc.createMemberCache();
 
 			for (var entry : event.context.gc.auditLog.query().filter(Filters.bitsAllSet("flags", GnomeAuditLogEntry.Flags.LEVEL_23)).descending("_id").limit(20)) {
-				cache.get(Snowflake.of(entry.getUser())).ifPresent(m -> list.add(Utils.formatRelativeDate(entry.getDate().toInstant()) + " " + m.getMention() + ": " + entry.getContent() + " - <@" + entry.getSource() + ">"));
+				cache.get(entry.getUser()).ifPresent(m -> list.add(Utils.formatRelativeDate(entry.getDate().toInstant()) + " " + m.getMention() + ": " + entry.getContent() + " - <@" + entry.getSource() + ">"));
 			}
 
 			if (list.isEmpty()) {

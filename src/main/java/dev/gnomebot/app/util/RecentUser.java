@@ -1,24 +1,13 @@
 package dev.gnomebot.app.util;
 
-import discord4j.common.util.Snowflake;
-
-import java.util.Objects;
-
-public record RecentUser(Snowflake id, String tag) {
+public record RecentUser(long id, String tag) {
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		var that = (RecentUser) o;
-		return Objects.equals(id, that.id);
+		return o == this || o instanceof RecentUser r && id == r.id;
 	}
 
 	@Override
 	public int hashCode() {
-		return id.hashCode();
+		return Long.hashCode(id);
 	}
 }

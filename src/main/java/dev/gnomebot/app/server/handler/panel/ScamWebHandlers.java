@@ -7,7 +7,7 @@ import dev.latvian.apps.webutils.net.Response;
 public class ScamWebHandlers {
 	public static Response scamDetection(ServerRequest request) {
 		var root = GnomeRootTag.createSimple(request.getPath(), "Scam Detection - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId.asString(), "< Back").classes("back");
+		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
 		root.content.p().string("Uh... nothing for now...");
 		return root.asResponse();
 	}

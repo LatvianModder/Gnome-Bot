@@ -83,7 +83,7 @@ public class ScamHandler {
 	public static final Pattern EXACT_DOMAIN = Pattern.compile("[\\w.-]+");
 
 	public static void fetchDomains(Runnable done) {
-		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot+" + App.instance.discordHandler.selfId.asString()).toJsonArray().subscribeContent(content -> {
+		URLRequest.of("https://phish.sinking.yachts/v2/all").addHeader("X-Identity", "gnomebot+" + App.instance.discordHandler.selfId).toJsonArray().subscribeContent(content -> {
 			var set = new HashSet<String>();
 
 			for (var e : content) {

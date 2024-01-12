@@ -7,9 +7,8 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.util.Utils;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
 
 import java.nio.file.Files;
@@ -21,7 +20,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class PingHandler implements Function<PingHandler.TargetDestinationKey, PingDestination> {
-	public record TargetDestinationKey(Snowflake targetId, String id) {
+	public record TargetDestinationKey(long targetId, String id) {
 	}
 
 	public final Databases db;
@@ -42,7 +41,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 		}
 
 		try {
-			var userWebhook = db.userWebhooks.query().eq("user", key.targetId.asLong()).eq("name", key.id).first();
+			var userWebhook = db.userWebhooksDB.query().eq("user", key.targetId).eq("name", key.id).first();
 
 			if (userWebhook != null) {
 				return userWebhook.createWebhook();
@@ -62,27 +61,27 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 			var gnomePingsWebHook = Config.get().gnome_mention_webhook;
 
-			if (gnomePingsWebHook.id.asLong() != 0L) {
-				list.add(new UserPingInstance(new Ping[]{new Ping(Pattern.compile("gnom|" + db.app.discordHandler.selfId.asString(), Pattern.CASE_INSENSITIVE), true)}, Utils.NO_SNOWFLAKE, gnomePingsWebHook, UserPingConfig.DEFAULT));
+			if (gnomePingsWebHook.id != 0L) {
+				list.add(new UserPingInstance(new Ping[]{new Ping(Pattern.compile("gnom|" + db.app.discordHandler.selfId, Pattern.CASE_INSENSITIVE), true)}, 0L, gnomePingsWebHook, UserPingConfig.DEFAULT));
 			}
 
 			try {
 				var pattern = Pattern.compile("^\\d+\\.txt$");
 				var pingFiles = Files.list(AppPaths.PINGS).filter(Files::isRegularFile).filter(f -> pattern.matcher(f.getFileName().toString()).find()).toList();
 
-				var futures = new ArrayList<CompletableFuture<Pair<Snowflake, List<PingBuilder>>>>(pingFiles.size());
+				var futures = new ArrayList<CompletableFuture<Pair<Long, List<PingBuilder>>>>(pingFiles.size());
 
 				for (var path : pingFiles) {
 					futures.add(CompletableFuture.supplyAsync(() -> {
-						var userId = Utils.snowflake(path.getFileName().toString().replace(".txt", ""));
+						var userId = SnowFlake.num(path.getFileName().toString().replace(".txt", ""));
 
 						try {
 							return Pair.of(userId, PingBuilder.compile(db, userId, Files.readString(path).trim(), false));
 						} catch (Exception ex) {
 							if (ex.getMessage().startsWith("You must message ")) {
-								App.warn(db.app.discordHandler.getUserName(userId) + " / " + userId.asString() + " needs to DM Gnome");
+								App.warn(db.app.discordHandler.getUserName(userId) + " / " + userId + " needs to DM Gnome");
 							} else {
-								App.warn(userId.asString() + " pings were misconfigured");
+								App.warn(userId + " pings were misconfigured");
 								ex.printStackTrace();
 							}
 
@@ -130,7 +129,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 	}
 
 	public void handle(GuildCollections gc, ChannelInfo channel, User user, String match, String content, String url) {
-		var userId = user.getId();
+		var userId = user.getId().asLong();
 		var username = user.getUsername();
 		var avatar = user.getAvatarUrl();
 		var bot = user.isBot();

@@ -10,8 +10,8 @@ import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.data.MutableLong;
-import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.dispatch.DispatchHandler;
@@ -70,13 +70,11 @@ import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.discordjson.json.UserData;
-import discord4j.discordjson.json.UserGuildData;
 import discord4j.discordjson.json.gateway.Dispatch;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import discord4j.gateway.json.jackson.PayloadDeserializer;
 import discord4j.rest.util.AllowedMentions;
-import discord4j.rest.util.PaginationUtil;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
@@ -91,8 +89,7 @@ import java.util.function.Function;
 public class DiscordHandler {
 	public final App app;
 	public final GatewayDiscordClient client;
-	public final Snowflake selfId;
-	public final long applicationId;
+	public final long selfId;
 
 	@SuppressWarnings("unchecked")
 	public static void addDispatcherType(String event, Class<? extends Dispatch> type) throws Exception {
@@ -144,8 +141,7 @@ public class DiscordHandler {
 				.block()
 		);
 
-		selfId = client.getSelfId();
-		applicationId = client.getRestClient().getApplicationId().block();
+		selfId = client.getSelfId().asLong();
 	}
 
 	public void load() {
@@ -231,6 +227,12 @@ public class DiscordHandler {
 		var gc = app.db.guild(event.getGuild().getId());
 		gc.guildUpdated(event.getGuild());
 
+		for (var channel : event.getGuild().getChannels().toIterable()) {
+			if (channel instanceof TopLevelGuildMessageChannel c) {
+				app.db.channelSettings(channel.getId().asLong()).updateFrom(c);
+			}
+		}
+
 		// App.info("Guild created: " + event.getGuild().getName());
 	}
 
@@ -282,26 +284,26 @@ public class DiscordHandler {
 	}
 
 	private void roleCreated(RoleCreateEvent event) {
-		app.db.guild(event.getGuildId()).roleUpdated(event.getRole().getId(), false);
+		app.db.guild(event.getGuildId()).roleUpdated(event.getRole().getId().asLong(), false);
 	}
 
 	private void roleDeleted(RoleDeleteEvent event) {
-		app.db.guild(event.getGuildId()).roleUpdated(event.getRoleId(), true);
+		app.db.guild(event.getGuildId()).roleUpdated(event.getRoleId().asLong(), true);
 	}
 
 	private void roleUpdated(RoleUpdateEvent event) {
-		app.db.guild(event.getCurrent().getGuildId()).roleUpdated(event.getCurrent().getId(), false);
+		app.db.guild(event.getCurrent().getGuildId()).roleUpdated(event.getCurrent().getId().asLong(), false);
 	}
 
 	private void memberJoined(MemberJoinEvent event) {
 		var gc = app.db.guild(event.getGuildId());
-		gc.memberUpdated(event.getMember().getId(), 1);
+		gc.memberUpdated(event.getMember().getId().asLong(), 1);
 		MemberHandler.joined(this, gc, event);
 	}
 
 	private void memberLeft(MemberLeaveEvent event) {
 		var gc = app.db.guild(event.getGuildId());
-		gc.memberUpdated(event.getUser().getId(), 2);
+		gc.memberUpdated(event.getUser().getId().asLong(), 2);
 		MemberHandler.left(this, gc, event);
 	}
 
@@ -324,8 +326,8 @@ public class DiscordHandler {
 				checkDifference(gc, b, old, member, Member::isPending, "Pending");
 
 				if (b.value > 0L) {
-					gc.memberUpdated(member.getId(), 0);
-					gc.pushRecentUser(member.getId(), member.getDisplayName() + "#" + member.getDiscriminator());
+					gc.memberUpdated(member.getId().asLong(), 0);
+					gc.pushRecentUser(member.getId().asLong(), member.getDisplayName() + "#" + member.getDiscriminator());
 				}
 			}
 		} catch (Exception ex) {
@@ -366,7 +368,7 @@ public class DiscordHandler {
 	private void memberPresenceUpdated(PresenceUpdateEvent event) {
 		if (event.getNewAvatar().isPresent() || event.getNewDiscriminator().isPresent() || event.getNewUsername().isPresent()) {
 			var gc = app.db.guild(event.getGuildId());
-			gc.memberUpdated(event.getUserId(), 0);
+			gc.memberUpdated(event.getUserId().asLong(), 0);
 
 			if (gc.advancedLogging) {
 				App.info("Member updated: " + this + "/" + event.getUserId());
@@ -492,13 +494,13 @@ public class DiscordHandler {
 		App.LOGGER.event(BrainEvents.AUDIT_LOG);
 		var e = event.getAuditLogEntry();
 
-		var target = e.getTargetId().isEmpty() ? null : gc.getMemberData(e.getTargetId().get());
+		var target = e.getTargetId().isEmpty() ? null : gc.getMemberData(e.getTargetId().get().asLong());
 
 		if (target == null) {
 			return;
 		}
 
-		var responsible = e.getResponsibleUserId().isEmpty() ? null : gc.getMemberData(e.getResponsibleUserId().get());
+		var responsible = e.getResponsibleUserId().isEmpty() ? null : gc.getMemberData(e.getResponsibleUserId().get().asLong());
 
 		var reason = e.getReason().orElse("No reason");
 
@@ -530,7 +532,7 @@ public class DiscordHandler {
 		}
 
 		if (user == null) {
-			user = getUser(Snowflake.of(message.getUserID()));
+			user = getUser(message.getUserID());
 		}
 
 		if (user == null) {
@@ -546,7 +548,7 @@ public class DiscordHandler {
 		var sb1 = new StringBuilder("[Suspicious message detected in](");
 		message.appendMessageURL(sb1);
 		sb1.append(") <#");
-		sb1.append(Snowflake.of(message.getChannelID()).asString());
+		sb1.append(SnowFlake.str(message.getChannelID()));
 		sb1.append("> from ").append(u.getMention()).append("\n\n");
 		sb1.append(content == null ? message.getContent() : content.apply(message.getContent()));
 
@@ -567,39 +569,31 @@ public class DiscordHandler {
 	}
 
 	@Nullable
-	public User getUser(@Nullable Snowflake id) {
+	public User getUser(long id) {
 		try {
-			return id == null ? null : client.getUserById(id).block();
+			return id == 0L ? null : client.getUserById(SnowFlake.convert(id)).block();
 		} catch (Exception ex) {
 			return null;
 		}
 	}
 
 	@Nullable
-	public UserData getUserData(@Nullable Snowflake id) {
+	public UserData getUserData(long id) {
 		var user = getUser(id);
 		return user == null ? null : user.getUserData();
 	}
 
-	public Optional<String> getUserName(@Nullable Snowflake id) {
+	public Optional<String> getUserName(long id) {
 		var user = getUser(id);
 		return user == null ? Optional.empty() : Optional.of(user.getGlobalName().orElse(user.getUsername()));
 	}
 
-	public Optional<String> getUserTag(@Nullable Snowflake id) {
+	public Optional<String> getUserTag(long id) {
 		var user = getUser(id);
 		return user == null ? Optional.empty() : Optional.of(user.getTag());
 	}
 
 	public List<Guild> getSelfGuilds() {
 		return client.getGuilds().toStream().toList();
-	}
-
-	public List<Snowflake> getSelfGuildIds() {
-		return PaginationUtil.paginateAfter(params -> client.getRestClient().getUserService().getCurrentUserGuilds(params), data -> Snowflake.asLong(data.id()), 0L, 100)
-				.map(UserGuildData::id)
-				.map(Snowflake::of)
-				.toStream()
-				.toList();
 	}
 }

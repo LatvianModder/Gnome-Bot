@@ -4,7 +4,6 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SelectMenuType;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.channel.Channel;
@@ -72,7 +71,7 @@ public class MESelectMenu extends MEComponent implements ComplexMessageContext.O
 	}
 
 	@Override
-	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, Snowflake sender) {
+	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
 		var menu = switch (type) {
 			case USER -> SelectMenu.ofUser(id);
 			case ROLE -> SelectMenu.ofRole(id);

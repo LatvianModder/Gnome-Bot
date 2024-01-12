@@ -4,11 +4,11 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.AnsiComponent;
 import dev.latvian.apps.webutils.ansi.AnsiJava;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.ThreadChannelEditSpec;
 import org.bson.Document;
@@ -24,18 +24,18 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 
 	public final String type;
 	public long end;
-	public final Snowflake guildId;
-	public final Snowflake channelId;
-	public final Snowflake userId;
+	public final long guildId;
+	public final long channelId;
+	public final long userId;
 	public final String content;
 
 	public ScheduledTask(WrappedCollection<ScheduledTask> c, MapWrapper d) {
 		super(c, d);
 		this.end = document.getLong("end");
 		this.type = document.getString("type");
-		this.guildId = Snowflake.of(document.getLong("guild"));
-		this.channelId = Snowflake.of(document.getLong("channel"));
-		this.userId = Snowflake.of(document.getLong("user"));
+		this.guildId = document.getLong("guild");
+		this.channelId = document.getLong("channel");
+		this.userId = document.getLong("user");
 		this.content = document.getString("content");
 	}
 
@@ -71,7 +71,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 
 		if (now >= end) {
 			delete();
-			var gc = guildId.asLong() == 0L ? null : collection.db.guild(guildId);
+			var gc = guildId == 0L ? null : collection.db.guild(guildId);
 
 			switch (type) {
 				case UNMUTE -> unmuteNow(Objects.requireNonNull(gc), userId, content);
@@ -86,7 +86,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		return false;
 	}
 
-	public static void unmuteNow(GuildCollections gc, Snowflake userId, String reason) {
+	public static void unmuteNow(GuildCollections gc, long userId, String reason) {
 		var data = gc.db.app.discordHandler.getUserData(userId);
 		App.warn("Unmuting " + gc + "/" + data.id().asString() + "/" + data.username());
 
@@ -107,9 +107,9 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		}
 	}
 
-	public static void closeThreadNow(GuildCollections gc, Snowflake channelId) {
-		var channel = gc.db.app.discordHandler.client.getChannelById(channelId).cast(ThreadChannel.class).block();
-		App.info("Closing thread " + channelId.asString() + "/" + channel.getName());
+	public static void closeThreadNow(GuildCollections gc, long channelId) {
+		var channel = gc.db.app.discordHandler.client.getChannelById(SnowFlake.convert(channelId)).cast(ThreadChannel.class).block();
+		App.info("Closing thread " + channelId + "/" + channel.getName());
 		channel.edit(ThreadChannelEditSpec.builder().archived(true).build()).subscribe();
 	}
 
@@ -117,9 +117,9 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		var map = new LinkedHashMap<String, Object>();
 		map.put("type", type);
 		map.put("expires", TimeUtils.prettyTimeString((end - System.currentTimeMillis()) / 1000L));
-		map.put("guild", guildId.asString());
-		map.put("channel", channelId.asString());
-		map.put("user", userId.asString());
+		map.put("guild", guildId);
+		map.put("channel", channelId);
+		map.put("user", userId);
 		map.put("content", content);
 		return AnsiJava.of(map);
 	}

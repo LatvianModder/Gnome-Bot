@@ -3,14 +3,15 @@ package dev.gnomebot.app.data;
 import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.WebhookCreateSpec;
+import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.MessageData;
 import discord4j.discordjson.possible.Possible;
@@ -29,7 +30,7 @@ import java.util.function.Function;
 
 public final class ChannelInfo {
 	public final GuildCollections gc;
-	public final Snowflake id;
+	public final long id;
 	public final ChannelSettings settings;
 	public String threadName;
 	public ChannelInfo threadParent;
@@ -38,24 +39,24 @@ public final class ChannelInfo {
 	private final LazyOptional<ChannelData> channelData;
 	private final LazyOptional<TopLevelGuildMessageChannel> topLevelChannel;
 	private final LazyOptional<WebHook> webHook;
-	private Map<Snowflake, PermissionSet> cachedPermissions;
+	private Map<Long, PermissionSet> cachedPermissions;
 
-	public ChannelInfo(GuildCollections g, Snowflake _id, ChannelSettings s) {
+	public ChannelInfo(GuildCollections g, long _id, ChannelSettings s) {
 		gc = g;
 		id = _id;
 		settings = s;
 		threadName = null;
 		threadParent = null;
 
-		rest = LazyOptional.of(() -> RestChannel.create(gc.getClient().getRestClient(), id));
-		channelData = LazyOptional.of(() -> gc.getClient().getRestClient().getChannelService().getChannel(id.asLong()).block());
+		rest = LazyOptional.of(() -> RestChannel.create(gc.getClient().getRestClient(), SnowFlake.convert(id)));
+		channelData = LazyOptional.of(() -> gc.getClient().getRestClient().getChannelService().getChannel(id).block());
 		topLevelChannel = LazyOptional.of(() -> {
 			if (threadParent != null) {
 				return threadParent.getTopLevelChannel();
 			}
 
 			try {
-				var channel = gc.getGuild().getChannelById(id).block();
+				var channel = gc.getGuild().getChannelById(SnowFlake.convert(id)).block();
 				return channel instanceof TopLevelGuildMessageChannel ? (TopLevelGuildMessageChannel) channel : null;
 			} catch (Exception ex) {
 				try {
@@ -87,14 +88,14 @@ public final class ChannelInfo {
 		});
 	}
 
-	public ChannelInfo thread(Snowflake threadId, String name) {
+	public ChannelInfo thread(long threadId, String name) {
 		var ci = new ChannelInfo(gc, threadId, settings);
 		ci.threadParent = this;
 		ci.threadName = name;
 		return ci;
 	}
 
-	public Snowflake getTopId() {
+	public long getTopId() {
 		return threadParent == null ? id : threadParent.getTopId();
 	}
 
@@ -124,36 +125,35 @@ public final class ChannelInfo {
 	}
 
 	@Nullable
-	public Message getMessage(Snowflake messageId) {
+	public Message getMessage(long messageId) {
 		try {
-			return gc.getClient().getMessageById(id, messageId).block();
+			return gc.getClient().getMessageById(SnowFlake.convert(id), SnowFlake.convert(messageId)).block();
 		} catch (Exception ex) {
 			return null;
 		}
 	}
 
 	@Nullable
-	public Message getUncachedMessage(Snowflake messageId) {
+	public Message getUncachedMessage(long messageId) {
 		try {
-			return gc.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getMessageById(id, messageId).block();
+			return gc.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getMessageById(SnowFlake.convert(id), SnowFlake.convert(messageId)).block();
 		} catch (Exception ex) {
 			return null;
 		}
 	}
 
-	public Flux<Message> getMessagesBefore(final Snowflake messageId) {
-		final Function<Map<String, Object>, Flux<MessageData>> doRequest = params -> gc.getClient().getRestClient().getChannelService().getMessages(id.asLong(), params);
-		return PaginationUtil.paginateBefore(doRequest, data -> Snowflake.asLong(data.id()), messageId.asLong(), 100).map(data -> new Message(gc.getClient(), data));
+	public Flux<Message> getMessagesBefore(long messageId) {
+		final Function<Map<String, Object>, Flux<MessageData>> doRequest = params -> gc.getClient().getRestClient().getChannelService().getMessages(id, params);
+		return PaginationUtil.paginateBefore(doRequest, data -> data.id().asLong(), messageId, 100).map(data -> new Message(gc.getClient(), data));
 	}
 
-	public Flux<Message> getMessagesAfter(final Snowflake messageId) {
-		final Function<Map<String, Object>, Flux<MessageData>> doRequest = params -> gc.getClient().getRestClient().getChannelService().getMessages(id.asLong(), params);
-		return PaginationUtil.paginateAfter(doRequest, data -> Snowflake.asLong(data.id()), messageId.asLong(), 100).map(data -> new Message(gc.getClient(), data));
+	public Flux<Message> getMessagesAfter(long messageId) {
+		final Function<Map<String, Object>, Flux<MessageData>> doRequest = params -> gc.getClient().getRestClient().getChannelService().getMessages(id, params);
+		return PaginationUtil.paginateAfter(doRequest, data -> data.id().asLong(), messageId, 100).map(data -> new Message(gc.getClient(), data));
 	}
 
-	@Nullable
-	public Snowflake getLastMessageId() {
-		return Possible.flatOpt(getChannelData().lastMessageId()).map(Snowflake::of).orElse(null);
+	public long getLastMessageId() {
+		return Possible.flatOpt(getChannelData().lastMessageId()).map(Id::asLong).orElse(0L);
 	}
 
 	public Mono<Message> createMessage(MessageBuilder builder) {
@@ -179,12 +179,12 @@ public final class ChannelInfo {
 
 	@Override
 	public boolean equals(Object o) {
-		return o instanceof ChannelInfo && (o == this || id.equals(((ChannelInfo) o).id));
+		return o == this || o instanceof ChannelInfo i && id == i.id;
 	}
 
 	@Override
 	public int hashCode() {
-		return id.hashCode();
+		return Long.hashCode(id);
 	}
 
 	public void refreshCache() {
@@ -195,14 +195,14 @@ public final class ChannelInfo {
 	}
 
 	public String getMention() {
-		return "<#" + id.asString() + ">";
+		return "<#" + SnowFlake.str(id) + ">";
 	}
 
 	public PermissionSet getSelfPermissions() {
 		return getPermissions(gc.db.app.discordHandler.selfId);
 	}
 
-	public PermissionSet getPermissions(Snowflake member) {
+	public PermissionSet getPermissions(long member) {
 		if (threadParent != null) {
 			return threadParent.getPermissions(member);
 		}
@@ -221,7 +221,7 @@ public final class ChannelInfo {
 		return set;
 	}
 
-	public boolean checkPermissions(Snowflake memberId, Permission... permissions) {
+	public boolean checkPermissions(long memberId, Permission... permissions) {
 		if (permissions.length == 0) {
 			return true;
 		}
@@ -237,17 +237,17 @@ public final class ChannelInfo {
 		return true;
 	}
 
-	public boolean checkPermissions(Snowflake memberId, Permission permission) {
+	public boolean checkPermissions(long memberId, Permission permission) {
 		return getPermissions(memberId).contains(permission);
 	}
 
-	public boolean canViewChannel(Snowflake memberId) {
+	public boolean canViewChannel(long memberId) {
 		return checkPermissions(memberId, Permission.VIEW_CHANNEL);
 	}
 
 	public Optional<WebHook> getWebHook() {
 		if (threadParent != null) {
-			return threadParent.getWebHook().map(webHook1 -> webHook1.withThread(this, id.asString()));
+			return threadParent.getWebHook().map(w -> w.withThread(this, id));
 		}
 
 		return webHook.getOptional();

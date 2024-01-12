@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +82,7 @@ public class MessageBuilder {
 	public AllowedMentions allowedMentions;
 	public List<LayoutComponent> components;
 	public List<MessageCreateFields.File> files;
-	public Snowflake messageReference;
+	public long messageReference;
 	public String webhookName;
 	public String webhookAvatarUrl;
 
@@ -92,7 +93,7 @@ public class MessageBuilder {
 		allowedMentions = NO_MENTIONS;
 		components = null;
 		files = null;
-		messageReference = null;
+		messageReference = 0L;
 		webhookName = null;
 		webhookAvatarUrl = null;
 	}
@@ -139,12 +140,12 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder allowUserMentions(Snowflake... ids) {
-		return allowedMentions(AllowedMentions.builder().allowUser(ids).build());
+	public MessageBuilder allowUserMentions(long... ids) {
+		return allowedMentions(AllowedMentions.builder().allowUser(Arrays.stream(ids).mapToObj(SnowFlake::convert).toArray(Snowflake[]::new)).build());
 	}
 
-	public MessageBuilder allowRoleMentions(Snowflake... ids) {
-		return allowedMentions(AllowedMentions.builder().allowRole(ids).build());
+	public MessageBuilder allowRoleMentions(long... ids) {
+		return allowedMentions(AllowedMentions.builder().allowRole(Arrays.stream(ids).mapToObj(SnowFlake::convert).toArray(Snowflake[]::new)).build());
 	}
 
 	public MessageBuilder components(List<LayoutComponent> components) {
@@ -208,7 +209,7 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder messageReference(Snowflake messageReference) {
+	public MessageBuilder messageReference(long messageReference) {
 		this.messageReference = messageReference;
 		return this;
 	}
@@ -246,8 +247,8 @@ public class MessageBuilder {
 			builder.files(this.files);
 		}
 
-		if (this.messageReference != null) {
-			builder.messageReference(this.messageReference);
+		if (this.messageReference != 0L) {
+			builder.messageReference(SnowFlake.convert(this.messageReference));
 		}
 
 		return builder.build();

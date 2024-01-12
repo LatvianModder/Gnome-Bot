@@ -55,7 +55,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 				throw new GnomeException("Only trusted users can use this command!");
 			}
 		} else if (command.trusted == 2) {
-			if (!Config.get().owner.equals(event.context.sender.getId())) {
+			if (Config.get().owner != event.context.sender.getId().asLong()) {
 				throw new GnomeException("Only bot owner can use this command!");
 			}
 		}
@@ -88,7 +88,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 		for (var command : CLICommands.COMMANDS.values()) {
 			if (command.trusted == 1 && !event.context.isTrusted()) {
 				continue;
-			} else if (command.trusted == 2 && !Config.get().owner.equals(event.context.sender.getId())) {
+			} else if (command.trusted == 2 && Config.get().owner != event.context.sender.getId().asLong()) {
 				continue;
 			} else if (command.admin && !event.context.isAdmin()) {
 				continue;

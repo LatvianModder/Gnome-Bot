@@ -2,9 +2,9 @@ package dev.gnomebot.app.cli;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.discord.Emojis;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
-import discord4j.common.util.Snowflake;
 
 import javax.imageio.ImageIO;
 import java.awt.Canvas;
@@ -18,7 +18,7 @@ import java.util.HashMap;
 public class CLIEmojiLeaderboardCommand {
 	private static class EmojiEntry {
 		public final String name;
-		public Snowflake id;
+		public long id;
 		public long count;
 
 		private EmojiEntry(String n) {
@@ -40,14 +40,14 @@ public class CLIEmojiLeaderboardCommand {
 
 		var emojiMap = new HashMap<String, EmojiEntry>();
 
-		for (var message : event.gc.messages.query().filter(c == null ? Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN) : Filters.and(Filters.eq("channel", c.id.asLong()), Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN)))) {
+		for (var message : event.gc.messages.query().filter(c == null ? Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN) : Filters.and(Filters.eq("channel", c.id), Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN)))) {
 			var matcher = Emojis.GUILD_EMOJI_PATTERN_GROUPS.matcher(message.getContent());
 
 			while (matcher.find()) {
 				var entry = emojiMap.computeIfAbsent(matcher.group(1).toLowerCase(), EmojiEntry::new);
-				var id = Utils.snowflake(matcher.group(2));
+				var id = SnowFlake.num(matcher.group(2));
 
-				if (entry.id == null || id.getTimestamp().toEpochMilli() > entry.id.getTimestamp().toEpochMilli()) {
+				if (entry.id == 0L || SnowFlake.timestamp(id) > SnowFlake.timestamp(entry.id)) {
 					entry.id = id;
 				}
 
@@ -111,6 +111,6 @@ public class CLIEmojiLeaderboardCommand {
 		var imageData = new ByteArrayOutputStream();
 		ImageIO.write(image, "png", imageData);
 		event.respond("Emoji Leaderboard:");
-		event.response.addFile("emoji-leaderboard-" + event.gc.guildId.asString() + ".png", imageData.toByteArray());
+		event.response.addFile("emoji-leaderboard-" + event.gc.guildId + ".png", imageData.toByteArray());
 	}
 }

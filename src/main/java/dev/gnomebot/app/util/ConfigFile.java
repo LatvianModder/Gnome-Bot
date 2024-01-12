@@ -3,7 +3,6 @@ package dev.gnomebot.app.util;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
-import discord4j.common.util.Snowflake;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,8 +50,8 @@ public class ConfigFile {
 		return String.valueOf(get(key, def));
 	}
 
-	public Snowflake getSnowflake(String key) {
-		return Utils.snowflake(getString(key, ""));
+	public long getSnowflake(String key) {
+		return SnowFlake.num(getString(key, ""));
 	}
 
 	public int getInt(String key, int def) {

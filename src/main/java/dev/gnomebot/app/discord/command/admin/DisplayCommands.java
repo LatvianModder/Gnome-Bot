@@ -11,11 +11,11 @@ import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.data.Pair;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -59,7 +59,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 		if (event.has("role")) {
 			var role = event.get("role").asRole().get().id;
-			predicate = predicate.and(m -> m.getRoleIds().contains(role));
+			predicate = predicate.and(m -> m.getRoleIds().contains(SnowFlake.convert(role)));
 		}
 
 		for (var member : event.context.gc.getGuild().getMembers().filter(predicate).toIterable(5)) {
@@ -107,7 +107,7 @@ public class DisplayCommands extends ApplicationCommands {
 			var count = messages.count();
 
 			for (var message : messages) {
-				var s = message.getURLAsArrow(event.context.gc) + " <@" + Snowflake.of(message.getUserID()).asString() + "> " + message.getContent();
+				var s = message.getURLAsArrow(event.context.gc) + " <@" + SnowFlake.str(message.getUserID()) + "> " + message.getContent();
 				list.add(s);
 				length += s.length() + 1;
 
@@ -146,7 +146,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void messageHistoryExport(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		var c = DM.open(event.context.gc.db.app.discordHandler, event.context.sender.getId());
+		var c = DM.open(event.context.gc.db.app.discordHandler, event.context.sender.getId().asLong());
 
 		var memberId = event.get("member").asMember().orElse(event.context.sender).getId();
 
@@ -174,7 +174,7 @@ public class DisplayCommands extends ApplicationCommands {
 					s = "#" + key.toString();
 
 					try {
-						s = event.context.gc.getChannelName(Snowflake.of((Long) key));
+						s = event.context.gc.getChannelName((Long) key);
 					} catch (Exception ex) {
 					}
 
@@ -227,10 +227,10 @@ public class DisplayCommands extends ApplicationCommands {
 
 		m.edit(MessageEditSpec.builder().contentOrNull("Done!").build()).subscribe();
 
-		c.createMessage(MessageCreateSpec.builder().addFile(event.context.gc.guildId.asString() + "-" + memberId.asString() + "-" + Instant.now() + ".csv", new ByteArrayInputStream(out.toByteArray())).build()).flatMap(dm -> {
+		c.createMessage(MessageCreateSpec.builder().addFile(event.context.gc.guildId + "-" + memberId.asString() + "-" + Instant.now() + ".csv", new ByteArrayInputStream(out.toByteArray())).build()).flatMap(dm -> {
 			var attachment = dm.getAttachments().get(0);
 			Paste.createPaste(event.context.gc.db, dm.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getUsername());
-			return dm.edit(MessageEditSpec.builder().addComponent(ActionRow.of(Button.link(Paste.getUrl(attachment.getId().asString()), "View " + attachment.getFilename()))).build());
+			return dm.edit(MessageEditSpec.builder().addComponent(ActionRow.of(Button.link(Paste.getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()))).build());
 		}).block();
 
 		event.respond("Done! Check your DMs!");
@@ -242,18 +242,18 @@ public class DisplayCommands extends ApplicationCommands {
 
 		if (channelInfo == null) {
 			var messages = event.context.gc.messages.count();
-			var months = (Instant.now().getEpochSecond() - event.context.gc.guildId.getTimestamp().getEpochSecond()) / 2592000D;
-			event.respond(messages + " messages / " + months + " months = " + ((long) (messages / months)) + " messages per month");
+			var months = (Instant.now().getEpochSecond() - SnowFlake.timestamp(event.context.gc.guildId) / 1000L) / 2592000D;
+			event.respond(messages + " messages / " + months + " months = " + (messages / months) + " messages per month");
 		} else {
-			var messages = event.context.gc.messages.count(Filters.eq("channel", channelInfo.id.asLong()));
-			var months = (Instant.now().getEpochSecond() - channelInfo.id.getTimestamp().getEpochSecond()) / 2592000D;
-			event.respond(messages + " messages / " + months + " months = " + ((long) (messages / months)) + " messages per month");
+			var messages = event.context.gc.messages.count(Filters.eq("channel", channelInfo.id));
+			var months = (Instant.now().getEpochSecond() - SnowFlake.timestamp(channelInfo.id) / 1000L) / 2592000D;
+			event.respond(messages + " messages / " + months + " months = " + (messages / months) + " messages per month");
 		}
 	}
 
 	public static void adminRoles(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.respond("Admin roles:\n\n" + event.context.gc.getRoleList().stream().filter(r -> r.adminRole).map(r -> "<@&" + r.id.asString() + ">").collect(Collectors.joining("\n")));
+		event.respond("Admin roles:\n\n" + event.context.gc.getRoleList().stream().filter(r -> r.adminRole).map(r -> "<@&" + r.id + ">").collect(Collectors.joining("\n")));
 	}
 
 	public static void hourlyActivity(ChatInputInteractionEventWrapper event) throws Exception {
@@ -311,7 +311,7 @@ public class DisplayCommands extends ApplicationCommands {
 			var wr = role.get();
 			long count = event.context.gc.getGuild()
 					.getMembers()
-					.filter(member -> member.getRoleIds().contains(wr.id))
+					.filter(member -> member.getRoleIds().contains(SnowFlake.convert(wr.id)))
 					.count()
 					.block();
 
@@ -352,14 +352,14 @@ public class DisplayCommands extends ApplicationCommands {
 		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
 		var role = event.get("role").asRole().orElse(null);
 
-		var url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId.asString() + "/" + mentionId.asString() + "/" + days + "?limit=" + limit;
+		var url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId + "/" + mentionId + "/" + days + "?limit=" + limit;
 
 		if (channelInfo != null) {
-			url += "&channel=" + channelInfo.id.asString();
+			url += "&channel=" + channelInfo.id;
 		}
 
 		if (role != null) {
-			url += "&role=" + role.id.asString();
+			url += "&role=" + role.id;
 		}
 
 		var req = Utils.internalRequest(url).timeout(30000).toImage();

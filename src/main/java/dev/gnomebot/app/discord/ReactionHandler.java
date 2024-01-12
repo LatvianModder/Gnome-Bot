@@ -5,7 +5,6 @@ import dev.gnomebot.app.BrainEvents;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.Member;
@@ -33,16 +32,16 @@ public class ReactionHandler {
 		}
 	}
 
-	private static final HashMap<Snowflake, Callback> TEMP_REACTION_HANDLERS = new HashMap<>();
+	private static final HashMap<Long, Callback> TEMP_REACTION_HANDLERS = new HashMap<>();
 
 	public static void addListener(Callback callback, long ttl) {
-		TEMP_REACTION_HANDLERS.put(callback.message.getId(), callback);
+		TEMP_REACTION_HANDLERS.put(callback.message.getId().asLong(), callback);
 
 		if (ttl > 0L) {
 			var thread = new Thread(() -> {
 				try {
 					Thread.sleep(ttl * 1000L);
-					removeListener(callback.message.getId());
+					removeListener(callback.message.getId().asLong());
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -57,7 +56,7 @@ public class ReactionHandler {
 		addListener(callback, 3600L);
 	}
 
-	public static void removeListener(Snowflake id) throws Exception {
+	public static void removeListener(long id) throws Exception {
 		var callback = TEMP_REACTION_HANDLERS.remove(id);
 
 		if (callback != null) {
@@ -100,7 +99,7 @@ public class ReactionHandler {
 				.content(Utils.reactionToString(emoji))
 		);
 
-		var callback = TEMP_REACTION_HANDLERS.get(event.getMessageId());
+		var callback = TEMP_REACTION_HANDLERS.get(event.getMessageId().asLong());
 
 		if (callback != null) {
 			event.getMessage().subscribe(m -> {

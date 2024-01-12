@@ -7,9 +7,9 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Confirm;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -26,7 +26,7 @@ public class KickCommand extends ApplicationCommands {
 		Member member = null;
 
 		try {
-			member = user == null ? null : user.asMember(event.context.gc.guildId).block();
+			member = user == null ? null : user.asMember(SnowFlake.convert(event.context.gc.guildId)).block();
 		} catch (Exception ex) {
 		}
 
@@ -70,10 +70,10 @@ public class KickCommand extends ApplicationCommands {
 		event.respond("Kicked! DM successful: " + dm);
 	}
 
-	public static void kickButtonCallback(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
+	public static void kickButtonCallback(ComponentEventWrapper event, long other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
-		event.context.gc.getGuild().kick(other, reason).subscribe();
+		event.context.gc.getGuild().kick(SnowFlake.convert(other), reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Kicked by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Kicked <@" + other.asString() + ">");
+		event.respond("Kicked <@" + other + ">");
 	}
 }

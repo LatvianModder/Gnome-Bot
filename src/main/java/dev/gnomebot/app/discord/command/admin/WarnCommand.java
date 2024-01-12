@@ -7,9 +7,9 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.data.Confirm;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -27,7 +27,7 @@ public class WarnCommand extends ApplicationCommands {
 		Member member = null;
 
 		try {
-			member = user == null ? null : user.asMember(event.context.gc.guildId).block();
+			member = user == null ? null : user.asMember(SnowFlake.convert(event.context.gc.guildId)).block();
 		} catch (Exception ex) {
 		}
 
@@ -72,10 +72,10 @@ public class WarnCommand extends ApplicationCommands {
 		// ReactionHandler.addListener();
 	}
 
-	public static void warnButtonCallback(ComponentEventWrapper event, Snowflake other, String reason, Confirm confirm) {
+	public static void warnButtonCallback(ComponentEventWrapper event, long other, String reason, Confirm confirm) {
 		event.context.checkSenderAdmin();
 		//other.kick(reason).subscribe();
 		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.danger("none", Emojis.WARNING, "Warned by " + event.context.sender.getUsername() + "!")).getData()));
-		event.respond("Warned <@" + other.asString() + ">");
+		event.respond("Warned <@" + other + ">");
 	}
 }

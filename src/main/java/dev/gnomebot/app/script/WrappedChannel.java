@@ -2,7 +2,6 @@ package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.mods.rhino.util.HideFromJS;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.discordjson.json.ChannelModifyRequest;
 import discord4j.rest.service.ChannelService;
@@ -28,13 +27,13 @@ public class WrappedChannel extends DiscordObject {
 	}
 
 	public String getMention() {
-		return "<#" + id.asString() + ">";
+		return "<#" + id + ">";
 	}
 
 	public String getName() {
 		if (name == null) {
 			try {
-				name = guild.gc.getChannelMap().get(id.asSnowflake()).getName();
+				name = guild.gc.getChannelMap().get(id.asLong()).getName();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				name = "deleted-channel";
@@ -47,7 +46,7 @@ public class WrappedChannel extends DiscordObject {
 	public String getTopic() {
 		if (topic == null) {
 			try {
-				topic = guild.gc.getChannelMap().get(id.asSnowflake()).getTopic().orElse("");
+				topic = guild.gc.getChannelMap().get(id.asLong()).getTopic().orElse("");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				topic = "";
@@ -60,7 +59,7 @@ public class WrappedChannel extends DiscordObject {
 	public boolean getNsfw() {
 		if (nsfw == null) {
 			try {
-				nsfw = guild.gc.getChannelMap().get(id.asSnowflake()).isNsfw();
+				nsfw = guild.gc.getChannelMap().get(id.asLong()).isNsfw();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				nsfw = false;
@@ -100,7 +99,7 @@ public class WrappedChannel extends DiscordObject {
 	}
 
 	public String getUrl() {
-		return "https://discord.com/channels/" + guild.id.asString() + "/" + id.asString();
+		return "https://discord.com/channels/" + guild.id + "/" + id;
 	}
 
 	public WrappedMessage getMessage(Message w) {
@@ -108,7 +107,7 @@ public class WrappedChannel extends DiscordObject {
 	}
 
 	@Nullable
-	public WrappedMessage findMessage(Snowflake messageId) {
+	public WrappedMessage findMessage(WrappedId messageId) {
 		try {
 			return getMessage(new Message(guild.gc.db.app.discordHandler.client, getChannelService().getMessage(id.asLong(), messageId.asLong()).block()));
 		} catch (Exception ex) {
