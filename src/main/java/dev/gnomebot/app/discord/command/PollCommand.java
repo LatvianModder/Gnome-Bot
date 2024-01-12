@@ -4,9 +4,11 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
@@ -40,7 +42,7 @@ public class PollCommand extends ApplicationCommands {
 		var options = optionsStr.isEmpty() || optionsStr.equalsIgnoreCase("No\nYes") || optionsStr.equalsIgnoreCase("Yes\nNo") ? NO_YES : new LinkedHashSet<>(Arrays.stream(optionsStr.split("\n")).filter(s -> !s.isBlank()).limit(25L).toList());
 
 		if (options.size() < 2) {
-			throw new GnomeException("Poll must have at least 2 options!");
+			throw new GnomeException("Poll must have at least 2 unique options!");
 		} else if (options.size() > 25) {
 			throw new GnomeException("Poll has too many options! (Max 25)");
 		}
@@ -51,13 +53,13 @@ public class PollCommand extends ApplicationCommands {
 		var components = new ArrayList<ActionComponent>();
 
 		if (options == NO_YES) {
-			components.add(Button.danger("poll-vote/" + number + "/0", "No (0)"));
-			components.add(Button.success("poll-vote/" + number + "/1", "Yes (0)"));
+			components.add(Button.secondary("poll-vote/" + number + "/0", Emojis.NO, "No: 0"));
+			components.add(Button.secondary("poll-vote/" + number + "/1", Emojis.YES, "Yes: 0"));
 		} else {
 			int num = 0;
 
 			for (var option : options) {
-				var str = " (0)";
+				var str = ": 0";
 				components.add(Button.secondary("poll-vote/" + number + "/" + num, FormattingUtils.trim(option, 80 - str.length()) + str));
 				num++;
 			}
@@ -91,7 +93,15 @@ public class PollCommand extends ApplicationCommands {
 
 			int[] votes = new int[options.size()];
 
-			poll.getVotes().map.put(event.context.sender.getId().asString(), vote);
+			var key = SnowFlake.str(event.context.sender.getId().asLong());
+
+			if (poll.getVotes().map.getOrDefault(key, -1).equals(vote)) {
+				poll.getVotes().map.remove(key);
+				event.context.gc.polls.getCollection().updateOne(Filters.eq(poll.getUID()), Updates.unset("votes." + key));
+			} else {
+				poll.getVotes().map.put(key, vote);
+				event.context.gc.polls.getCollection().updateOne(Filters.eq(poll.getUID()), Updates.set("votes." + key, vote));
+			}
 
 			for (var entry : poll.getVotes().map.values()) {
 				votes[((Number) entry).intValue()]++;
@@ -100,13 +110,13 @@ public class PollCommand extends ApplicationCommands {
 			var components = new ArrayList<ActionComponent>();
 
 			if (options == NO_YES) {
-				components.add(Button.danger("poll-vote/" + number + "/0", "No (" + votes[0] + ")"));
-				components.add(Button.success("poll-vote/" + number + "/1", "Yes (" + votes[1] + ")"));
+				components.add(Button.secondary("poll-vote/" + number + "/0", Emojis.NO, "No: " + votes[0]));
+				components.add(Button.secondary("poll-vote/" + number + "/1", Emojis.YES, "Yes: " + votes[1]));
 			} else {
 				int num = 0;
 
 				for (var option : options) {
-					var str = " (" + votes[num] + ")";
+					var str = ": " + votes[num];
 					components.add(Button.secondary("poll-vote/" + number + "/" + num, FormattingUtils.trim(option, 80 - str.length()) + str));
 					num++;
 				}
@@ -116,8 +126,6 @@ public class PollCommand extends ApplicationCommands {
 			message.dynamicComponents(components);
 			message.ephemeral(false);
 			event.edit().respond(message);
-
-			event.context.gc.polls.getCollection().updateOne(Filters.eq(poll.getUID()), Updates.set("votes." + event.context.sender.getId().asLong(), vote));
 		} else {
 			event.acknowledge();
 		}
