@@ -67,6 +67,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 				case ">>>" -> contentBlockLines = new ArrayList<>();
 				case "embed" -> {
 					var c = complex.newEmbed();
+					c.title = reader.readRemainingString().orElse("");
 					ctx.propertyHolder = c;
 					ctx.textHolder = c;
 				}
