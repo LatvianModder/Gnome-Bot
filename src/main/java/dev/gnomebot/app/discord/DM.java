@@ -10,7 +10,6 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.util.EntityUtil;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ChannelData;
@@ -129,7 +128,7 @@ public class DM {
 
 			if (dmChannel == null) {
 				var channelService = handler.app.discordHandler.client.getRestClient().getChannelService();
-				var messageId = channelService.createMessage(dmChannelId, MessageCreateSpec.builder().content(user.getUsername() + " [" + user.getId().asString() + "]").build().asRequest()).block().id().asLong();
+				var messageId = channelService.createMessage(dmChannelId, MessageBuilder.create(user.getUsername() + " [" + user.getId().asString() + "]").toMultipartMessageCreateRequest()).block().id().asLong();
 				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadRequest.builder().name("DMs of " + user.getUsername()).autoArchiveDuration(1440).build()).block();
 				dmChannel = new DMChannel(user.getId().asLong(), messageId, 0L);
 				save = true;

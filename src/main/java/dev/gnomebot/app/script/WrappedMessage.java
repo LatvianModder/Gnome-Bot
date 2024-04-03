@@ -1,15 +1,13 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadSpec;
 import discord4j.discordjson.json.MessageData;
 import org.jetbrains.annotations.Nullable;
@@ -210,15 +208,15 @@ public class WrappedMessage extends DiscordObject {
 		try {
 			return new WrappedThread(channel.guild, message.startThread(StartThreadSpec.builder().name(title).build()).block());
 		} catch (Exception ex) {
-			App.error("Failed to create a thread!");
-			App.warn(ex);
+			Log.error("Failed to create a thread!");
+			Log.warn(ex);
 			return null;
 		}
 	}
 
 	public void setContent(String c) {
 		channel.guild.discordJS.checkReadOnly();
-		message.edit(MessageEditSpec.builder().contentOrNull(c).allowedMentionsOrNull(DiscordMessage.noMentions()).build()).block();
+		message.edit(MessageBuilder.create(c).toMessageEditSpec()).block();
 		content = c;
 		contentNoEmojis = null;
 	}

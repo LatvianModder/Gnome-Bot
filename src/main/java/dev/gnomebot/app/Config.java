@@ -4,6 +4,7 @@ import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -76,7 +77,7 @@ public class Config {
 					trusted.add(id);
 				}
 			} catch (Exception ex) {
-				App.error("Invalid trusted ID: " + s + ", must be their snowflake ID");
+				Log.error("Invalid trusted ID: " + s + ", must be their snowflake ID");
 			}
 		}
 
@@ -90,7 +91,7 @@ public class Config {
 		}
 
 		c.save();
-		App.success("Loaded Gnome config with panel URL: " + panel_url);
+		Log.success("Loaded Gnome config with panel URL: " + panel_url);
 	}
 
 	public boolean isTrusted(long id) {

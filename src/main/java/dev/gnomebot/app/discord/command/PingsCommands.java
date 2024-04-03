@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.ping.PingBuilder;
 import dev.gnomebot.app.data.ping.PingData;
@@ -11,6 +10,7 @@ import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 
@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 public class PingsCommands extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("pings")
+			.supportsDM()
 			.description("Manage pings")
 			.add(sub("edit")
 					.description("Edit pings")
@@ -165,15 +166,15 @@ public class PingsCommands extends ApplicationCommands {
 
 			var pings = PingBuilder.compile(event.context.gc.db, event.context.sender.getId().asLong(), config, true);
 
-			App.success(event.context.sender.getUsername() + " updated their pings:");
+			Log.success(event.context.sender.getUsername() + " updated their pings:");
 
 			for (var ping : pings) {
-				App.info("- name: " + ping.name);
-				App.info("  config: " + ping.buildConfig());
-				App.info("  pings:");
+				Log.info("- name: " + ping.name);
+				Log.info("  config: " + ping.buildConfig());
+				Log.info("  pings:");
 
 				for (var p : ping.pings) {
-					App.info("  " + p);
+					Log.info("  " + p);
 				}
 			}
 

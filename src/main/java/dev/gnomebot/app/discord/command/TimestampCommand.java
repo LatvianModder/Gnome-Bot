@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 public class TimestampCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("timestamp")
+			.supportsDM()
 			.description("Converts your input to discord timestamp format")
 			.add(string("input").required())
 			.run(TimestampCommand::run);

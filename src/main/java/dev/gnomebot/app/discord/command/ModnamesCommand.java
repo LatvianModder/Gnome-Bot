@@ -8,6 +8,7 @@ import java.util.List;
 
 public class ModnamesCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modnames")
+			.supportsDM()
 			.description("Displays 10 randomly generated mod names")
 			.add(string("type"))
 			.run(ModnamesCommand::run);

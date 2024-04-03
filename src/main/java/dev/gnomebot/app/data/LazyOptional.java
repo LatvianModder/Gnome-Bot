@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -43,7 +43,7 @@ public class LazyOptional<T> {
 			try {
 				object = getter.get();
 			} catch (Exception ex) {
-				App.error(ex.toString());
+				Log.error(ex);
 			}
 		}
 

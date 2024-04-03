@@ -1,21 +1,21 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 
 public class ConsoleWrapper {
 	public static void log(Object text) {
-		App.info(text);
+		Log.info(text);
 	}
 
 	public static void info(Object text) {
-		App.info(text);
+		Log.info(text);
 	}
 
 	public static void error(Object text) {
-		App.error(text);
+		Log.error(text);
 	}
 
 	public static void warn(Object text) {
-		App.warn(text);
+		Log.warn(text);
 	}
 }

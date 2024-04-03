@@ -5,7 +5,7 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
@@ -70,13 +70,15 @@ public final class ChannelInfo {
 			var tlc = getTopLevelChannel();
 
 			if (tlc != null) {
-				var webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().equals(gc.db.app.discordHandler.selfId)).orElse(false)).blockFirst();
+				// App.info("Unknown webhook for " + getName() + "/" + id);
+
+				var webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)).blockFirst();
 
 				if (webhook == null) {
-					Ansi.log("Webhook for " + this + " not found, creating");
+					Log.info("Webhook for " + this + " not found, creating");
 					webhook = tlc.createWebhook(WebhookCreateSpec.builder().name("Gnome").reason("Gnome Bot webhook").build()).block();
 				} else {
-					Ansi.log("Loaded webhook " + webhook.getId().asString() + " '" + webhook.getName().orElse("Unnamed") + "'");
+					Log.info("Loaded webhook " + webhook.getId().asString() + " '" + webhook.getName().orElse("Unnamed") + "'");
 				}
 
 				if (webhook != null) {

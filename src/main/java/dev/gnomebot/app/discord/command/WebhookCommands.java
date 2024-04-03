@@ -19,6 +19,7 @@ public class WebhookCommands extends ApplicationCommands {
 	public static final Pattern WEBHOOK_PATTERN = Pattern.compile("https://.*discord(?:app)?.com/api/(?:v\\d+/)?webhooks/(\\d+)/([\\w-]+)");
 
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("webhook")
+			.supportsDM()
 			.description("Manage your webhooks")
 			.add(sub("add")
 					.add(string("name").required())

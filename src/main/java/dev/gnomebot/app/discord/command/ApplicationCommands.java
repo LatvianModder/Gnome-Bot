@@ -1,11 +1,11 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.Currency;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.command.admin.GnomeAdminCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.mods.rhino.mod.wrapper.UUIDWrapper;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandData;
@@ -93,7 +93,7 @@ public class ApplicationCommands {
 		add(WhoisCommand.COMMAND);
 
 		for (var type : InteractionType.TYPES.values()) {
-			App.info("Found " + type.builders.size() + " " + type.name.replace('_', ' ') + " commands");
+			Log.info("Found " + type.builders.size() + " " + type.name.replace('_', ' ') + " commands");
 		}
 	}
 
@@ -134,7 +134,7 @@ public class ApplicationCommands {
 			}
 		}
 
-		App.warn("Bulk updating all commands...");
+		Log.warn("Bulk updating all commands...");
 
 		handler.client.getRestClient()
 				.getApplicationService()
@@ -142,7 +142,7 @@ public class ApplicationCommands {
 				.blockFirst()
 		;
 
-		App.success("Bulk updated " + list.size() + " application commands!");
+		Log.success("Bulk updated " + list.size() + " application commands!");
 	}
 
 	private static boolean updateChangedCommands(DiscordHandler handler, List<String> lines) {
@@ -187,7 +187,7 @@ public class ApplicationCommands {
 				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
-					App.warn("Deleting " + entry.getKey() + "/" + id);
+					Log.warn("Deleting " + entry.getKey() + "/" + id);
 
 					handler.client.getRestClient()
 							.getApplicationService()
@@ -195,7 +195,7 @@ public class ApplicationCommands {
 							.block()
 					;
 				} else {
-					App.warn("Deleting " + entry.getKey() + "/unknown");
+					Log.warn("Deleting " + entry.getKey() + "/unknown");
 				}
 
 				changed++;
@@ -207,9 +207,9 @@ public class ApplicationCommands {
 				var id = globalCommands.get(entry.getKey());
 
 				if (id != null) {
-					App.warn("Updating " + entry.getKey() + "/" + id);
+					Log.warn("Updating " + entry.getKey() + "/" + id);
 				} else {
-					App.warn("Creating " + entry.getKey());
+					Log.warn("Creating " + entry.getKey());
 				}
 
 				handler.client.getRestClient()
@@ -223,9 +223,9 @@ public class ApplicationCommands {
 		}
 
 		if (changed > 0) {
-			App.success("Updated " + changed + " application commands!");
+			Log.success("Updated " + changed + " application commands!");
 		} else {
-			App.info("There were no application command updates");
+			Log.info("There were no application command updates");
 		}
 
 		return changed > 0;

@@ -8,72 +8,86 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	public interface Flags {
-		int LEVEL_01 = 1 << 0;
-		int LEVEL_23 = 1 << 1;
 		int EXPIRES = 1 << 2;
 		int CONTENT = 1 << 3;
-		int OLD_CONTENT = 1 << 4;
+		// int OLD_CONTENT = 1 << 4;
 		int EXTRA = 1 << 5;
 		int REVOCABLE = 1 << 6;
 		int BOT_USER_IGNORED = 1 << 7;
 		int DM = 1 << 8;
 		int LOCKDOWN = 1 << 9;
 		int DELETED_MESSAGES = 1 << 10;
+
+		int USER_AUDIT_LOG = 1 << 11;
 	}
 
 	public enum Type {
-		MESSAGE_DELETED("message_deleted", 0, Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
-		MESSAGE_EDITED("message_edited", 0, Flags.CONTENT | Flags.OLD_CONTENT | Flags.EXTRA | Flags.BOT_USER_IGNORED),
-		REACTION_ADDED("reaction_added", 0, Flags.CONTENT | Flags.BOT_USER_IGNORED),
-		REACTION_REMOVED("reaction_removed", 0, Flags.CONTENT | Flags.BOT_USER_IGNORED),
-		JOIN_VOICE("join_voice", 0, 0),
-		LEAVE_VOICE("leave_voice", 0, 0),
+		REACTION_ADDED("reaction_added", "Added Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, gc -> gc.reactionLog),
+		REACTION_REMOVED("reaction_removed", "Removed Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, gc -> gc.reactionLog),
+		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, gc -> gc.voiceLog),
+		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, gc -> gc.voiceLog),
 
-		JOIN("join", 1, Flags.EXTRA),
-		LEAVE("leave", 1, Flags.CONTENT | Flags.EXTRA),
-		COMMAND("command", 1, Flags.OLD_CONTENT),
-		ECHO("echo", 1, Flags.CONTENT),
+		JOIN("join", "Joined", 1, Flags.USER_AUDIT_LOG | Flags.EXTRA),
+		LEAVE("leave", "Left", 1, Flags.USER_AUDIT_LOG | Flags.CONTENT | Flags.EXTRA),
+		COMMAND("command", "Command", 1, Flags.CONTENT),
+		ECHO("echo", "Echo", 1, Flags.CONTENT),
 
-		ADMIN_PING("admin_ping", 2, 0),
-		DISCORD_INVITE("discord_invite", 2, Flags.REVOCABLE),
-		IP_ADDRESS("ip_address", 2, 0),
-		URL_SHORTENER("url_shortener", 2, 0),
-		SCAM("scam", 2, 0),
-		// BAD_WORD("bad_word", 2, 0),
-		MESSAGE_REPORT("message_report", 2, 0),
+		ADMIN_PING("admin_ping", "Admin Ping", 2, 0),
+		DISCORD_INVITE("discord_invite", "Discord Invite", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
+		IP_ADDRESS("ip_address", "IP Address", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
+		URL_SHORTENER("url_shortener", "URL Shortener", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
+		SCAM("scam", "Potential Scam", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
+		// BAD_WORD("bad_word", "Bad Word", 2, Flags.USER_AUDIT_LOG),
+		MESSAGE_REPORT("message_report", "Message Report", 2, Flags.USER_AUDIT_LOG),
 
-		CUSTOM("custom", 3, Flags.CONTENT),
-		BAN("ban", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
-		UNBAN("unban", 3, 0),
-		KICK("kick", 3, Flags.CONTENT | Flags.EXTRA),
-		WARN("warn", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
-		MUTE("mute", 3, Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
-		NOTE("note", 2, Flags.REVOCABLE | Flags.CONTENT),
-		LOCKDOWN_ENABLED("lockdown_enabled", 3, Flags.CONTENT),
-		LOCKDOWN_DISABLED("lockdown_disabled", 3, 0),
+		CUSTOM("custom", "Custom", 3, Flags.CONTENT),
+		BAN("ban", "Banned", 3, Flags.USER_AUDIT_LOG | Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		UNBAN("unban", "Unbanned", 3, Flags.USER_AUDIT_LOG),
+		KICK("kick", "Kicked", 3, Flags.USER_AUDIT_LOG | Flags.CONTENT | Flags.EXTRA),
+		WARN("warn", "Warned", 3, Flags.USER_AUDIT_LOG | Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		MUTE("mute", "Muted", 3, Flags.USER_AUDIT_LOG | Flags.REVOCABLE | Flags.CONTENT | Flags.EXTRA),
+		NOTE("note", "Note", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE | Flags.CONTENT),
+		LOCKDOWN_ENABLED("lockdown_enabled", "Enabled Lockdown", 3, Flags.CONTENT),
+		LOCKDOWN_DISABLED("lockdown_disabled", "Disabled Lockdown", 3, 0),
 
 		;
 
 		public static final Map<String, Type> NAME_MAP = new HashMap<>();
+		public static final List<String> USER_AUDIT_LOG_TYPES = new ArrayList<>();
 
 		static {
 			for (var type : values()) {
 				NAME_MAP.put(type.name, type);
+
+				if (type.has(Flags.USER_AUDIT_LOG)) {
+					USER_AUDIT_LOG_TYPES.add(type.name);
+				}
 			}
 		}
 
 		public final String name;
+		public final String displayName;
 		public final int flags;
+		public final Function<GuildCollections, WrappedCollection<GnomeAuditLogEntry>> collection;
 
-		Type(String n, int l, int f) {
+		Type(String n, String dn, int l, int f) {
+			this(n, dn, l, f, gc -> gc.auditLog);
+		}
+
+		Type(String n, String dn, int l, int f, Function<GuildCollections, WrappedCollection<GnomeAuditLogEntry>> collection) {
 			name = n;
+			displayName = dn;
 			flags = l | f | (l == 0 ? Flags.EXPIRES : 0);
+			this.collection = collection;
 		}
 
 		public boolean has(int f) {
@@ -97,7 +111,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		private long user = 0L;
 		private long source = 0L;
 		private String content = null;
-		private String oldContent = null;
 		private final Document extra = new Document();
 
 		public Builder(Type t) {
@@ -147,11 +160,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 			return this;
 		}
 
-		public Builder oldContent(@Nullable String s) {
-			oldContent = s;
-			return this;
-		}
-
 		public Builder extra(String key, @Nullable Object value) {
 			if (value != null) {
 				extra.put(key, value);
@@ -197,10 +205,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 
 			if (content != null) {
 				doc.put("content", content);
-			}
-
-			if (oldContent != null) {
-				doc.put("old_content", oldContent);
 			}
 
 			if (!extra.isEmpty()) {

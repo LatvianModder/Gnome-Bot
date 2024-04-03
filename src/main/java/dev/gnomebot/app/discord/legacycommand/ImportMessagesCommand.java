@@ -1,11 +1,11 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AppTaskCancelledException;
 import dev.latvian.apps.webutils.TimeUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.entity.Message;
 
@@ -39,7 +39,7 @@ public class ImportMessagesCommand {
 
 		context.handler.app.queueBlockingTask(task -> {
 			var channelNames = messageChannels.stream().map(mc -> mc.a().getMention()).collect(Collectors.joining(" "));
-			App.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a().getName() + ":" + mc.b()).collect(Collectors.joining(" ")));
+			Log.info("Importing messages from " + messageChannels.stream().map(mc -> "#" + mc.a().getName() + ":" + mc.b()).collect(Collectors.joining(" ")));
 			context.reply("Importing messages from " + channelNames);
 
 			var mId = 0;
@@ -57,7 +57,7 @@ public class ImportMessagesCommand {
 				try {
 					for (var message : ch.getMessagesBefore(lastId)
 							.delayElements(Duration.ofMillis(10))
-							.onErrorContinue((throwable, o) -> App.info("Error! " + o + ": " + throwable))
+							.onErrorContinue((throwable, o) -> Log.error("Error! " + o + ": " + throwable))
 							.filter(m -> m.getType() == Message.Type.DEFAULT && m.getAuthor().isPresent())
 							.toIterable()) {
 						mId++;
@@ -78,7 +78,7 @@ public class ImportMessagesCommand {
 					channelsLeft.add(0, Pair.of(ch, lastId));
 					break;
 				} catch (Exception ex) {
-					App.error("Error! " + ch.getName() + ": " + ex);
+					Log.error("Error! " + ch.getName() + ": " + ex);
 					context.reply("Can't read " + ch.getMention() + ", skipping");
 				}
 			}

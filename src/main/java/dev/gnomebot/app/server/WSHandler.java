@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 import io.javalin.websocket.WsConfig;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
@@ -67,7 +68,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 			synchronized (sessions) {
 				var session = new WSSession(this, ctx.session, token, user);
 				sessions.put(session.session(), session);
-				App.warn(getName() + " connected: " + session);
+				Log.warn(getName() + " connected: " + session);
 				onLoggedIn(session);
 			}
 		});
@@ -97,11 +98,11 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 				var session = sessions.remove(ctx.session);
 
 				if (session != null) {
-					App.warn(getName() + " closed: " + session + " [" + ctx.status() + (ctx.reason() == null ? "" : (" / " + ctx.reason())) + "]");
+					Log.warn(getName() + " closed: " + session + " [" + ctx.status() + (ctx.reason() == null ? "" : (" / " + ctx.reason())) + "]");
 				} else if (ctx.session.getRemoteAddress() instanceof InetSocketAddress inet) {
-					App.error("Unknown " + getName() + " session: #" + inet.getPort());
+					Log.error("Unknown " + getName() + " session: #" + inet.getPort());
 				} else {
-					App.error("Unknown " + getName() + " session: #" + ctx.session.getRemoteAddress());
+					Log.error("Unknown " + getName() + " session: #" + ctx.session.getRemoteAddress());
 				}
 			}
 		});
@@ -112,7 +113,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 	}
 
 	public void onMessage(WSSession session, String message) {
-		App.warn(getName() + " message from " + session + ": " + message);
+		Log.warn(getName() + " message from " + session + ": " + message);
 	}
 
 	public void onDataMessage(WSSession session, byte[] data) {
@@ -126,7 +127,7 @@ public class WSHandler extends Thread implements Consumer<WsConfig> {
 			sb.append(String.format("%02X ", data[i]));
 		}
 
-		App.warn(sb);
+		Log.warn(sb);
 	}
 
 	public void broadcast(String message) {

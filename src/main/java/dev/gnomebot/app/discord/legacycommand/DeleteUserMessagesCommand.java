@@ -1,10 +1,10 @@
 package dev.gnomebot.app.discord.legacycommand;
 
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
@@ -38,17 +38,17 @@ public class DeleteUserMessagesCommand {
 				count++;
 
 				try {
-					App.info("Deleting " + SnowFlake.str(m.getUID()));
+					Log.info("Deleting " + SnowFlake.str(m.getUID()));
 					var channel = context.gc.getChannelInfo(m.getChannelID());
 					channel.getMessage(m.getUID()).delete().block();
 				} catch (Exception ex) {
-					App.info("Message not found!");
+					Log.info("Message not found!");
 				}
 			}
 
 			context.upvote();
 			context.message.removeSelfReaction(Emojis.VOTENONE).block();
-			App.info("Deleted " + count + " messages from " + user.getUsername());
+			Log.info("Deleted " + count + " messages from " + user.getUsername());
 		});
 	};
 }

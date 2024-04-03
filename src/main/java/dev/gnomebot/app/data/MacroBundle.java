@@ -1,8 +1,8 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -44,7 +44,7 @@ public class MacroBundle {
 			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}
 
-		App.info(reader.toString());
+		Log.info(reader.toString());
 
 		var item = macros.get(reader.readString().orElse(""));
 

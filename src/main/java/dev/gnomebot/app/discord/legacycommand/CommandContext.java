@@ -1,9 +1,7 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.Emojis;
@@ -14,6 +12,7 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.rest.http.client.ClientException;
@@ -34,7 +33,7 @@ public class CommandContext {
 	public Member sender;
 	public InteractionEventWrapper<?> interaction = null;
 	public boolean referenceMessage = true;
-	public AllowedMentions allowedMentions = DiscordMessage.noMentions();
+	public AllowedMentions allowedMentions = null;
 
 	@Override
 	public String toString() {
@@ -42,7 +41,7 @@ public class CommandContext {
 				"gc=" + gc +
 				", channel=#" + (channelInfo == null ? "<null>" : channelInfo.getName()) +
 				", message=" + (message == null ? "<null>" : message.getContent()) +
-				", sender=" + sender.getTag() +
+				", sender=" + (sender == null ? "<null?" : sender.getUsername()) +
 				'}';
 	}
 
@@ -108,7 +107,9 @@ public class CommandContext {
 				msg.messageReference(message.getId().asLong());
 			}
 
-			msg.allowedMentions(allowedMentions);
+			if (allowedMentions != null) {
+				msg.allowedMentions(allowedMentions);
+			}
 
 			var m = Objects.requireNonNull(channelInfo.createMessage(msg).block());
 
@@ -118,8 +119,8 @@ public class CommandContext {
 
 			return m;
 		} catch (ClientException ex) {
-			App.info("! Message:");
-			App.info(msg.toString());
+			Log.error("Message:");
+			Log.warn(msg);
 			ex.printStackTrace();
 			throw new GnomeException("Failed to reply! " + ex.getStatus() + " " + ex.getErrorResponse().map(ErrorResponse::getFields).map(Object::toString).orElse("Unknown error")).clientException(ex);
 		} catch (Exception ex) {

@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.config;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -24,7 +24,7 @@ public class FontConfigType implements ConfigType<Font, FontConfigType.Holder> {
 	private static Font defaultFont = ALL_FONTS.get("DejaVu Serif");
 
 	static {
-		App.info("Available Fonts: " + String.join(" ; ", ALL_FONTS.keySet()));
+		Log.info("Available Fonts: " + String.join(" ; ", ALL_FONTS.keySet()));
 
 		if (defaultFont == null) {
 			defaultFont = ALL_FONTS.values().iterator().next();

@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord.legacycommand;
 
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.discord.Emojis;
@@ -9,6 +8,7 @@ import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.reaction.ReactionEmoji;
 
@@ -114,13 +114,13 @@ public class DownloadAllImagesCommand {
 					fileOut.write(buffer, 0, len);
 				}
 			} catch (FileNotFoundException ex) {
-				App.info("Not found!");
+				Log.info("Not found!");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 
 			var i = remaining.decrementAndGet();
-			App.info("Downloaded " + image.url + ", " + i + " left");
+			Log.info("Downloaded " + image.url + ", " + i + " left");
 		}
 
 		context.reply("Done!");

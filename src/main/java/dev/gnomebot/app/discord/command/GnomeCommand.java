@@ -9,6 +9,7 @@ import java.util.List;
 
 public class GnomeCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("gnome")
+			.supportsDM()
 			.add(sub("about")
 					.description("Info about Gnome Bot")
 					.run(GnomeCommand::about)

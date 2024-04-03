@@ -2,11 +2,12 @@ package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.Response;
 import io.javalin.Javalin;
@@ -106,7 +107,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 				}
 			}
 
-			javalin.addHandler(method, "*", w);
+			javalin.addHttpHandler(method, "*", w);
 		}
 
 		for (var h : webSocketHandlerList) {
@@ -174,6 +175,12 @@ public class WebServer implements Consumer<JavalinConfig> {
 			if (ctx.method() == HandlerType.GET && webServer.staticFilesSet.contains(ctx.path())) {
 				try {
 					var path = AppPaths.RESOURCES.resolve(ctx.path().substring(1));
+
+					if (Files.notExists(path)) {
+						ctx.status(HttpStatus.NOT_FOUND);
+						return;
+					}
+
 					ctx.result(Files.readAllBytes(path));
 					ctx.contentType(Files.probeContentType(path));
 					ctx.status(HttpStatus.OK);
@@ -212,26 +219,33 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			country = country.toLowerCase();
+
+			var userAgent = ctx.header("User-Agent");
+
+			if (userAgent == null || userAgent.isEmpty()) {
+				userAgent = "Unknown";
+			}
+
 			var tokenCallback = new WebToken[1];
 
 			try {
-				handle0(ctx, p, ip, country, tokenCallback);
+				handle0(ctx, p, ip, country, userAgent, tokenCallback);
 			} catch (HttpResponseException ex) {
 				var status = HttpStatus.forStatus(ex.getStatus());
-				log(p, ip, country, status, tokenCallback[0]);
+				log(p, ip, country, status, tokenCallback[0], userAgent);
 				var root = GnomeRootTag.createSimple(getPath(ctx), "Error " + ex.getStatus());
 				root.content.p().span("red").string(ex.getMessage());
 				root.asResponse(status, true).result(ctx);
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				log(p, ip, country, HttpStatus.INTERNAL_SERVER_ERROR, tokenCallback[0]);
+				log(p, ip, country, HttpStatus.INTERNAL_SERVER_ERROR, tokenCallback[0], userAgent);
 				var root = GnomeRootTag.createSimple(getPath(ctx), "Internal Server Error");
 				root.content.p().span("red").string("Internal Error: " + ex);
 				root.asResponse(HttpStatus.INTERNAL_SERVER_ERROR, true).result(ctx);
 			}
 		}
 
-		private void handle0(Context ctx, String p, String ip, String country, WebToken[] tokenCallback) throws Exception {
+		private void handle0(Context ctx, String p, String ip, String country, String userAgent, WebToken[] tokenCallback) throws Exception {
 			if (Config.get().require_cloudflare && (ip.equals("0.0.0.0") || country.equals("xx"))) {
 				throw HTTPResponseCode.BAD_REQUEST.error("Missing required headers");
 			}
@@ -242,7 +256,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 			var sh = staticHandlers.get(p);
 
 			if (sh != null) {
-				var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, Collections.emptyMap());
+				var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, userAgent, Collections.emptyMap());
 				serverRequest.token = token;
 				handle1(ctx, sh, p, serverRequest).result(ctx);
 				return;
@@ -275,7 +289,7 @@ public class WebServer implements Consumer<JavalinConfig> {
 					vars.clear();
 
 					if (dh.matches(pa, vars)) {
-						var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, vars);
+						var serverRequest = new ServerRequest(webServer.app, ctx, ip, country, userAgent, vars);
 						serverRequest.token = token;
 						handle1(ctx, dh, p1.toString(), serverRequest).result(ctx);
 						return;
@@ -335,15 +349,15 @@ public class WebServer implements Consumer<JavalinConfig> {
 			}
 
 			if (handler.log) {
-				log(p, req.ip, req.country, r.getStatus(), req.token);
+				log(p, req.ip, req.country, r.getStatus(), req.token, req.userAgent);
 			} else {
-				App.LOGGER.event(BrainEvents.WEB_REQUEST);
+				BrainEventType.WEB_REQUEST.build(0L).post();
 			}
 
 			return r;
 		}
 
-		private void log(String p, String ip, String country, HttpStatus status, @Nullable WebToken token) {
+		private void log(String p, String ip, String country, HttpStatus status, @Nullable WebToken token, String userAgent) {
 			var sout = Ansi.of();
 			var ip1 = String.format("%08X", ip.hashCode());
 
@@ -364,8 +378,10 @@ public class WebServer implements Consumer<JavalinConfig> {
 			sout.append(Ansi.yellow(method.name().toUpperCase()));
 			sout.append(' ');
 			sout.append(Ansi.cyan(p));
+			sout.append(' ');
+			sout.append(Ansi.darkGray(userAgent));
 
-			App.info(sout);
+			Log.info(sout);
 
 			var date = new Date();
 

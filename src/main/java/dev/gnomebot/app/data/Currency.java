@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.json.JSONObject;
 
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ public class Currency {
 				map.put(currency.id, currency);
 			}
 		} catch (Exception ex) {
-			App.LOGGER.error("Failed to fetch all currencies");
+			Log.error("Failed to fetch all currencies");
 			ex.printStackTrace();
 		}
 

@@ -152,11 +152,11 @@ public class QuoteHandler {
 			}
 
 			quoteEmbed.color(EmbedColor.GRAY);
-			//quoteEmbed.description("[Quote ➤](" + quoteURL + ')' + (content.indexOf('\n') != -1 ? '\n' : ' ') + content);
-			quoteEmbed.description(content);
+			quoteEmbed.description("[➤](" + quoteURL + ')' + (content.indexOf('\n') != -1 ? '\n' : ' ') + content);
+			// quoteEmbed.description(content);
 			// quoteEmbed.timestamp(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(m.timestamp(), Instant::from));
 
-			if (webHook == null && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
+			if (webHook == null && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
 				if (mentionsAdmin) {
 					quoteEmbed.footer(member.getTag() + " pinged admins", member.getAvatarUrl());
 				} else if (authorMember != member) {

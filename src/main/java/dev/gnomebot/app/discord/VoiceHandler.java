@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 
@@ -14,7 +13,7 @@ public class VoiceHandler {
 
 		if (event.isJoinEvent()) {
 			// App.info(Utils.ANSI_GREEN + gc + "/" + c.getName() + " " + Utils.ANSI_YELLOW + m.getTag() + Utils.ANSI_RESET + " Changed voice state: " + Utils.ANSI_CYAN + "JOIN");
-			App.LOGGER.event(BrainEvents.VOICE_JOINED);
+			BrainEventType.VOICE_JOINED.build(gc.guildId).post();
 
 			if (state.getChannelId().isPresent()) {
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.JOIN_VOICE)
@@ -24,7 +23,7 @@ public class VoiceHandler {
 			}
 		} else if (event.isLeaveEvent()) {
 			// App.info(Utils.ANSI_GREEN + gc + "/" + c.getName() + " " + Utils.ANSI_YELLOW + m.getTag() + Utils.ANSI_RESET + " Changed voice state: " + Utils.ANSI_CYAN + "LEAVE");
-			App.LOGGER.event(BrainEvents.VOICE_LEFT);
+			BrainEventType.VOICE_LEFT.build(gc.guildId).post();
 
 			if (oldState != null && oldState.getChannelId().isPresent()) {
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LEAVE_VOICE)
@@ -33,7 +32,7 @@ public class VoiceHandler {
 				);
 			}
 		} else if (event.isMoveEvent()) {
-			App.LOGGER.event(BrainEvents.VOICE_CHANGED);
+			BrainEventType.VOICE_CHANGED.build(gc.guildId).post();
 
 			if (oldState != null && oldState.getChannelId().isPresent()) {
 				// App.info(Utils.ANSI_GREEN + gc + "/" + c.getName() + " " + Utils.ANSI_YELLOW + m.getTag() + Utils.ANSI_RESET + " Changed voice state: " + Utils.ANSI_CYAN + "LEAVE");

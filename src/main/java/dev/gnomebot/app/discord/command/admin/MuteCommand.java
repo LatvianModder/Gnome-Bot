@@ -22,7 +22,6 @@ import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 
@@ -171,7 +170,7 @@ public class MuteCommand extends ApplicationCommands {
 			replyButtons.add(Button.link(QuoteHandler.getMessageURL(context.gc.guildId, context.gc.adminLogChannel.get(), m1.getId().asLong()), "Take Action"));
 
 			if (contextMessage != null) {
-				contextMessage.edit(MessageEditSpec.builder().componentsOrNull(List.of(ActionRow.of(replyButtons))).build()).subscribe();
+				contextMessage.edit(MessageBuilder.create().addComponent(ActionRow.of(replyButtons)).toMessageEditSpec()).subscribe();
 			}
 		}));
 

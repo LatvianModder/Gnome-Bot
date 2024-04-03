@@ -1,11 +1,12 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
-import discord4j.rest.util.AllowedMentions;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
@@ -32,10 +33,6 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	//public static final long FLAG_DM = 1L << 23L;
 	public static final long FLAG_FILES = 1L << 24L;
 	public static final long FLAG_REPLY = 1L << 25L;
-
-	public static AllowedMentions noMentions() {
-		return MessageBuilder.NO_MENTIONS;
-	}
 
 	public final long flags;
 
@@ -81,6 +78,10 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		return document.getList("images");
 	}
 
+	public MapWrapper getFiles() {
+		return document.getMap("files");
+	}
+
 	public String getURL(GuildCollections gc) {
 		return "https://discord.com/channels/" + gc.guildId + "/" + SnowFlake.str(getChannelID()) + "/" + SnowFlake.str(getUID());
 	}
@@ -92,7 +93,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	private void deleteOrEdit(GuildCollections gc, boolean deleted, String newContent, boolean auditLog) {
 		var flags1 = deleted ? flags : (flags & ~DiscordMessage.FLAG_EDITED);
 
-		List<Bson> updates = new ArrayList<>();
+		var updates = new ArrayList<Bson>();
 		updates.add(Updates.set("channel", getChannelID()));
 		updates.add(Updates.set("user", getUserID()));
 		updates.add(Updates.set("flags", flags1));
@@ -103,18 +104,6 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 		var reply = getReply();
 
-		if (auditLog) {
-			gc.auditLog(GnomeAuditLogEntry.builder(deleted ? GnomeAuditLogEntry.Type.MESSAGE_DELETED : GnomeAuditLogEntry.Type.MESSAGE_EDITED)
-					.channel(getChannelID())
-					.message(getUID())
-					.user(getUserID())
-					.oldContent(getContent())
-					.content(newContent)
-					.extra("flags", flags1 == 0L ? null : flags1)
-					.extra("reply", reply == 0L ? null : reply)
-			);
-		}
-
 		if (reply != 0L) {
 			updates.add(Updates.set("reply", reply));
 		}
@@ -123,8 +112,21 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 		if (deleted) {
 			gc.messages.query(getUID()).delete();
+			BrainEventType.MESSAGE_DELETED.build(gc.guildId).post();
+
+			if (App.debug) {
+				Log.info(gc + "/" + getUserID() + " deleted message: " + getContent());
+			}
 		} else {
 			gc.messages.query(getUID()).update(Updates.bitwiseOr("flags", DiscordMessage.FLAG_EDITED), Updates.set("content", newContent));
+
+			if (!is(DiscordMessage.FLAG_BOT)) {
+				BrainEventType.MESSAGE_EDITED.build(gc.guildId).post();
+
+				if (App.debug) {
+					Log.info(gc + "/" + getUserID() + " edited message: " + getContent() + " -> " + newContent);
+				}
+			}
 		}
 	}
 

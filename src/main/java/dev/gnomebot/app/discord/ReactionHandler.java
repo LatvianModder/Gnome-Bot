@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
@@ -86,10 +85,8 @@ public class ReactionHandler {
 		}
 
 		var guildId = event.getGuildId().get();
-
-		App.LOGGER.event(BrainEvents.REACTION_ADDED);
-
 		var gc = handler.app.db.guild(guildId);
+		BrainEventType.REACTION_ADDED.build(gc).post();
 		var emoji = event.getEmoji();
 
 		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_ADDED)
@@ -205,10 +202,9 @@ public class ReactionHandler {
 				return;
 			}
 
-			App.LOGGER.event(BrainEvents.REACTION_REMOVED);
-
 			event.getGuildId().ifPresent(guildId -> {
 				var gc = handler.app.db.guild(guildId);
+				BrainEventType.REACTION_REMOVED.build(gc).post();
 
 				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.REACTION_REMOVED)
 						.channel(event.getChannelId().asLong())

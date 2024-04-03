@@ -1,18 +1,20 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 
 public class RelayPingTask implements Runnable {
 	private final PingDestination destination;
 	private final long targetId;
 	private final PingData pingData;
 	private final Ping ping;
+	private final UserPingConfig config;
 
-	public RelayPingTask(PingDestination destination, long targetId, PingData pingData, Ping ping) {
+	public RelayPingTask(PingDestination destination, long targetId, PingData pingData, Ping ping, UserPingConfig config) {
 		this.destination = destination;
 		this.targetId = targetId;
 		this.pingData = pingData;
 		this.ping = ping;
+		this.config = config;
 	}
 
 	@Override
@@ -21,13 +23,13 @@ public class RelayPingTask implements Runnable {
 			var start = System.nanoTime();
 
 			if (targetId == 0L || pingData.channel().canViewChannel(targetId)) {
-				destination.relayPing(targetId, pingData, ping);
+				destination.relayPing(targetId, pingData, ping, config);
 			}
 
 			var time = System.nanoTime() - start;
 
 			if (time >= 1_000_000_000L) { // 1000.000 ms
-				App.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + destination);
+				Log.warn("Reply: " + ((time / 1000L) / 1000F) + " ms " + destination);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();

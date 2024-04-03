@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.TimestampFormat;
@@ -106,6 +107,8 @@ public class Utils {
 	}
 
 	public static ReactionEmoji stringToReaction(String s) {
+		s = s.trim();
+
 		if (s.isEmpty() || s.equals("-")) {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
@@ -195,10 +198,10 @@ public class Utils {
 			return set;
 		} catch (ClientException ex) {
 			if (ex.getStatus().code() != 404) {
-				App.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
+				Log.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
 			}
 		} catch (Exception ex) {
-			App.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
+			Log.error("Failed to get permissions for " + member + " in " + channel.getName() + ": " + ex);
 			ex.printStackTrace();
 		}
 

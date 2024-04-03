@@ -6,11 +6,11 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import org.jetbrains.annotations.Nullable;
 
@@ -125,8 +125,8 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		return document.getBoolean("deleted");
 	}
 
-	public EmbedCreateSpec edit(GuildCollections gc, @Nullable EmbedCreateFields.Footer footer) {
-		var builder = EmbedCreateSpec.builder();
+	public EmbedBuilder edit(GuildCollections gc, @Nullable EmbedCreateFields.Footer footer) {
+		var builder = EmbedBuilder.create();
 
 		var status = getStatus();
 		var v = countVotes();
@@ -139,8 +139,8 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 
 		builder.url(App.url("guild/feedback/" + gc.guildId + "/" + getNumber()));
 		builder.description(getContent());
-		builder.addField(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
-		builder.addField(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
+		builder.field(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
+		builder.field(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.color(status.color);
 		builder.footer(footer);
 
@@ -148,13 +148,13 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 
 		if (status != Status.NONE) {
 			if (gc.anonymousFeedback.get()) {
-				builder.addField("Reason", getReason(), false);
+				builder.field("Reason", getReason(), false);
 			} else {
-				builder.addField("Reason", getReason() + " - <@" + getReasonAuthor() + ">", false);
+				builder.field("Reason", getReason() + " - <@" + getReasonAuthor() + ">", false);
 			}
 		}
 
-		return builder.build();
+		return builder;
 	}
 
 	public static boolean canSee(GuildCollections gc, AuthLevel authLevel) {

@@ -1,10 +1,14 @@
 package dev.gnomebot.app.server.handler;
 
+import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.Paste;
+import dev.gnomebot.app.data.Databases;
+import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.util.MessageBuilder;
+import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
@@ -14,7 +18,14 @@ import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
+import discord4j.core.object.entity.Attachment;
+import discord4j.core.object.entity.Message;
+import discord4j.rest.entity.RestChannel;
+import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.HttpStatus;
+import org.bson.conversions.Bson;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -108,15 +119,7 @@ public class PasteHandlers {
 	public static final int TYPE_NONE = 0;
 	public static final int TYPE_JAVA_AND_JS = 1;
 
-	public static Response file(ServerRequest request) throws Exception {
-		var channel = request.getSnowflake("channel");
-		var id = request.getSnowflake("id");
-		var filename = request.variable("filename");
-		Paste.createPaste(request.app.db, channel, id, filename, "");
-		return Response.permanentRedirect(App.url("paste/" + SnowFlake.str(id)));
-	}
-
-	public static Response pasteRaw(ServerRequest request) throws Exception {
+	public static Response pasteRaw(ServerRequest request) {
 		var id0 = request.variable("id").split("!", 2);
 		var id = SnowFlake.num(id0[0]);
 
@@ -127,12 +130,27 @@ public class PasteHandlers {
 		}
 
 		var channel = paste.getChannelID();
+		var messageId = paste.getMessageID();
+
 		var filename = paste.getFilename();
+
+		Attachment attachment = null;
+
+		for (var att : request.app.discordHandler.client.getMessageById(SnowFlake.convert(channel), SnowFlake.convert(messageId)).block().getAttachments()) {
+			if (att.getId().asLong() == id) {
+				attachment = att;
+				break;
+			}
+		}
+
+		if (attachment == null) {
+			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+		}
 
 		byte[] contents;
 
 		try {
-			contents = URLRequest.of(Paste.getOriginalUrl(channel, id, filename)).toBytes().block();
+			contents = URLRequest.of(attachment.getUrl()).toBytes().block();
 		} catch (Exception ex) {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
@@ -158,6 +176,7 @@ public class PasteHandlers {
 				.withHeader("Gnome-Paste-Bytes", String.valueOf(contents.length))
 				.withHeader("Gnome-Paste-Filename", filename)
 				.withHeader("Gnome-Paste-Channel", SnowFlake.str(channel))
+				.withHeader("Gnome-Paste-Message", SnowFlake.str(messageId))
 				.withHeader("Gnome-Paste-User", paste.getUser());
 
 		if (download) {
@@ -167,16 +186,11 @@ public class PasteHandlers {
 		return response;
 	}
 
-	public static Response pasteDirect(ServerRequest request) throws Exception {
-		var channel = request.getSnowflake("channel");
-		var id = request.getSnowflake("id");
-		var name = request.variable("name");
-		var author = request.variable("author");
-		Paste.createPaste(request.app.db, channel, id, name, author);
-		return Response.redirect("/paste/" + SnowFlake.str(id));
-	}
-
 	public static Response paste(ServerRequest request) throws Exception {
+		if (request.userAgent.contains("PetalBot")) {
+			throw new ForbiddenResponse("Access Denied");
+		}
+
 		var id0 = request.variable("id").split("!", 2);
 		var id = id0[0];
 		var subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
@@ -400,5 +414,49 @@ public class PasteHandlers {
 		}
 
 		return root.asResponse();
+	}
+
+	public static String getUrl(long attachmentId) {
+		return App.url("paste/" + attachmentId);
+	}
+
+	public static void pasteMessage(Databases db, RestChannel channel, Message m, List<Attachment> attachments) {
+		if (attachments.isEmpty()) {
+			return;
+		}
+
+		var userData = m.getUserData();
+		var buttons = new ArrayList<Button>();
+
+		for (var attachment : attachments) {
+			createPaste(db, m.getChannelId().asLong(), m.getId().asLong(), attachment.getId().asLong(), attachment.getFilename(), userData.id().asLong());
+			buttons.add(Button.link(getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()));
+		}
+
+		if (userData.id().asLong() == db.app.discordHandler.selfId && (m.getData().components().isAbsent() || m.getData().components().get().isEmpty())) {
+			m.edit(MessageBuilder.create()
+					.addComponent(ActionRow.of(buttons))
+					.toMessageEditSpec()
+			).subscribe();
+		} else {
+			channel.createMessage(MessageBuilder.create()
+					.content("Paste version of " + attachments.stream().map(a -> "`" + a.getFilename() + "`").collect(Collectors.joining(", ")) + " from <@" + userData.id().asString() + ">")
+					.addComponent(ActionRow.of(buttons))
+					.toMultipartMessageCreateRequest()
+			).subscribe(m1 -> MessageHandler.addAutoDelete(m.getId().asLong(), new MessageId(m1.channelId().asLong(), m1.id().asLong())));
+		}
+	}
+
+	public static void createPaste(Databases db, long channelId, long messageId, long attachmentId, String filename, long user) {
+		var updates = new ArrayList<Bson>();
+		updates.add(Updates.set("channel", channelId));
+		updates.add(Updates.set("message", messageId));
+		updates.add(Updates.set("filename", filename));
+
+		if (user != 0L) {
+			updates.add(Updates.set("user", user));
+		}
+
+		db.pastesDB.query(attachmentId).upsert(updates);
 	}
 }

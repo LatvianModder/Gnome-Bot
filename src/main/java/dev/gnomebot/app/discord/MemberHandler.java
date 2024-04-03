@@ -2,8 +2,7 @@ package dev.gnomebot.app.discord;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
@@ -11,6 +10,7 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.event.domain.guild.BanEvent;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.guild.MemberLeaveEvent;
@@ -130,7 +130,7 @@ public class MemberHandler {
 		}
 
 		// App.info(Utils.ANSI_GREEN + member.getTag() + Utils.ANSI_RESET + " has joined the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server!");
-		App.LOGGER.event(BrainEvents.MEMBER_JOINED);
+		BrainEventType.MEMBER_JOINED.build(gc.guildId).post();
 
 		var oldMember = gc.members.findFirst(member);
 
@@ -146,7 +146,7 @@ public class MemberHandler {
 		try {
 			updateMember(gc, member, member, ACTION_JOINED, oldMember, null);
 		} catch (Exception ex) {
-			App.error("Failed to save member from joining: " + ex);
+			Log.error("Failed to save member from joining: " + ex);
 		}
 	}
 
@@ -162,7 +162,7 @@ public class MemberHandler {
 		);
 
 		// App.info(Utils.ANSI_GREEN + event.getUser().getUsername() + Utils.ANSI_RESET + " has left the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server! (" + Utils.prettyTimeString(mems) + " of membership)");
-		App.LOGGER.event(BrainEvents.MEMBER_LEFT);
+		BrainEventType.MEMBER_LEFT.build(gc.guildId).post();
 
 		if (gc.logLeavingChannel.isSet()) {
 			var sb = new StringBuilder();
@@ -212,7 +212,7 @@ public class MemberHandler {
 			var reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
 
 			// App.info(Utils.ANSI_RED + event.getUser().getUsername() + Utils.ANSI_RESET + " was banned from " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server by " + (responsible == null ? "Unknown" : responsible.getTag()) + "! Reason: " + reason);
-			App.LOGGER.event(BrainEvents.MEMBER_BANNED);
+			BrainEventType.MEMBER_BANNED.build(gc.guildId).post();
 
 			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAN)
 					.user(event.getUser())

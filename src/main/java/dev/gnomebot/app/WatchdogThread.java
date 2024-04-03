@@ -2,6 +2,7 @@ package dev.gnomebot.app;
 
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,7 +32,7 @@ public class WatchdogThread extends Thread {
 	public static void majorError(String reason) {
 		if (majorErrors < MAX_ERRORS) {
 			majorErrors++;
-			App.error("Watchdog: Major error occurred [" + majorErrors + "/" + MAX_ERRORS + "]: " + reason);
+			Log.error("Watchdog: Major error occurred [" + majorErrors + "/" + MAX_ERRORS + "]: " + reason);
 			errorList.add(new Date().toLocaleString() + ": " + reason);
 		}
 	}
@@ -53,12 +54,12 @@ public class WatchdogThread extends Thread {
 						update();
 					} catch (Exception ex) {
 						ex.printStackTrace();
-						App.error("Watchdog: Timed out");
+						Log.error("Watchdog: Timed out");
 						majorErrors = MAX_ERRORS;
 					}
 				} else {
-					App.error("Watchdog: Blocking task is taking more than 1 minute! Tasks:");
-					App.error(app.blockingTasks);
+					Log.error("Watchdog: Blocking task is taking more than 1 minute! Tasks:");
+					Log.error(app.blockingTasks);
 				}
 			}
 

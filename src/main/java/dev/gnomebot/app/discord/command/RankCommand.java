@@ -4,7 +4,6 @@ import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.json.JSONObject;
 
 public class RankCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("rank")
@@ -21,15 +20,14 @@ public class RankCommand extends ApplicationCommands {
 
 		var m = event.get("member").asMember().orElse(event.context.sender);
 		var days = event.get("timespan").asDays().orElse(90L);
+		var channel = event.get("channel").asChannelInfo().orElse(null);
 
 		event.context.handler.app.queueBlockingTask(task -> {
 			try {
-				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId + "/" + days).timeout(5000).toJsonArray().block();
+				var leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId + "/" + days + (channel == null ? "" : ("?channel=" + channel.id))).timeout(5000).toJsonArray().block();
 				var id = m.getId().asString();
 
-				for (var e : leaderboardJson) {
-					var o = (JSONObject) e;
-
+				for (var o : leaderboardJson.ofObjects()) {
 					if (o.asString("id").equals(id)) {
 						// event.response().createFollowupMessage("**Rank:**  #0   |   **XP:**  0").subscribe();
 

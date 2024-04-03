@@ -36,7 +36,7 @@ public class RequestHandler {
 		cacheSeconds = 0;
 		authLevel = AuthLevel.LOGGED_IN;
 		trusted = false;
-		log = false;
+		log = true;
 	}
 
 	public RequestHandler method(HandlerType m) {
@@ -103,8 +103,8 @@ public class RequestHandler {
 		return this;
 	}
 
-	public RequestHandler log() {
-		log = true;
+	public RequestHandler noLog() {
+		log = false;
 		return this;
 	}
 

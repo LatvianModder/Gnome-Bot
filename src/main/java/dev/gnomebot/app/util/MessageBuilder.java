@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
-import dev.gnomebot.app.App;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -72,7 +72,7 @@ public class MessageBuilder {
 			return builder;
 		}
 
-		App.error("Invalid script message: " + object);
+		Log.error("Invalid script message: " + object);
 		return MessageBuilder.create("Invalid script message!");
 	}
 
@@ -258,7 +258,7 @@ public class MessageBuilder {
 		return toMessageCreateSpec().asRequest();
 	}
 
-	public MessageEditSpec.Builder toMessageEditSpec() {
+	public MessageEditSpec toMessageEditSpec() {
 		var builder = MessageEditSpec.builder();
 
 		if (this.content != null) {
@@ -279,7 +279,7 @@ public class MessageBuilder {
 			builder.files(this.files);
 		}
 
-		return builder;
+		return builder.build();
 	}
 
 	public FollowupMessageRequest toFollowupMessageRequest() {

@@ -5,10 +5,12 @@ import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ping.Ping;
 import dev.gnomebot.app.data.ping.PingData;
 import dev.gnomebot.app.data.ping.PingDestination;
+import dev.gnomebot.app.data.ping.UserPingConfig;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Webhook;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.service.WebhookService;
@@ -94,7 +96,7 @@ public class WebHook implements PingDestination {
 
 			return 0L;
 		} catch (Exception ex) {
-			App.error("Failed to execute webhook " + SnowFlake.str(id) + " with body " + body);
+			Log.error("Failed to execute webhook " + SnowFlake.str(id) + " with body " + body);
 			ex.printStackTrace();
 			return 0L;
 		}
@@ -109,13 +111,21 @@ public class WebHook implements PingDestination {
 	}
 
 	@Override
-	public void relayPing(long targetId, PingData pingData, Ping ping) {
+	public void relayPing(long targetId, PingData pingData, Ping ping, UserPingConfig config) {
 		try {
 			var targetUserName = targetId == 0L ? "Gnome" : pingData.gc().db.app.discordHandler.getUserName(targetId).orElse(SnowFlake.str(targetId));
-			App.info("Ping for WebHook[" + SnowFlake.str(id) + " of " + targetUserName + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+			Log.info("Ping for WebHook[" + SnowFlake.str(id) + " of " + targetUserName + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+
+			var content = new StringBuilder();
+
+			if (config.silent()) {
+				content.append("@silent ");
+			}
+
+			content.append("[Ping ➤](").append(pingData.url()).append(") from ").append(pingData.url()).append("\n").append(pingData.content());
 
 			execute(MessageBuilder.create()
-					.content("[Ping ➤](" + pingData.url() + ") from " + pingData.url() + "\n" + pingData.content())
+					.content(content.toString())
 					.webhookName(pingData.username())
 					.webhookAvatarUrl(pingData.avatar())
 			);

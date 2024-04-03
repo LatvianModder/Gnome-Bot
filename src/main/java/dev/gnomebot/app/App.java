@@ -13,22 +13,20 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.server.WebServer;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
+import dev.gnomebot.app.server.handler.GuildAPIHandlers;
 import dev.gnomebot.app.server.handler.GuildHandlers;
 import dev.gnomebot.app.server.handler.InfoHandlers;
+import dev.gnomebot.app.server.handler.LogHandlers;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
-import dev.gnomebot.app.server.handler.MiscHandlers;
 import dev.gnomebot.app.server.handler.PasteHandlers;
-import dev.gnomebot.app.server.handler.SpecialHandlers;
-import dev.gnomebot.app.server.handler.panel.AuditLogHandlers;
-import dev.gnomebot.app.server.handler.panel.PanelHandlers;
-import dev.gnomebot.app.server.handler.panel.ScamWebHandlers;
+import dev.gnomebot.app.server.handler.RootHandlers;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
 import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.ansi.Table;
-import discord4j.rest.http.client.ClientException;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
@@ -39,36 +37,11 @@ import java.util.function.Predicate;
 
 public class App implements Runnable {
 	public static final Instant START_INSTANT = Instant.now();
-	public static final Logger LOGGER = new Logger();
 	public static boolean debug = false;
 	public static App instance;
 
 	public static void main(String[] args) {
 		new Thread(instance = new App(), "MainThread").start();
-	}
-
-	public static void info(Object message) {
-		LOGGER.info(message);
-	}
-
-	public static void success(Object message) {
-		LOGGER.success(message);
-	}
-
-	public static void warn(Object message) {
-		LOGGER.warn(message);
-	}
-
-	public static void error(Object message) {
-		LOGGER.error(message);
-	}
-
-	public static void warn(Exception ex) {
-		if (ex instanceof ClientException) {
-			warn(ex.getMessage());
-		} else {
-			warn(ex.toString());
-		}
 	}
 
 	public static String url(String path) {
@@ -92,8 +65,9 @@ public class App implements Runnable {
 
 	@Override
 	public void run() {
+		Log.INSTANCE = new GnomeLog();
 		// LOGGER.replaceSystemOutLogger();
-		App.info("Starting up...");
+		Log.info("Starting up...");
 		Locale.setDefault(Locale.US);
 		System.setProperty("java.awt.headless", "true");
 		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
@@ -101,87 +75,84 @@ public class App implements Runnable {
 
 		running = true;
 
-		App.info("Loading char map...");
+		Log.info("Loading char map...");
 		CharMap.load();
 
 		cli = new CLI(this);
 		cli.start();
 		db = new Databases(this);
 
-		App.info("Loading discord handler...");
+		Log.info("Loading discord handler...");
 
 		discordHandler = new DiscordHandler(this);
 		discordHandler.load();
-		App.info("Discord handler loaded");
+		Log.info("Discord handler loaded");
 
 		db.createSelfToken();
 
 		pingHandler = new PingHandler(db);
 
-		App.info("Loading web server...");
+		Log.info("Loading web server...");
 		webServer = new WebServer(this);
 
-		webServer.add("api/account/sign-out", MiscHandlers::signOut).post().log();
+		webServer.add("/", RootHandlers::root).noAuth();
+		webServer.add("/login", RootHandlers::login).noAuth();
+		webServer.add("/logout", RootHandlers::logout);
+		webServer.add("/robots.txt", RootHandlers::robots).noAuth().cacheDays(1);
+		webServer.add("/public/:file", RootHandlers::publicfile).noAuth().cacheMinutes(5).noLog();
 
-		webServer.add("api/info/ping", InfoHandlers::ping).noAuth();
-		webServer.add("api/info/user/:user", InfoHandlers::user).noAuth().cacheHours(1);
-		webServer.add("api/info/avatar/:user/:size", InfoHandlers::avatar).noAuth().cacheDays(1);
-		webServer.add("api/info/emoji/:emoji/:size", InfoHandlers::emoji).noAuth().cacheDays(1);
-		webServer.add("api/info/define/:word", InfoHandlers::define).noAuth().cacheMinutes(1);
-		webServer.add("api/info/video-thumbnail/:channel/:message/:attachment", InfoHandlers::videoThumbnail).noAuth().cacheDays(1);
+		webServer.add("/api/info/ping", InfoHandlers::ping).noAuth();
+		webServer.add("/api/info/user/:user", InfoHandlers::user).noAuth().cacheHours(1);
+		webServer.add("/api/info/avatar/:user/:size", InfoHandlers::avatar).noAuth().cacheDays(1);
+		webServer.add("/api/info/emoji/:emoji/:size", InfoHandlers::emoji).noAuth().cacheDays(1);
+		webServer.add("/api/info/define/:word", InfoHandlers::define).noAuth().cacheMinutes(1);
+		webServer.add("/api/info/video-thumbnail/:channel/:message/:attachment", InfoHandlers::videoThumbnail).noAuth().cacheDays(1);
 
-		webServer.add("api/guilds", GuildHandlers::guilds).cacheMinutes(1).log();
-		webServer.add("api/guild/info/:guild", GuildHandlers::info).member().cacheHours(1);
-		webServer.add("api/guild/banner/:guild", GuildHandlers::banner).noAuth().cacheSeconds(1);
-		webServer.add("api/guild/settings/basic/:guild", GuildHandlers::getSettings).member();
-		webServer.add("api/guild/settings/basic/:guild/:key", GuildHandlers::updateSetting).patch().owner();
-		webServer.add("api/guild/icon/:guild/:size", GuildHandlers::icon).noAuth().cacheDays(1);
-		webServer.add("api/guild/file/:channel/:id/:filename", PasteHandlers::file).noAuth().cacheMinutes(5);
-		webServer.add("paste/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
-		webServer.add("paste/:id", PasteHandlers::paste).noAuth().cacheMinutes(5);
-		webServer.add("paste/:channel/:id/:name/:author", PasteHandlers::pasteDirect).noAuth().cacheMinutes(5);
-		webServer.add("api/guild/feedback/:guild/:id", GuildHandlers::feedback).member();
-		webServer.add("api/guild/feedback/:guild", GuildHandlers::feedbackList).member().cacheMinutes(1);
-		webServer.add("api/guild/polls/:guild/:id", GuildHandlers::poll).member();
-		webServer.add("api/guild/polls/:guild", GuildHandlers::pollList).member();
-		webServer.add("api/guild/members/:guild", GuildHandlers::members).member().cacheMinutes(5);
-		webServer.add("api/guild/member/:guild/:member", GuildHandlers::member).member().cacheMinutes(5);
-		webServer.add("api/guild/audit-log/:guild", GuildHandlers::auditLog).admin().log();
-		webServer.add("api/guild/export-messages/:guild/:member", GuildHandlers::exportMessages).admin().log();
+		webServer.add("/api/guilds", GuildAPIHandlers::guilds).cacheMinutes(1);
+		webServer.add("/api/guild/info/:guild", GuildAPIHandlers::info).member().cacheHours(1);
+		webServer.add("/api/guild/banner/:guild", GuildAPIHandlers::banner).noAuth().cacheSeconds(1);
+		webServer.add("/api/guild/settings/basic/:guild", GuildAPIHandlers::getSettings).member();
+		webServer.add("/api/guild/settings/basic/:guild/:key", GuildAPIHandlers::updateSetting).patch().owner();
+		webServer.add("/api/guild/icon/:guild/:size", GuildAPIHandlers::icon).noAuth().cacheDays(1);
+		webServer.add("/paste/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
+		webServer.add("/paste/:id", PasteHandlers::paste).noAuth().cacheMinutes(5);
+		webServer.add("/api/guild/feedback/:guild/:id", GuildAPIHandlers::feedback).member();
+		webServer.add("/api/guild/feedback/:guild", GuildAPIHandlers::feedbackList).member().cacheMinutes(1);
+		webServer.add("/api/guild/polls/:guild/:id", GuildAPIHandlers::poll).member();
+		webServer.add("/api/guild/polls/:guild", GuildAPIHandlers::pollList).member();
+		webServer.add("/api/guild/members/:guild", GuildAPIHandlers::members).member().cacheMinutes(5);
+		webServer.add("/api/guild/member/:guild/:member", GuildAPIHandlers::member).member().cacheMinutes(5);
+		webServer.add("/api/guild/audit-log/:guild", GuildAPIHandlers::auditLog).admin();
+		webServer.add("/api/guild/export-messages/:guild/:member", GuildAPIHandlers::exportMessages).admin();
 
-		webServer.add("api/guild/activity/leaderboard/:guild/:days", ActivityHandlers::leaderboard).member().cacheHours(1);
-		webServer.add("api/guild/activity/leaderboard-image/:guild/:days", ActivityHandlers::leaderboardImage).member().cacheHours(1);
-		webServer.add("api/guild/activity/rank/:guild/:member/:days", ActivityHandlers::rank).member().cacheHours(0); // 1
-		webServer.add("api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5);
-		webServer.add("api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5);
-		webServer.add("api/guild/activity/user-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::userMentionLeaderboardImage).admin().cacheHours(1);
-		webServer.add("api/guild/activity/role-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::roleMentionLeaderboardImage).admin().cacheHours(1);
+		webServer.add("/api/guild/activity/leaderboard/:guild/:days", ActivityHandlers::leaderboard).member().cacheHours(1);
+		webServer.add("/api/guild/activity/leaderboard-image/:guild/:days", ActivityHandlers::leaderboardImage).member().cacheHours(1);
+		webServer.add("/api/guild/activity/rank/:guild/:member/:days", ActivityHandlers::rank).member().cacheHours(0); // 1
+		webServer.add("/api/guild/activity/members/:guild", ActivityHandlers::members).member().cacheMinutes(5);
+		webServer.add("/api/guild/activity/channels/:guild", ActivityHandlers::channels).member().cacheMinutes(5);
+		webServer.add("/api/guild/activity/user-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::userMentionLeaderboardImage).admin().cacheHours(1);
+		webServer.add("/api/guild/activity/role-mention-leaderboard-image/:guild/:mention/:days", ActivityHandlers::roleMentionLeaderboardImage).admin().cacheHours(1);
 
-		webServer.add("api/rust-plus/:from", MiscHandlers::rustPlus).post().noAuth().log();
+		webServer.add("/guild", GuildHandlers::guildList);
+		webServer.add("/guild/:guild", GuildHandlers::guild).member();
+		webServer.add("/guild/:guild/members/:id", GuildHandlers::memberInfo);
+		webServer.add("/guild/:guild/audit-log", LogHandlers::auditLog).admin();
+		webServer.add("/guild/:guild/macros", GuildHandlers::macros);
+		webServer.add("/guild/:guild/macros/:id", GuildHandlers::macroInfo);
+		webServer.add("/guild/:guild/bans", LogHandlers::bans).admin();
+		webServer.add("/guild/:guild/mutes", LogHandlers::mutes).admin();
+		webServer.add("/guild/:guild/feedback", GuildHandlers::feedbackList).member();
+		webServer.add("/guild/:guild/feedback/:id", GuildHandlers::feedback).member();
 
-		webServer.add("public/:file", SpecialHandlers::publicfile).noAuth().cacheMinutes(5);
+		webServer.add("/minecraft/verify", MinecraftHandlers::verify).noAuth();
 
-		webServer.add("panel", PanelHandlers::root).log();
-		webServer.add("panel/login", PanelHandlers::login).noAuth().log();
-		webServer.add("panel/:guild", PanelHandlers::guild).member();
-		webServer.add("panel/:guild/audit-log", AuditLogHandlers::auditLog).admin();
-		webServer.add("panel/:guild/offenses", AuditLogHandlers::offenses).member();
-		webServer.add("panel/:guild/offenses/:user", AuditLogHandlers::offensesOf).admin();
-		webServer.add("panel/:guild/bans", AuditLogHandlers::bans).admin();
-		webServer.add("panel/:guild/scam-detection", ScamWebHandlers::scamDetection).admin();
-		webServer.add("panel/:guild/macros", PanelHandlers::macros);
-		webServer.add("panel/:guild/macros/:id", PanelHandlers::macroInfo);
-		webServer.add("panel/:guild/members/:id", PanelHandlers::memberInfo);
-
-		webServer.add("minecraft/verify", MinecraftHandlers::verify).noAuth().log();
-
-		webServer.addWS("api/cli", WSHandler.CLI);
+		webServer.addWS("/api/cli", WSHandler.CLI);
 
 		webServer.start(Config.get().port);
 
-		info("");
-		info("API Endpoints:");
-		info("");
+		Log.info("");
+		Log.info("API Endpoints:");
+		Log.info("");
 
 		var table = new Table("Method", "Path", "Auth Level", "Cache");
 
@@ -220,7 +191,7 @@ public class App implements Runnable {
 
 		table.print();
 
-		info("");
+		Log.info("");
 
 		ScamHandler.loadDomains();
 		DM.loadDmChannels();
@@ -228,15 +199,13 @@ public class App implements Runnable {
 		try {
 			ApplicationCommands.updateCommands(discordHandler);
 		} catch (Exception ex) {
-			error("Failed to update commands:");
+			Log.error("Failed to update commands:");
 			ex.printStackTrace();
 		}
 
-		printScheduled();
-
 		pingHandler.getPings();
 
-		success("Server restarted!");
+		Log.success("Server restarted!");
 		new WatchdogThread(this).start();
 
 		try {
@@ -268,14 +237,14 @@ public class App implements Runnable {
 				Thread.sleep(5L);
 			}
 		} catch (Throwable ex) {
-			error("Server crashed!");
+			Log.error("Server crashed!");
 			ex.printStackTrace();
 		}
 
-		info("Stopping the server...");
+		Log.info("Stopping the server...");
 		webServer.stop();
 		discordHandler.client.logout().block();
-		info("Server stopped!");
+		Log.info("Server stopped!");
 		System.exit(0);
 	}
 
@@ -316,7 +285,7 @@ public class App implements Runnable {
 			running = false;
 		}
 
-		App.info("Stopping server...");
+		Log.info("Stopping server...");
 		ReactionHandler.shutdown();
 
 		for (var task : blockingTasks) {
@@ -354,14 +323,6 @@ public class App implements Runnable {
 
 		if (running) {
 			scheduledTasks.add(task);
-		}
-	}
-
-	public void printScheduled() {
-		App.info("Scheduled tasks [" + scheduledTasks.size() + "]");
-
-		for (var task : scheduledTasks) {
-			App.info(Ansi.of("- ").append(task.toAnsi()));
 		}
 	}
 }

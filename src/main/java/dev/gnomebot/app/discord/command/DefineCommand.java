@@ -16,6 +16,7 @@ import java.util.List;
 
 public class DefineCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("define")
+			.supportsDM()
 			.description("Prints dictionary definition of a word")
 			.add(string("word").required())
 			.run(DefineCommand::run);

@@ -1,33 +1,30 @@
 package dev.gnomebot.app.discord.command.admin;
 
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ExportedMessage;
-import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.core.spec.MessageEditSpec;
 import io.javalin.http.HttpStatus;
 
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -197,7 +194,7 @@ public class DisplayCommands extends ApplicationCommands {
 			list.add(emessage);
 		}
 
-		m.edit(MessageEditSpec.builder().contentOrNull("Done gathering messages! Saving to file...").build()).block();
+		m.edit(MessageBuilder.create("Done gathering messages! Saving to file...").toMessageEditSpec()).block();
 		list.sort(ExportedMessage.COMPARATOR);
 
 		var out = new ByteArrayOutputStream();
@@ -225,12 +222,12 @@ public class DisplayCommands extends ApplicationCommands {
 			ex.printStackTrace();
 		}
 
-		m.edit(MessageEditSpec.builder().contentOrNull("Done!").build()).subscribe();
+		m.edit(MessageBuilder.create("Done!").toMessageEditSpec()).subscribe();
 
-		c.createMessage(MessageCreateSpec.builder().addFile(event.context.gc.guildId + "-" + memberId.asString() + "-" + Instant.now() + ".csv", new ByteArrayInputStream(out.toByteArray())).build()).flatMap(dm -> {
+		c.createMessage(MessageBuilder.create().addFile(event.context.gc.guildId + "-" + memberId.asString() + "-" + Instant.now() + ".csv", out.toByteArray()).toMessageCreateSpec()).flatMap(dm -> {
 			var attachment = dm.getAttachments().get(0);
-			Paste.createPaste(event.context.gc.db, dm.getChannelId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getUsername());
-			return dm.edit(MessageEditSpec.builder().addComponent(ActionRow.of(Button.link(Paste.getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()))).build());
+			PasteHandlers.createPaste(event.context.gc.db, dm.getChannelId().asLong(), dm.getId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getId().asLong());
+			return dm.edit(MessageBuilder.create().addComponent(ActionRow.of(Button.link(PasteHandlers.getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()))).toMessageEditSpec());
 		}).block();
 
 		event.respond("Done! Check your DMs!");
@@ -269,14 +266,14 @@ public class DisplayCommands extends ApplicationCommands {
 
 		var activity = new long[24];
 		var total = 0L;
-		App.info("Starting... " + member.getTag());
+		Log.info("Starting... " + member.getTag());
 
 		for (var m : event.context.gc.messages.query().eq("user", member.getId().asLong()).filter(ms == 0L ? null : Filters.gt("timestamp", new Date(System.currentTimeMillis() - ms)))) {
 			activity[m.getDate().toInstant().atZone(zoneId).getHour()]++;
 			total++;
 		}
 
-		App.info("Stopped!");
+		Log.info("Stopped!");
 
 		if (total == 0L) {
 			event.respond("No messages found!");

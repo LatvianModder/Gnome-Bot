@@ -3,9 +3,8 @@ package dev.gnomebot.app.data;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.data.config.ConfigHolder;
@@ -30,7 +29,7 @@ import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.AnsiJava;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.json.JSON;
@@ -44,12 +43,9 @@ import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.json.MemberData;
 import discord4j.discordjson.json.UserData;
-import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Image;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
@@ -95,6 +91,8 @@ public class GuildCollections {
 	public final WrappedCollection<DiscordMessageCount> messageCount;
 	public final WrappedCollection<DiscordMessageXP> messageXp;
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
+	public final WrappedCollection<GnomeAuditLogEntry> voiceLog;
+	public final WrappedCollection<GnomeAuditLogEntry> reactionLog;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final Map<ConfigKey<?, ?>, ConfigHolder<?>> configHolders = new IdentityHashMap<>();
@@ -176,17 +174,19 @@ public class GuildCollections {
 			}
 		}
 
-		App.info("Loading guild '" + this + "'...");
+		Log.info("Loading guild '" + this + "'...");
 
 		members = create("members", DiscordMember::new);
 		// TODO: Move messages to edited when channel is deleted
 		messages = create("messages", DiscordMessage::new);
-		editedMessages = create("edited_messages", DiscordMessage::new).expiresAfterMonth("timestamp_expire_" + dbid, "timestamp", null); // GDPR
+		editedMessages = create("edited_messages", DiscordMessage::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
 		feedback = create("feedback", DiscordFeedback::new);
 		polls = create("polls", DiscordPoll::new);
 		messageCount = create("message_count", DiscordMessageCount::new);
 		messageXp = create("message_xp", DiscordMessageXP::new);
-		auditLog = create("audit_log", GnomeAuditLogEntry::new).expiresAfterMonth("timestamp_expire_" + dbid, "expires", Filters.exists("expires")); // GDPR
+		auditLog = create("audit_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
+		voiceLog = create("voice_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
+		reactionLog = create("reaction_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
 		memberLogThreads = create("member_log_threads", ThreadLocation::new);
 
 		if (Files.exists(paths.config)) {
@@ -303,7 +303,7 @@ public class GuildCollections {
 			}
 		}
 
-		App.info(Ansi.of("Saved config of " + name + ": ").append(AnsiJava.of(json)));
+		Log.info(Ansi.of("Saved config of " + name + ": ").append(Ansi.ofObject(json)));
 
 		try {
 			Files.writeString(paths.config, json.toPrettyString());
@@ -478,9 +478,9 @@ public class GuildCollections {
 	public AuthLevel getAuthLevel(@Nullable Member member) {
 		if (member == null) {
 			return AuthLevel.NO_AUTH;
-		} else if (member.getId().equals(db.app.discordHandler.selfId)) {
+		} else if (member.getId().asLong() == db.app.discordHandler.selfId) {
 			return AuthLevel.OWNER;
-		} else if (member.getId().equals(getGuild().getOwnerId())) {
+		} else if (member.getId().asLong() == getGuild().getOwnerId().asLong()) {
 			return AuthLevel.OWNER;
 		}
 
@@ -551,7 +551,7 @@ public class GuildCollections {
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
-		App.LOGGER.event(BrainEvents.REFRESHED_GUILD_CACHE);
+		BrainEventType.REFRESHED_GUILD_CACHE.build(this).post();
 		refreshCache();
 		var saveInfo = false;
 
@@ -591,19 +591,19 @@ public class GuildCollections {
 	}
 
 	public void channelUpdated(@Nullable CategorizableChannel old, TopLevelGuildMessageChannel channel, boolean deleted) {
-		App.LOGGER.event(BrainEvents.REFRESHED_CHANNEL_CACHE);
+		BrainEventType.REFRESHED_CHANNEL_CACHE.build(this).post();
 		refreshCache();
 
 		if (advancedLogging) {
-			App.info("Channel updated: " + this + "/#" + channel.getName());
+			Log.info("Channel updated: " + this + "/#" + channel.getName());
 
 			if (old != null) {
 				if (!old.getName().equals(channel.getName())) {
-					App.info("> Name " + old.getName() + " -> " + channel.getName());
+					Log.info("> Name " + old.getName() + " -> " + channel.getName());
 				}
 
 				if (old.getRawPosition() != channel.getRawPosition()) {
-					App.info("> Position " + old.getRawPosition() + " -> " + channel.getRawPosition());
+					Log.info("> Position " + old.getRawPosition() + " -> " + channel.getRawPosition());
 				}
 			}
 		}
@@ -614,7 +614,7 @@ public class GuildCollections {
 	}
 
 	public void roleUpdated(long roleId, boolean deleted) {
-		App.LOGGER.event(BrainEvents.REFRESHED_ROLE_CACHE);
+		BrainEventType.REFRESHED_ROLE_CACHE.build(this).post();
 		refreshCache();
 	}
 
@@ -748,9 +748,9 @@ public class GuildCollections {
 
 	public void auditLog(GnomeAuditLogEntry.Builder builder) {
 		try {
-			auditLog.insert(builder.build());
+			builder.type.collection.apply(this).insert(builder.build());
 		} catch (Exception ex) {
-			Ansi.log(Ansi.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(Ansi.darkRed(ex)));
+			Log.info(Ansi.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(Ansi.darkRed(ex)));
 		}
 	}
 
@@ -1032,29 +1032,19 @@ public class GuildCollections {
 					} catch (Exception ignored) {
 					}
 
-					thread.createMessage(MessageCreateSpec.builder()
-							.content(String.join("\n", list))
-							.allowedMentions(AllowedMentions.builder()
-									.allowUser(SnowFlake.convert(user.id().asLong()))
-									.build()
-							)
-							.build()
-					).subscribe();
+					thread.createMessage(MessageBuilder.create().content(list).allowUserMentions(user.id().asLong()).toMessageCreateSpec()).subscribe();
 				}
 
 				var adminRole = this.adminRole.get();
 
 				if (adminRole != 0L) {
-					thread.createMessage("...").withAllowedMentions(AllowedMentions.builder()
-							.allowRole(SnowFlake.convert(adminRole))
-							.build()
-					).flatMap(m -> m.edit(MessageEditSpec.builder()
-							.allowedMentionsOrNull(AllowedMentions.builder()
-									.allowRole(SnowFlake.convert(adminRole))
-									.build()
-							)
-							.contentOrNull("Adding <@&" + adminRole + ">...")
-							.build()
+					thread.createMessage(MessageBuilder.create("...")
+							.allowRoleMentions(adminRole)
+							.toMessageCreateSpec()
+					).flatMap(m -> m.edit(MessageBuilder.create()
+							.allowRoleMentions(adminRole)
+							.content("Adding <@&" + adminRole + ">...")
+							.toMessageEditSpec()
 					)).flatMap(Message::delete).subscribe();
 				}
 

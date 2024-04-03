@@ -5,6 +5,7 @@ import discord4j.core.object.reaction.ReactionEmoji;
 
 public class BigEmojiCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("bigemoji")
+			.supportsDM()
 			.description("Get image version of an emoji")
 			.add(string("emoji").required())
 			.run(BigEmojiCommand::run);

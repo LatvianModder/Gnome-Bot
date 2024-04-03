@@ -1,6 +1,5 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.WebHook;
@@ -12,6 +11,7 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.NativeJavaClass;
 import dev.latvian.mods.rhino.NativeJavaObject;
@@ -71,9 +71,9 @@ public class DiscordJS {
 						ScriptableObject.putProperty(scope, "WebhookExecuteRequest", new NativeJavaClass(scope, WebhookExecuteRequest.class));
 
 						context.evaluateReader(scope, reader, rfile.toString(), 1, null);
-						App.info("Loaded script " + rfile);
+						Log.info("Loaded script " + rfile);
 					} catch (Exception ex) {
-						App.error("Failed to load script " + rfile);
+						Log.error("Failed to load script " + rfile);
 						ex.printStackTrace();
 					}
 				}

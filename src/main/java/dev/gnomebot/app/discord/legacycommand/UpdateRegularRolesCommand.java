@@ -1,9 +1,9 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public class UpdateRegularRolesCommand {
 					if (totalMessages >= context.gc.regularMessages.get()) {
 						if (!member.getRoleIds().contains(role)) {
 							added++;
-							App.info("Regular + " + n + ": " + totalMessages);
+							Log.info("Regular + " + n + ": " + totalMessages);
 
 							if (confirm) {
 								member.addRole(role).block();
@@ -53,7 +53,7 @@ public class UpdateRegularRolesCommand {
 						}
 					} else if (member.getRoleIds().contains(role)) {
 						removed++;
-						App.info("Regular - " + n + ": " + totalMessages);
+						Log.info("Regular - " + n + ": " + totalMessages);
 
 						if (confirm) {
 							member.removeRole(role).block();
@@ -64,7 +64,7 @@ public class UpdateRegularRolesCommand {
 						if (totalMessages >= 150) {
 							if (!member.getRoleIds().contains(roleMember)) {
 								addedMember++;
-								App.info(Ansi.of("Member + ").append(n).append(": " + totalMessages));
+								Log.info(Ansi.of("Member + ").append(n).append(": " + totalMessages));
 
 								if (confirm) {
 									member.addRole(roleMember).block();
@@ -72,7 +72,7 @@ public class UpdateRegularRolesCommand {
 							}
 						} else if (member.getRoleIds().contains(roleMember)) {
 							removedMember++;
-							App.info(Ansi.of("Member - ").append(n).append(": " + totalMessages));
+							Log.info(Ansi.of("Member - ").append(n).append(": " + totalMessages));
 
 							if (confirm) {
 								member.removeRole(roleMember).block();

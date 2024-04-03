@@ -1,13 +1,13 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.entity.User;
 
@@ -79,9 +79,9 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 							return Pair.of(userId, PingBuilder.compile(db, userId, Files.readString(path).trim(), false));
 						} catch (Exception ex) {
 							if (ex.getMessage().startsWith("You must message ")) {
-								App.warn(db.app.discordHandler.getUserName(userId) + " / " + userId + " needs to DM Gnome");
+								Log.warn(db.app.discordHandler.getUserName(userId) + " / " + userId + " needs to DM Gnome");
 							} else {
-								App.warn(userId + " pings were misconfigured");
+								Log.warn(userId + " pings were misconfigured");
 								ex.printStackTrace();
 							}
 
@@ -121,8 +121,8 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 			}
 
 			userPingInstances = list.toArray(new UserPingInstance[0]);
-			App.LOGGER.event(BrainEvents.REFRESHED_PINGS);
-			App.info("Loaded " + userPingInstances.length + " ping instances in " + (System.currentTimeMillis() - start) + " ms");
+			BrainEventType.REFRESHED_PINGS.build(0L).post();
+			Log.info("Loaded " + userPingInstances.length + " ping instances in " + (System.currentTimeMillis() - start) + " ms");
 		}
 
 		return userPingInstances;

@@ -1,8 +1,8 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
@@ -84,8 +84,8 @@ public class CachedRole {
 				gc.getClient().getRestClient().getGuildService().addGuildMemberRole(gc.guildId, member, id, reason).block();
 				return true;
 			} catch (Exception ex) {
-				App.warn("Can't assign role " + SnowFlake.str(id) + " to " + SnowFlake.str(member) + " in " + gc);
-				App.warn(ex);
+				Log.warn("Can't assign role " + SnowFlake.str(id) + " to " + SnowFlake.str(member) + " in " + gc);
+				Log.warn(ex);
 			}
 		}
 
@@ -102,8 +102,8 @@ public class CachedRole {
 				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId, member, id, reason).block();
 				return true;
 			} catch (Exception ex) {
-				App.warn("Can't remove role " + SnowFlake.str(id) + " from " + SnowFlake.str(member) + " in " + gc);
-				App.warn(ex);
+				Log.warn("Can't remove role " + SnowFlake.str(id) + " from " + SnowFlake.str(member) + " in " + gc);
+				Log.warn(ex);
 			}
 		}
 

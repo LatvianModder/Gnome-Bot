@@ -1,7 +1,7 @@
 package dev.gnomebot.app.script;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;
@@ -106,7 +106,7 @@ public class WrappedMember extends WrappedUser {
 		if (role != null) {
 			return role.add(id.asLong(), reason);
 		} else {
-			App.warn("Unknown role " + roleId.asString());
+			Log.warn("Unknown role " + roleId.asString());
 			return false;
 		}
 	}
@@ -122,7 +122,7 @@ public class WrappedMember extends WrappedUser {
 		if (role != null) {
 			return role.remove(id.asLong(), reason);
 		} else {
-			App.warn("Unknown role " + roleId.asString());
+			Log.warn("Unknown role " + roleId.asString());
 			return false;
 		}
 	}

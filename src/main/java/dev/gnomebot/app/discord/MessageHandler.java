@@ -1,16 +1,16 @@
 package dev.gnomebot.app.discord;
 
 import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.ChannelSettings;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
-import dev.gnomebot.app.data.Paste;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.discord.command.admin.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
@@ -19,6 +19,7 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
 import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
@@ -26,7 +27,9 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.net.IPUtils;
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
@@ -186,7 +189,7 @@ public class MessageHandler {
 				}
 			}
 		} else {
-			App.LOGGER.event(BrainEvents.UNKNOWN_MESSAGE);
+			BrainEventType.UNKNOWN_MESSAGE.build(event.getGuildId().map(Snowflake::asLong).orElse(0L)).content(m.getContent()).post();
 			//App.info("Message type: " + m.getData().type() + " / " + (author == null ? "-" : author.getUsername()));
 		}
 	}
@@ -201,7 +204,6 @@ public class MessageHandler {
 				if (message != null) {
 					message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 					//App.info("Deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString() + " / by " + Snowflake.of(message.getUserID()).asString());
-					App.LOGGER.event(BrainEvents.MESSAGE_DELETED);
 				}
 
 				autoDelete(event.getClient().getRestClient(), event.getMessageId().asLong());
@@ -222,7 +224,6 @@ public class MessageHandler {
 					if (message != null) {
 						message.delete(gc, !message.is(DiscordMessage.FLAG_BOT));
 						//App.info("Bulk deleted " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + m.asString() + " - " + message.getContent());
-						App.LOGGER.event(BrainEvents.MESSAGE_DELETED);
 					}
 				}
 			});
@@ -236,11 +237,6 @@ public class MessageHandler {
 
 			if (message != null) {
 				message.edit(gc, event.getCurrentContent().get(), !message.is(DiscordMessage.FLAG_BOT));
-
-				if (!message.is(DiscordMessage.FLAG_BOT)) {
-					//App.info("Edited " + gc + "/#" + gc.getChannelName(event.getChannelId()) + "/" + event.getMessageId().asString());
-					App.LOGGER.event(BrainEvents.MESSAGE_EDITED);
-				}
 			}
 		}
 	}
@@ -258,7 +254,7 @@ public class MessageHandler {
 		var content = message.getContent();
 		var contentNoEmojis = Emojis.stripEmojis(content);
 
-		List<Bson> updates = new ArrayList<>();
+		var updates = new ArrayList<Bson>();
 		updates.add(Updates.set("timestamp", message.getTimestamp()));
 		updates.add(Updates.set("channel", channelInfo.id));
 		updates.add(Updates.set("user", user.getId().asLong()));
@@ -280,7 +276,7 @@ public class MessageHandler {
 
 		var images = new BasicDBList();
 		var videos = new BasicDBList();
-		var files = new BasicDBList();
+		var files = new BasicDBObject(0);
 
 		for (var embed : message.getEmbeds()) {
 			embed.getImage().ifPresent(img -> images.add(img.getProxyUrl()));
@@ -291,7 +287,7 @@ public class MessageHandler {
 			switch (AttachmentType.get(a)) {
 				case IMAGE -> images.add(a.getProxyUrl());
 				case VIDEO -> videos.add(a.getProxyUrl());
-				default -> files.add(a.getUrl());
+				default -> files.put(a.getId().asString(), a.getFilename());
 			}
 		}
 
@@ -321,7 +317,7 @@ public class MessageHandler {
 		for (var userId : message.getUserMentionIds()) {
 			userMentions.add(userId.asLong());
 
-			if (userId.equals(handler.selfId)) {
+			if (userId.asLong() == handler.selfId) {
 				flags |= DiscordMessage.FLAG_MENTIONS_BOT;
 			}
 		}
@@ -369,7 +365,7 @@ public class MessageHandler {
 					var c = Integer.parseInt(ipMatcher.group(3));
 					var d = Integer.parseInt(ipMatcher.group(4));
 
-					if (IPUtils.isIP(a, b, c, d)) {
+					if (IPUtils.isIP(a, b, c, d) && !(a == b && c == d && a == c)) {
 						flags |= DiscordMessage.FLAG_IP;
 						break;
 					}
@@ -383,13 +379,13 @@ public class MessageHandler {
 		try {
 			gc.messages.query(message.getId().asLong()).upsert(updates);
 		} catch (Exception ex) {
-			App.error("Failed to save message " + message.getId().asString() + ": " + ex);
+			Log.error("Failed to save message " + message.getId().asString() + ": " + ex);
 		}
 
 		var discordMessage = gc.messages.findFirst(message);
 
 		if (discordMessage == null) {
-			App.error("Failed to retrieve message " + message.getId().asString());
+			Log.error("Failed to retrieve message " + message.getId().asString());
 			return;
 		}
 
@@ -397,7 +393,7 @@ public class MessageHandler {
 			try {
 				MemberHandler.updateMember(gc, user, member, MemberHandler.ACTION_MESSAGE, gc.members.findFirst(user), discordMessage);
 			} catch (Exception ex) {
-				App.info("Failed to save member from message " + message.getId().asString() + ": " + ex);
+				Log.error("Failed to save member from message " + message.getId().asString() + ": " + ex);
 			}
 
 			var date = Date.from(message.getTimestamp().truncatedTo(ChronoUnit.DAYS));
@@ -423,7 +419,7 @@ public class MessageHandler {
 
 				gc.members.query(user.getId().asLong()).update(Updates.inc("total_messages", 1L));
 			} catch (Exception ex) {
-				App.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
+				Log.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
 			}
 
 			var xp = channelInfo.getXp();
@@ -449,7 +445,7 @@ public class MessageHandler {
 
 					gc.members.query(user.getId().asLong()).update(Updates.inc("total_xp", xp));
 				} catch (Exception ex) {
-					App.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
+					Log.error("Failed to save message stats from message " + message.getId().asString() + ": " + ex);
 				}
 			}
 		}
@@ -460,13 +456,13 @@ public class MessageHandler {
 		var authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
 		if (user.isBot()) {
-			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_BOT);
+			BrainEventType.MESSAGE_CREATED_BOT.build(gc).post();
 		} else if (authLevel.is(AuthLevel.ADMIN)) {
-			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_ADMIN);
+			BrainEventType.MESSAGE_CREATED_ADMIN.build(gc).post();
 		} else if (member != null && member.getRoleIds().size() > 0) {
-			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_ANY_ROLE);
+			BrainEventType.MESSAGE_CREATED_ANY_ROLE.build(gc).post();
 		} else {
-			App.LOGGER.event(BrainEvents.MESSAGE_CREATED_NO_ROLE);
+			BrainEventType.MESSAGE_CREATED_NO_ROLE.build(gc).post();
 		}
 
 		if (importing || member == null) {
@@ -496,7 +492,7 @@ public class MessageHandler {
 			var scam = ScamHandler.checkScam(contentNoEmojis);
 
 			if (scam != null) {
-				App.info("Potential scam URL detected in " + gc + ": " + scam);
+				Log.warn("Potential scam URL detected in " + gc + ": " + scam);
 
 				if (gc.autoMuteScamUrl.get() > 0 && context.gc.mutedRole.isSet()) {
 					var seconds = gc.autoMuteScamUrl.get() * 60L;
@@ -579,7 +575,7 @@ public class MessageHandler {
 		try {
 			handleQuotes = QuoteHandler.handle(gc, message, channelInfo, member);
 		} catch (Exception ex) {
-			App.info("Failed to read message: " + ex);
+			Log.error("Failed to read message: " + ex);
 		}
 
 		var adminRoleMentioned = gc.adminRole.isMentioned(message);
@@ -662,7 +658,7 @@ public class MessageHandler {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
 
-		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && !member.getId().equals(gc.db.app.discordHandler.selfId)) {
+		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
 			try {
 				var u = member.getDisplayName();
 				var c = contentNoEmojis.replace('\n', ' ');
@@ -701,8 +697,8 @@ public class MessageHandler {
 						.block();
 				 */
 			} catch (Exception ex) {
-				App.error("Failed to create a thread!");
-				App.warn(ex);
+				Log.error("Failed to create a thread!");
+				Log.warn(ex);
 			}
 		}
 
@@ -718,9 +714,9 @@ public class MessageHandler {
 
 			if (!attachments.isEmpty()) {
 				if (channelInfo.settings.autoThread) {
-					Paste.pasteMessage(gc.db, RestChannel.create(gc.getClient().getRestClient(), message.getId()), message, attachments);
+					PasteHandlers.pasteMessage(gc.db, RestChannel.create(gc.getClient().getRestClient(), message.getId()), message, attachments);
 				} else {
-					Paste.pasteMessage(gc.db, channelInfo.getRest(), message, attachments);
+					PasteHandlers.pasteMessage(gc.db, channelInfo.getRest(), message, attachments);
 				}
 			}
 		}
@@ -749,7 +745,7 @@ public class MessageHandler {
 					channelInfo.createMessage("Hi").subscribe();
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
 					channelInfo.createMessage("ok").subscribe();
-				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().equals(gc.db.app.discordHandler.selfId)) {
+				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().asLong() == gc.db.app.discordHandler.selfId) {
 					channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
 				} else {
 					channelInfo.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
@@ -763,7 +759,7 @@ public class MessageHandler {
 
 		if (task != null) {
 			task.changeEnd(System.currentTimeMillis() + Duration.ofHours(1L).toMillis());
-			App.info("Extended " + channelInfo.getName() + " expiration");
+			Log.info("Extended " + channelInfo.getName() + " expiration");
 		}
 
 		if (gc.discordJS.onAfterMessage.hasListeners()) {
@@ -779,14 +775,14 @@ public class MessageHandler {
 
 			try {
 				LegacyCommands.run(context, reader, content, false);
-				App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
+				BrainEventType.COMMAND_SUCCESS.build(context.gc).content(content).post();
 				return true;
 			} catch (GnomeException ex) {
 				if (ex.type == GnomeException.Type.NOT_FOUND) {
 					return false;
 				}
 
-				App.LOGGER.event(BrainEvents.COMMAND_FAIL);
+				BrainEventType.COMMAND_FAIL.build(context.gc).content(content).post();
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {
@@ -817,7 +813,7 @@ public class MessageHandler {
 				return true;
 			} catch (Exception ex) {
 				context.message.addReaction(Emojis.NO).subscribe();
-				App.info("Failed to run command: " + ex + " / " + context);
+				Log.warn("Failed to run command: " + ex + " / " + context);
 				ex.printStackTrace();
 				return true;
 			}
@@ -836,12 +832,11 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					context.reply(macro.createMessage(context.gc, reader, context.sender.getId().asLong()));
-					App.LOGGER.event(BrainEvents.COMMAND_SUCCESS);
+					macro.createMessageOrTimeout(context.gc, reader, context.sender.getId().asLong()).thenAccept(context::reply);
 					return true;
 				}
 			} catch (GnomeException ex) {
-				App.LOGGER.event(BrainEvents.COMMAND_FAIL);
+				BrainEventType.COMMAND_FAIL.build(context.gc).post();
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {
@@ -872,7 +867,7 @@ public class MessageHandler {
 				return true;
 			} catch (Exception ex) {
 				context.message.addReaction(Emojis.NO).subscribe();
-				App.info("Failed to run command: " + ex + " / " + context);
+				Log.warn("Failed to run command: " + ex + " / " + context);
 				ex.printStackTrace();
 				return true;
 			}

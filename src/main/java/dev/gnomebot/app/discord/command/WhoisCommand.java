@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 public class WhoisCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("whois")
+			.supportsDM()
 			.description("Information about a user")
 			.add(user("user").required())
 			.run(WhoisCommand::runChatInput);
@@ -38,7 +39,7 @@ public class WhoisCommand extends ApplicationCommands {
 				.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
 
 		if (member != null) {
-			embed.url(App.url("panel/" + member.getGuildId().asString() + "/members/" + member.getId().asString()));
+			embed.url(App.url("guild/" + member.getGuildId().asString() + "/members/" + member.getId().asString()));
 			embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
 
 			if (!member.getRoleIds().isEmpty()) {

@@ -127,7 +127,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 			return Collections.emptyList();
 		}
 
-		List<ApplicationCommandOptionData> list = new ArrayList<>();
+		var list = new ArrayList<ApplicationCommandOptionData>();
 
 		for (var builder : options.values()) {
 			var b = ApplicationCommandOptionData.builder();
@@ -135,6 +135,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 			b.name(builder.name);
 			b.description(builder.description);
 			b.required(builder.required);
+			b.addChannelType(0);
 
 			if (builder.suggestions != null) {
 				b.autocomplete(true);
@@ -161,12 +162,14 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		b.type(interactionType.type);
 		b.name(name);
 
-		if (defaultMemberPermissions != null) {
-			b.defaultMemberPermissions(Long.toUnsignedString(defaultMemberPermissions.getRawValue()));
-		}
-
 		if (interactionType.hasDescription) {
 			b.description(description);
+		}
+
+		b.dmPermission(supportsDM);
+
+		if (defaultMemberPermissions != null) {
+			b.defaultMemberPermissions(Long.toUnsignedString(defaultMemberPermissions.getRawValue()));
 		}
 
 		var options = createOptions();
@@ -182,8 +185,22 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		stream.writeByte(interactionType.type);
 		stream.writeUTF(name);
 		stream.writeUTF(description);
-		stream.writeBoolean(required);
-		stream.writeBoolean(suggestions != null);
+
+		var flags = 0;
+
+		if (required) {
+			flags |= 1;
+		}
+
+		if (suggestions != null) {
+			flags |= 2;
+		}
+
+		if (supportsDM) {
+			flags |= 4;
+		}
+
+		stream.writeByte(flags);
 
 		if (choices != null) {
 			for (var choice : choices) {

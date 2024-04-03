@@ -1,7 +1,7 @@
 package dev.gnomebot.app.server;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.WebToken;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.User;
 import org.eclipse.jetty.websocket.api.Session;
 
@@ -22,7 +22,7 @@ public record WSSession(WSHandler handler, Session session, WebToken token, User
 		try {
 			session.getRemote().sendString(message);
 		} catch (Exception ex) {
-			App.error(handler.getName() + " failed to send message " + message + " to " + this + ": " + ex.getMessage());
+			Log.error(handler.getName() + " failed to send message " + message + " to " + this + ": " + ex.getMessage());
 		}
 	}
 
@@ -30,7 +30,7 @@ public record WSSession(WSHandler handler, Session session, WebToken token, User
 		try {
 			session.getRemote().sendBytes(data);
 		} catch (Exception ex) {
-			App.error(handler.getName() + " failed to send bytes " + data + " to " + this + ": " + ex.getMessage());
+			Log.error(handler.getName() + " failed to send bytes " + data + " to " + this + ": " + ex.getMessage());
 		}
 	}
 
@@ -38,7 +38,7 @@ public record WSSession(WSHandler handler, Session session, WebToken token, User
 		try {
 			session.close(code, reason);
 		} catch (Exception ex) {
-			App.error(handler.getName() + " failed to close " + this + " connection: " + ex.getMessage());
+			Log.error(handler.getName() + " failed to close " + this + " connection: " + ex.getMessage());
 		}
 	}
 }

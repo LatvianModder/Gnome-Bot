@@ -1,14 +1,14 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.TimeUtils;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.AnsiComponent;
-import dev.latvian.apps.webutils.ansi.AnsiJava;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.ThreadChannelEditSpec;
 import org.bson.Document;
@@ -75,9 +75,9 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 
 			switch (type) {
 				case UNMUTE -> unmuteNow(Objects.requireNonNull(gc), userId, content);
-				case REMIND_ME -> App.info("Reminder!");
+				case REMIND_ME -> Log.info("Reminder!");
 				case CLOSE_THREAD -> closeThreadNow(Objects.requireNonNull(gc), channelId);
-				default -> App.warn("Unknown scheduled task type: " + type);
+				default -> Log.warn("Unknown scheduled task type: " + type);
 			}
 
 			return true;
@@ -88,7 +88,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 
 	public static void unmuteNow(GuildCollections gc, long userId, String reason) {
 		var data = gc.db.app.discordHandler.getUserData(userId);
-		App.warn("Unmuting " + gc + "/" + data.id().asString() + "/" + data.username());
+		Log.warn("Unmuting " + gc + "/" + data.id().asString() + "/" + data.username());
 
 		var mutedRole = gc.mutedRole.getRole();
 
@@ -109,7 +109,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 
 	public static void closeThreadNow(GuildCollections gc, long channelId) {
 		var channel = gc.db.app.discordHandler.client.getChannelById(SnowFlake.convert(channelId)).cast(ThreadChannel.class).block();
-		App.info("Closing thread " + channelId + "/" + channel.getName());
+		Log.info("Closing thread " + channelId + "/" + channel.getName());
 		channel.edit(ThreadChannelEditSpec.builder().archived(true).build()).subscribe();
 	}
 
@@ -121,7 +121,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		map.put("channel", channelId);
 		map.put("user", userId);
 		map.put("content", content);
-		return AnsiJava.of(map);
+		return Ansi.ofObject(map);
 	}
 
 	@Override

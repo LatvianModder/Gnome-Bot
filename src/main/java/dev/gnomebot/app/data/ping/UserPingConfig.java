@@ -3,13 +3,13 @@ package dev.gnomebot.app.data.ping;
 import java.util.Collections;
 import java.util.Set;
 
-public record UserPingConfig(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self) {
+public record UserPingConfig(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self, boolean silent) {
 	public static final UserPingConfig DEFAULT = new UserPingConfig(true, false);
 	public static final UserPingConfig DEFAULT_NO_BOTS = new UserPingConfig(false, false);
 	public static final UserPingConfig DEFAULT_SELF = new UserPingConfig(true, true);
 	public static final UserPingConfig DEFAULT_NO_BOTS_SELF = new UserPingConfig(false, true);
 
-	public static UserPingConfig get(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self) {
+	public static UserPingConfig get(Set<Long> ignoredGuilds, Set<Long> ignoredChannels, Set<Long> ignoredUsers, boolean bots, boolean self, boolean silent) {
 		if (ignoredGuilds.isEmpty() && ignoredChannels.isEmpty() && ignoredUsers.isEmpty()) {
 			if (self) {
 				return bots ? DEFAULT_SELF : DEFAULT_NO_BOTS_SELF;
@@ -18,11 +18,11 @@ public record UserPingConfig(Set<Long> ignoredGuilds, Set<Long> ignoredChannels,
 			}
 		}
 
-		return new UserPingConfig(Set.copyOf(ignoredGuilds), Set.copyOf(ignoredChannels), Set.copyOf(ignoredUsers), bots, self);
+		return new UserPingConfig(Set.copyOf(ignoredGuilds), Set.copyOf(ignoredChannels), Set.copyOf(ignoredUsers), bots, self, silent);
 	}
 
 	private UserPingConfig(boolean bots, boolean self) {
-		this(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), bots, self);
+		this(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), bots, self, false);
 	}
 
 	public boolean match(long guildId, long channelId, long userId, boolean bot) {
@@ -59,6 +59,7 @@ public record UserPingConfig(Set<Long> ignoredGuilds, Set<Long> ignoredChannels,
 				", ignoredUsers=" + ignoredUsers +
 				", bots=" + bots +
 				", self=" + self +
+				", silent=" + silent +
 				'}';
 	}
 }

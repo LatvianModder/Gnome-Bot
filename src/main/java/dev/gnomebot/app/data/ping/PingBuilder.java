@@ -18,6 +18,7 @@ public class PingBuilder {
 	public final LinkedHashSet<Long> ignoredUsers = new LinkedHashSet<>();
 	public boolean bots = true;
 	public boolean self = false;
+	public boolean silent = false;
 	public final List<Ping> pings = new ArrayList<>();
 
 	private void set(LinkedHashSet<Long> list, boolean add, String id) {
@@ -41,11 +42,12 @@ public class PingBuilder {
 		builder.ignoredUsers.addAll(ignoredUsers);
 		builder.bots = bots;
 		builder.self = self;
+		builder.silent = silent;
 		return builder;
 	}
 
 	public UserPingConfig buildConfig() {
-		return UserPingConfig.get(ignoredGuilds, ignoredChannels, ignoredUsers, bots, self);
+		return UserPingConfig.get(ignoredGuilds, ignoredChannels, ignoredUsers, bots, self, silent);
 	}
 
 	public UserPingInstance buildInstance(long user, PingDestination destination) {
@@ -124,6 +126,7 @@ public class PingBuilder {
 							switch (s1[0]) {
 								case "bots" -> current.bots = c == '+';
 								case "self" -> current.self = c == '+';
+								case "silent" -> current.silent = c == '+';
 								case "guild" -> current.set(current.ignoredGuilds, c == '-', s1[1]);
 								case "channel" -> current.set(current.ignoredChannels, c == '-', s1[1]);
 								case "user" -> current.set(current.ignoredUsers, c == '-', s1[1]);

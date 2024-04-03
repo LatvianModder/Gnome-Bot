@@ -4,6 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -169,7 +170,7 @@ public class ScamHandler {
 
 	public static void setOverride(GuildCollections gc, String user, String domain, Type override) {
 		synchronized (LOCK) {
-			App.error("Domain " + domain + " set to " + override + " by " + user + " in " + gc);
+			Log.important("Domain " + domain + " set to " + override + " by " + user + " in " + gc);
 			domain = domain.trim().toLowerCase();
 
 			if (domain.startsWith("www.")) {

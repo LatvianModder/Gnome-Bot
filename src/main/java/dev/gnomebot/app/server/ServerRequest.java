@@ -28,6 +28,7 @@ public class ServerRequest {
 	public final Context context;
 	public final String ip;
 	public final String country;
+	public final String userAgent;
 	private final Map<String, String> variables;
 	private Map<String, CommandOption> query;
 	public WebToken token;
@@ -35,11 +36,12 @@ public class ServerRequest {
 	public Member member;
 	private List<Body> bodyList = null;
 
-	public ServerRequest(App m, Context ctx, String i, String c, Map<String, String> v) {
+	public ServerRequest(App m, Context ctx, String i, String c, String ua, Map<String, String> v) {
 		app = m;
 		context = ctx;
 		ip = i;
 		country = c;
+		userAgent = ua;
 		variables = v;
 	}
 

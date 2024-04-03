@@ -1,10 +1,10 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -97,7 +97,7 @@ public class GnomeMemberInteraction extends ApplicationCommands {
 					event.context.checkSenderAdmin();
 				}
 
-				App.info(event.context.gc + "/" + event.context.sender.getDisplayName() + " used member action '" + action.name + "' on " + member.getDisplayName());
+				Log.info(event.context.gc + "/" + event.context.sender.getDisplayName() + " used member action '" + action.name + "' on " + member.getDisplayName());
 
 				if (action.callback != null) {
 					action.callback.memberInteraction(member, event);

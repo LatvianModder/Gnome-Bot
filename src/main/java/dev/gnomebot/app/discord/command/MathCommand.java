@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 public class MathCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("math")
+			.supportsDM()
 			.description("Gnome knows math pretty well")
 			.add(string("equation").required())
 			.add(bool("detailed"))

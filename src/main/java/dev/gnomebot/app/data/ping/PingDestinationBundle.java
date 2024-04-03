@@ -6,9 +6,9 @@ public record PingDestinationBundle(PingDestination[] destinations) implements P
 	public static final PingDestination[] EMPTY_ARRAY = new PingDestination[0];
 
 	@Override
-	public void relayPing(long targetId, PingData data, Ping ping) {
+	public void relayPing(long targetId, PingData data, Ping ping, UserPingConfig config) {
 		for (var destination : destinations) {
-			destination.relayPing(targetId, data, ping);
+			destination.relayPing(targetId, data, ping, config);
 		}
 	}
 

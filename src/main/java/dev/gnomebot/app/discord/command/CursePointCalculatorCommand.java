@@ -5,6 +5,7 @@ import dev.latvian.apps.webutils.ansi.Table;
 
 public class CursePointCalculatorCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("curse-point-calculator")
+			.supportsDM()
 			.description("Curse Point calculator")
 			.add(number("daily-points").required())
 			.add(currency("currency"))

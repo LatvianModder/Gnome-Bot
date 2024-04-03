@@ -1,8 +1,8 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Message;
 
 public class DeleteChannelMessagesCommand {
@@ -12,7 +12,7 @@ public class DeleteChannelMessagesCommand {
 		var m = Math.min(reader.readLong().orElse(0L), 1000L);
 
 		cm.ifPresent(pair -> context.handler.app.queueBlockingTask(task -> {
-			App.info("Deleting starting from " + pair.a().getMention() + "/" + pair.b());
+			Log.info("Deleting starting from " + pair.a().getMention() + "/" + pair.b());
 			context.message.addReaction(Emojis.VOTENONE).block();
 
 			Iterable<Message> iterable;
@@ -20,7 +20,7 @@ public class DeleteChannelMessagesCommand {
 			if (m > 0L) {
 				iterable = pair.a().getMessagesBefore(pair.b()).take(m, true).toIterable();
 			} else {
-				if (!pair.b().equals(context.message.getId())) {
+				if (pair.b() != context.message.getId().asLong()) {
 					pair.a().getMessage(pair.b()).delete().block();
 				}
 
@@ -34,7 +34,7 @@ public class DeleteChannelMessagesCommand {
 					continue;
 				}
 
-				App.info("Deleting " + message.getId().asString());
+				Log.info("Deleting " + message.getId().asString());
 				message.delete().block();
 			}
 

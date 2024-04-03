@@ -3,13 +3,13 @@ package dev.gnomebot.app.server.handler;
 import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.HTTPResponseCode;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
 import dev.latvian.apps.webutils.data.Color4f;
 import dev.latvian.apps.webutils.json.JSONArray;
@@ -101,7 +101,7 @@ public class ActivityHandlers {
 				o.put("id", member.getId().asString());
 				o.put("name", member.getDisplayName());
 				o.put("xp", entry.xp);
-				o.put("rank", array.size() + 1);
+				o.put("rank", array.size());
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 			} catch (Exception ex) {
@@ -196,7 +196,7 @@ public class ActivityHandlers {
 					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
-					App.error(ex.toString());
+					Log.error(ex.toString());
 				}
 
 				avatarsRemaining.decrementAndGet();
@@ -660,7 +660,7 @@ public class ActivityHandlers {
 					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
-					App.error(ex.toString());
+					Log.error(ex.toString());
 				}
 
 				avatarsRemaining.decrementAndGet();

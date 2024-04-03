@@ -1,11 +1,11 @@
 package dev.gnomebot.app.discord.command;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.TimeUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.MutableLong;
 import org.bson.Document;
 
@@ -336,7 +336,7 @@ public class ChannelCommands extends ApplicationCommands {
 						break;
 					}
 
-					App.info("Deleting " + id);
+					Log.info("Deleting " + id);
 					service.deleteMessage(channel.id, id, null).block();
 				}
 

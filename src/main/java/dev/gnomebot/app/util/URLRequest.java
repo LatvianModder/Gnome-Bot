@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
-import dev.gnomebot.app.App;
 import dev.latvian.apps.webutils.CodingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Either;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONArray;
@@ -372,7 +372,7 @@ public class URLRequest<T> {
 				var json = JSON.DEFAULT.read(sb.toString()).readObject();
 
 				if (json.containsKey("retry_after")) {
-					App.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.asLong("retry_after") + "ms");
+					Log.warn("Request " + m + " from " + (hiddenUrlPart.isEmpty() ? fullUrl : fullUrl.replace(hiddenUrlPart, "***")) + " rate limited for " + json.asLong("retry_after") + "ms");
 					Thread.sleep(json.asLong("retry_after") + 50L);
 					return block();
 				}

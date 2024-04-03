@@ -1,11 +1,11 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.entity.User;
 
@@ -47,7 +47,7 @@ public class CommandReader extends SimpleStringReader {
 		if (lh > 0 && s.indexOf('@') == 0) {
 			var s0 = s.substring(1, lh);
 			var s1 = s.substring(lh + 1);
-			App.info(s0 + " # " + s1);
+			Log.info(s0 + " # " + s1);
 			var member = gc.members.query().eq("name", s0).eq("discriminator", s1).first();
 
 			if (member != null) {
@@ -115,7 +115,7 @@ public class CommandReader extends SimpleStringReader {
 
 		var s = ns.get().split("[/:]", 2);
 
-		App.info(Arrays.toString(s));
+		Log.info(Arrays.toString(s));
 
 		if (s[0].startsWith("<#") && s[0].endsWith(">")) {
 			s[0] = s[0].substring(2, s[0].length() - 1);

@@ -8,6 +8,7 @@ import discord4j.core.object.entity.Member;
 
 public class AvatarCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("avatar")
+			.supportsDM()
 			.description("Sends avatar image in full resolution")
 			.add(user("user").required())
 			.add(bool("guild"))

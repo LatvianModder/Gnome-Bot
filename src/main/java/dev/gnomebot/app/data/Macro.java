@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 	public final GuildCollections guild;
@@ -83,7 +85,12 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 	}
 
 	public MessageBuilder createMessage(GuildCollections gc, @Nullable CommandReader reader, long sender) {
-		return getCachedContent().a().render(gc, reader, getCachedContent().b(), sender);
+		var cached = getCachedContent();
+		return cached.a().render(gc, reader, cached.b(), sender);
+	}
+
+	public CompletableFuture<MessageBuilder> createMessageOrTimeout(GuildCollections gc, @Nullable CommandReader reader, long sender) {
+		return CompletableFuture.supplyAsync(() -> createMessage(gc, reader, sender)).completeOnTimeout(MessageBuilder.create("Macro timed out!"), 2500L, TimeUnit.MILLISECONDS);
 	}
 
 	public void rename(String rename) {

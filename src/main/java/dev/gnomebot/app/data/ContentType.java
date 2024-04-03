@@ -7,14 +7,14 @@ import dev.latvian.apps.webutils.data.Pair;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class ContentType {
-	public static final ContentType TEXT = new ContentType() {
+	public static final ContentType TEXT = new ContentType("text") {
 		@Override
 		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
-	public static final ContentType COMPLEX = new ContentType() {
+	public static final ContentType COMPLEX = new ContentType("complex") {
 		@Override
 		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			var msg = MessageBuilder.create();
@@ -23,19 +23,30 @@ public abstract class ContentType {
 		}
 	};
 
-	public static final ContentType JS = new ContentType() {
+	public static final ContentType JS = new ContentType("js") {
 		@Override
 		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return MessageBuilder.create(String.valueOf(cached)).noComponents().noEmbeds();
 		}
 	};
 
-	public static final ContentType MACRO_BUNDLE = new ContentType() {
+	public static final ContentType MACRO_BUNDLE = new ContentType("macro-bundle") {
 		@Override
 		public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender) {
 			return ((MacroBundle) cached).render(gc, reader, sender);
 		}
 	};
+
+	public final String name;
+
+	public ContentType(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
 
 	public abstract MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, Object cached, long sender);
 

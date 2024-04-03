@@ -205,7 +205,7 @@ public class InfoHandlers {
 		var attachmentId = request.getSnowflake("attachment");
 
 		for (var a : message.getAttachments()) {
-			if (a.getId().equals(attachmentId)) {
+			if (a.getId().asLong() == attachmentId) {
 				var img = URLRequest.of(a.getProxyUrl() + "?format=jpeg").toImage().block();
 				var img1 = ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(Assets.VIDEO.getFilePath())));
 				var g = img.createGraphics();

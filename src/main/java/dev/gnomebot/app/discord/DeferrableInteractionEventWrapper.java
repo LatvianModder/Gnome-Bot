@@ -1,12 +1,12 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
@@ -96,7 +96,7 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 				return Optional.ofNullable(getResponse().createFollowupMessage(messageBuilder.toMultipartWebhookExecuteRequest()).block());
 			}
 		} catch (ClientException ex) {
-			App.error("Failed to respond to slash command " + this + ": " + ex.getMessage());
+			Log.error("Failed to respond to slash command " + this + ": " + ex.getMessage());
 
 			for (var t : ex.getSuppressed()) {
 				t.printStackTrace();

@@ -1,6 +1,5 @@
 package dev.gnomebot.app.server.handler;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
@@ -8,6 +7,7 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;
@@ -73,7 +73,7 @@ public class MinecraftHandlers {
 				event = null;
 			}
 
-			App.warn(user.getUsername() + " started mc verification");
+			Log.warn(user.getUsername() + " started mc verification");
 
 			message.edit().withEmbedsOrNull(List.of(
 					EmbedBuilder.create("Verify Minecraft", "Waiting for " + user.getMention() + " to complete verification...")
@@ -87,7 +87,7 @@ public class MinecraftHandlers {
 		public void success(UUID uuid, String name) {
 			stage = 2;
 
-			App.success(user.getUsername() + " completed mc verification as " + name);
+			Log.success(user.getUsername() + " completed mc verification as " + name);
 
 			message.edit().withEmbedsOrNull(List.of(
 					EmbedBuilder.create("Verify Minecraft", "Success! Verified as [" + name + "](https://mcuuid.net/?q=" + uuid + ")")
@@ -111,7 +111,7 @@ public class MinecraftHandlers {
 		public void fail(String error) {
 			stage = 3;
 
-			App.error(user.getUsername() + " failed mc verification: " + error);
+			Log.error(user.getUsername() + " failed mc verification: " + error);
 
 			message.edit().withEmbedsOrNull(List.of(
 					EmbedBuilder.create("Verify Minecraft", error.startsWith("com.fasterxml.jackson") ? "Internal Error" : ("Error!\n\n" + error))
@@ -159,7 +159,7 @@ public class MinecraftHandlers {
 	public static final URI MC_PROFILE_URI = URI.create("https://api.minecraftservices.com/minecraft/profile");
 
 	public static void verifyCallback(ComponentEventWrapper event, long userId) {
-		if (!event.context.sender.getId().equals(userId)) {
+		if (event.context.sender.getId().asLong() != userId) {
 			event.respond("You can't verify account of someone else!");
 			return;
 		} else {

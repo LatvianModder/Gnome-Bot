@@ -1,6 +1,6 @@
 package dev.gnomebot.app.util;
 
-import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Attachment;
 
 import java.util.regex.Pattern;
@@ -16,7 +16,7 @@ public enum AttachmentType {
 	public static final Pattern TEXT_REGEX = Pattern.compile("\\.(?:log|txt|toml|json|java|js|php|lua|ts|zs|obj|csv|snbt|bat|cfg|md|html|diff|patch|css|pom|xml|gradle|properties|mcmeta|pdf)$");
 	public static final Pattern IMAGE_REGEX = Pattern.compile("\\.(?:gif|jpe?g|tiff?|png|webp|bmp)$");
 	public static final Pattern VIDEO_REGEX = Pattern.compile("\\.(?:mov|avi|wmv|flv|3gp|mp4|mpg|mkv)$");
-	public static final Pattern ATTACHMENT_PATTERN = Pattern.compile("https?://(?:cdn|media)\\.(?:discord|discordapp)\\.(?:com|net)/attachments/\\d+/\\d+/.*", Pattern.MULTILINE);
+	public static final Pattern ATTACHMENT_PATTERN = Pattern.compile("https?://(?:cdn|media)\\.(?:discord|discordapp)\\.(?:com|net)/attachments/(\\d+)/(\\d+)/([^\\s?]+)", Pattern.MULTILINE);
 	public static final Pattern FULL_IMAGE_PATTERN = Pattern.compile(ATTACHMENT_PATTERN + "\\.(?:gif|jpe?g|tiff?|png|webp|bmp)", Pattern.MULTILINE);
 	public static final Pattern FULL_VIDEO_PATTERN = Pattern.compile(ATTACHMENT_PATTERN + "\\.(?:mov|avi|wmv|flv|3gp|mp4|mpg|mkv)", Pattern.MULTILINE);
 
@@ -52,7 +52,7 @@ public enum AttachmentType {
 		}
 
 		if (!contentType.isEmpty()) {
-			App.error("Unknown content type: " + contentType);
+			Log.error("Unknown content type: " + contentType);
 		}
 
 		return FILE;

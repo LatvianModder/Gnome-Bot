@@ -184,10 +184,11 @@ public class MacroCommands extends ApplicationCommands {
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
 
-		var preview = macro.createMessage(event.context.gc, null, event.context.sender.getId().asLong());
-		preview.content("Preview:\n\n" + preview.getContent());
-		preview.ephemeral(true);
-		event.respond(preview);
+		macro.createMessageOrTimeout(event.context.gc, null, event.context.sender.getId().asLong()).thenAccept(preview -> {
+			preview.content("Preview:\n\n" + preview.getContent());
+			preview.ephemeral(true);
+			event.respond(preview);
+		});
 	}
 
 	private static void remove(ChatInputInteractionEventWrapper event) {
@@ -249,7 +250,7 @@ public class MacroCommands extends ApplicationCommands {
 		if (list.isEmpty()) {
 			event.respond("No macros found!");
 		} else {
-			event.respond(list.stream().map(Macro::chatFormatted).collect(Collectors.joining(" • ")));
+			event.respond(list.stream().map(m -> m.name).collect(Collectors.joining(" • ")));
 		}
 	}
 
@@ -261,7 +262,7 @@ public class MacroCommands extends ApplicationCommands {
 		list.add("Author: <@" + SnowFlake.str(macro.author) + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
-		event.respond(EmbedBuilder.create().url(App.url("panel/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
+		event.respond(EmbedBuilder.create().url(App.url("guild/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 
 	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long owner) {
@@ -272,11 +273,11 @@ public class MacroCommands extends ApplicationCommands {
 				event.acknowledge();
 			} else {
 				macro.addUse();
-				event.edit().respond(macro.createMessage(event.context.gc, null, owner).ephemeral(true));
+				macro.createMessageOrTimeout(event.context.gc, null, owner).thenAccept(m -> event.edit().respond(m.ephemeral(true)));
 			}
 		} else {
 			macro.addUse();
-			event.respond(macro.createMessage(event.context.gc, null, event.context.sender.getId().asLong()).ephemeral(true));
+			macro.createMessageOrTimeout(event.context.gc, null, event.context.sender.getId().asLong()).thenAccept(m -> event.respond(m.ephemeral(true)));
 		}
 	}
 }

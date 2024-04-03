@@ -1,22 +1,17 @@
 package dev.gnomebot.app;
 
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.core.object.entity.Guild;
-import org.bson.Document;
 
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class CLI extends Thread {
 	public final App app;
@@ -45,27 +40,25 @@ public class CLI extends Thread {
 					case "stats" -> stats();
 					case "flags" -> flags(input);
 					case "debug" -> debug();
-					case "token" -> App.info(Utils.createToken());
-					case "short_token" -> App.info(Utils.createShortToken());
+					case "token" -> Log.info(Utils.createToken());
+					case "short_token" -> Log.info(Utils.createShortToken());
 					case "leave_guild" -> leaveGuild(SnowFlake.num(input[1]));
-					case "remove_modifiers" -> App.info(CharMap.MODIFIER_PATTERN.matcher(nonInput).replaceAll(""));
-					case "colors" -> colors();
+					case "remove_modifiers" -> Log.info(CharMap.MODIFIER_PATTERN.matcher(nonInput).replaceAll(""));
 					case "echo_cli" -> echoCli(nonInput);
 					case "guilds" -> printGuilds();
-					case "scheduled" -> app.printScheduled();
-					default -> Ansi.log("Unknown command: " + input[0]);
+					default -> Log.warn("Unknown command: " + input[0]);
 				}
 			} catch (IllegalArgumentException ex) {
-				App.error(ex.getMessage());
+				Log.error(ex.getMessage());
 			} catch (Exception ex) {
-				App.error(ex);
+				Log.error(ex);
 			}
 		}
 	}
 
 	private void printThreads() {
 		for (var t : Thread.getAllStackTraces().keySet()) {
-			App.info("- " + t.getName() + ": " + t.getClass().getName());
+			Log.info("- " + t.getName() + ": " + t.getClass().getName());
 		}
 	}
 
@@ -73,6 +66,7 @@ public class CLI extends Thread {
 		var server = ManagementFactory.getPlatformMBeanServer();
 		var mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
 		mxBean.dumpHeap("heapdump.hprof", false);
+		Log.info("Heap Dump");
 	}
 
 	private void size() throws Exception {
@@ -90,46 +84,32 @@ public class CLI extends Thread {
 			sb.append((char) c);
 		}
 
-		App.info(sb);
-		App.info("+ Done");
+		Log.info(sb);
+		Log.success("Done");
 	}
 
 	private void port(String input) throws Exception {
 		// var mm = app.db.guild(Snowflake.of(166630061217153024L));
-		var count = 0;
+		var count = 0L;
 
 		// var database = app.db.mongoClient.getDatabase("gnomebot_test");
 		// var collection = database.getCollection("abc");
 		// collection.insertOne(new Document("test", 1));
 		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
 
-		var regex = Pattern.compile("^[?!]+");
-		var filter = Filters.regex("content", Pattern.compile("^[?!]+\\S+"));
-
 		for (var gc : app.db.allGuilds()) {
-			App.info("Porting " + gc);
+			Log.info("Porting " + gc);
+
+			Log.warn("Done %,d".formatted(count));
 		}
 
-		app.db.channelSettingsDB.getCollection().updateMany(Filters.exists("guild"), Updates.unset("guild"));
-		app.db.channelSettingsDB.getCollection().updateMany(Filters.exists("name"), Updates.unset("name"));
-
-		var docs = new ArrayList<Document>();
-		app.db.channelSettingsDB.getCollection().find().forEach(docs::add);
-
-		for (var doc : docs) {
-			if (doc.size() == 1) {
-				app.db.channelSettingsDB.getCollection().deleteOne(Filters.eq(doc.get("_id")));
-				count++;
-			}
-		}
-
-		App.info("+ Done " + count);
+		Log.success("Done %,d".formatted(count));
 	}
 
 	private void stats() {
-		App.info("***");
+		Log.info("***");
 
-		App.info("DB Stats:");
+		Log.info("DB Stats:");
 
 		/*
 		for (var db : app.db.collections.values()) {
@@ -139,7 +119,7 @@ public class CLI extends Thread {
 		}
 		 */
 
-		App.info("***");
+		Log.info("***");
 	}
 
 	private void flags(String[] input) {
@@ -149,16 +129,16 @@ public class CLI extends Thread {
 			try {
 				flags |= 1L << Long.parseLong(input[i]);
 			} catch (NumberFormatException ex) {
-				Ansi.log("Invalid number: " + input[i]);
+				Log.info("Invalid number: " + input[i]);
 			}
 		}
 
-		Ansi.log("%016X: %d".formatted(flags, flags));
+		Log.info("%016X: %d".formatted(flags, flags));
 	}
 
 	private void debug() {
 		App.debug = !App.debug;
-		App.success("Debug mode: " + (App.debug ? "enabled" : "disabled"));
+		Log.info("+ Debug mode: " + (App.debug ? "enabled" : "disabled"));
 	}
 
 	private void leaveGuild(long id) {
@@ -169,7 +149,7 @@ public class CLI extends Thread {
 		var table = new Table("Name", "Owner", "Members", "Messages", "Gnome Messages", "ID");
 
 		for (var g : app.discordHandler.getSelfGuilds()) {
-			App.info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
+			Log.info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
 			var gc = app.db.guild(g.getId());
 
 			table.addRow(FormattingUtils.trim(g.getName(), 70), gc.getMember(gc.ownerId).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", app.discordHandler.selfId).count(), g.getId().asString());
@@ -178,31 +158,8 @@ public class CLI extends Thread {
 		table.print();
 	}
 
-	private void colors() {
-		var line1 = new StringBuilder();
-		var line2 = new StringBuilder();
-
-		for (var i = 0; i < 8; i++) {
-			line1.append("\u001B[3").append(i).append("m■ Hello ");
-			line2.append("\u001B[9").append(i).append("m■ Hello ");
-		}
-
-		App.info(line1);
-		App.info(line2);
-
-		for (var y = 0; y < 16; y++) {
-			var str = new StringBuilder();
-
-			for (var x = 0; x < 16; x++) {
-				str.append("\u001B[48;5;").append(x + y * 16).append("m  ");
-			}
-
-			App.info(str);
-		}
-	}
-
 	private void echoCli(String message) {
-		App.info("Sending to all CLI clients: " + message);
+		Log.info("Sending to all CLI clients: " + message);
 		WSHandler.CLI.broadcast(message);
 	}
 }

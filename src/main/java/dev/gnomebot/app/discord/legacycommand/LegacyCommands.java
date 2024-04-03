@@ -1,10 +1,10 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.latvian.apps.webutils.ansi.AnsiJava;
+import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.rest.util.Permission;
 
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ public final class LegacyCommands {
 			COMMAND_MAP.put(cmd.name, cmd);
 		}
 
-		App.info("Found " + COMMAND_MAP.size() + " legacy commands");
+		Log.info("Found " + COMMAND_MAP.size() + " legacy commands");
 	}
 
 	public static void run(CommandContext context, CommandReader reader, String content, boolean ignorePermissions) throws Exception {
@@ -78,7 +78,6 @@ public final class LegacyCommands {
 					.channel(context.channelInfo.id)
 					.message(context.message)
 					.user(context.sender)
-					.oldContent(command.name)
 					.content(content)
 			);
 
@@ -114,7 +113,7 @@ public final class LegacyCommands {
 		map.put("arguments", arguments);
 		map.put("aliases", Arrays.asList(aliases));
 		map.put("permissionLevel", permissionLevel.name());
-		return AnsiJava.of(map).toAnsiString();
+		return Ansi.ofObject(map).toAnsiString();
 	}
 
 	public boolean hasPermission(CommandContext context) {
@@ -123,7 +122,7 @@ public final class LegacyCommands {
 		} else if (permissionLevel == AuthLevel.MEMBER) {
 			return true;
 		} else if (permissionLevel == AuthLevel.OWNER) {
-			return context.sender.getId().equals(context.handler.selfId) || (context.channelInfo != null && context.channelInfo.checkPermissions(context.sender.getId().asLong(), Permission.ADMINISTRATOR));
+			return context.sender.getId().asLong() == context.handler.selfId || (context.channelInfo != null && context.channelInfo.checkPermissions(context.sender.getId().asLong(), Permission.ADMINISTRATOR));
 		}
 
 		return context.sender != null && context.gc.adminRole.is(context.sender);

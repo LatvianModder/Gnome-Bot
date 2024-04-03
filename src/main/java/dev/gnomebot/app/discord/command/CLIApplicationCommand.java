@@ -1,11 +1,11 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +99,6 @@ public class CLIApplicationCommand extends ApplicationCommands {
 	}
 
 	private static void suggestArguments(ChatCommandSuggestionEvent event) {
-		App.info("Suggestions for " + event.get("command").asString("Unknown") + ": []");
+		Log.info("Suggestions for " + event.get("command").asString("Unknown") + ": []");
 	}
 }

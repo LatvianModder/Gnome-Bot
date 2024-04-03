@@ -17,6 +17,7 @@ import java.util.List;
 
 public class ModpackCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("modpack")
+			.supportsDM()
 			.description("Gives you a random Minecraft modpack to play")
 			.run(ModpackCommand::run);
 

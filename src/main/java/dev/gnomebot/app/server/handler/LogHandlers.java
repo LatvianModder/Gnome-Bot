@@ -1,7 +1,8 @@
-package dev.gnomebot.app.server.handler.panel;
+package dev.gnomebot.app.server.handler;
 
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.latvian.apps.webutils.ansi.Table;
@@ -12,7 +13,6 @@ import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.PaginationUtil;
-import io.javalin.http.HttpStatus;
 import org.bson.conversions.Bson;
 import reactor.core.publisher.Flux;
 
@@ -22,26 +22,32 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class AuditLogHandlers {
-	public static Response offenses(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
-		root.content.p().string("Uh... nothing for now...");
-		return root.asResponse();
-	}
+public class LogHandlers {
+	public static Response mutes(ServerRequest request) {
+		var root = GnomeRootTag.createSimple(request.getPath(), "Mutes - " + request.gc);
+		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
 
-	public static Response offensesOf(ServerRequest request) {
-		var userId = request.getSnowflake("user");
-		var user = request.app.discordHandler.getUser(userId);
-		var root = GnomeRootTag.createSimple(request.getPath(), "Offenses of " + (user == null ? "Unknown User" : user.getUsername()) + " - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId + "/offenses", "< Back").classes("back");
+		var list = root.content.ul();
+		var members = new ArrayList<Pair<Long, String>>();
 
-		if (user == null) {
-			root.content.p().classes("red").string("User not found!");
-			return root.asResponse(HttpStatus.NOT_FOUND, true);
+		for (var task : request.app.scheduledTasks) {
+			if (task.guildId == request.gc.guildId && task.type.equals(ScheduledTask.UNMUTE)) {
+				var m = request.gc.getMember(task.userId);
+
+				if (m != null) {
+					members.add(Pair.of(task.userId, m.getDisplayName()));
+				} else {
+					members.add(Pair.of(task.userId, request.app.discordHandler.getUserName(task.userId).orElse("Unknown")));
+				}
+			}
 		}
 
-		root.content.p().string("Uh... nothing for now...");
+		members.sort((o1, o2) -> o1.b().compareToIgnoreCase(o2.b()));
+
+		for (var member : members) {
+			list.li().a("/guild/" + request.gc.guildId + "/members/" + member.a(), member.b());
+		}
+
 		return root.asResponse();
 	}
 
@@ -56,7 +62,7 @@ public class AuditLogHandlers {
 		var level = request.query("level").asInt();
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Audit Log - " + request.gc);
-		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
+		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
 
 		var userCache = request.app.discordHandler.createUserCache();
 		var entryQuery = request.gc.auditLog.query();
@@ -92,7 +98,7 @@ public class AuditLogHandlers {
 			entryQuery.filter(Filters.gte("level", level));
 		}
 
-		var table = new Table("Timestamp", "Type", "Channel", "User", "Old Content", "Content", "Source");
+		var table = new Table("Timestamp", "Type", "Channel", "User", "Content", "Source");
 
 		for (var entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
 			var t = entry.getType();
@@ -104,7 +110,7 @@ public class AuditLogHandlers {
 			var cells = table.addRow();
 
 			cells[0].value(entry.getDate().toInstant().toString());
-			cells[1].value(t.name);
+			cells[1].value(t.displayName);
 
 			if (entry.getChannel() != 0L) {
 				var channelId = entry.getChannel();
@@ -120,16 +126,12 @@ public class AuditLogHandlers {
 				cells[3].value(userCache.getUsername(entry.getUser()));
 			}
 
-			if (t.has(GnomeAuditLogEntry.Flags.OLD_CONTENT)) {
-				cells[4].value(entry.getOldContent());
-			}
-
 			if (t.has(GnomeAuditLogEntry.Flags.CONTENT)) {
-				cells[5].value(entry.getContent());
+				cells[4].value(entry.getContent());
 			}
 
 			if (entry.getSource() != 0L) {
-				cells[6].value(userCache.getUsername(entry.getSource()));
+				cells[5].value(userCache.getUsername(entry.getSource()));
 			}
 		}
 
@@ -172,7 +174,7 @@ public class AuditLogHandlers {
 
 		var root = GnomeRootTag.createSimple(request.getPath(), "Bans - " + request.gc);
 		root.content.style("width:100%");
-		root.content.a("/panel/" + request.gc.guildId, "< Back").classes("back");
+		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
 
 		var spamList = new ArrayList<BanEntry>();
 		var hackList = new ArrayList<BanEntry>();
@@ -222,7 +224,7 @@ public class AuditLogHandlers {
 				var name = badNamePattern.matcher(entry.name).find() ? "(Cringe Name)" : entry.name;
 				var displayName = entry.displayName.isEmpty() ? "" : badNamePattern.matcher(entry.displayName).find() ? "(Cringe Name)" : entry.displayName;
 
-				var nameTag = cells[1].tag().a("/panel/" + request.gc.guildId + "/members/" + entry.id);
+				var nameTag = cells[1].tag().a("/guild/" + request.gc.guildId + "/members/" + entry.id);
 
 				if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
 					nameTag.string("(Cringe Name)");

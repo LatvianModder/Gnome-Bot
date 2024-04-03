@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 public class AboutCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("about")
+			.supportsDM()
 			.description("Info about Gnome Bot")
 			.add(sub("macro")
 					.description("Info about macros")

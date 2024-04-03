@@ -1,6 +1,6 @@
 package dev.gnomebot.app.cli;
 
-import dev.gnomebot.app.App;
+import dev.latvian.apps.webutils.ansi.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +28,6 @@ public class CLICommands {
 		add(CLIRestart.COMMAND);
 		add(CLIRoleMentionChart.COMMAND);
 
-		App.info("Found " + COMMANDS.size() + " CLI commands");
+		Log.info("Found " + COMMANDS.size() + " CLI commands");
 	}
 }

@@ -30,6 +30,7 @@ import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.OngoingAction;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
@@ -67,7 +68,7 @@ public class InteractionHandler {
 
 			if (command != null) {
 				if (App.debug) {
-					App.info("Chat command '" + event.getCommandName() + "': " + w.options);
+					Log.info("Chat command '" + event.getCommandName() + "': " + w.options);
 				}
 
 				try {
@@ -84,9 +85,9 @@ public class InteractionHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					event.reply(macro.createMessage(gc, reader, w.context.sender.getId().asLong()).ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe();
+					macro.createMessageOrTimeout(gc, reader, w.context.sender.getId().asLong()).thenAccept(m -> event.reply(m.ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe());
 				} else {
-					App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
+					Log.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
 				}
 			}
@@ -131,7 +132,7 @@ public class InteractionHandler {
 					ex.printStackTrace();
 				}
 			} else {
-				App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
+				Log.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 				event.reply("Command not found!").withEphemeral(true).subscribe();
 			}
 		} catch (Exception ex) {
@@ -161,7 +162,7 @@ public class InteractionHandler {
 					ex.printStackTrace();
 				}
 			} else {
-				App.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
+				Log.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 				event.reply("Command not found!").withEphemeral(true).subscribe();
 			}
 		} catch (Exception ex) {
@@ -187,10 +188,10 @@ public class InteractionHandler {
 					try {
 						button(eventWrapper);
 					} catch (GnomeException ex) {
-						App.error("Error in " + eventWrapper + ": " + ex.getMessage());
+						Log.error("Error in " + eventWrapper + ": " + ex.getMessage());
 						eventWrapper.respond(ex.getMessage());
 					} catch (Exception ex) {
-						App.error("Error in " + eventWrapper + ": " + ex);
+						Log.error("Error in " + eventWrapper + ": " + ex);
 						eventWrapper.respond("Error: " + ex);
 					}
 				} catch (Exception ex) {
@@ -246,10 +247,10 @@ public class InteractionHandler {
 					try {
 						modalSubmit(eventWrapper);
 					} catch (GnomeException ex) {
-						App.error("Error in " + eventWrapper + ": " + ex.getMessage());
+						Log.error("Error in " + eventWrapper + ": " + ex.getMessage());
 						eventWrapper.respond(ex.getMessage());
 					} catch (Exception ex) {
-						App.error("Error in " + eventWrapper + ": " + ex);
+						Log.error("Error in " + eventWrapper + ": " + ex);
 						eventWrapper.respond("Error: " + ex);
 					}
 				} catch (Exception ex) {
@@ -340,7 +341,7 @@ public class InteractionHandler {
 			case "regex-help" -> PingsCommands.regexHelp(event);
 			case "verify-minecraft" -> MinecraftHandlers.verifyCallback(event, SnowFlake.num(event.path[1]));
 			default -> {
-				App.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
+				Log.info(event.context.sender.getTag() + " clicked " + event.context.gc + "/" + Arrays.asList(event.path));
 				throw new GnomeException("Unknown button ID: " + Arrays.asList(event.path));
 			}
 		}
@@ -353,7 +354,7 @@ public class InteractionHandler {
 			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
 			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.get(0));
 			default -> {
-				App.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
+				Log.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
 			}
 		}
@@ -375,7 +376,7 @@ public class InteractionHandler {
 			case "webhook" -> WebhookCommands.executeCallback(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]));
 			case "create-paste" -> PasteCommands.createCallback(event);
 			default -> {
-				App.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
+				Log.warn(event.context.sender.getTag() + " submitted unknown modal " + event.context.gc + "/" + event);
 				throw new GnomeException("Unknown modal ID: " + event);
 			}
 		}

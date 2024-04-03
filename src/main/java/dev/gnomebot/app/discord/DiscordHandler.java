@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEvents;
+import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
@@ -11,6 +11,7 @@ import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
@@ -54,12 +55,6 @@ import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
-import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
-import discord4j.core.event.domain.thread.ThreadChannelDeleteEvent;
-import discord4j.core.event.domain.thread.ThreadChannelUpdateEvent;
-import discord4j.core.event.domain.thread.ThreadListSyncEvent;
-import discord4j.core.event.domain.thread.ThreadMemberUpdateEvent;
-import discord4j.core.event.domain.thread.ThreadMembersUpdateEvent;
 import discord4j.core.object.audit.ChangeKey;
 import discord4j.core.object.entity.Entity;
 import discord4j.core.object.entity.Guild;
@@ -149,13 +144,13 @@ public class DiscordHandler {
 			throw new RuntimeException("Discord client is null!");
 		}
 
-		App.info("Looking for commands");
+		Log.info("Looking for commands");
 		LegacyCommands.find();
 		ApplicationCommands.findCommands();
 		CLICommands.find();
 		CustomInteractionTypes.init();
 
-		App.info("Loading discord handler events...");
+		Log.info("Loading discord handler events...");
 		handle(ReadyEvent.class, this::ready);
 		handle(GuildCreateEvent.class, this::guildCreated);
 		handle(ReconnectFailEvent.class, this::disconnected);
@@ -193,15 +188,9 @@ public class DiscordHandler {
 		handle(SelectMenuInteractionEvent.class, this::selectMenu);
 		handle(ModalSubmitInteractionEvent.class, this::modalSubmitInteraction);
 		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
-		handle(ThreadChannelCreateEvent.class, this::threadChannelCreate);
-		handle(ThreadChannelDeleteEvent.class, this::threadChannelDelete);
-		handle(ThreadChannelUpdateEvent.class, this::threadChannelUpdate);
-		handle(ThreadMemberUpdateEvent.class, this::threadMemberUpdate);
-		handle(ThreadMembersUpdateEvent.class, this::threadMembersUpdate);
-		handle(ThreadListSyncEvent.class, this::threadListSync);
 		handle(AuditLogEntryCreateEvent.class, this::auditLogEntryCreated);
 
-		App.info("Connecting to discord servers...");
+		Log.info("Connecting to discord servers...");
 		client.onDisconnect().subscribe(this::disconnected);
 	}
 
@@ -210,7 +199,7 @@ public class DiscordHandler {
 	}
 
 	private <T extends Event> Mono<T> defaultErrorHandler(Throwable exception) {
-		App.error("Failed to handle event: " + exception);
+		Log.error("Failed to handle event: " + exception);
 		exception.printStackTrace();
 		return Mono.empty();
 	}
@@ -219,7 +208,7 @@ public class DiscordHandler {
 	}
 
 	private void disconnected(Object ignored) {
-		App.error("Disconnected!");
+		Log.error("Disconnected!");
 		app.restart();
 	}
 
@@ -332,7 +321,7 @@ public class DiscordHandler {
 			}
 		} catch (Exception ex) {
 			// ex.printStackTrace();
-			App.error("Failed to update member " + event.getMemberId().asString() + ": " + ex);
+			Log.error("Failed to update member " + event.getMemberId().asString() + ": " + ex);
 		}
 	}
 
@@ -357,10 +346,10 @@ public class DiscordHandler {
 
 			if (gc.advancedLogging) {
 				if (b.value == 1L) {
-					App.info(newM.getClass().getSimpleName() + " updated: " + this + "/" + getEntityName(newM));
+					Log.info(newM.getClass().getSimpleName() + " updated: " + this + "/" + getEntityName(newM));
 				}
 
-				App.info("> " + name + " " + o + " -> " + n);
+				Log.info("> " + name + " " + o + " -> " + n);
 			}
 		}
 	}
@@ -371,18 +360,18 @@ public class DiscordHandler {
 			gc.memberUpdated(event.getUserId().asLong(), 0);
 
 			if (gc.advancedLogging) {
-				App.info("Member updated: " + this + "/" + event.getUserId());
+				Log.info("Member updated: " + this + "/" + event.getUserId());
 
 				if (event.getNewUsername().isPresent()) {
-					App.info("> Username " + event.getNewUsername().get());
+					Log.info("> Username " + event.getNewUsername().get());
 				}
 
 				if (event.getNewAvatar().isPresent()) {
-					App.info("> Avatar " + event.getNewAvatar().get());
+					Log.info("> Avatar " + event.getNewAvatar().get());
 				}
 
 				if (event.getNewDiscriminator().isPresent()) {
-					App.info("> Discriminator " + event.getNewDiscriminator().get());
+					Log.info("> Discriminator " + event.getNewDiscriminator().get());
 				}
 			}
 		}
@@ -456,30 +445,6 @@ public class DiscordHandler {
 		InteractionHandler.chatInputAutoComplete(this, event);
 	}
 
-	private void threadChannelCreate(ThreadChannelCreateEvent event) {
-		ThreadHandler.channelCreate(this, event);
-	}
-
-	private void threadChannelDelete(ThreadChannelDeleteEvent event) {
-		ThreadHandler.channelDelete(this, event);
-	}
-
-	private void threadChannelUpdate(ThreadChannelUpdateEvent event) {
-		ThreadHandler.channelUpdate(this, event);
-	}
-
-	private void threadMemberUpdate(ThreadMemberUpdateEvent event) {
-		ThreadHandler.memberUpdate(this, event);
-	}
-
-	private void threadMembersUpdate(ThreadMembersUpdateEvent event) {
-		ThreadHandler.membersUpdate(this, event);
-	}
-
-	private void threadListSync(ThreadListSyncEvent event) {
-		ThreadHandler.listSync(this, event);
-	}
-
 	private void auditLogEntryCreated(AuditLogEntryCreateEvent event) {
 		try {
 			auditLogEntryCreated0(event);
@@ -491,7 +456,7 @@ public class DiscordHandler {
 	private void auditLogEntryCreated0(AuditLogEntryCreateEvent event) {
 		var gc = app.db.guild(event.getGuildId());
 		// App.warn(event.toString());
-		App.LOGGER.event(BrainEvents.AUDIT_LOG);
+		BrainEventType.AUDIT_LOG.build(gc.guildId).post();
 		var e = event.getAuditLogEntry();
 
 		var target = e.getTargetId().isEmpty() ? null : gc.getMemberData(e.getTargetId().get().asLong());
@@ -513,16 +478,16 @@ public class DiscordHandler {
 
 					if (timeout != null) {
 						if (timeout.getCurrentValue().isEmpty()) {
-							App.warn(target.user().username() + " timeout removed by " + (responsible == null ? "System" : responsible.user().username()));
+							Log.warn(target.user().username() + " timeout removed by " + (responsible == null ? "System" : responsible.user().username()));
 						} else {
-							App.warn(target.user().username() + " timeout added by " + responsible.user().username() + " for '" + reason + "' until " + timeout.getCurrentValue().get());
+							Log.warn(target.user().username() + " timeout added by " + responsible.user().username() + " for '" + reason + "' until " + timeout.getCurrentValue().get());
 						}
 					}
 				}
 			}
-			case MEMBER_BAN_ADD -> App.warn(target.user().username() + " banned for '" + reason + "' by " + responsible.user().username());
-			case MEMBER_BAN_REMOVE -> App.warn(target.user().username() + " unbanned by " + responsible.user().username());
-			case AUTO_MODERATION_USER_COMMUNICATION_DISABLED -> App.info("AutoMod timed out " + target.user().username());
+			case MEMBER_BAN_ADD -> Log.warn(target.user().username() + " banned for '" + reason + "' by " + responsible.user().username());
+			case MEMBER_BAN_REMOVE -> Log.warn(target.user().username() + " unbanned by " + responsible.user().username());
+			case AUTO_MODERATION_USER_COMMUNICATION_DISABLED -> Log.warn("AutoMod timed out " + target.user().username());
 		}
 	}
 
@@ -543,7 +508,7 @@ public class DiscordHandler {
 
 		//App.error("Suspicious message by " + u.getUsername() + " detected: " + content.apply(message.getContent()) + " [" + reason + "]" + Ansi.RESET);
 
-		App.LOGGER.event(BrainEvents.SUSPICIOUS_MESSAGE);
+		BrainEventType.SUSPICIOUS_MESSAGE.build(gc.guildId).post();
 
 		var sb1 = new StringBuilder("[Suspicious message detected in](");
 		message.appendMessageURL(sb1);

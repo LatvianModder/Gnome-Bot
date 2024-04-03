@@ -13,12 +13,12 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.MessageEditSpec;
 import discord4j.core.spec.StartThreadSpec;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
@@ -80,7 +80,7 @@ public class FeedbackCommand extends ApplicationCommands {
 		votes.put(event.context.sender.getId().asString(), true);
 		document.put("votes", votes);
 		event.context.gc.feedback.insert(document);
-		m.edit(MessageEditSpec.builder().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).build()).block();
+		m.edit(MessageBuilder.create().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).toMessageEditSpec()).block();
 
 		try {
 			m.startThread(StartThreadSpec.builder()
@@ -90,15 +90,15 @@ public class FeedbackCommand extends ApplicationCommands {
 			).block();
 
 		} catch (Exception ex) {
-			App.error("Failed to create a thread for suggestion " + event.context.gc + "/#" + number);
+			Log.error("Failed to create a thread for suggestion " + event.context.gc + "/#" + number);
 		}
 
-		m.edit(MessageEditSpec.builder().addComponent(ActionRow.of(
+		m.edit(MessageBuilder.create().addComponent(ActionRow.of(
 				Button.secondary("feedback/" + number + "/upvote", Emojis.VOTEUP),
 				Button.secondary("feedback/" + number + "/mehvote", Emojis.VOTENONE),
 				Button.secondary("feedback/" + number + "/downvote", Emojis.VOTEDOWN),
 				Button.link(QuoteHandler.getChannelURL(event.context.gc.guildId, m.getId().asLong()), "Discussion")
-		)).build()).block();
+		)).toMessageEditSpec()).block();
 
 		event.respond(MessageBuilder.create("Your feedback has been submitted!").addComponentRow(Button.link(QuoteHandler.getMessageURL(event.context.gc.guildId, m.getChannelId().asLong(), m.getId().asLong()), "Open")));
 	}
@@ -133,7 +133,7 @@ public class FeedbackCommand extends ApplicationCommands {
 
 		event.context.gc.findMessage(feedback.getUID(), event.context.gc.feedbackChannel.messageChannel().orElse(null)).ifPresent(message -> {
 			var footer = Utils.getFooter(message);
-			message.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
+			message.edit(MessageBuilder.create().addEmbed(feedback.edit(event.context.gc, footer)).toMessageEditSpec()).subscribe();
 
 			if (!status.canEdit()) {
 				Utils.editComponents(message, null);
@@ -171,7 +171,7 @@ public class FeedbackCommand extends ApplicationCommands {
 
 				for (var feedback : event.context.gc.feedback.query().neq("deleted", true).neq("status", 0)) {
 					feedback.update(Updates.set("deleted", true));
-					App.info("Deleting #" + feedback.getNumber() + " - " + feedback.getStatus() + ": " + feedback.getReason());
+					Log.info("Deleting #" + feedback.getNumber() + " - " + feedback.getStatus() + ": " + feedback.getReason());
 
 					try {
 						feedbackChannel.getMessage(feedback.getUID()).delete().block();
@@ -205,7 +205,7 @@ public class FeedbackCommand extends ApplicationCommands {
 
 			if (feedback.setVote(event.context.sender.getId().asString(), vote)) {
 				var footer = Utils.getFooter(m);
-				m.edit(MessageEditSpec.builder().addEmbed(feedback.edit(event.context.gc, footer)).build()).subscribe();
+				m.edit(MessageBuilder.create().addEmbed(feedback.edit(event.context.gc, footer)).toMessageEditSpec()).subscribe();
 			}
 		} else {
 			throw new GnomeException("You can't vote for this suggestion, you have to have " + event.context.gc.regularRole + " role!");

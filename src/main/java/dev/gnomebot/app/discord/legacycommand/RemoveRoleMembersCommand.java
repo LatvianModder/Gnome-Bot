@@ -1,9 +1,9 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Ansi;
+import dev.latvian.apps.webutils.ansi.Log;
 
 public class RemoveRoleMembersCommand {
 	@LegacyDiscordCommand(name = "remove_role_members", help = "Removes members from role", arguments = "<role>", permissionLevel = AuthLevel.ADMIN)
@@ -31,7 +31,7 @@ public class RemoveRoleMembersCommand {
 
 					if (member.getRoleIds().contains(role)) {
 						removed++;
-						App.info(Ansi.of("- ").append(n));
+						Log.info(Ansi.of("- ").append(n));
 
 						if (confirm) {
 							member.removeRole(role).block();
@@ -40,7 +40,7 @@ public class RemoveRoleMembersCommand {
 				}
 			}
 
-			App.info("Removed " + removed);
+			Log.info("Removed " + removed);
 
 			if (confirm) {
 				context.reply("<@&" + role.asString() + ">: removed " + removed);

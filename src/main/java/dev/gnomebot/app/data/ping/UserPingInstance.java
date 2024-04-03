@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.util.TimeLimitedCharSequence;
+import dev.latvian.apps.webutils.ansi.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -17,10 +17,10 @@ public record UserPingInstance(Ping[] pings, long user, PingDestination destinat
 				var time = System.nanoTime() - start;
 
 				if (time >= 100_000L) { // 0.100 ms
-					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
+					Log.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
 				}
 
-				CompletableFuture.runAsync(new RelayPingTask(destination, user, pingData, ping));
+				CompletableFuture.runAsync(new RelayPingTask(destination, user, pingData, ping, config));
 			}
 		}
 	}
@@ -35,7 +35,7 @@ public record UserPingInstance(Ping[] pings, long user, PingDestination destinat
 				var time = System.nanoTime() - start;
 
 				if (time >= 100_000L) { // 0.100 ms
-					App.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
+					Log.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
 				}
 
 				return ping;

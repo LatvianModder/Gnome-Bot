@@ -1,8 +1,10 @@
 package dev.gnomebot.app.data.complex;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
@@ -44,6 +46,12 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		List<String> contentBlockLines = null;
 
 		for (var line : lines) {
+			line = line.strip();
+
+			if (App.debug) {
+				Log.info("Parsing line " + line);
+			}
+
 			if (contentBlockLines != null) {
 				if (line.equals("<<<")) {
 					contentBlockLines.forEach(ctx::acceptText);

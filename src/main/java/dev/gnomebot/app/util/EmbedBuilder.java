@@ -3,6 +3,7 @@ package dev.gnomebot.app.util;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.EmbedAuthorData;
@@ -98,7 +99,7 @@ public class EmbedBuilder {
 			return builder;
 		}
 
-		App.error("Invalid script embbed: " + object);
+		Log.error("Invalid script embbed: " + object);
 		return EmbedBuilder.create("Invalid script embed!");
 	}
 
@@ -162,8 +163,12 @@ public class EmbedBuilder {
 		return this;
 	}
 
-	public EmbedBuilder footer(String text) {
-		return footer(text, null);
+	public EmbedBuilder footer(@Nullable EmbedCreateFields.Footer footer) {
+		return footer == null ? this : footer(footer.text(), footer.iconUrl());
+	}
+
+	public EmbedBuilder footer() {
+		return footer("Powered by GnomeBot", App.url("gnomebot.png"));
 	}
 
 	public EmbedBuilder image(String image) {

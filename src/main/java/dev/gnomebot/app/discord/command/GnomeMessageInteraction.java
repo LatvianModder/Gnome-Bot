@@ -1,12 +1,12 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.command.admin.DisplayCommands;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
@@ -91,7 +91,7 @@ public class GnomeMessageInteraction extends ApplicationCommands {
 					event.context.checkSenderAdmin();
 				}
 
-				App.info(event.context.gc + "/" + event.context.sender.getDisplayName() + " used message action '" + action.name + "' on " + message.getChannelId().asString() + "/" + message.getId().asString());
+				Log.info(event.context.gc + "/" + event.context.sender.getDisplayName() + " used message action '" + action.name + "' on " + message.getChannelId().asString() + "/" + message.getId().asString());
 
 				if (action.callback != null) {
 					action.callback.messageInteraction(message, event);
