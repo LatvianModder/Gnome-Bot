@@ -41,7 +41,7 @@ public class KickCommand extends ApplicationCommands {
 
 		event.context.reply(event.context.sender.getMention() + " kicked " + user.getMention());
 
-		var dm = DM.send(event.context.handler, user, "You've been kicked from " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user.getUserData(), "You've been kicked from " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (member != null) {
 			// MemberHandler.ignoreNextBan = true;

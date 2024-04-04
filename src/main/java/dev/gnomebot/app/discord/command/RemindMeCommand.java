@@ -22,7 +22,7 @@ public class RemindMeCommand extends ApplicationCommands {
 
 		if (dm) {
 			event.acknowledgeEphemeral();
-			dm = DM.send(event.context.handler, event.context.sender, "⏰ " + Utils.formatRelativeDate(instant) + ": " + text, false).isPresent();
+			dm = DM.send(event.context.handler, event.context.sender.getUserData(), "⏰ " + Utils.formatRelativeDate(instant) + ": " + text, false).isPresent();
 
 			if (!dm) {
 				event.respond("Failed to DM you! You must share at least one guild with Gnome where you have DMs open. You can specify `private:False` in command and you will receive reminder in this channel instead");

@@ -41,7 +41,7 @@ public class WarnCommand extends ApplicationCommands {
 		}
 
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
-		var dm = DM.send(event.context.handler, user, "You've been warned on " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user.getUserData(), "You've been warned on " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (dm) {
 			event.context.reply(event.context.sender.getMention() + " warned " + user.getMention());

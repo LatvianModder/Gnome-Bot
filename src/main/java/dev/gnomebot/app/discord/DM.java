@@ -6,8 +6,8 @@ import dev.gnomebot.app.Config;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.util.EntityUtil;
@@ -15,6 +15,7 @@ import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.DMCreateRequest;
 import discord4j.discordjson.json.ImmutableStartThreadRequest;
+import discord4j.discordjson.json.UserData;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -117,20 +118,20 @@ public class DM {
 	}
 
 	// async this
-	private static void sendInDmChannel(DiscordHandler handler, @Nullable PrivateChannel privateChannel, User user, MessageBuilder message) {
+	private static void sendInDmChannel(DiscordHandler handler, @Nullable PrivateChannel privateChannel, UserData user, MessageBuilder message) {
 		var dmChannelId = Config.get().gnome_dm_channel_id;
 
 		if (dmChannelId == 0L) {
 			Config.get().gnome_dm_webhook.execute(message);
 		} else {
-			var dmChannel = DM_CHANNELS_USER.get(user.getId().asLong());
+			var dmChannel = DM_CHANNELS_USER.get(user.id().asLong());
 			var save = false;
 
 			if (dmChannel == null) {
 				var channelService = handler.app.discordHandler.client.getRestClient().getChannelService();
-				var messageId = channelService.createMessage(dmChannelId, MessageBuilder.create(user.getUsername() + " [" + user.getId().asString() + "]").toMultipartMessageCreateRequest()).block().id().asLong();
-				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadRequest.builder().name("DMs of " + user.getUsername()).autoArchiveDuration(1440).build()).block();
-				dmChannel = new DMChannel(user.getId().asLong(), messageId, 0L);
+				var messageId = channelService.createMessage(dmChannelId, MessageBuilder.create(user.username() + " [" + user.id().asString() + "]").toMultipartMessageCreateRequest()).block().id().asLong();
+				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadRequest.builder().name("DMs of " + user.username()).autoArchiveDuration(1440).build()).block();
+				dmChannel = new DMChannel(user.id().asLong(), messageId, 0L);
 				save = true;
 			}
 
@@ -149,9 +150,9 @@ public class DM {
 		}
 	}
 
-	public static Optional<Message> send(DiscordHandler handler, User user, MessageBuilder message, boolean log) {
+	public static Optional<Message> send(DiscordHandler handler, UserData user, MessageBuilder message, boolean log) {
 		try {
-			var m = Optional.of(open(handler, user.getId().asLong()).createMessage(message.toMessageCreateSpec()).block());
+			var m = Optional.of(open(handler, user.id().asLong()).createMessage(message.toMessageCreateSpec()).block());
 
 			if (log && message.getContent() != null) {
 				sendInDmChannel(handler, null, user, MessageBuilder.create()
@@ -167,11 +168,11 @@ public class DM {
 		}
 	}
 
-	public static Optional<Message> send(DiscordHandler handler, User user, String content, boolean log) {
+	public static Optional<Message> send(DiscordHandler handler, UserData user, String content, boolean log) {
 		return send(handler, user, MessageBuilder.create().content(content), log);
 	}
 
-	public static void log(DiscordHandler handler, PrivateChannel privateChannel, User author, Message message) {
+	public static void log(DiscordHandler handler, PrivateChannel privateChannel, UserData author, Message message) {
 		var builder = new StringBuilder(message.getContent());
 
 		for (var attachment : message.getAttachments()) {
@@ -190,12 +191,12 @@ public class DM {
 
 		sendInDmChannel(handler, privateChannel, author, MessageBuilder.create()
 				.content(builder.toString().trim())
-				.webhookName(author.getUsername())
-				.webhookAvatarUrl(author.getAvatarUrl())
+				.webhookName(author.globalName().orElse(author.username()))
+				.webhookAvatarUrl(Utils.getAvatarUrl(author))
 		);
 	}
 
-	public static void reply(DiscordHandler handler, PrivateChannel privateChannel, User author, MessageChannel channel, String content) {
+	public static void reply(DiscordHandler handler, PrivateChannel privateChannel, UserData author, MessageChannel channel, String content) {
 		channel.createMessage(content).block();
 
 		sendInDmChannel(handler, privateChannel, author, MessageBuilder.create()

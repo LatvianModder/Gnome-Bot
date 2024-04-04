@@ -111,7 +111,7 @@ public class MemberHandler {
 				lockdownKicks.add(member.getId().asLong());
 			}
 
-			DM.send(handler, member, "Your account is too new! You can return " + Utils.formatRelativeDate(Instant.ofEpochSecond(member.getId().getTimestamp().getEpochSecond() + gc.kickNewAccounts.get())), false);
+			DM.send(handler, member.getUserData(), "Your account is too new! You can return " + Utils.formatRelativeDate(Instant.ofEpochSecond(member.getId().getTimestamp().getEpochSecond() + gc.kickNewAccounts.get())), false);
 			member.kick("New Account").subscribe();
 			return;
 		}

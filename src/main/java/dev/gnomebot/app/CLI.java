@@ -9,8 +9,12 @@ import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.Webhook;
+import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class CLI extends Thread {
@@ -97,10 +101,40 @@ public class CLI extends Thread {
 		// collection.insertOne(new Document("test", 1));
 		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
 
+		var toDelete = new ArrayList<Webhook>();
+
 		for (var gc : app.db.allGuilds()) {
+			Log.warn("Done %,d".formatted(count));
 			Log.info("Porting " + gc);
 
-			Log.warn("Done %,d".formatted(count));
+			for (var channel : gc.getGuild().getChannels().toIterable()) {
+				if (channel instanceof TopLevelGuildMessageChannel tlc) {
+					try {
+						for (var w : tlc.getWebhooks().toIterable()) {
+							boolean success = false;
+
+							if (w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)) {
+								count++;
+								success = true;
+								toDelete.add(w);
+							}
+
+							Log.success("- " + w.getName().orElse("Unnamed") + " by " + w.getCreator().map(User::getUsername).orElse("Unknown") + " " + w.getId().asString(), success);
+						}
+					} catch (Exception ex) {
+						Log.warn(ex);
+					}
+				}
+			}
+		}
+
+		for (var w : toDelete) {
+			try {
+				w.delete().block();
+				Log.success("Deleted " + w.getId().asString());
+			} catch (Exception ex) {
+				Log.warn(ex);
+			}
 		}
 
 		Log.success("Done %,d".formatted(count));

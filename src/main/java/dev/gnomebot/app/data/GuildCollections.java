@@ -41,7 +41,10 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
 import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.Channel;
+import discord4j.core.object.entity.channel.ForumChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
+import discord4j.core.object.entity.channel.TopLevelGuildChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.json.MemberData;
@@ -638,12 +641,14 @@ public class GuildCollections {
 
 			try {
 				for (var ch : getGuild().getChannels()
-						.filter(c -> c instanceof TopLevelGuildMessageChannel)
-						.cast(TopLevelGuildMessageChannel.class)
-						.sort(Comparator.comparing(TopLevelGuildMessageChannel::getRawPosition).thenComparing(TopLevelGuildMessageChannel::getId))
+						.filter(c -> c instanceof TopLevelGuildChannel)
+						.cast(TopLevelGuildChannel.class)
+						.sort(Comparator.comparing(TopLevelGuildChannel::getRawPosition).thenComparing(TopLevelGuildChannel::getId))
 						.toIterable()) {
-					var c = new ChannelInfo(this, ch.getId().asLong(), db.channelSettings(ch.getId().asLong()));
-					channelMap.put(ch.getId().asLong(), c);
+					if (ch instanceof MessageChannel || ch instanceof ForumChannel) {
+						var c = new ChannelInfo(this, ch.getId().asLong(), db.channelSettings(ch.getId().asLong()));
+						channelMap.put(ch.getId().asLong(), c);
+					}
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -984,7 +989,7 @@ public class GuildCollections {
 			var ci = config.messageChannel().orElse(null);
 			var topLevelChannel = ci == null ? null : ci.getTopLevelChannel();
 
-			if (topLevelChannel != null) {
+			if (topLevelChannel instanceof TopLevelGuildMessageChannel msgc) {
 				try {
 					var doc = memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id).projectionFields("thread").first();
 
@@ -999,7 +1004,7 @@ public class GuildCollections {
 				} catch (Exception ignore) {
 				}
 
-				var thread = topLevelChannel.startThread(StartThreadWithoutMessageSpec.builder()
+				var thread = msgc.startThread(StartThreadWithoutMessageSpec.builder()
 						.type(type == 0 ? ThreadChannel.Type.GUILD_PUBLIC_THREAD : ThreadChannel.Type.GUILD_PRIVATE_THREAD)
 						.invitable(false)
 						.reason(user.username() + " Member Channel")

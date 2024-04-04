@@ -50,7 +50,6 @@ public class Databases {
 	private final WrappedCollection<WebToken> webTokensDB;
 	public final WrappedCollection<BasicDocument> mmShowcaseDB;
 	public final WrappedCollection<UserWebhook> userWebhooksDB;
-	public final WrappedCollection<Paste> pastesDB;
 	public final WrappedCollection<InteractionDocument> interactionsDB;
 	public final WrappedCollection<ScheduledTask> scheduledTasksDB;
 	public final WrappedCollection<DiscordPoll> pollsDB;
@@ -73,7 +72,6 @@ public class Databases {
 		webTokensDB = create(database, "web_tokens", WebToken::new);
 		mmShowcaseDB = create(database, "mm_showcase", BasicDocument::new);
 		userWebhooksDB = create(database, "user_webhooks", UserWebhook::new);
-		pastesDB = create(database, "pastes", Paste::new);
 		interactionsDB = create(database, "interactions", InteractionDocument::new);
 		scheduledTasksDB = create(database, "scheduled_tasks", ScheduledTask::new);
 		pollsDB = create(database, "polls", DiscordPoll::new);

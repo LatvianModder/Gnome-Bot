@@ -8,7 +8,6 @@ import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
-import dev.gnomebot.app.data.ChannelSettings;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
@@ -22,7 +21,6 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
-import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
@@ -38,12 +36,13 @@ import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.StartThreadSpec;
 import discord4j.rest.RestClient;
-import discord4j.rest.entity.RestChannel;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +54,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class MessageHandler {
@@ -129,14 +129,34 @@ public class MessageHandler {
 	public static void created(DiscordHandler handler, MessageCreateEvent event) {
 		WatchdogThread.update();
 		var m = event.getMessage();
+		var channel = Objects.requireNonNull(m.getChannel().block());
 
-		var author = m.getAuthor().orElse(null);
+		if (event.getGuildId().isPresent() && event.getGuildId().get().asLong() == 720671115336220693L) {
+			Log.error("Message " + m.getId().asString() + " in " + channel.getClass().getName() + "/" + channel.getId().asString() + " - " + m.getType() + ", '" + m.getContent() + "' by " + m.getUserData().username());
+		}
 
-		if (author != null && VALID_MESSAGE_TYPES.contains(m.getData().type())) {
+		var author = m.getData().author();
+
+		if (m.getType() == Message.Type.AUTO_MODERATION_ACTION && channel instanceof GuildChannel c) {
+			Log.important("AutoMod message in " + c.getGuild().block().getName() + "/#" + c.getName() + ":");
+			Log.important("> User: " + author.id().asLong() + " / " + author.globalName().orElse(author.username()));
+
+			for (var embed : m.getEmbeds()) {
+				Log.important("> Description: " + embed.getDescription().orElse(""));
+
+				for (var field : embed.getFields()) {
+					Log.important("> " + field.getName() + ": " + field.getValue());
+				}
+			}
+
+			//  + m.getContent() + ", Ref: " + m.getReferencedMessage().map(Message::getId).map(Snowflake::asLong).orElse(0L) + ", By: " + author.id().asLong() + "/" + author.username() + ", In " + m.getChannelId().asLong());
+			return;
+		}
+
+		if (VALID_MESSAGE_TYPES.contains(m.getData().type())) {
 			var member = event.getMember().orElse(null);
-			var channel = m.getChannel().block();
 
-			if (channel instanceof PrivateChannel privateChannel && !author.isBot()) {
+			if (channel instanceof PrivateChannel privateChannel && !author.bot().toOptional().orElse(false)) {
 				var content = Emojis.stripEmojis(m.getContent());
 				DM.log(handler, privateChannel, author, m);
 
@@ -155,42 +175,27 @@ public class MessageHandler {
 				} else {
 					DM.reply(handler, privateChannel, author, channel, "Why are you talking to me? I'm a bot");
 				}
-			} else if (member != null && channel instanceof GuildMessageChannel gchannel) {
-				var gc = handler.app.db.guild(event.getGuildId().orElse(null));
-				var threadChannel = gchannel instanceof ThreadChannel t ? t : null;
-
-				var topLevelChannelId = gc == null ? null : threadChannel != null ? threadChannel.getParentId().orElse(null) : event.getMessage().getChannelId();
-				var channelInfo = topLevelChannelId == null ? null : gc.getChannelMap().get(topLevelChannelId.asLong());
-
-				if (channelInfo != null && threadChannel != null) {
-					channelInfo = channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName());
-				}
-
-				// Temp fix until D4J supports forum channels
-				if (channelInfo == null && threadChannel != null) {
-					channelInfo = new ChannelInfo(gc, threadChannel.getParentId().get().asLong(), new ChannelSettings(gc.db.channelSettingsDB, MapWrapper.wrap(new Document("_id", threadChannel.getParentId().get()))));
-					channelInfo = channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName());
-				}
-
-				/* testing forum channels
-				if (m.getChannelId().equals(Snowflake.of(1020391704232198144L))) {
-					App.info("Inside post, info:");
-					App.info("Guild ID: " + event.getGuildId());
-					App.info("GC: " + gc);
-					App.info("Channel Type: " + (channel != null ? channel.getType().toString() : "unknown type"));
-					App.info("Channel Class: " + (channel != null ? channel.getClass().getName() : "unknown class"));
-					App.info("Top level channel ID: " + topLevelChannelId);
-					App.info("Channel Info: " + channelInfo);
-				}
-				 */
+			} else if (member != null && channel instanceof ThreadChannel threadChannel) {
+				var gc = handler.app.db.guild(event.getGuildId().get());
+				var channelInfo = gc.getChannelMap().get(threadChannel.getParentId().get().asLong());
 
 				if (channelInfo != null) {
-					messageCreated(handler, channelInfo, m, member, member, false);
+					messageCreated(handler, threadChannel, channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName()), m, member, member, false);
+				} else {
+					Log.error("Thread parent not found: " + threadChannel.getParentId().get().asLong());
+				}
+			} else if (member != null && channel instanceof GuildMessageChannel guildChannel) {
+				var gc = handler.app.db.guild(event.getGuildId().get());
+				var channelInfo = gc.getChannelMap().get(guildChannel.getId().asLong());
+
+				if (channelInfo != null) {
+					messageCreated(handler, guildChannel, channelInfo, m, member, member, false);
+				} else {
+					Log.error("Channel not found: " + guildChannel.getId().asLong());
 				}
 			}
 		} else {
 			BrainEventType.UNKNOWN_MESSAGE.build(event.getGuildId().map(Snowflake::asLong).orElse(0L)).content(m.getContent()).post();
-			//App.info("Message type: " + m.getData().type() + " / " + (author == null ? "-" : author.getUsername()));
 		}
 	}
 
@@ -242,11 +247,11 @@ public class MessageHandler {
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void messageCreated(DiscordHandler handler, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
+	public static void messageCreated(DiscordHandler handler, MessageChannel messageChannel, ChannelInfo channelInfo, Message message, User user, @Nullable Member member, boolean importing) {
 		var dmId = DM.getChannelFromMessage(channelInfo.id);
 
 		if (dmId != null && !message.getContent().isEmpty()) {
-			DM.send(handler, handler.getUser(dmId.userId()), message.getContent(), true);
+			DM.send(handler, handler.getUserData(dmId.userId()), message.getContent(), true);
 			return;
 		}
 
@@ -491,35 +496,6 @@ public class MessageHandler {
 		if (!member.isBot() && !authLevel.is(AuthLevel.ADMIN)) {
 			var scam = ScamHandler.checkScam(contentNoEmojis);
 
-			if (scam != null) {
-				Log.warn("Potential scam URL detected in " + gc + ": " + scam);
-
-				if (gc.autoMuteScamUrl.get() > 0 && context.gc.mutedRole.isSet()) {
-					var seconds = gc.autoMuteScamUrl.get() * 60L;
-
-					context.referenceMessage = false;
-
-					try {
-						MuteCommand.mute(context, member, seconds, "Potential Scam URL", "Muted " + member.getMention());
-					} catch (GnomeException e) {
-						e.printStackTrace();
-					}
-
-					context.referenceMessage = true;
-					message.delete().subscribe();
-					return;
-				} else {
-					handler.suspiciousMessageModLog(gc, gc.adminLogChannel, discordMessage, member, "Potential Scam URL: " + scam, null);
-				}
-
-				gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.SCAM)
-						.channel(channelInfo.id)
-						.message(message)
-						.user(member)
-						.content(content)
-				);
-			}
-
 			if (ScamHandler.URL_SHORTENER_PATTERN.matcher(contentNoEmojis).find()) {
 				if (gc.autoMuteUrlShortener.get() > 0 && context.gc.mutedRole.isSet()) {
 					var seconds = gc.autoMuteUrlShortener.get() * 60L;
@@ -658,6 +634,8 @@ public class MessageHandler {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
 
+		var outputMessageChannel = messageChannel;
+
 		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
 			try {
 				var u = member.getDisplayName();
@@ -683,19 +661,11 @@ public class MessageHandler {
 
 				// (u.endsWith("s") ? (u + "’") : (u + "’s")) + " Post Discussion"
 
-				message.startThread(StartThreadSpec.builder()
+				outputMessageChannel = Objects.requireNonNull(message.startThread(StartThreadSpec.builder()
 						.name(n)
 						// .autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION2)
 						.build()
-				).block();
-
-				/*
-				Utils.THREAD_ROUTE.newRequest(channelInfo.id.asLong(), message.getId().asLong())
-						.body(new ThreadMessageRequest(n))
-						.exchange(context.handler.client.getCoreResources().getRouter())
-						.skipBody()
-						.block();
-				 */
+				).block());
 			} catch (Exception ex) {
 				Log.error("Failed to create a thread!");
 				Log.warn(ex);
@@ -713,11 +683,7 @@ public class MessageHandler {
 			}
 
 			if (!attachments.isEmpty()) {
-				if (channelInfo.settings.autoThread) {
-					PasteHandlers.pasteMessage(gc.db, RestChannel.create(gc.getClient().getRestClient(), message.getId()), message, attachments);
-				} else {
-					PasteHandlers.pasteMessage(gc.db, channelInfo.getRest(), message, attachments);
-				}
+				PasteHandlers.pasteMessage(gc.db, outputMessageChannel, message, attachments);
 			}
 		}
 
@@ -736,19 +702,19 @@ public class MessageHandler {
 				if (thankGnome) {
 					message.addReaction(Emojis.GNOME_HAHA_YES).subscribe();
 				} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
-					channelInfo.createMessage("no u").subscribe();
+					outputMessageChannel.createMessage("no u").subscribe();
 				} else if (contentNoEmojis.contains("help")) {
-					channelInfo.createMessage("Try `" + gc.legacyPrefix.get() + "help`").subscribe();
+					outputMessageChannel.createMessage("Try `" + gc.legacyPrefix.get() + "help`").subscribe();
 				} else if (contentNoEmojis.contains("prefix")) {
-					channelInfo.createMessage("Current command prefix is `" + gc.legacyPrefix.get() + "`").subscribe();
+					outputMessageChannel.createMessage("Current command prefix is `" + gc.legacyPrefix.get() + "`").subscribe();
 				} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
-					channelInfo.createMessage("Hi").subscribe();
+					outputMessageChannel.createMessage("Hi").subscribe();
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
-					channelInfo.createMessage("ok").subscribe();
+					outputMessageChannel.createMessage("ok").subscribe();
 				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().asLong() == gc.db.app.discordHandler.selfId) {
-					channelInfo.createMessage(Assets.REPLY_PING.getPath()).subscribe();
+					outputMessageChannel.createMessage(Assets.REPLY_PING.getPath()).subscribe();
 				} else {
-					channelInfo.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
+					outputMessageChannel.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
 				}
 			}
 
@@ -802,7 +768,7 @@ public class MessageHandler {
 					error.description("```\n" + ex.getMessage() + "\n```");
 				}
 
-				if (!ex.ephemeral || DM.send(context.handler, context.sender, MessageBuilder.create(error), false).isEmpty()) {
+				if (!ex.ephemeral || DM.send(context.handler, context.sender.getUserData(), MessageBuilder.create(error), false).isEmpty()) {
 					try {
 						context.reply(error);
 					} catch (GnomeException e) {
@@ -856,7 +822,7 @@ public class MessageHandler {
 					error.description("```\n" + ex.getMessage() + "\n```");
 				}
 
-				if (!ex.ephemeral || DM.send(context.handler, context.sender, MessageBuilder.create(error), false).isEmpty()) {
+				if (!ex.ephemeral || DM.send(context.handler, context.sender.getUserData(), MessageBuilder.create(error), false).isEmpty()) {
 					try {
 						context.reply(error);
 					} catch (GnomeException e) {

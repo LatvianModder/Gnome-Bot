@@ -226,8 +226,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 		c.createMessage(MessageBuilder.create().addFile(event.context.gc.guildId + "-" + memberId.asString() + "-" + Instant.now() + ".csv", out.toByteArray()).toMessageCreateSpec()).flatMap(dm -> {
 			var attachment = dm.getAttachments().get(0);
-			PasteHandlers.createPaste(event.context.gc.db, dm.getChannelId().asLong(), dm.getId().asLong(), attachment.getId().asLong(), attachment.getFilename(), event.context.sender.getId().asLong());
-			return dm.edit(MessageBuilder.create().addComponent(ActionRow.of(Button.link(PasteHandlers.getUrl(attachment.getId().asLong()), "View " + attachment.getFilename()))).toMessageEditSpec());
+			return dm.edit(MessageBuilder.create().addComponent(ActionRow.of(Button.link(PasteHandlers.getUrl(dm.getChannelId().asLong(), dm.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()))).toMessageEditSpec());
 		}).block();
 
 		event.respond("Done! Check your DMs!");

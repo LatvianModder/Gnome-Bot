@@ -47,7 +47,7 @@ public class BanCommand extends ApplicationCommands {
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
 		event.context.reply(event.context.sender.getMention() + " banned " + user.getMention());
 
-		var dm = DM.send(event.context.handler, user, "You've been banned from " + event.context.gc + ", reason: " + reason, false).isPresent();
+		var dm = DM.send(event.context.handler, user.getUserData(), "You've been banned from " + event.context.gc + ", reason: " + reason, false).isPresent();
 
 		if (member != null) {
 			MemberHandler.ignoreNextBan = true;

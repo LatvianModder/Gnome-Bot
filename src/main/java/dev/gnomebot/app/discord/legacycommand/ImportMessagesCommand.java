@@ -8,6 +8,7 @@ import dev.latvian.apps.webutils.TimeUtils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.MessageChannel;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -53,6 +54,11 @@ public class ImportMessagesCommand {
 				var lastId = pair.b();
 
 				var nowChannel = System.currentTimeMillis();
+				var tlc = ch.getTopLevelChannel();
+
+				if (!(tlc instanceof MessageChannel)) {
+					continue;
+				}
 
 				try {
 					for (var message : ch.getMessagesBefore(lastId)
@@ -63,7 +69,7 @@ public class ImportMessagesCommand {
 						mId++;
 						lastId = message.getId().asLong();
 						var user = message.getAuthor().get();
-						MessageHandler.messageCreated(context.handler, ch, message, user, memberCache.getAndUpdate(user).orElse(null), true);
+						MessageHandler.messageCreated(context.handler, (MessageChannel) tlc, ch, message, user, memberCache.getAndUpdate(user).orElse(null), true);
 
 						if (task.cancelled) {
 							throw new AppTaskCancelledException();

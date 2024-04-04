@@ -11,7 +11,7 @@ public class GnomeRootTag extends RootTag {
 	public Tag content;
 
 	public GnomeRootTag(String path, String title, String description) {
-		super(path, title + " - Gnome Panel", description);
+		super(path, title + " - GnomeBot", description);
 		head.meta("name", "theme-color", "content", "#262728");
 		head.stylesheet("/assets/style.css");
 		body.iframe("invisibleframe").style("display:none;");

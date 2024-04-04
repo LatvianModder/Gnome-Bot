@@ -47,7 +47,9 @@ public class PasteCommands extends ApplicationCommands {
 		var matcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(event.get("message-link").asString());
 
 		if (matcher.find()) {
-			var msg = App.instance.discordHandler.client.getMessageById(SnowFlake.convert(matcher.group(2)), SnowFlake.convert(matcher.group(3))).block();
+			var channelId = SnowFlake.convert(matcher.group(2));
+			var messageId = SnowFlake.convert(matcher.group(3));
+			var msg = App.instance.discordHandler.client.getMessageById(channelId, messageId).block();
 
 			if (msg != null) {
 				var attachments = msg.getAttachments();
@@ -61,8 +63,7 @@ public class PasteCommands extends ApplicationCommands {
 				long author = msg.getUserData().id().asLong();
 
 				for (var att : attachments) {
-					PasteHandlers.createPaste(App.instance.db, msg.getChannelId().asLong(), msg.getId().asLong(), att.getId().asLong(), att.getFilename(), author);
-					buttons.add(Button.link(PasteHandlers.getUrl(att.getId().asLong()), "View " + att.getFilename()));
+					buttons.add(Button.link(PasteHandlers.getUrl(channelId.asLong(), messageId.asLong(), att.getId().asLong()), "View " + att.getFilename()));
 				}
 
 				event.respond(MessageBuilder.create()

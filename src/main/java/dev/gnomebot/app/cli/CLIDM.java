@@ -19,7 +19,7 @@ public class CLIDM {
 
 		var message = event.reader.readString().orElse("Test");
 
-		if (DM.send(event.gc.db.app.discordHandler, user, String.format("%s send you a test DM from %s: %s", event.sender.getMention(), event.gc, message), true).isPresent()) {
+		if (DM.send(event.gc.db.app.discordHandler, user.getUserData(), String.format("%s send you a test DM from %s: %s", event.sender.getMention(), event.gc, message), true).isPresent()) {
 			event.respond("DM send!");
 		} else {
 			event.respond("Couldn't send a DM to this user!");

@@ -8,6 +8,7 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.TopLevelGuildChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.WebhookCreateSpec;
@@ -37,7 +38,7 @@ public final class ChannelInfo {
 
 	private final LazyOptional<RestChannel> rest;
 	private final LazyOptional<ChannelData> channelData;
-	private final LazyOptional<TopLevelGuildMessageChannel> topLevelChannel;
+	private final LazyOptional<TopLevelGuildChannel> topLevelChannel;
 	private final LazyOptional<WebHook> webHook;
 	private Map<Long, PermissionSet> cachedPermissions;
 
@@ -67,16 +68,14 @@ public final class ChannelInfo {
 			}
 		});
 		webHook = LazyOptional.of(() -> {
-			var tlc = getTopLevelChannel();
-
-			if (tlc != null) {
+			if (getTopLevelChannel() instanceof TopLevelGuildMessageChannel tlcMsg) {
 				// App.info("Unknown webhook for " + getName() + "/" + id);
 
-				var webhook = tlc.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)).blockFirst();
+				var webhook = tlcMsg.getWebhooks().filter(w -> w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)).blockFirst();
 
 				if (webhook == null) {
 					Log.info("Webhook for " + this + " not found, creating");
-					webhook = tlc.createWebhook(WebhookCreateSpec.builder().name("Gnome").reason("Gnome Bot webhook").build()).block();
+					webhook = tlcMsg.createWebhook(WebhookCreateSpec.builder().name("Gnome").reason("Gnome Bot webhook").build()).block();
 				} else {
 					Log.info("Loaded webhook " + webhook.getId().asString() + " '" + webhook.getName().orElse("Unnamed") + "'");
 				}
@@ -122,7 +121,7 @@ public final class ChannelInfo {
 	}
 
 	@Nullable
-	public TopLevelGuildMessageChannel getTopLevelChannel() {
+	public TopLevelGuildChannel getTopLevelChannel() {
 		return topLevelChannel.get();
 	}
 

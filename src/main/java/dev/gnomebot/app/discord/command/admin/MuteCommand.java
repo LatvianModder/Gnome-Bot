@@ -52,7 +52,7 @@ public class MuteCommand extends ApplicationCommands {
 		}
 
 		event.context.allowedMentions = AllowedMentions.builder().allowUser(user.getId()).allowUser(event.context.sender.getId()).build();
-		var dm = DM.send(event.context.handler, user, "You've been muted on " + event.context.gc + ", reason: " + reason, true).isPresent();
+		var dm = DM.send(event.context.handler, user.getUserData(), "You've been muted on " + event.context.gc + ", reason: " + reason, true).isPresent();
 
 		if (dm) {
 			event.context.reply(event.context.sender.getMention() + " muted " + user.getMention());
@@ -184,7 +184,7 @@ public class MuteCommand extends ApplicationCommands {
 			dmButtons.add(Button.link(QuoteHandler.getChannelURL(context.gc.guildId, context.gc.muteAppealChannel.get()), "Appeal"));
 		}
 
-		var dm = DM.send(context.handler, m, MessageBuilder.create()
+		var dm = DM.send(context.handler, m.getUserData(), MessageBuilder.create()
 						.addEmbed(embed)
 						.components(dmButtons.isEmpty() ? null : Collections.singletonList(ActionRow.of(dmButtons)))
 				, true).isPresent();

@@ -114,8 +114,10 @@ public class App implements Runnable {
 		webServer.add("/api/guild/settings/basic/:guild", GuildAPIHandlers::getSettings).member();
 		webServer.add("/api/guild/settings/basic/:guild/:key", GuildAPIHandlers::updateSetting).patch().owner();
 		webServer.add("/api/guild/icon/:guild/:size", GuildAPIHandlers::icon).noAuth().cacheDays(1);
-		webServer.add("/paste/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
-		webServer.add("/paste/:id", PasteHandlers::paste).noAuth().cacheMinutes(5);
+		webServer.add("/paste/:channel/:message/:id/raw", PasteHandlers::pasteRaw).noAuth().cacheMinutes(5);
+		webServer.add("/paste/:channel/:message/:id", PasteHandlers::paste).noAuth().cacheMinutes(5);
+		webServer.add("/new-paste/:channel/:message/:id", PasteHandlers::newPaste).noAuth();
+		webServer.add("/paste/:id", PasteHandlers::pasteOld).noAuth().cacheMinutes(5);
 		webServer.add("/api/guild/feedback/:guild/:id", GuildAPIHandlers::feedback).member();
 		webServer.add("/api/guild/feedback/:guild", GuildAPIHandlers::feedbackList).member().cacheMinutes(1);
 		webServer.add("/api/guild/polls/:guild/:id", GuildAPIHandlers::poll).member();
