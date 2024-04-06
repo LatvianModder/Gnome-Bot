@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class GnomeMemberInteraction extends ApplicationCommands {
-	public static final UserInteractionBuilder USER_INTERACTION = userInteraction("Gnome Actions")
+	public static final UserInteractionBuilder USER_INTERACTION = userInteraction("Other Gnome Actions")
 			.run(GnomeMemberInteraction::run);
 
 	@FunctionalInterface

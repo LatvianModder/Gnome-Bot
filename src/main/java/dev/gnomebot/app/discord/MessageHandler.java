@@ -25,6 +25,7 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Ansi;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.net.IPUtils;
 import discord4j.common.util.Snowflake;
@@ -36,7 +37,6 @@ import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
@@ -61,8 +61,6 @@ public class MessageHandler {
 	public static final Pattern MESSAGE_URL_PATTERN = Pattern.compile("<?https?://(?:(?:canary|ptb)\\.)?(?:discordapp|discord)\\.(?:com|net)/channels/(\\d+)/(\\d+)/(\\d+)>?", Pattern.MULTILINE);
 	public static final Pattern INVITE_PATTERN = Pattern.compile("(?:discord\\.com/invite|discord\\.gg)/(\\w+)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern IP_PATTERN = Pattern.compile("\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b(.*\\.jar)?", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-	public static final Pattern EVERYONE_MENTION_PATTERN = Pattern.compile("(`?)\\\\?@(?:everyone|here)\\1");
-	public static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```\\w*\\n.*```", Pattern.MULTILINE | Pattern.DOTALL);
 	public static final Pattern REMOVE_FORMATTING_PATTERN = Pattern.compile("(\\*\\*|\\*|__|_|`)(.+?)\\1");
 	public static final Pattern URL_PATTERN = Pattern.compile("(?:https?://)?((?:www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{2,64})\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 	public static final Pattern EXTRA_SPACE_PATTERN = Pattern.compile("\\s{2,}", Pattern.MULTILINE);
@@ -99,30 +97,6 @@ public class MessageHandler {
 		}
 	}
 
-	public static boolean mentionsEveryone(String s) {
-		if (s.length() < 5 || s.indexOf('@') == -1) {
-			return false;
-		}
-
-		var s1 = CODE_BLOCK_PATTERN.matcher(s).replaceAll("").trim();
-
-		if (s1.length() < 5 || s1.indexOf('@') == -1) {
-			return false;
-		}
-
-		var m = EVERYONE_MENTION_PATTERN.matcher(s1);
-
-		while (m.find()) {
-			var s2 = m.group(0);
-
-			if (s2.equals("@everyone") || s2.equals("@here") || s2.equals("\\@everyone") || s2.equals("\\@here")) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	// FIXME: Remove this hardcoded shit and move it to automatic role system
 	public static final int MM_MEMBER = 300;
 
@@ -132,26 +106,10 @@ public class MessageHandler {
 		var channel = Objects.requireNonNull(m.getChannel().block());
 
 		if (event.getGuildId().isPresent() && event.getGuildId().get().asLong() == 720671115336220693L) {
-			Log.error("Message " + m.getId().asString() + " in " + channel.getClass().getName() + "/" + channel.getId().asString() + " - " + m.getType() + ", '" + m.getContent() + "' by " + m.getUserData().username());
+			Log.info(Ansi.of("Message " + m.getId().asString() + " in " + channel.getClass().getName() + "/" + channel.getId().asString() + " - " + m.getType() + ", '" + m.getContent() + "' by " + m.getUserData().username()).navyBg());
 		}
 
 		var author = m.getData().author();
-
-		if (m.getType() == Message.Type.AUTO_MODERATION_ACTION && channel instanceof GuildChannel c) {
-			Log.important("AutoMod message in " + c.getGuild().block().getName() + "/#" + c.getName() + ":");
-			Log.important("> User: " + author.id().asLong() + " / " + author.globalName().orElse(author.username()));
-
-			for (var embed : m.getEmbeds()) {
-				Log.important("> Description: " + embed.getDescription().orElse(""));
-
-				for (var field : embed.getFields()) {
-					Log.important("> " + field.getName() + ": " + field.getValue());
-				}
-			}
-
-			//  + m.getContent() + ", Ref: " + m.getReferencedMessage().map(Message::getId).map(Snowflake::asLong).orElse(0L) + ", By: " + author.id().asLong() + "/" + author.username() + ", In " + m.getChannelId().asLong());
-			return;
-		}
 
 		if (VALID_MESSAGE_TYPES.contains(m.getData().type())) {
 			var member = event.getMember().orElse(null);

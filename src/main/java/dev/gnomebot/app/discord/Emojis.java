@@ -20,6 +20,10 @@ public interface Emojis {
 	ReactionEmoji.Custom YES = custom(1183755303079125002L, "yes", false);
 	ReactionEmoji.Custom NO = custom(1183755305037869157L, "no", false);
 
+	static ReactionEmoji.Custom yesNo(boolean yes) {
+		return yes ? YES : NO;
+	}
+
 	ReactionEmoji.Unicode POLICE_CAR = unicode("🚓");
 	ReactionEmoji.Unicode NO_ENTRY = unicode("🚫");
 	ReactionEmoji.Unicode STAR = unicode("⭐");

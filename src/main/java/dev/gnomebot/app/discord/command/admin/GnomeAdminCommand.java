@@ -235,6 +235,13 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.run(VerifyMinecraftCommand::run)
 					)
 			)
+			.add(subGroup("delete-messages")
+					.add(sub("between")
+							.add(string("message-1").required())
+							.add(string("message-2").required())
+							.add(mentionable("from"))
+					)
+			)
 			// END
 			;
 

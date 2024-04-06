@@ -395,7 +395,7 @@ public class GuildCollections {
 
 	public String getClickableName() {
 		var inv = getInviteUrl();
-		return inv.isEmpty() ? name : ("[" + name + "](" + inv + ")");
+		return inv.isEmpty() ? name : ("[" + name + "](<" + inv + ">)");
 	}
 
 	public Optional<Message> findMessage(long id, @Nullable ChannelInfo priority) {

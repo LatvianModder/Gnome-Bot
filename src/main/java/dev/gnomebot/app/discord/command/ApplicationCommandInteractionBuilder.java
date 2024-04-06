@@ -29,6 +29,7 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 	public UUID commandHash;
 	protected String description;
 	protected boolean required;
+	protected Double minValue, maxValue;
 	protected List<ApplicationCommandOptionChoiceData> choices;
 	protected LinkedHashMap<String, Self> options;
 	public ApplicationCommandCallback<E, W> callback;
@@ -84,6 +85,16 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 		return self();
 	}
 
+	public Self minValue(double v) {
+		minValue = v;
+		return self();
+	}
+
+	public Self maxValue(double v) {
+		maxValue = v;
+		return self();
+	}
+
 	public Self choice(ApplicationCommandOptionChoiceData choice) {
 		if (choices == null) {
 			choices = new ArrayList<>();
@@ -135,6 +146,15 @@ public class ApplicationCommandInteractionBuilder<E extends ApplicationCommandIn
 			b.name(builder.name);
 			b.description(builder.description);
 			b.required(builder.required);
+
+			if (builder.minValue != null) {
+				b.minValue(builder.minValue);
+			}
+
+			if (builder.maxValue != null) {
+				b.maxValue(builder.maxValue);
+			}
+
 			b.addChannelType(0);
 
 			if (builder.suggestions != null) {

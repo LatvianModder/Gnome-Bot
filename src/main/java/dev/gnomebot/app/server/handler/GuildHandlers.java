@@ -229,4 +229,17 @@ public class GuildHandlers {
 		feedback.toJson(json, memberCache, canSee, request.getAuthLevel().is(AuthLevel.OWNER));
 		return JSONResponse.of(json);
 	}
+
+	public static Response appeal(ServerRequest request) {
+		var root = GnomeRootTag.createSimple(request.getPath(), "Appeals - " + request.gc);
+		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+		root.content.h3().string("Unfortunately, there currently isn't a better appeal process.");
+		root.content.h3().string("If you are banned, join the server with an alt and message a moderator.");
+
+		if (!request.gc.getInviteUrl().isEmpty()) {
+			root.content.h3().a(request.gc.getInviteUrl(), "Click here").end().string(" to join the server.");
+		}
+
+		return root.asResponse();
+	}
 }

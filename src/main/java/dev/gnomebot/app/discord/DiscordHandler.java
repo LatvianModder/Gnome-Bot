@@ -5,12 +5,15 @@ import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
+import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.interaction.CustomInteractionTypes;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.core.DiscordClientBuilder;
@@ -21,6 +24,7 @@ import discord4j.core.event.domain.AuditLogEntryCreateEvent;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.PresenceUpdateEvent;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
+import discord4j.core.event.domain.automod.AutoModActionExecutedEvent;
 import discord4j.core.event.domain.channel.NewsChannelCreateEvent;
 import discord4j.core.event.domain.channel.NewsChannelDeleteEvent;
 import discord4j.core.event.domain.channel.NewsChannelUpdateEvent;
@@ -56,14 +60,17 @@ import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
 import discord4j.core.object.audit.ChangeKey;
+import discord4j.core.object.automod.AutoModRuleAction;
 import discord4j.core.object.entity.Entity;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.shard.MemberRequestFilter;
+import discord4j.discordjson.Id;
 import discord4j.discordjson.json.UserData;
 import discord4j.discordjson.json.gateway.Dispatch;
 import discord4j.gateway.intent.Intent;
@@ -80,6 +87,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class DiscordHandler {
 	public final App app;
@@ -128,7 +136,8 @@ public class DiscordHandler {
 						Intent.DIRECT_MESSAGES,
 						Intent.DIRECT_MESSAGE_REACTIONS,
 						Intent.GUILD_PRESENCES,
-						Intent.GUILD_VOICE_STATES
+						Intent.GUILD_VOICE_STATES,
+						Intent.AUTO_MODERATION_EXECUTION
 				))
 				.setMemberRequestFilter(MemberRequestFilter.none())
 				.login()
@@ -189,6 +198,7 @@ public class DiscordHandler {
 		handle(ModalSubmitInteractionEvent.class, this::modalSubmitInteraction);
 		handle(ChatInputAutoCompleteEvent.class, this::chatInputAutoComplete);
 		handle(AuditLogEntryCreateEvent.class, this::auditLogEntryCreated);
+		handle(AutoModActionExecutedEvent.class, this::autoModActionExecuted);
 
 		Log.info("Connecting to discord servers...");
 		client.onDisconnect().subscribe(this::disconnected);
@@ -459,13 +469,15 @@ public class DiscordHandler {
 		BrainEventType.AUDIT_LOG.build(gc.guildId).post();
 		var e = event.getAuditLogEntry();
 
-		var target = e.getTargetId().isEmpty() ? null : gc.getMemberData(e.getTargetId().get().asLong());
+		var target = e.getTargetId().isEmpty() ? null : app.discordHandler.getUser(e.getTargetId().get().asLong());
 
 		if (target == null) {
 			return;
 		}
 
-		var responsible = e.getResponsibleUserId().isEmpty() ? null : gc.getMemberData(e.getResponsibleUserId().get().asLong());
+		var targetName = target.getGlobalName().orElse(target.getUsername());
+		var responsible = e.getResponsibleUserId().isEmpty() ? null : gc.getMember(e.getResponsibleUserId().get().asLong());
+		var responsibleName = responsible == null ? "AutoMod" : responsible.getDisplayName();
 
 		var reason = e.getReason().orElse("No reason");
 
@@ -478,16 +490,98 @@ public class DiscordHandler {
 
 					if (timeout != null) {
 						if (timeout.getCurrentValue().isEmpty()) {
-							Log.warn(target.user().username() + " timeout removed by " + (responsible == null ? "System" : responsible.user().username()));
+							gc.adminLogChannelEmbed(target.getUserData(), gc.adminLogChannel, spec -> {
+								spec.description((responsible == null ? "AutoMod" : responsible.getMention()) + " removed timeout of " + target.getMention());
+								spec.author(targetName + " timeout", target.getAvatarUrl());
+								spec.color(EmbedColor.GREEN);
+
+								if (responsible != null) {
+									spec.footer(responsibleName, responsible.getEffectiveAvatarUrl());
+								}
+							});
 						} else {
-							Log.warn(target.user().username() + " timeout added by " + responsible.user().username() + " for '" + reason + "' until " + timeout.getCurrentValue().get());
+							gc.adminLogChannelEmbed(target.getUserData(), gc.adminLogChannel, spec -> {
+								spec.description((responsible == null ? "AutoMod" : responsible.getMention()) + " timed out " + target.getMention());
+								spec.author(targetName + " timeout", target.getAvatarUrl());
+								spec.inlineField("Expires", Utils.formatRelativeDate(timeout.getCurrentValue().get()));
+								spec.inlineField("Reason", reason);
+
+								if (responsible != null) {
+									spec.footer(responsibleName, responsible.getEffectiveAvatarUrl());
+								}
+							});
 						}
 					}
 				}
 			}
-			case MEMBER_BAN_ADD -> Log.warn(target.user().username() + " banned for '" + reason + "' by " + responsible.user().username());
-			case MEMBER_BAN_REMOVE -> Log.warn(target.user().username() + " unbanned by " + responsible.user().username());
-			case AUTO_MODERATION_USER_COMMUNICATION_DISABLED -> Log.warn("AutoMod timed out " + target.user().username());
+			case MEMBER_BAN_ADD -> Log.warn(targetName + " banned for '" + reason + "' by " + responsibleName);
+			case MEMBER_BAN_REMOVE -> Log.warn(targetName + " unbanned by " + responsibleName);
+			case AUTO_MODERATION_USER_COMMUNICATION_DISABLED -> Log.warn(responsibleName + " timed out " + targetName);
+		}
+	}
+
+	private void autoModActionExecuted(AutoModActionExecutedEvent event) {
+		if (event.getAction().getType() != AutoModRuleAction.Type.SEND_ALERT_MESSAGE) {
+			return;
+		}
+
+		var pattern = Pattern.compile("\\[gnome:(kick|warn|mute|ban)( [^]]+)?]");
+		var rule = event.getAutoModRule().block();
+
+		Log.error("AutoMod: " + rule.getName() + " " + event.getContent());
+		Log.info(event.getAction().getData());
+
+		var matcher = pattern.matcher(rule.getName());
+
+		Consumer<MessageBuilder> messageChannel = null;
+
+		while (matcher.find()) {
+			var reason = Optional.ofNullable(matcher.group(2)).map(String::trim).orElse("AutoMod");
+			var guild = event.getGuild().block();
+			var gc = app.db.guild(guild);
+			var user = event.getUser().block();
+
+			if (messageChannel == null) {
+				long msgChannel = event.getAction().getData().metadata().toOptional().flatMap(d -> d.channelId().toOptional()).map(Id::asLong).orElse(0L);
+
+				if (msgChannel != 0L) {
+					messageChannel = m -> guild.getChannelById(SnowFlake.convert(msgChannel)).ofType(MessageChannel.class).flatMap(c -> c.createMessage(m.toMessageCreateSpec())).block();
+				} else if (gc.adminLogChannel.isSet()) {
+					messageChannel = m -> gc.adminLogChannel.getMessageChannel().createMessage(m).block();
+				} else {
+					messageChannel = m -> {
+					};
+				}
+			}
+
+			switch (matcher.group(1).trim()) {
+				case "kick" -> {
+					var dm = DM.send(this, user.getUserData(), "You've been kicked from " + gc.getClickableName() + ": **" + reason + "**.\nIf you wish to appeal it, [click here](<" + App.url("/guild/" + guild.getId().asString() + "/appeal") + ">).", true).isPresent();
+					guild.kick(user.getId(), reason).block();
+					var msg = "<@" + selfId + "> kicked " + user.getMention() + ": " + reason + " [DM " + Emojis.yesNo(dm).asFormat() + "]";
+
+					messageChannel.accept(MessageBuilder.create(msg));
+
+					gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.KICK)
+							.user(user)
+							.source(selfId)
+							.content("AutoMod: " + reason)
+							.flags(GnomeAuditLogEntry.Flags.DM, dm)
+					);
+				}
+				case "warn" -> {
+					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Warn not implemented yet :("));
+					// Warn
+				}
+				case "mute" -> {
+					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Mute not implemented yet :("));
+					// Mute
+				}
+				case "ban" -> {
+					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Ban not implemented yet :("));
+					// Ban
+				}
+			}
 		}
 	}
 

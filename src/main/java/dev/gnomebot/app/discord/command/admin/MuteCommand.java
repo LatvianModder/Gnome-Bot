@@ -25,6 +25,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -70,8 +71,9 @@ public class MuteCommand extends ApplicationCommands {
 		event.context.gc.unmute(user.getId().asLong(), seconds, reason);
 
 		event.context.gc.adminLogChannelEmbed(user.getUserData(), event.context.gc.adminLogChannel, spec -> {
-			spec.description("Bad " + user.getMention());
-			spec.author(user.getTag() + " was warned", user.getAvatarUrl());
+			spec.description("Muted " + user.getMention());
+			spec.author(user.getTag() + " was muted", user.getAvatarUrl());
+			spec.inlineField("Expires", Utils.formatRelativeDate(Instant.ofEpochSecond(Instant.now().getEpochSecond() + seconds)));
 			spec.inlineField("Reason", reason);
 			spec.inlineField("DM successful", dm ? "Yes" : "No");
 			spec.footer(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());

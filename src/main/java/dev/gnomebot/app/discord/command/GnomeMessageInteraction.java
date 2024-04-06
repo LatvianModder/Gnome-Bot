@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class GnomeMessageInteraction extends ApplicationCommands {
-	public static final MessageInteractionBuilder MESSAGE_INTERACTION = messageInteraction("Gnome Actions")
+	public static final MessageInteractionBuilder MESSAGE_INTERACTION = messageInteraction("Other Gnome Actions")
 			.run(GnomeMessageInteraction::run);
 
 	@FunctionalInterface

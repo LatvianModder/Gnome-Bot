@@ -145,6 +145,7 @@ public class App implements Runnable {
 		webServer.add("/guild/:guild/mutes", LogHandlers::mutes).admin();
 		webServer.add("/guild/:guild/feedback", GuildHandlers::feedbackList).member();
 		webServer.add("/guild/:guild/feedback/:id", GuildHandlers::feedback).member();
+		webServer.add("/guild/:guild/appeal", GuildHandlers::appeal).noAuth();
 
 		webServer.add("/minecraft/verify", MinecraftHandlers::verify).noAuth();
 
