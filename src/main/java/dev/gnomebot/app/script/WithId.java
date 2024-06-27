@@ -1,6 +1,7 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.util.SpecialEquality;
 import discord4j.common.util.Snowflake;
 
@@ -23,7 +24,7 @@ public interface WithId extends SpecialEquality {
 	}
 
 	@Override
-	default boolean specialEquals(Object o, boolean shallow) {
+	default boolean specialEquals(Context cx, Object o, boolean shallow) {
 		if (o == this) {
 			return true;
 		} else if (o instanceof WrappedId i) {

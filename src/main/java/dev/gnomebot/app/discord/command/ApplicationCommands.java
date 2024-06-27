@@ -5,8 +5,8 @@ import dev.gnomebot.app.data.Currency;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.command.admin.GnomeAdminCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
+import dev.gnomebot.app.util.UUIDWrapper;
 import dev.latvian.apps.webutils.ansi.Log;
-import dev.latvian.mods.rhino.mod.wrapper.UUIDWrapper;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
@@ -57,6 +57,7 @@ public class ApplicationCommands {
 			type.builders.clear();
 		}
 
+		add(QuoteCommands.MESSAGE_INTERACTION);
 		add(ReportCommand.MESSAGE_INTERACTION);
 		add(GnomeMessageInteraction.MESSAGE_INTERACTION);
 

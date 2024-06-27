@@ -29,7 +29,7 @@ public class DiscordObject implements WithId {
 
 	@Override
 	public final boolean equals(Object obj) {
-		return specialEquals(obj, false);
+		return obj == this || obj instanceof WithId w && id.asLong() == w.getWrappedId().asLong();
 	}
 
 	public String toString() {

@@ -137,7 +137,8 @@ public class DiscordHandler {
 						Intent.DIRECT_MESSAGE_REACTIONS,
 						Intent.GUILD_PRESENCES,
 						Intent.GUILD_VOICE_STATES,
-						Intent.AUTO_MODERATION_EXECUTION
+						Intent.AUTO_MODERATION_EXECUTION,
+						Intent.MESSAGE_CONTENT
 				))
 				.setMemberRequestFilter(MemberRequestFilter.none())
 				.login()

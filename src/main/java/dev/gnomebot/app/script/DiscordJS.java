@@ -12,11 +12,11 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.ansi.Log;
-import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.NativeJavaClass;
 import dev.latvian.mods.rhino.NativeJavaObject;
 import dev.latvian.mods.rhino.Scriptable;
 import dev.latvian.mods.rhino.ScriptableObject;
+import dev.latvian.mods.rhino.type.TypeInfo;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.WebhookExecuteRequest;
 
@@ -46,31 +46,31 @@ public class DiscordJS {
 		readOnly = ro;
 
 		if (Files.exists(gc.paths.scripts) && hasFiles(gc.paths.scripts)) {
-			var context = Context.enterWithNewFactory();
-			context.setClassShutter((fullClassName, type) -> true);
+			var factory = new DJSContext.Factory();
+			var cx = factory.enter();
 
 			try {
-				var typeWrappers = context.getTypeWrappers();
-				typeWrappers.register(WrappedId.class, o -> new WrappedId(o instanceof Number n ? n.longValue() : SnowFlake.num(o.toString())));
-				typeWrappers.register(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
-				typeWrappers.register(MessageBuilder.class, MessageBuilder::of);
-				typeWrappers.register(EmbedBuilder.class, EmbedBuilder::of);
+				var typeWrappers = factory.getTypeWrappers();
+				typeWrappers.registerDirect(WrappedId.class, o -> new WrappedId(o instanceof Number n ? n.longValue() : SnowFlake.num(o.toString())));
+				typeWrappers.registerDirect(ReactionEmoji.class, o -> Utils.stringToReaction(o.toString()));
+				typeWrappers.registerDirect(MessageBuilder.class, MessageBuilder::of);
+				typeWrappers.registerDirect(EmbedBuilder.class, EmbedBuilder::of);
 
 				for (var file : Files.walk(gc.paths.scripts).filter(Files::isRegularFile).toList()) {
 					var rfile = gc.paths.scripts.relativize(file);
 
 					try (Reader reader = Files.newBufferedReader(file)) {
-						Scriptable scope = context.initStandardObjects();
+						Scriptable scope = cx.initStandardObjects();
 
-						ScriptableObject.putProperty(scope, "console", new NativeJavaClass(scope, ConsoleWrapper.class));
-						ScriptableObject.putProperty(scope, "Utils", new NativeJavaClass(scope, ScriptUtils.class));
-						ScriptableObject.putProperty(scope, "WrappedId", new NativeJavaClass(scope, WrappedId.class));
-						ScriptableObject.putProperty(scope, "Discord", new NativeJavaObject(scope, this, DiscordJS.class));
-						ScriptableObject.putProperty(scope, "EmbedColor", new NativeJavaClass(scope, EmbedColor.class));
-						ScriptableObject.putProperty(scope, "WebHook", new NativeJavaClass(scope, WebHook.class));
-						ScriptableObject.putProperty(scope, "WebhookExecuteRequest", new NativeJavaClass(scope, WebhookExecuteRequest.class));
+						ScriptableObject.putProperty(scope, "console", new NativeJavaClass(cx, scope, ConsoleWrapper.class), cx);
+						ScriptableObject.putProperty(scope, "Utils", new NativeJavaClass(cx, scope, ScriptUtils.class), cx);
+						ScriptableObject.putProperty(scope, "WrappedId", new NativeJavaClass(cx, scope, WrappedId.class), cx);
+						ScriptableObject.putProperty(scope, "Discord", new NativeJavaObject(scope, this, TypeInfo.of(DiscordJS.class), cx), cx);
+						ScriptableObject.putProperty(scope, "EmbedColor", new NativeJavaClass(cx, scope, EmbedColor.class), cx);
+						ScriptableObject.putProperty(scope, "WebHook", new NativeJavaClass(cx, scope, WebHook.class), cx);
+						ScriptableObject.putProperty(scope, "WebhookExecuteRequest", new NativeJavaClass(cx, scope, WebhookExecuteRequest.class), cx);
 
-						context.evaluateReader(scope, reader, rfile.toString(), 1, null);
+						cx.evaluateReader(scope, reader, rfile.toString(), 1, null);
 						Log.info("Loaded script " + rfile);
 					} catch (Exception ex) {
 						Log.error("Failed to load script " + rfile);
@@ -80,8 +80,6 @@ public class DiscordJS {
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-
-			Context.exit();
 		}
 	}
 

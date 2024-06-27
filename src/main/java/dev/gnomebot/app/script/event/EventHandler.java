@@ -3,6 +3,7 @@ package dev.gnomebot.app.script.event;
 import dev.latvian.mods.rhino.BaseFunction;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.Scriptable;
+import dev.latvian.mods.rhino.type.TypeInfo;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +17,8 @@ public final class EventHandler<T extends EventJS> extends BaseFunction {
 	public interface EventCallback {
 		void post(EventJS event);
 	}
+
+	public static final TypeInfo CALLBACK_TYPE_INFO = TypeInfo.of(EventCallback.class);
 
 	public final boolean canCancel;
 	private List<EventCallback> consumers;
@@ -32,11 +35,11 @@ public final class EventHandler<T extends EventJS> extends BaseFunction {
 				consumers = new ArrayList<>();
 			}
 
-			var callback = (EventCallback) Context.jsToJava(args[0], EventCallback.class);
+			var callback = (EventCallback) cx.jsToJava(args[0], CALLBACK_TYPE_INFO);
 			consumers.add(callback);
 		} else if (args.length == 2) {
 			var extra = String.valueOf(args[0]);
-			var callback = (EventCallback) Context.jsToJava(args[1], EventCallback.class);
+			var callback = (EventCallback) cx.jsToJava(args[1], CALLBACK_TYPE_INFO);
 
 			if (extra.isEmpty()) {
 				if (consumers == null) {

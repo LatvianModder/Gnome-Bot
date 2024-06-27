@@ -13,7 +13,6 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.CodingUtils;
-import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.json.JSONObject;
@@ -121,6 +120,8 @@ public class PasteHandlers {
 	// 5 - bracket open
 	// 6 - bracket close
 	public static final Pattern JAVA_AND_JS_PATTERN = Pattern.compile("(([\"'`]).*?\\2)|(\\d+(?:\\.\\d+)?)|(\\b(?:" + String.join("|", JAVA_AND_JS_KEYWORDS) + ")\\b)|([;=\\-+*/%&|^~!:?.,])|([{(<\\[])|([})>\\]])");
+
+	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([ \\t]+at )(?:([\\w./$@-]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 
 	public static final int TYPE_NONE = 0;
 	public static final int TYPE_LANGUAGE = 1;
@@ -420,7 +421,7 @@ public class PasteHandlers {
 						}
 					}
 				} else {
-					matcher = FormattingUtils.STACK_AT_PATTERN.matcher(s);
+					matcher = STACK_AT_PATTERN.matcher(s);
 
 					while (matcher.find()) {
 						sb.setLength(0);
@@ -428,13 +429,20 @@ public class PasteHandlers {
 						line.string(sb.toString());
 
 						var at = matcher.group(1);
-						var packagePath = matcher.group(2);
-						var className = matcher.group(3);
-						var methodName = matcher.group(4);
-						var source = matcher.group(5);
+						var moduleName = matcher.group(2);
+						var packagePath = matcher.group(3);
+						var className = matcher.group(4);
+						var methodName = matcher.group(5);
+						var source = matcher.group(6);
 
 						line.string(at);
-						line.span("f-o").string(packagePath);
+
+						var pspan = line.span("f-o").string(packagePath);
+
+						if (moduleName != null) {
+							pspan.title(moduleName);
+						}
+
 						line.string(".");
 						line.span("f-y").string(className);
 						line.string(".");
@@ -445,19 +453,23 @@ public class PasteHandlers {
 
 						var sourceS = source.split(":", 2);
 
+						var lineSpan = line.span("f-p");
+
 						if (sourceS[0].equals("Native Method")) {
-							line.span("f-p").string("native");
+							lineSpan.string("native");
 						} else if (sourceS[0].equals("Unknown Source")) {
-							line.span("f-p").string("unknown");
+							lineSpan.string("unknown");
 						} else if (sourceS[0].equals(".dynamic")) {
-							line.span("f-p").string("dynamic");
+							lineSpan.string("dynamic");
 						} else if (sourceS[0].equals("SourceFile")) {
-							line.span("f-p").string("SourceFile");
+							lineSpan.string("SourceFile");
 						} else if (sourceS.length == 2 && sourceSet.contains(sourceS[0].replace(".java", ""))) {
-							line.span("f-p").string("L" + sourceS[1]);
+							lineSpan.string("L" + sourceS[1]);
 						} else {
-							line.span("f-p").string(source.replace(".java", ""));
+							lineSpan.string(source.replace(".java", ""));
 						}
+
+						lineSpan.title(s);
 					}
 				}
 

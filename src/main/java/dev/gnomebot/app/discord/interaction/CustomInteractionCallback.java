@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.interaction;
 
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.util.MapWrapper;
-import dev.latvian.mods.rhino.mod.wrapper.UUIDWrapper;
+import dev.gnomebot.app.util.UUIDWrapper;
 import org.bson.Document;
 
 import java.util.UUID;
