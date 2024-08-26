@@ -250,7 +250,7 @@ public class MacroCommands extends ApplicationCommands {
 		if (list.isEmpty()) {
 			event.respond("No macros found!");
 		} else {
-			event.respond(list.stream().map(m -> m.name).collect(Collectors.joining(" • ")));
+			event.respond(list.stream().map(m -> m.name.replaceAll("_", "\\_")).collect(Collectors.joining(" • ")));
 		}
 	}
 
