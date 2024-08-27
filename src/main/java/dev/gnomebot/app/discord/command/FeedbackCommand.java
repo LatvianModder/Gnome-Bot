@@ -19,7 +19,7 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.EmbedCreateFields;
-import discord4j.core.spec.StartThreadSpec;
+import discord4j.core.spec.StartThreadFromMessageSpec;
 import discord4j.rest.util.Permission;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -83,7 +83,7 @@ public class FeedbackCommand extends ApplicationCommands {
 		m.edit(MessageBuilder.create().addEmbed(event.context.gc.feedback.findFirst(m).edit(event.context.gc, event.context.gc.anonymousFeedback.get() ? null : EmbedCreateFields.Footer.of(event.context.sender.getTag(), event.context.sender.getAvatarUrl()))).toMessageEditSpec()).block();
 
 		try {
-			m.startThread(StartThreadSpec.builder()
+			m.startThread(StartThreadFromMessageSpec.builder()
 					.name("Discussion of " + number)
 					.autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION3)
 					.build()

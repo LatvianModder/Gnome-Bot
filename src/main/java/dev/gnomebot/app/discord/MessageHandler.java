@@ -41,7 +41,7 @@ import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
-import discord4j.core.spec.StartThreadSpec;
+import discord4j.core.spec.StartThreadFromMessageSpec;
 import discord4j.rest.RestClient;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -619,7 +619,7 @@ public class MessageHandler {
 
 				// (u.endsWith("s") ? (u + "’") : (u + "’s")) + " Post Discussion"
 
-				outputMessageChannel = Objects.requireNonNull(message.startThread(StartThreadSpec.builder()
+				outputMessageChannel = Objects.requireNonNull(message.startThread(StartThreadFromMessageSpec.builder()
 						.name(n)
 						// .autoArchiveDuration(ThreadChannel.AutoArchiveDuration.DURATION2)
 						.build()

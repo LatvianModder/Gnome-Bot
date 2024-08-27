@@ -4,7 +4,7 @@ import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.entity.channel.ThreadChannel;
-import discord4j.core.spec.StartThreadSpec;
+import discord4j.core.spec.StartThreadFromMessageSpec;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -85,7 +85,7 @@ public class ReportHandler {
 			report = new Report();
 
 			var msg = c.get().createMessage(reportMessage).block();
-			report.message = msg.startThread(StartThreadSpec.builder().name(author.getUsername()).build()).block();
+			report.message = msg.startThread(StartThreadFromMessageSpec.builder().name(author.getUsername()).build()).block();
 			report.ttl = now + 3600000L;
 			REPORT_STACKS.put(author.getId().asLong(), report);
 		}

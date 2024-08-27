@@ -14,7 +14,7 @@ import discord4j.core.util.EntityUtil;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ChannelData;
 import discord4j.discordjson.json.DMCreateRequest;
-import discord4j.discordjson.json.ImmutableStartThreadRequest;
+import discord4j.discordjson.json.ImmutableStartThreadFromMessageRequest;
 import discord4j.discordjson.json.UserData;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,7 +130,7 @@ public class DM {
 			if (dmChannel == null) {
 				var channelService = handler.app.discordHandler.client.getRestClient().getChannelService();
 				var messageId = channelService.createMessage(dmChannelId, MessageBuilder.create(user.username() + " [" + user.id().asString() + "]").toMultipartMessageCreateRequest()).block().id().asLong();
-				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadRequest.builder().name("DMs of " + user.username()).autoArchiveDuration(1440).build()).block();
+				channelService.startThreadWithMessage(dmChannelId, messageId, ImmutableStartThreadFromMessageRequest.builder().name("DMs of " + user.username()).autoArchiveDuration(1440).build()).block();
 				dmChannel = new DMChannel(user.id().asLong(), messageId, 0L);
 				save = true;
 			}

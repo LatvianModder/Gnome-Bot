@@ -46,6 +46,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.object.entity.channel.TopLevelGuildMessageWithThreadsChannel;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.json.MemberData;
 import discord4j.discordjson.json.UserData;
@@ -989,7 +990,7 @@ public class GuildCollections {
 			var ci = config.messageChannel().orElse(null);
 			var topLevelChannel = ci == null ? null : ci.getTopLevelChannel();
 
-			if (topLevelChannel instanceof TopLevelGuildMessageChannel msgc) {
+			if (topLevelChannel instanceof TopLevelGuildMessageWithThreadsChannel msgc) {
 				try {
 					var doc = memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id).projectionFields("thread").first();
 
@@ -1004,7 +1005,7 @@ public class GuildCollections {
 				} catch (Exception ignore) {
 				}
 
-				var thread = msgc.startThread(StartThreadWithoutMessageSpec.builder()
+				var thread = msgc.startPublicThreadWithoutMessage(StartThreadWithoutMessageSpec.builder()
 						.type(type == 0 ? ThreadChannel.Type.GUILD_PUBLIC_THREAD : ThreadChannel.Type.GUILD_PRIVATE_THREAD)
 						.invitable(false)
 						.reason(user.username() + " Member Channel")

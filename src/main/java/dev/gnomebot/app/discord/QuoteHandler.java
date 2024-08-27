@@ -36,6 +36,10 @@ public class QuoteHandler {
 	}
 
 	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, Member member) {
+		if (member.isBot() && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
+			return 0;
+		}
+
 		var quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
 		var quotes = 0;
 

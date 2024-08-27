@@ -8,7 +8,7 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.StartThreadSpec;
+import discord4j.core.spec.StartThreadFromMessageSpec;
 import discord4j.discordjson.json.MessageData;
 import org.jetbrains.annotations.Nullable;
 
@@ -206,7 +206,7 @@ public class WrappedMessage extends DiscordObject {
 		channel.guild.discordJS.checkReadOnly();
 
 		try {
-			return new WrappedThread(channel.guild, message.startThread(StartThreadSpec.builder().name(title).build()).block());
+			return new WrappedThread(channel.guild, message.startThread(StartThreadFromMessageSpec.builder().name(title).build()).block());
 		} catch (Exception ex) {
 			Log.error("Failed to create a thread!");
 			Log.warn(ex);
