@@ -82,10 +82,12 @@ public abstract class ContentType {
 		content = content.trim();
 
 		var inl = content.indexOf('\n');
+
 		if (inl == -1) {
 			return Pair.of(TEXT, content);
 		} else {
 			var first = content.substring(0, content.indexOf('\n')).replace(" ", "");
+
 			return switch (first) {
 				case "//cpx", "//complex" -> Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
 				case "//js", "//javascript" -> Pair.of(JS, content);
