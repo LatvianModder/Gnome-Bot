@@ -3,6 +3,7 @@ package dev.gnomebot.app.discord.command.admin;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
+import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.rest.util.Permission;
 
 public class EchoCommand extends ApplicationCommands {
@@ -23,6 +24,7 @@ public class EchoCommand extends ApplicationCommands {
 				.content(message)
 		);
 
+		Log.info(event.context.sender.getUsername() + " echoed: " + message);
 		event.respond("Echo!");
 	}
 }

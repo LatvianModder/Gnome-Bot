@@ -36,13 +36,13 @@ public class RootHandlers {
 			} else {
 				root.content.p().string("You've successfully logged in, " + request.token.getName() + "!");
 				root.content.p().string("You can now close this page.");
-				root.content.p().a("/panel").string("You can click here to browse guild list.");
+				root.content.p().a("/guild").string("You can click here to browse guild list.");
 			}
 
 			return root.asResponse();
 		}
 
-		return Response.redirect(App.url("panel/login"));
+		return Response.redirect(App.url("login"));
 	}
 
 	public static Response logout(ServerRequest request) {

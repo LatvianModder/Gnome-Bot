@@ -145,6 +145,7 @@ public class GuildCollections {
 	private Map<Integer, MutableInt> macroUseMap;
 	private final Map<Long, Long> memberLogThreadCache;
 	private final Map<Long, Long> appealThreadCache;
+	private List<RelatedGuild.Group> relatedGuilds;
 
 	public boolean advancedLogging = false;
 
@@ -1087,5 +1088,21 @@ public class GuildCollections {
 	public ConfigHolder<?> getConfigHolder(String key) {
 		var k = GuildConfig.get(key);
 		return k == null ? null : configHolders.get(k);
+	}
+
+	public List<RelatedGuild.Group> getRelatedGuilds() {
+		if (relatedGuilds == null) {
+			relatedGuilds = new ArrayList<>();
+
+			if (Files.exists(paths.relatedGuilds)) {
+				try {
+					var json = JSON.DEFAULT.read(paths.relatedGuilds).readArray();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+
+		return relatedGuilds;
 	}
 }

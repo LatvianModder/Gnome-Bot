@@ -1,6 +1,8 @@
 package dev.gnomebot.app;
 
+import com.google.gson.JsonArray;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import dev.gnomebot.app.data.RelatedGuild;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.SnowFlake;
@@ -8,14 +10,16 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.ansi.Table;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.Webhook;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class CLI extends Thread {
 	public final App app;
@@ -74,7 +78,7 @@ public class CLI extends Thread {
 	}
 
 	private void size() throws Exception {
-		System.out.print("\u001b[s\u001b[5000;5000H\u001b[6n\u001b[u");
+		System.out.print("\u001b[s\u001b[9999;9999H\u001b[6n\u001b[u");
 
 		var sb = new StringBuilder();
 
@@ -93,14 +97,78 @@ public class CLI extends Thread {
 	}
 
 	private void port(String input) throws Exception {
-		// var mm = app.db.guild(Snowflake.of(166630061217153024L));
+		var mm = app.db.guild(Snowflake.of(166630061217153024L));
 		var count = 0L;
 
-		// var database = app.db.mongoClient.getDatabase("gnomebot_test");
-		// var collection = database.getCollection("abc");
-		// collection.insertOne(new Document("test", 1));
-		// collection.renameCollection(new MongoNamespace("gnomebot", "test_collection_124"));
+		/*
+		var invite = app.discordHandler.client.getRestClient().getInviteService().getInvite(input).block();
+		// 6v3z26B
 
+		Log.info("Invite Data: " + invite);
+
+		var guild = invite.guild().toOptional().orElse(null);
+		Log.info("Invite Guild Members: " + invite.approximatePresenceCount().toOptional().orElse(0) + " / " + invite.approximateMemberCount().toOptional().orElse(0));
+
+		if (guild != null) {
+			Log.info("Invite Guild: " + guild.name());
+			Log.info("- Icon: " + guild.icon().orElse(""));
+			Log.info("- Description: " + guild.description().orElse(""));
+			Log.info("- Vanity URL: " + guild.vanityUrlCode().orElse(""));
+			Log.info("- Members: " + guild.approximatePresenceCount().toOptional().orElse(0) + " / " + guild.approximateMemberCount().toOptional().orElse(0));
+		}
+		 */
+
+		var group = new RelatedGuild.Group(0, "Mods", "", new ArrayList<>());
+		var pattern = Pattern.compile("^(.+?)(?: \\((.+)\\))?: (\\w+)$");
+
+		for (var line : Files.readAllLines(mm.paths.path.resolve("related_guilds.txt"))) {
+			line = line.trim();
+
+			if (line.isEmpty()) {
+				continue;
+			}
+
+			var matcher = pattern.matcher(line);
+
+			if (matcher.find()) {
+				count++;
+				var name = matcher.group(1);
+				var description = Optional.ofNullable(matcher.group(2)).orElse("");
+				var invite = matcher.group(3);
+				var icon = "";
+				var guildId = 0L;
+
+				try {
+					var inv = app.discordHandler.client.getRestClient().getInviteService().getInvite(invite).block();
+					var guild = inv.guild().toOptional().orElse(null);
+
+					if (guild != null) {
+						guildId = guild.id().asLong();
+						name = guild.name();
+						icon = guild.icon().orElse("");
+
+						if (description.isEmpty()) {
+							description = guild.description().orElse("");
+						}
+
+						invite = guild.vanityUrlCode().orElse(invite);
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+
+				Log.info(name + " (" + description + "): " + invite + " (" + icon + ")");
+
+				group.guilds().add(new RelatedGuild(group, group.guilds().size(), invite, guildId, name, description, icon));
+			}
+		}
+
+		Collections.reverse(group.guilds());
+		var json = new JsonArray();
+		json.add(group.toJson());
+		Files.writeString(mm.paths.path.resolve("related_guilds.json"), json.toString());
+
+		/*
 		var toDelete = new ArrayList<Webhook>();
 
 		for (var gc : app.db.allGuilds()) {
@@ -136,6 +204,7 @@ public class CLI extends Thread {
 				Log.warn(ex);
 			}
 		}
+		 */
 
 		Log.success("Done %,d".formatted(count));
 	}

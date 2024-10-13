@@ -2,7 +2,6 @@ package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.GnomeRootTag;
 import dev.gnomebot.app.server.HTTPResponseCode;
@@ -15,7 +14,6 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Pair;
-import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.net.FileResponse;
 import dev.latvian.apps.webutils.net.MimeType;
 import dev.latvian.apps.webutils.net.Response;
@@ -120,8 +118,14 @@ public class PasteHandlers {
 	// 5 - bracket open
 	// 6 - bracket close
 	public static final Pattern JAVA_AND_JS_PATTERN = Pattern.compile("(([\"'`]).*?\\2)|(\\d+(?:\\.\\d+)?)|(\\b(?:" + String.join("|", JAVA_AND_JS_KEYWORDS) + ")\\b)|([;=\\-+*/%&|^~!:?.,])|([{(<\\[])|([})>\\]])");
-
 	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([ \\t]+at )(?:([\\w./$@-]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
+	public static final Pattern MCLOGS_PATTERN = Pattern.compile("https://mclo.gs/(\\w+)");
+
+
+	public static final Pattern WIN_USERNAME_PATTERN = Pattern.compile("\\b(\\w):([\\\\/])Users\\2(\\w+)\\2", Pattern.CASE_INSENSITIVE);
+	public static final Pattern UNIX_USERNAME_PATTERN = Pattern.compile("/home/\\w+/");
+	public static final Pattern MC_UUID_PATTERN = Pattern.compile("--uuid,\\s?(\\w{32})");
+	public static final Pattern MC_USERNAME_PATTERN = Pattern.compile("--username,\\s?(\\w+)");
 
 	public static final int TYPE_NONE = 0;
 	public static final int TYPE_LANGUAGE = 1;
@@ -173,13 +177,24 @@ public class PasteHandlers {
 		var download = false;
 
 		if (filename.endsWith(".pdf")) {
-			type = "application/pdf";
+			type = MimeType.PDF;
 		} else if (filename.endsWith(".zip")) {
-			type = "application/zip";
+			type = MimeType.ZIP;
 			download = true;
 		} else if (filename.endsWith(".jar")) {
-			type = "application/java-archive";
+			type = MimeType.JAR;
 			download = true;
+		} else {
+			var lines = new String(contents, StandardCharsets.UTF_8).split("\r?\n");
+
+			for (int i = 0; i < lines.length; i++) {
+				var s = lines[i];
+				s = WIN_USERNAME_PATTERN.matcher(s).replaceAll("$1:$2Users$2<User>$2");
+				s = UNIX_USERNAME_PATTERN.matcher(s).replaceAll("/home/<User>/");
+				lines[i] = s;
+			}
+
+			contents = String.join("\n", lines).getBytes(StandardCharsets.UTF_8);
 		}
 
 		var response = FileResponse.of(HttpStatus.OK, type, contents)
@@ -196,48 +211,6 @@ public class PasteHandlers {
 		}
 
 		return response;
-	}
-
-	public static JSONObject pasteJson0(DiscordHandler discordHandler, long channelId, long messageId, long attachmentId) {
-		MessageData message;
-
-		try {
-			message = Objects.requireNonNull(discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
-		} catch (Exception ex) {
-			Log.error("Message " + messageId + " not found!");
-			throw HTTPResponseCode.NOT_FOUND.error("Message " + messageId + " not found! " + ex.getMessage());
-		}
-
-		AttachmentData attachment = null;
-
-		for (var att : message.attachments()) {
-			if (att.id().asLong() == attachmentId) {
-				attachment = att;
-				break;
-			}
-		}
-
-		if (attachment == null) {
-			Log.error("Message " + messageId + " attachments: " + message.attachments().stream().map(a -> a.id().asString() + "/" + a.filename()).collect(Collectors.joining(", ")));
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
-		}
-
-		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(attachmentId));
-		json.put("guild", message.guildId().toOptional().map(Id::asString).orElse(""));
-		json.put("channel", SnowFlake.str(channelId));
-		json.put("message", SnowFlake.str(messageId));
-		json.put("filename", attachment.filename());
-		json.put("user_id", message.author().id().asString());
-		json.put("user_name", message.author().globalName().orElse(message.author().username()));
-		json.put("size", attachment.size());
-		json.put("url", attachment.url());
-		json.put("content_type", attachment.contentType().toOptional().orElse(""));
-		return json;
-	}
-
-	public static Response pasteOld(ServerRequest request) throws Exception {
-		throw HTTPResponseCode.NOT_FOUND.error("Paste website has updated and this link is no longer valid! You must re-upload the file.");
 	}
 
 	public static Response paste(ServerRequest request) throws Exception {
@@ -290,14 +263,37 @@ public class PasteHandlers {
 			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
 		}
 
+		var url = "/paste/" + channel + "/" + messageId + "/" + id;
+		var rawUrl = url + "/raw";
+		return paste0(filename, contents, user, url, rawUrl, archive, subfile);
+	}
+
+	public static Response pasteMclogs(ServerRequest request) {
+		var id = request.variable("id");
+
+		try {
+			var reqInfo = URLRequest.of("https://api.mclo.gs/1/insights/" + id).toJsonObject();
+
+			try {
+				var req = URLRequest.of("https://api.mclo.gs/1/raw/" + id).toBytes();
+				return paste0(reqInfo.block().asString("title") + ".log", req.block(), "Unknown", "/paste/mclogs/" + id, "https://api.mclo.gs/1/raw/" + id, false, "");
+			} catch (Exception ex) {
+				throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			}
+		} catch (Exception ex) {
+			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+		}
+	}
+
+	private static Response paste0(String filename, byte[] contents, String user, String url, String rawUrl, boolean archive, String subfile) throws Exception {
 		if (filename.endsWith(".pdf")) {
 			return FileResponse.of(HttpStatus.OK, "application/pdf", contents);
 		}
 
-		var root = GnomeRootTag.createSimple("/paste/" + channel + "/" + messageId + "/" + id, filename);
+		var root = GnomeRootTag.createSimple(url, filename);
 		root.head.deferScript("/assets/paste.js");
 
-		root.content.h3().string(filename + " by " + user).a("/paste/" + channel + "/" + messageId + "/" + id + "/raw").string(archive ? " [Download]" : " [Raw]").end();
+		var titleTag = root.content.h3().string(filename + " by " + user).a(rawUrl).string(archive ? " [Download]" : " [Raw]");
 		root.content.br();
 		root.content.classes("paste");
 
@@ -313,7 +309,7 @@ public class PasteHandlers {
 				if (zipEntry.isDirectory() || zipEntry.getName().endsWith(".zip") || zipEntry.getName().endsWith(".jar")) {
 					zipList.add(Pair.of(zipEntry.getName(), ""));
 				} else {
-					zipList.add(Pair.of(zipEntry.getName(), "/paste/" + channel + "/" + messageId + "/" + id + "!" + CodingUtils.encodeURL(zipEntry.getName())));
+					zipList.add(Pair.of(zipEntry.getName(), url + "!" + CodingUtils.encodeURL(zipEntry.getName())));
 				}
 			}
 
@@ -363,8 +359,28 @@ public class PasteHandlers {
 				fileType = TYPE_NONE;
 			}
 
+			var mcUUID = "";
+			var mcUsername = "";
+
 			for (var i = 0; i < lines.size(); i++) {
 				var s = lines.get(i);
+
+				if (mcUUID.isEmpty()) {
+					var matcher = MC_UUID_PATTERN.matcher(s);
+
+					if (matcher.find()) {
+						mcUUID = matcher.group(1);
+					}
+				}
+
+				if (mcUsername.isEmpty()) {
+					var matcher = MC_USERNAME_PATTERN.matcher(s);
+
+					if (matcher.find()) {
+						mcUsername = matcher.group(1);
+					}
+				}
+
 				var lineId = "L" + (i + 1);
 				var line = pasteText.span();
 				line.id(lineId);
@@ -477,6 +493,15 @@ public class PasteHandlers {
 				matcher.appendTail(sb);
 				line.string(sb.toString());
 			}
+
+			if (!mcUUID.isEmpty() || !mcUsername.isEmpty()) {
+				var mc = mcUUID.isEmpty() ? mcUsername : mcUUID;
+				var a = titleTag.a("https://mcuuid.net/?q=" + mc).title(mcUsername);
+				a.space();
+				a.img("https://crafthead.net/avatar/" + mc + "/48").classes("inline-img");
+				a.space();
+				a.string("[Minecraft Profile]");
+			}
 		}
 
 		return root.asResponse();
@@ -507,17 +532,25 @@ public class PasteHandlers {
 		return App.url("paste/" + channelId + "/" + messageId + "/" + attachmentId);
 	}
 
-	public static void pasteMessage(Databases db, MessageChannel outputMessageChannel, Message m, List<Attachment> attachments) {
-		if (attachments.isEmpty()) {
-			return;
-		}
-
-		var userData = m.getUserData();
+	public static void pasteMessage(Databases db, MessageChannel outputMessageChannel, Message m, String content, List<Attachment> attachments) {
 		var buttons = new ArrayList<Button>();
 
 		for (var attachment : attachments) {
 			buttons.add(Button.link(getUrl(m.getChannelId().asLong(), m.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()));
 		}
+
+		var mcLogsMatcher = MCLOGS_PATTERN.matcher(content);
+
+		while (mcLogsMatcher.find()) {
+			var id = mcLogsMatcher.group(1);
+			buttons.add(Button.link(App.url("paste/mclogs/" + id), "View mclo.gs/" + id));
+		}
+
+		if (buttons.isEmpty()) {
+			return;
+		}
+
+		var userData = m.getUserData();
 
 		if (userData.id().asLong() == db.app.discordHandler.selfId && (m.getData().components().isAbsent() || m.getData().components().get().isEmpty())) {
 			m.edit(MessageBuilder.create()
@@ -526,7 +559,7 @@ public class PasteHandlers {
 			).block();
 		} else {
 			var r = outputMessageChannel.createMessage(MessageBuilder.create()
-					.content("Paste version of " + attachments.stream().map(a -> "`" + a.getFilename() + "`").collect(Collectors.joining(", ")) + " from <@" + userData.id().asString() + ">")
+					.content("Paste version of " + buttons.stream().map(a -> "`" + a.getLabel().orElse("?").replace("View ", "") + "`").collect(Collectors.joining(", ")) + " from <@" + userData.id().asString() + ">")
 					.addComponent(ActionRow.of(buttons))
 					.toMessageCreateSpec()
 			).block();

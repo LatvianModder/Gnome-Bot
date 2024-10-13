@@ -640,8 +640,8 @@ public class MessageHandler {
 				}
 			}
 
-			if (!attachments.isEmpty()) {
-				PasteHandlers.pasteMessage(gc.db, outputMessageChannel, message, attachments);
+			if (!attachments.isEmpty() || PasteHandlers.MCLOGS_PATTERN.matcher(contentNoEmojis).find()) {
+				PasteHandlers.pasteMessage(gc.db, outputMessageChannel, message, contentNoEmojis, attachments);
 			}
 		}
 

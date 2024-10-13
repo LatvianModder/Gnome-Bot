@@ -55,6 +55,7 @@ public class GuildPaths {
 	public final Path scripts;
 	public final Path feedback;
 	public final Path polls;
+	public final Path relatedGuilds;
 
 	public GuildPaths(long i) {
 		id = i;
@@ -70,5 +71,6 @@ public class GuildPaths {
 		scripts = path.resolve("scripts");
 		feedback = path.resolve("feedback");
 		polls = path.resolve("polls");
+		relatedGuilds = path.resolve("related_guilds.json");
 	}
 }

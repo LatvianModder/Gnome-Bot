@@ -436,3 +436,9 @@ details.bantable > table {
 div.content.paste {
     width: 100%;
 }
+
+img.inline-img {
+    height: 1.2em;
+    border: #ffffff61 1px solid;
+    vertical-align: sub;
+}

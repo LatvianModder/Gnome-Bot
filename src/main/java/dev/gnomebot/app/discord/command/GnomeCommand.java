@@ -48,7 +48,7 @@ public class GnomeCommand extends ApplicationCommands {
 	private static void login(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		var tokenString = event.context.gc.db.getEncodedToken(event.context.sender.getId().asLong(), event.context.sender.getUsername());
-		event.respond("[Click here to open the panel!](<" + App.url("panel/login?logintoken=" + tokenString) + ">)");
+		event.respond("[Click here to open the panel!](<" + App.url("login?logintoken=" + tokenString) + ">)");
 	}
 
 	private static void logout(ChatInputInteractionEventWrapper event) throws Exception {
