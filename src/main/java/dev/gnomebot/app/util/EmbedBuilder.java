@@ -2,8 +2,8 @@ package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.EmbedAuthorData;

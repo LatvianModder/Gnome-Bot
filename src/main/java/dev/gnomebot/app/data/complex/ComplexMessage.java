@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SimpleStringReader;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;

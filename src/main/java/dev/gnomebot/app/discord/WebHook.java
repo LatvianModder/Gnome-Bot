@@ -10,7 +10,7 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.Webhook;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.service.WebhookService;

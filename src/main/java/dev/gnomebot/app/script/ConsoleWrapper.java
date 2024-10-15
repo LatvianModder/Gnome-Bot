@@ -1,6 +1,6 @@
 package dev.gnomebot.app.script;
 
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 public class ConsoleWrapper {
 	public static void log(Object text) {

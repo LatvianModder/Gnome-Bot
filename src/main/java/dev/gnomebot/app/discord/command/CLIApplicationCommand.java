@@ -5,7 +5,7 @@ import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;

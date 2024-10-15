@@ -9,8 +9,8 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.TextInput;
 

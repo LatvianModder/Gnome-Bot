@@ -1,7 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.data.WebToken;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.User;
 import org.eclipse.jetty.websocket.api.Session;
 

@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.config;
 
 import dev.gnomebot.app.data.GuildCollections;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;

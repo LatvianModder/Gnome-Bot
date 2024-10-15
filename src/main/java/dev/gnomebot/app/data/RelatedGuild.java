@@ -1,35 +1,33 @@
 package dev.gnomebot.app.data;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import dev.latvian.apps.json.JSONObject;
 
 import java.util.List;
 
 public record RelatedGuild(Group group, int index, String invite, long guild, String name, String description, String icon) {
 	public record Group(int index, String name, String description, List<RelatedGuild> guilds) {
-		public JsonObject toJson() {
-			JsonObject json = new JsonObject();
-			json.addProperty("name", name);
-			json.addProperty("description", description);
+		public JSONObject toJson() {
+			var json = JSONObject.of();
+			json.put("name", name);
+			json.put("description", description);
 
-			var arr = new JsonArray();
+			var arr = json.addArray("guilds");
 
 			for (var guild : guilds) {
 				arr.add(guild.toJson());
 			}
 
-			json.add("guilds", arr);
 			return json;
 		}
 	}
 
-	public JsonObject toJson() {
-		JsonObject json = new JsonObject();
-		json.addProperty("invite", invite);
-		json.addProperty("guild", guild);
-		json.addProperty("name", name);
-		json.addProperty("description", description);
-		json.addProperty("icon", icon);
+	public JSONObject toJson() {
+		var json = JSONObject.of();
+		json.put("invite", invite);
+		json.put("guild", guild);
+		json.put("name", name);
+		json.put("description", description);
+		json.put("icon", icon);
 		return json;
 	}
 

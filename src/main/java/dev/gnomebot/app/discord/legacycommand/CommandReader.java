@@ -5,7 +5,7 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.entity.User;
 

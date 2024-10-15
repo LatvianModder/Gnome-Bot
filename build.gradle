@@ -52,6 +52,10 @@ dependencies {
 	// https://oss.sonatype.org/content/repositories/snapshots/com/discord4j/discord4j-core/
 	// https://github.com/Discord4J/Discord4J/commits/master
 
+	implementation('dev.latvian.apps:tiny-java-server:1.0.0-build.18')
+	implementation('dev.latvian.apps:ansi:1.0.0-build.4')
+	implementation('dev.latvian.apps:json:1.0.0-build.3')
+
 	implementation('dev.latvian.apps:webutils:1.0.0-build.57')
 	// implementation('curse.maven:rhino-416294:3892335') { transitive = false }
 	implementation('dev.latvian.mods:rhino:2101.2.5-build.54') { transitive = false }

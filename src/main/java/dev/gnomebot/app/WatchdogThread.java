@@ -2,7 +2,7 @@ package dev.gnomebot.app;
 
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.util.ArrayList;
 import java.util.Date;

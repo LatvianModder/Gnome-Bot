@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;

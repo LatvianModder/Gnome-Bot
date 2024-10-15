@@ -1,8 +1,8 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.AppPaths;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Substitute;
 
 import java.nio.file.Files;
@@ -88,7 +88,7 @@ public class CharMap {
 					}
 				}
 			} catch (Exception ex) {
-				Log.error(Ansi.of("Failed to read special char map for ").append(Ansi.yellow(c)));
+				Log.error(ANSI.of("Failed to read special char map for ").append(ANSI.yellow(c)));
 			}
 		}
 

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.util;
 
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.Attachment;
 
 import java.util.regex.Pattern;

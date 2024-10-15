@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 public class RelayPingTask implements Runnable {
 	private final PingDestination destination;

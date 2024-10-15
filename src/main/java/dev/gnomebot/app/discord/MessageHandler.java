@@ -24,9 +24,9 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.net.IPUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
@@ -106,7 +106,7 @@ public class MessageHandler {
 		var channel = Objects.requireNonNull(m.getChannel().block());
 
 		if (event.getGuildId().isPresent() && event.getGuildId().get().asLong() == 720671115336220693L) {
-			Log.info(Ansi.of("Message " + m.getId().asString() + " in " + channel.getClass().getName() + "/" + channel.getId().asString() + " - " + m.getType() + ", '" + m.getContent() + "' by " + m.getUserData().username()).navyBg());
+			Log.info(ANSI.of("Message " + m.getId().asString() + " in " + channel.getClass().getName() + "/" + channel.getId().asString() + " - " + m.getType() + ", '" + m.getContent() + "' by " + m.getUserData().username()).navyBG());
 		}
 
 		var author = m.getData().author();

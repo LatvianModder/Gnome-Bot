@@ -1,14 +1,15 @@
 package dev.gnomebot.app;
 
-import com.google.gson.JsonArray;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import dev.gnomebot.app.data.RelatedGuild;
 import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.util.CharMap;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.ansi.Table;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
@@ -164,9 +165,9 @@ public class CLI extends Thread {
 		}
 
 		Collections.reverse(group.guilds());
-		var json = new JsonArray();
+		var json = JSONArray.of();
 		json.add(group.toJson());
-		Files.writeString(mm.paths.path.resolve("related_guilds.json"), json.toString());
+		JSON.DEFAULT.write(mm.paths.path.resolve("related_guilds.json"), json, false);
 
 		/*
 		var toDelete = new ArrayList<Webhook>();

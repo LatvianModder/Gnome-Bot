@@ -6,8 +6,8 @@ import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.Response;
 import io.javalin.Javalin;
@@ -358,28 +358,28 @@ public class WebServer implements Consumer<JavalinConfig> {
 		}
 
 		private void log(String p, String ip, String country, HttpStatus status, @Nullable WebToken token, String userAgent) {
-			var sout = Ansi.of();
+			var sout = ANSI.empty();
 			var ip1 = String.format("%08X", ip.hashCode());
 
-			sout.append(Ansi.cyan(ip1));
+			sout.append(ANSI.cyan(ip1));
 			sout.append(' ');
-			sout.append(Ansi.yellow(country));
+			sout.append(ANSI.yellow(country));
 			sout.append(' ');
 
 			if (token == null) {
-				sout.append(Ansi.yellow("anonymous"));
+				sout.append(ANSI.yellow("anonymous"));
 			} else {
-				sout.append(Ansi.green(token.getName()));
+				sout.append(ANSI.green(token.getName()));
 			}
 
 			sout.append(' ');
-			sout.append((status.getCode() / 100 == 4) ? Ansi.darkRed(status) : Ansi.purple(status));
+			sout.append((status.getCode() / 100 == 4) ? ANSI.darkRed(status) : ANSI.purple(status));
 			sout.append(' ');
-			sout.append(Ansi.yellow(method.name().toUpperCase()));
+			sout.append(ANSI.yellow(method.name().toUpperCase()));
 			sout.append(' ');
-			sout.append(Ansi.cyan(p));
+			sout.append(ANSI.cyan(p));
 			sout.append(' ');
-			sout.append(Ansi.darkGray(userAgent));
+			sout.append(ANSI.darkGray(userAgent));
 
 			Log.info(sout);
 

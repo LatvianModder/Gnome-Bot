@@ -28,8 +28,9 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.RecentUser;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.JavaANSI;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.json.JSON;
@@ -308,7 +309,7 @@ public class GuildCollections {
 			}
 		}
 
-		Log.info(Ansi.of("Saved config of " + name + ": ").append(Ansi.ofObject(json)));
+		Log.info(ANSI.of("Saved config of " + name + ": ").append(JavaANSI.of(json)));
 
 		try {
 			Files.writeString(paths.config, json.toPrettyString());
@@ -757,7 +758,7 @@ public class GuildCollections {
 		try {
 			builder.type.collection.apply(this).insert(builder.build());
 		} catch (Exception ex) {
-			Log.info(Ansi.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(Ansi.darkRed(ex)));
+			Log.info(ANSI.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(ANSI.darkRed(ex)));
 		}
 	}
 

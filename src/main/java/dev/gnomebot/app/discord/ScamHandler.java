@@ -4,7 +4,7 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.URLRequest;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;

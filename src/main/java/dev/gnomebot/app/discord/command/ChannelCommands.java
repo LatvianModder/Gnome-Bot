@@ -4,8 +4,8 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.TimeUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.MutableLong;
 import org.bson.Document;
 

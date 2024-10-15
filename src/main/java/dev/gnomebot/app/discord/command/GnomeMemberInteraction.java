@@ -4,7 +4,7 @@ import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;

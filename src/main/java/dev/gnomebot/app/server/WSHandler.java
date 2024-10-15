@@ -1,7 +1,7 @@
 package dev.gnomebot.app.server;
 
 import dev.gnomebot.app.App;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import io.javalin.websocket.WsConfig;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;

@@ -3,7 +3,7 @@ package dev.gnomebot.app.data.ping;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.time.Duration;
 

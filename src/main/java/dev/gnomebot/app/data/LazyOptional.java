@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;

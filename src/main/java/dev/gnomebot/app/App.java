@@ -23,10 +23,11 @@ import dev.gnomebot.app.server.handler.RootHandlers;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.ANSITable;
+import dev.latvian.apps.ansi.color.Color16;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.TimeUtils;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
-import dev.latvian.apps.webutils.ansi.Table;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
@@ -156,38 +157,39 @@ public class App implements Runnable {
 		Log.info("API Endpoints:");
 		Log.info("");
 
-		var table = new Table("Method", "Path", "Auth Level", "Cache");
+		var table = new ANSITable("Method", "Path", "Auth Level", "Cache");
 
 		for (var wrapper : webServer.handlerList) {
 			var cells = table.addRow();
 
-			switch (wrapper.method) {
-				case GET -> cells[0].value(Ansi.green("GET"));
-				case POST -> cells[0].value(Ansi.cyan("POST"));
-				case PATCH -> cells[0].value(Ansi.teal("PATCH"));
-				case DELETE -> cells[0].value(Ansi.red("DELETE"));
-				case PUT -> cells[0].value(Ansi.yellow("PUT"));
-			}
+			cells.set(0, switch (wrapper.method) {
+				case GET -> ANSI.green("GET");
+				case POST -> ANSI.cyan("POST");
+				case PATCH -> ANSI.teal("PATCH");
+				case DELETE -> ANSI.red("DELETE");
+				case PUT -> ANSI.yellow("PUT");
+				default -> wrapper.method.name();
+			});
 
-			var psb = Ansi.of();
+			var psb = ANSI.empty();
 
 			for (var p : wrapper.path.split("/")) {
-				psb.append(Ansi.cyan('/'));
+				psb.append(ANSI.cyan('/'));
 
 				if (p.startsWith(":")) {
-					psb.append(Ansi.yellow(p.substring(1)));
+					psb.append(ANSI.yellow(p.substring(1)));
 				} else {
 					psb.append(p);
 				}
 			}
 
-			cells[1].value(psb);
-			cells[2].value(Ansi.of(wrapper.authLevel.name().toLowerCase()).color(wrapper.authLevel == AuthLevel.NO_AUTH ? 11 : 2));
+			cells.set(1, psb);
+			cells.set(2, ANSI.of(wrapper.authLevel.name().toLowerCase()).foreground(wrapper.authLevel == AuthLevel.NO_AUTH ? Color16.GREEN : Color16.YELLOW));
 
 			if (wrapper.cacheSeconds == 0) {
-				cells[3].value(Ansi.yellow("no-cache"));
+				cells.set(3, ANSI.yellow("no-cache"));
 			} else {
-				cells[3].value(Ansi.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + TimeUtils.prettyTimeString(wrapper.cacheSeconds)));
+				cells.set(3, ANSI.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + TimeUtils.prettyTimeString(wrapper.cacheSeconds)));
 			}
 		}
 

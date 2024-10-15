@@ -6,7 +6,7 @@ import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.command.admin.GnomeAdminCommand;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.UUIDWrapper;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;

@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.CodingUtils;
-import dev.latvian.apps.webutils.ansi.Log;
 import dev.latvian.apps.webutils.data.Either;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONArray;

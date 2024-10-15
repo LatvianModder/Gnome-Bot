@@ -5,7 +5,7 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.script.event.EventJS;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.StartThreadFromMessageSpec;

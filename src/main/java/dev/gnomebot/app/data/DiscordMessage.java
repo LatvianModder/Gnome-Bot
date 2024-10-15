@@ -6,7 +6,7 @@ import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;

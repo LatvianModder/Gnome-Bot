@@ -4,7 +4,7 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;

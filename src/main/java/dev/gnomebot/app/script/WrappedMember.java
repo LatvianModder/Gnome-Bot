@@ -1,7 +1,7 @@
 package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.BanQuerySpec;

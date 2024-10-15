@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.Message;
 
 public class DeleteChannelMessagesCommand {

@@ -14,7 +14,7 @@ import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.MutableLong;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.cli;
 
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.util.HashMap;
 import java.util.Map;

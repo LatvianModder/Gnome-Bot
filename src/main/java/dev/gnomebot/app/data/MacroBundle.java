@@ -2,7 +2,7 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;

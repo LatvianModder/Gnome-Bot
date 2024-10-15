@@ -5,10 +5,10 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.JavaANSI;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.TimeUtils;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.AnsiComponent;
-import dev.latvian.apps.webutils.ansi.Log;
 import discord4j.core.object.entity.channel.ThreadChannel;
 import discord4j.core.spec.ThreadChannelEditSpec;
 import org.bson.Document;
@@ -113,7 +113,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		channel.edit(ThreadChannelEditSpec.builder().archived(true).build()).subscribe();
 	}
 
-	public AnsiComponent toAnsi() {
+	public ANSI toAnsi() {
 		var map = new LinkedHashMap<String, Object>();
 		map.put("type", type);
 		map.put("expires", TimeUtils.prettyTimeString((end - System.currentTimeMillis()) / 1000L));
@@ -121,7 +121,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 		map.put("channel", channelId);
 		map.put("user", userId);
 		map.put("content", content);
-		return Ansi.ofObject(map);
+		return JavaANSI.of(map);
 	}
 
 	@Override

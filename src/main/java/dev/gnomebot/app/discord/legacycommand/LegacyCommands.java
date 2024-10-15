@@ -3,8 +3,8 @@ package dev.gnomebot.app.discord.legacycommand;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.JavaANSI;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.rest.util.Permission;
 
 import java.util.ArrayList;
@@ -113,7 +113,7 @@ public final class LegacyCommands {
 		map.put("arguments", arguments);
 		map.put("aliases", Arrays.asList(aliases));
 		map.put("permissionLevel", permissionLevel.name());
-		return Ansi.ofObject(map).toAnsiString();
+		return JavaANSI.of(map).toString();
 	}
 
 	public boolean hasPermission(CommandContext context) {

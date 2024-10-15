@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.util.TimeLimitedCharSequence;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;

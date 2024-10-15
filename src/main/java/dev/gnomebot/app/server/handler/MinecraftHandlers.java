@@ -7,7 +7,7 @@ import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.json.JSON;
 import dev.latvian.apps.webutils.json.JSONArray;
 import dev.latvian.apps.webutils.json.JSONObject;

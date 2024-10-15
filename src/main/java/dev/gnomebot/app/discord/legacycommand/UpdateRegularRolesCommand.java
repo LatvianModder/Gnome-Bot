@@ -2,8 +2,8 @@ package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Ansi;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.ANSI;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class UpdateRegularRolesCommand {
 				if (m != null) {
 					var totalMessages = m.getTotalMessages();
 
-					var n = Ansi.of(member.getTag());
+					var n = ANSI.of(member.getTag());
 
 					if (member.getRoleIds().size() > 1) {
 						n.cyan();
@@ -64,7 +64,7 @@ public class UpdateRegularRolesCommand {
 						if (totalMessages >= 150) {
 							if (!member.getRoleIds().contains(roleMember)) {
 								addedMember++;
-								Log.info(Ansi.of("Member + ").append(n).append(": " + totalMessages));
+								Log.info(ANSI.of("Member + ").append(n).append(": " + totalMessages));
 
 								if (confirm) {
 									member.addRole(roleMember).block();
@@ -72,7 +72,7 @@ public class UpdateRegularRolesCommand {
 							}
 						} else if (member.getRoleIds().contains(roleMember)) {
 							removedMember++;
-							Log.info(Ansi.of("Member - ").append(n).append(": " + totalMessages));
+							Log.info(ANSI.of("Member - ").append(n).append(": " + totalMessages));
 
 							if (confirm) {
 								member.removeRole(roleMember).block();

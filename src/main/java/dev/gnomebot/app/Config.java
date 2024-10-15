@@ -4,7 +4,7 @@ import dev.gnomebot.app.discord.WebHook;
 import dev.gnomebot.app.util.ConfigFile;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 
 import java.nio.file.Path;
 import java.util.HashSet;

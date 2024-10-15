@@ -30,7 +30,7 @@ import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.OngoingAction;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Log;
+import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
