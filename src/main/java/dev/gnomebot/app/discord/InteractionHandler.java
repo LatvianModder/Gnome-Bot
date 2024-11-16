@@ -1,6 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
+import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
@@ -28,8 +29,10 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
+import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.OngoingAction;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Confirm;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -42,6 +45,7 @@ import discord4j.core.event.domain.interaction.UserInteractionEvent;
 import discord4j.core.spec.BanQuerySpec;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -322,6 +326,7 @@ public class InteractionHandler {
 	private static void button(ComponentEventWrapper event) throws Exception {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
+			case "restart-bot" -> restartBot(event, event.path[1]);
 			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
 			case "callback" -> callback(event, event.path[1]);
 			case "stop" -> stopOngoingAction(event, event.path[1]);
@@ -383,6 +388,17 @@ public class InteractionHandler {
 	}
 
 	// Actions //
+
+	private static void restartBot(DeferrableInteractionEventWrapper<?> event, String token) {
+		if (Config.get().restart_button_token.equals(token)) {
+			event.edit().respond(MessageBuilder.create("# Restart Gnome Bot\nLast clicked by " + event.context.sender.getMention() + " " + Utils.formatRelativeDate(Instant.now())));
+			event.context.handler.app.restart();
+		} else if (event.requiresTextResponse()) {
+			event.respond("Incorrect token!");
+		} else {
+			event.acknowledge();
+		}
+	}
 
 	private static void deleteMessage(DeferrableInteractionEventWrapper<?> event, long owner) {
 		if (event.context.isAdmin() || event.context.sender.getId().asLong() == owner) {

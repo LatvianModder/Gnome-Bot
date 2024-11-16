@@ -26,6 +26,7 @@ public class Config {
 	}
 
 	public final int port;
+	public final String restart_button_token;
 	public final String panel_url;
 	public final String db_uri;
 	public final String discord_bot_token;
@@ -45,6 +46,7 @@ public class Config {
 		var c = new ConfigFile(file);
 
 		port = c.getInt("port", 26609);
+		restart_button_token = c.getString("restart_button_token", "none");
 
 		var defUrl = "";
 

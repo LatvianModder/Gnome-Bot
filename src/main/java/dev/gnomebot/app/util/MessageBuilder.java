@@ -15,6 +15,7 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.FollowupMessageRequest;
 import discord4j.discordjson.json.MessageCreateRequest;
+import discord4j.discordjson.json.MessageReferenceData;
 import discord4j.discordjson.json.WebhookExecuteRequest;
 import discord4j.discordjson.json.WebhookMessageEditRequest;
 import discord4j.discordjson.possible.Possible;
@@ -248,7 +249,7 @@ public class MessageBuilder {
 		}
 
 		if (this.messageReference != 0L) {
-			builder.messageReference(SnowFlake.convert(this.messageReference));
+			builder.messageReference(MessageReferenceData.builder().messageId(messageReference).build());
 		}
 
 		return builder.build();

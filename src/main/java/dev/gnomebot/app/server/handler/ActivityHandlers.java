@@ -169,6 +169,7 @@ public class ActivityHandlers {
 				var e = new LeaderboardCommandEntry();
 				e.id = member.getId().asLong();
 				e.name = member.getDisplayName();
+				e.altName = member.getUsername();
 				e.xp = FormattingUtils.format(entry.xp);
 				e.rank = list.size() + 1;
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
@@ -216,6 +217,13 @@ public class ActivityHandlers {
 		var w = 0;
 
 		for (var entry : list) {
+			for (var ch : entry.name.toCharArray()) {
+				if (ch != ' ' && !canvas.font.canDisplay(ch)) {
+					entry.name = entry.altName;
+					break;
+				}
+			}
+
 			w = Math.max(w, canvas.metrics.stringWidth(entry.name + entry.xp) + 240);
 		}
 

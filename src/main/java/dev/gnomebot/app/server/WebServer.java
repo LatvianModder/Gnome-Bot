@@ -8,7 +8,7 @@ import dev.gnomebot.app.data.WebToken;
 import dev.gnomebot.app.server.json.JsonServerPathHandler;
 import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.webutils.data.Pair;
+import dev.latvian.apps.tinyserver.HTTPServer;
 import dev.latvian.apps.webutils.net.Response;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
@@ -19,7 +19,6 @@ import io.javalin.http.Header;
 import io.javalin.http.HttpResponseException;
 import io.javalin.http.HttpStatus;
 import org.bson.Document;
-import org.eclipse.jetty.websocket.api.StatusCode;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -38,15 +37,16 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 	private final App app;
 	public List<RequestHandler> handlerList;
-	public List<Pair<String, WSHandler>> webSocketHandlerList;
 	private Javalin javalin;
+	private HTTPServer<AppRequest> httpServer;
 	private final Set<String> staticFilesSet;
 	private final Set<String> staticFilesSetNoCache;
 
 	public WebServer(App m) {
 		app = m;
 		handlerList = new ArrayList<>();
-		webSocketHandlerList = new ArrayList<>();
+
+		// fail();
 
 		this.staticFilesSet = new HashSet<>();
 
@@ -110,21 +110,26 @@ public class WebServer implements Consumer<JavalinConfig> {
 			javalin.addHttpHandler(method, "*", w);
 		}
 
-		for (var h : webSocketHandlerList) {
-			javalin.ws(h.a(), h.b());
-		}
+		httpServer = new HTTPServer<>(this::createRequest);
+		httpServer.setPort(port + 1);
 
 		javalin.start(port);
+		// httpServer.start();
+	}
+
+	private AppRequest createRequest() {
+		return new AppRequest(app);
 	}
 
 	public void stop() {
-		for (var h : webSocketHandlerList) {
-			h.b().closeAll(StatusCode.SHUTDOWN, "GnomeBot Restarting");
-		}
-
 		if (javalin != null) {
 			javalin.stop();
 			javalin = null;
+		}
+
+		if (httpServer != null) {
+			httpServer.stop();
+			httpServer = null;
 		}
 
 		handlerList.clear();
@@ -138,10 +143,6 @@ public class WebServer implements Consumer<JavalinConfig> {
 
 	public RequestHandler add(String path, JsonServerPathHandler handler) {
 		return add(path, (ServerPathHandler) handler);
-	}
-
-	public void addWS(String path, WSHandler consumer) {
-		webSocketHandlerList.add(Pair.of(path, consumer));
 	}
 
 	@Override

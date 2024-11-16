@@ -1,16 +1,16 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
+import dev.gnomebot.app.data.RelatedGuild;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.script.DiscordJS;
-import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.WSHandler;
 import dev.gnomebot.app.server.WebServer;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
 import dev.gnomebot.app.server.handler.GuildAPIHandlers;
@@ -23,26 +23,44 @@ import dev.gnomebot.app.server.handler.RootHandlers;
 import dev.gnomebot.app.util.BlockingTask;
 import dev.gnomebot.app.util.BlockingTaskCallback;
 import dev.gnomebot.app.util.CharMap;
+import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.ANSI;
-import dev.latvian.apps.ansi.ANSITable;
-import dev.latvian.apps.ansi.color.Color16;
+import dev.latvian.apps.ansi.command.CLI;
+import dev.latvian.apps.ansi.command.CommandManager;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.webutils.TimeUtils;
+import dev.latvian.apps.ansi.terminal.Terminal;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.ansi.Table;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.spec.MessageCreateSpec;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
-public class App implements Runnable {
+public class App {
 	public static final Instant START_INSTANT = Instant.now();
 	public static boolean debug = false;
 	public static App instance;
 
 	public static void main(String[] args) {
-		new Thread(instance = new App(), "MainThread").start();
+		new App();
 	}
 
 	public static String url(String path) {
@@ -53,19 +71,20 @@ public class App implements Runnable {
 		return Config.get().panel_url + path;
 	}
 
-	public boolean running = true;
+	public boolean running;
 	public ConcurrentLinkedDeque<BlockingTask> blockingTasks = new ConcurrentLinkedDeque<>();
 	public ConcurrentLinkedDeque<ScheduledTask> scheduledTasks = new ConcurrentLinkedDeque<>();
 
-	public CLI cli;
 	public Databases db;
 	public WebServer webServer;
 	public DiscordHandler discordHandler;
 	// TODO: Move more handlers from static instances to here
 	public PingHandler pingHandler;
 
-	@Override
-	public void run() {
+	public App() {
+		instance = this;
+		Terminal.replaceSystemLog();
+
 		// LOGGER.replaceSystemOutLogger();
 		Log.info("Starting up...");
 		Locale.setDefault(Locale.US);
@@ -78,8 +97,22 @@ public class App implements Runnable {
 		Log.info("Loading char map...");
 		CharMap.load();
 
-		cli = new CLI(this);
-		cli.start();
+		var commands = new CommandManager();
+		commands.add("restart", this::restart);
+		commands.add("rebuild", this::rebuild);
+		commands.add("reload", this::reload);
+		commands.add("port", List.of("input"), this::port);
+		commands.add("stats", this::stats);
+		commands.add("debug", this::debug);
+		commands.add("token", () -> Log.info(Utils.createToken()));
+		commands.add("short_token", () -> Log.info(Utils.createShortToken()));
+		commands.add("leave_guild", List.of("guild"), args -> leaveGuild(args.get("guild")));
+		commands.add("remove_modifiers", List.of("text"), args -> Log.info(CharMap.MODIFIER_PATTERN.matcher(args.get("text")).replaceAll("")));
+		commands.add("echo_cli", List.of("message..."), args -> echoCli(args.get("message")));
+		commands.add("guilds", this::printGuilds);
+		commands.add("create_restart_button", List.of("channel"), args -> createRestartButton(args.get("channel")));
+		CLI.start(commands);
+
 		db = new Databases(this);
 
 		Log.info("Loading discord handler...");
@@ -149,53 +182,11 @@ public class App implements Runnable {
 
 		webServer.add("/minecraft/verify", MinecraftHandlers::verify).noAuth();
 
-		webServer.addWS("/api/cli", WSHandler.CLI);
+		// fail();
+
+		// webServer.addWS("/api/cli", WSHandler.CLI);
 
 		webServer.start(Config.get().port);
-
-		Log.info("");
-		Log.info("API Endpoints:");
-		Log.info("");
-
-		var table = new ANSITable("Method", "Path", "Auth Level", "Cache");
-
-		for (var wrapper : webServer.handlerList) {
-			var cells = table.addRow();
-
-			cells.set(0, switch (wrapper.method) {
-				case GET -> ANSI.green("GET");
-				case POST -> ANSI.cyan("POST");
-				case PATCH -> ANSI.teal("PATCH");
-				case DELETE -> ANSI.red("DELETE");
-				case PUT -> ANSI.yellow("PUT");
-				default -> wrapper.method.name();
-			});
-
-			var psb = ANSI.empty();
-
-			for (var p : wrapper.path.split("/")) {
-				psb.append(ANSI.cyan('/'));
-
-				if (p.startsWith(":")) {
-					psb.append(ANSI.yellow(p.substring(1)));
-				} else {
-					psb.append(p);
-				}
-			}
-
-			cells.set(1, psb);
-			cells.set(2, ANSI.of(wrapper.authLevel.name().toLowerCase()).foreground(wrapper.authLevel == AuthLevel.NO_AUTH ? Color16.GREEN : Color16.YELLOW));
-
-			if (wrapper.cacheSeconds == 0) {
-				cells.set(3, ANSI.yellow("no-cache"));
-			} else {
-				cells.set(3, ANSI.green((wrapper.authLevel == AuthLevel.NO_AUTH ? "public " : "private ") + TimeUtils.prettyTimeString(wrapper.cacheSeconds)));
-			}
-		}
-
-		table.print();
-
-		Log.info("");
 
 		ScamHandler.loadDomains();
 		DM.loadDmChannels();
@@ -307,6 +298,20 @@ public class App implements Runnable {
 		running = false;
 	}
 
+	private void rebuild() throws Exception {
+		Log.error(ANSI.of("Building...").white().orangeBG());
+
+		var process = new ProcessBuilder("./gradlew", "shadowJar").start();
+		int result = process.waitFor();
+
+		if (result == 0) {
+			Log.info(ANSI.of("Building finished with no errors!").white().greenBG());
+			restart();
+		} else {
+			Log.error("Building finished with error code " + result);
+		}
+	}
+
 	public void reload() {
 		CharMap.load();
 		GuildPaths.CUSTOM_NAMES.invalidate();
@@ -328,5 +333,171 @@ public class App implements Runnable {
 		if (running) {
 			scheduledTasks.add(task);
 		}
+	}
+
+	private void port(Map<String, String> args) throws Exception {
+		var mm = db.guild(Snowflake.of(166630061217153024L));
+		var count = 0L;
+
+		/*
+		var invite = app.discordHandler.client.getRestClient().getInviteService().getInvite(input).block();
+		// 6v3z26B
+
+		Log.info("Invite Data: " + invite);
+
+		var guild = invite.guild().toOptional().orElse(null);
+		Log.info("Invite Guild Members: " + invite.approximatePresenceCount().toOptional().orElse(0) + " / " + invite.approximateMemberCount().toOptional().orElse(0));
+
+		if (guild != null) {
+			Log.info("Invite Guild: " + guild.name());
+			Log.info("- Icon: " + guild.icon().orElse(""));
+			Log.info("- Description: " + guild.description().orElse(""));
+			Log.info("- Vanity URL: " + guild.vanityUrlCode().orElse(""));
+			Log.info("- Members: " + guild.approximatePresenceCount().toOptional().orElse(0) + " / " + guild.approximateMemberCount().toOptional().orElse(0));
+		}
+		 */
+
+		var group = new RelatedGuild.Group(0, "Mods", "", new ArrayList<>());
+		var pattern = Pattern.compile("^(.+?)(?: \\((.+)\\))?: (\\w+)$");
+
+		for (var line : Files.readAllLines(mm.paths.path.resolve("related_guilds.txt"))) {
+			line = line.trim();
+
+			if (line.isEmpty()) {
+				continue;
+			}
+
+			var matcher = pattern.matcher(line);
+
+			if (matcher.find()) {
+				count++;
+				var name = matcher.group(1);
+				var description = Optional.ofNullable(matcher.group(2)).orElse("");
+				var invite = matcher.group(3);
+				var icon = "";
+				var guildId = 0L;
+
+				try {
+					var inv = discordHandler.client.getRestClient().getInviteService().getInvite(invite).block();
+					var guild = inv.guild().toOptional().orElse(null);
+
+					if (guild != null) {
+						guildId = guild.id().asLong();
+						name = guild.name();
+						icon = guild.icon().orElse("");
+
+						if (description.isEmpty()) {
+							description = guild.description().orElse("");
+						}
+
+						invite = guild.vanityUrlCode().orElse(invite);
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+
+				Log.info(name + " (" + description + "): " + invite + " (" + icon + ")");
+
+				group.guilds().add(new RelatedGuild(group, group.guilds().size(), invite, guildId, name, description, icon));
+			}
+		}
+
+		Collections.reverse(group.guilds());
+		var json = JSONArray.of();
+		json.add(group.toJson());
+		JSON.DEFAULT.write(mm.paths.path.resolve("related_guilds.json"), json, false);
+
+		/*
+		var toDelete = new ArrayList<Webhook>();
+
+		for (var gc : app.db.allGuilds()) {
+			Log.warn("Done %,d".formatted(count));
+			Log.info("Porting " + gc);
+
+			for (var channel : gc.getGuild().getChannels().toIterable()) {
+				if (channel instanceof TopLevelGuildMessageChannel tlc) {
+					try {
+						for (var w : tlc.getWebhooks().toIterable()) {
+							boolean success = false;
+
+							if (w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)) {
+								count++;
+								success = true;
+								toDelete.add(w);
+							}
+
+							Log.success("- " + w.getName().orElse("Unnamed") + " by " + w.getCreator().map(User::getUsername).orElse("Unknown") + " " + w.getId().asString(), success);
+						}
+					} catch (Exception ex) {
+						Log.warn(ex);
+					}
+				}
+			}
+		}
+
+		for (var w : toDelete) {
+			try {
+				w.delete().block();
+				Log.success("Deleted " + w.getId().asString());
+			} catch (Exception ex) {
+				Log.warn(ex);
+			}
+		}
+		 */
+
+		Log.success("Done %,d".formatted(count));
+	}
+
+	private void stats() {
+		Log.info("***");
+
+		Log.info("DB Stats:");
+
+		/*
+		for (var db : app.db.collections.values()) {
+			Ansi.log("- " + db.name + ":");
+			Ansi.log("    Size: " + db.count);
+			Ansi.log("    Queue: " + db.queue.size());
+		}
+		 */
+
+		Log.info("***");
+	}
+
+	private void debug() {
+		App.debug = !App.debug;
+		Log.info("+ Debug mode: " + (App.debug ? "enabled" : "disabled"));
+	}
+
+	private void leaveGuild(String id) {
+		discordHandler.client.getGuildById(SnowFlake.convert(id)).flatMap(Guild::leave).subscribe();
+	}
+
+	private void printGuilds() {
+		var table = new Table("Name", "Owner", "Members", "Messages", "Gnome Messages", "ID");
+
+		for (var g : discordHandler.getSelfGuilds()) {
+			Log.info("Loading guild " + g.getId().asString() + " " + g.getName() + "...");
+			var gc = db.guild(g.getId());
+
+			table.addRow(FormattingUtils.trim(g.getName(), 70), gc.getMember(gc.ownerId).getDisplayName(), g.getMembers().count().block(), gc.messages.count(), gc.messages.query().eq("user", discordHandler.selfId).count(), g.getId().asString());
+		}
+
+		table.print();
+	}
+
+	private void echoCli(String message) {
+		Log.info("Sending to all CLI clients: " + message);
+		// FIXME: WSHandler.CLI.broadcast(message);
+	}
+
+	private void createRestartButton(String s) {
+		var channel = (MessageChannel) discordHandler.client.getChannelById(SnowFlake.convert(s)).block();
+
+		channel.createMessage(MessageCreateSpec.builder()
+				.content("# Restart Gnome Bot")
+				.addComponent(ActionRow.of(discord4j.core.object.component.Button.danger("restart-bot/" + Config.get().restart_button_token, Emojis.ALERT, "Restart")))
+				.build()
+		).subscribe();
 	}
 }

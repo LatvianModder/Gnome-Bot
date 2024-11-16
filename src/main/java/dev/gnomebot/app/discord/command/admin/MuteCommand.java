@@ -143,7 +143,7 @@ public class MuteCommand extends ApplicationCommands {
 					SelectMenu.Option.of("Ban", "ban").withEmoji(Emojis.NO_ENTRY),
 					SelectMenu.Option.of("Kick", "kick").withEmoji(Emojis.BOOT),
 					// SelectMenu.Option.of("Warn", "warn").withEmoji(Emojis.WARNING),
-					SelectMenu.Option.of("Unmute", "unmute").withEmoji(Emojis.CHECKMARK)
+					SelectMenu.Option.of("Unmute", "unmute").withEmoji(Emojis.YES)
 			).withPlaceholder("Select Action").withMinValues(0).withMaxValues(1)));
 
 			if (contextMessage != null) {

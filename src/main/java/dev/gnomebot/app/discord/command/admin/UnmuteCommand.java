@@ -39,7 +39,7 @@ public class UnmuteCommand extends ApplicationCommands {
 	public static void unmuteButtonCallback(ComponentEventWrapper event, long other) {
 		event.context.checkSenderAdmin();
 		event.context.gc.unmute(other, 0L, "");
-		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.secondary("none", Emojis.CHECKMARK, "Unmuted by " + event.context.sender.getUsername() + "!")).getData()));
+		Utils.editComponents(event.event.getMessage().orElse(null), Collections.singletonList(ActionRow.of(Button.secondary("none", Emojis.YES, "Unmuted by " + event.context.sender.getUsername() + "!")).getData()));
 		event.respond("Unmuted <@" + other + ">");
 	}
 }

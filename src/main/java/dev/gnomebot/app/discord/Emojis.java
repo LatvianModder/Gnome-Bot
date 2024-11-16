@@ -17,8 +17,8 @@ public interface Emojis {
 		return ReactionEmoji.unicode(name);
 	}
 
-	ReactionEmoji.Custom YES = custom(1183755303079125002L, "yes", false);
-	ReactionEmoji.Custom NO = custom(1183755305037869157L, "no", false);
+	ReactionEmoji.Custom YES = custom(1295675217863250023L, "Yes", false);
+	ReactionEmoji.Custom NO = custom(1295675226037682207L, "No", false);
 
 	static ReactionEmoji.Custom yesNo(boolean yes) {
 		return yes ? YES : NO;
@@ -28,21 +28,19 @@ public interface Emojis {
 	ReactionEmoji.Unicode NO_ENTRY = unicode("🚫");
 	ReactionEmoji.Unicode STAR = unicode("⭐");
 	ReactionEmoji.Unicode BOOT = unicode("\uD83D\uDC62");
-	ReactionEmoji.Unicode WARNING = unicode("⚠️");
-	ReactionEmoji.Unicode DOOR = unicode("\uD83D\uDEAA");
-	ReactionEmoji.Custom VOTENONE = custom(873933804383928411L, "votenone", false);
-	ReactionEmoji.Custom VOTEUP = custom(873933822381678612L, "voteup", false);
-	ReactionEmoji.Custom VOTEDOWN = custom(873933788751753237L, "votedown", false);
-	ReactionEmoji.Custom DOWNLOAD = custom(873934864217419837L, "download", false);
-	ReactionEmoji.Unicode CHECKMARK = unicode("✅");
-	ReactionEmoji.Custom GNOME_PING = custom(873937057553215538L, "GnomePing", false);
-	ReactionEmoji.Custom GNOME_HAHA_YES = custom(720018305963917383L, "GnomeHahaYes", false);
-	ReactionEmoji.Custom GNOME_HAHA_NO = custom(736853401131810826L, "GnomeHahaNo", false);
-	ReactionEmoji.Custom GNOME_SHERLOCK = custom(750360232357658668L, "SherlockGnome", false);
+	ReactionEmoji.Custom VOTENONE = custom(1295674246898516008L, "RemoveVote", false);
+	ReactionEmoji.Custom VOTEUP = custom(1295674258202300468L, "Upvote", false);
+	ReactionEmoji.Custom VOTEDOWN = custom(1295674268121567292L, "Downvote", false);
+	ReactionEmoji.Custom DOWNLOAD = custom(1295682331016826900L, "Download", false);
+	ReactionEmoji.Custom GNOME_PING = custom(1295673389284982784L, "Pinged", false);
+	ReactionEmoji.Custom GNOME_HAHA_YES = custom(1295673202768478261L, "GnomeYes", false);
+	ReactionEmoji.Custom GNOME_HAHA_NO = custom(1295673187543023679L, "GnomeNo", false);
+	ReactionEmoji.Custom GNOME_SHERLOCK = custom(1295672789176418394L, "SherlockGnomes", false);
 	ReactionEmoji.Unicode RAGE = unicode("\uD83D\uDE21");
 	ReactionEmoji.Unicode STOP = unicode("\uD83D\uDED1");
 	ReactionEmoji.Unicode REFRESH = unicode("\uD83D\uDD04");
-	ReactionEmoji.Custom ALERT = custom(660111101605969940L, "alert", true);
+	ReactionEmoji.Custom ALERT = custom(1295672502961438822L, "Alert", true);
+	ReactionEmoji.Custom WARNING = custom(1295672318416388127L, "Warning", false);
 	ReactionEmoji.Unicode PENCIL = unicode("\uD83D\uDCDD");
 
 	ReactionEmoji.Unicode[] NUMBERS = {
