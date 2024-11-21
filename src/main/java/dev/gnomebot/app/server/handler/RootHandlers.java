@@ -2,21 +2,23 @@ package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.GnomeRootTag;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.Response;
-import io.javalin.http.HttpStatus;
+import dev.latvian.apps.tinyserver.http.response.CookieResponse;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.util.Base64;
 
 public class RootHandlers {
-	public static Response root(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Bot");
+	public static HTTPResponse root(AppRequest req) {
+		var root = req.createRoot("Homepage");
 
-		if (!request.getAuthLevel().is(AuthLevel.LOGGED_IN)) {
+		if (!req.authLevel().is(AuthLevel.LOGGED_IN)) {
 			root.content.p().string("You are not logged in! Run ").code().string("/gnome panel login").end().string(" command on discord to continue.");
 			return root.asResponse();
 		}
@@ -27,14 +29,16 @@ public class RootHandlers {
 		return root.asResponse();
 	}
 
-	public static Response login(ServerRequest request) {
-		if (!request.query("logintoken").isPresent()) {
-			var root = GnomeRootTag.createSimple(request.getPath(), "Logged In");
+	public static HTTPResponse login(AppRequest req) {
+		var token = req.query("logintoken").asString();
 
-			if (request.token == null) {
+		if (token.isEmpty()) {
+			var root = req.createRoot("Logged In");
+
+			if (req.token == null) {
 				root.content.p().string("What the heck? You shouldn't be here, shoo!");
 			} else {
-				root.content.p().string("You've successfully logged in, " + request.token.getName() + "!");
+				root.content.p().string("You've successfully logged in, " + req.token.getName() + "!");
 				root.content.p().string("You can now close this page.");
 				root.content.p().a("/guild").string("You can click here to browse guild list.");
 			}
@@ -42,37 +46,38 @@ public class RootHandlers {
 			return root.asResponse();
 		}
 
-		return Response.redirect(App.url("login"));
+		return HTTPResponse.redirect("/login").cookie(AppRequest.COOKIE_TOKEN, new String(Base64.getUrlDecoder().decode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8), CookieResponse.Builder::maxAgeYear);
 	}
 
-	public static Response logout(ServerRequest request) {
-		App.instance.db.invalidateToken(request.token.userId);
-		return Response.redirect("/");
+	public static HTTPResponse logout(AppRequest req) {
+		req.checkLoggedIn();
+		App.instance.db.invalidateTokens(req.token.userId);
+		return HTTPResponse.redirect("/");
 	}
 
-	public static Response publicfile(ServerRequest request) throws Exception {
-		var filename = request.variable("file");
+	public static HTTPResponse publicfile(AppRequest req) {
+		req.log = false;
+
+		var filename = req.variable("file").asString();
 
 		if (filename.length() < 3 || filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid file name!");
+			throw new BadRequestError("Invalid file name!");
 		}
 
 		var path = AppPaths.PUBLIC_DATA.resolve(filename);
 
 		if (Files.exists(path)) {
-			var type = request.header("Content-Type", "text/plain");
-			var data = Files.readAllBytes(path);
-			return FileResponse.of(HttpStatus.OK, type, data);
+			return HTTPResponse.ok().content(path, req.header("Content-Type").asString()).publicCache(Duration.ofMinutes(5L));
 		}
 
-		throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+		throw new NotFoundError("File not found!");
 	}
 
-	public static Response robots(ServerRequest request) {
-		return FileResponse.plainText("""
+	public static HTTPResponse robots(AppRequest req) {
+		return HTTPResponse.ok().text("""
 				User-agent: *
 				Disallow: /paste/*
 				Disallow: /guild/*
-				Allow: /""");
+				Allow: /""").publicCache(Duration.ofDays(1L));
 	}
 }

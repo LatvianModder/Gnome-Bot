@@ -2,17 +2,16 @@ package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.DiscordFeedback;
+import dev.gnomebot.app.data.Macro;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.GnomeRootTag;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.json.JSONResponse;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.data.HexId32;
-import dev.latvian.apps.webutils.json.JSONObject;
-import dev.latvian.apps.webutils.json.JSONResponse;
-import dev.latvian.apps.webutils.net.Response;
-import io.javalin.http.ForbiddenResponse;
-import io.javalin.http.NotFoundResponse;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -22,12 +21,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class GuildHandlers {
-	public static Response guildList(ServerRequest request) {
+	public static HTTPResponse guildList(AppRequest req) {
+		req.checkLoggedIn();
+
 		var futures = new ArrayList<CompletableFuture<PanelGuildData>>();
 
-		for (var gc : request.app.db.allGuilds()) {
+		for (var gc : req.app.db.allGuilds()) {
 			futures.add(CompletableFuture.supplyAsync(() -> {
-				var authLevel = gc.getAuthLevel(request.token.userId);
+				var authLevel = gc.getAuthLevel(req.token.userId);
 
 				if (authLevel.is(AuthLevel.MEMBER)) {
 					return new PanelGuildData(gc, authLevel);
@@ -40,7 +41,7 @@ public class GuildHandlers {
 		CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 		var guilds = futures.stream().map(CompletableFuture::join).filter(Objects::nonNull).sorted().toList();
 
-		var root = GnomeRootTag.createSimple(request.getPath(), "Gnome Panel");
+		var root = req.createRoot("Gnome Panel");
 
 		for (var data : guilds) {
 			var line = root.content.p().classes("withicon");
@@ -51,30 +52,34 @@ public class GuildHandlers {
 		return root.asResponse();
 	}
 
-	public static Response guild(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), request.gc.toString());
-		root.content.h3().a("/guild/" + request.gc.guildId + "/audit-log", "Audit Log");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/macros", "Macros");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/bans", "Bans");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/mutes", "Mutes");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/message-log", "Message Log");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/voice-log", "Voice Log");
-		root.content.h3().a("/guild/" + request.gc.guildId + "/reaction-log", "Reaction Log");
+	public static HTTPResponse guild(AppRequest req) {
+		req.checkMember();
+
+		var root = req.createRoot(req.gc.toString());
+		root.content.h3().a("/guild/" + req.gc.guildId + "/audit-log", "Audit Log");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/macros", "Macros");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/bans", "Bans");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/mutes", "Mutes");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/message-log", "Message Log");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/voice-log", "Voice Log");
+		root.content.h3().a("/guild/" + req.gc.guildId + "/reaction-log", "Reaction Log");
 		// root.content.p().string("Uh... nothing for now...");
 		// root.content.p().a("/guild/" + request.gc.guildId.asString()).string("For now you can go to old page.");
 		return root.asResponse();
 	}
 
-	public static Response macros(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Macros - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+	public static HTTPResponse macros(AppRequest req) {
+		req.checkLoggedIn();
+
+		var root = req.createRoot("Macros - " + req.gc);
+		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
 
 		var slashMacros = root.content.section("macros-slash").classes("divborder").div().h3().string("Macros with Slash Command").end().ol();
 
-		var author = request.query("author").asSnowflake();
-		var macros = request.gc.getMacroMap().values().stream().filter(m -> author == 0L || m.author == author).sorted().toList();
+		var author = SnowFlake.num(req.query("author").asString());
+		var macros = req.gc.getMacroMap().values().stream().filter(m -> author == 0L || m.author == author).sorted().toList();
 
-		var guildCommands = request.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(request.gc.db.app.discordHandler.selfId, request.gc.guildId)
+		var guildCommands = req.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(req.gc.db.app.discordHandler.selfId, req.gc.guildId)
 				.toStream()
 				.collect(Collectors.toMap(d -> d.id().asLong(), Function.identity()));
 
@@ -87,9 +92,9 @@ public class GuildHandlers {
 						throw new NullPointerException();
 					}
 
-					slashMacros.li().a("/guild/" + request.gc.guildId + "/macros/" + macro.id, macro.name);
+					slashMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
 				} catch (Exception ex) {
-					slashMacros.li().a("/guild/" + request.gc.guildId + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
+					slashMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
 				}
 			}
 		}
@@ -97,37 +102,39 @@ public class GuildHandlers {
 		var allMacros = root.content.section("macros").classes("divborder").div().h3().string("All Macros").end().ol();
 
 		for (var macro : macros) {
-			allMacros.li().a("/guild/" + request.gc.guildId + "/macros/" + macro.id, macro.name);
+			allMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
 		}
 
 		return root.asResponse();
 	}
 
-	public static Response macroInfo(ServerRequest request) {
-		var macro = request.gc.db.allMacros.get(HexId32.of(request.variable("id")).getAsInt());
+	public static HTTPResponse macroInfo(AppRequest req) {
+		req.checkLoggedIn();
 
-		if (macro == null || macro.guild != request.gc) {
-			throw new NotFoundResponse("Macro '" + request.variable("id") + "' not found!");
+		var macro = req.gc.db.allMacros.get(HexId32.of(req.variable("id")).getAsInt());
+
+		if (macro == null || macro.guild != req.gc) {
+			throw new NotFoundError("Macro '" + req.variable("id") + "' not found!");
 		}
 
-		if (request.hasQuery("slash")) {
-			if (!request.getAuthLevel().is(AuthLevel.ADMIN)) {
-				throw new ForbiddenResponse("You must be an admin to toggle slash commands");
+		if (req.query().containsKey("slash")) {
+			if (!req.authLevel().isAdmin()) {
+				throw new ForbiddenError("You must be an admin to toggle slash commands");
 			}
 
-			macro.setSlashCommand(request.query("slash").asString("0").equals("1"));
-			return Response.redirect(request.context.path());
+			macro.setSlashCommand(req.query("slash").asString("0").equals("1"));
+			return HTTPResponse.redirect("/" + req.path());
 		}
 
-		var root = GnomeRootTag.createSimple(request.getPath(), macro.name + " - Macros - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId + "/macros", "< Back").classes("back");
+		var root = req.createRoot(macro.name + " - Macros - " + req.gc);
+		root.content.a("/guild/" + req.gc.guildId + "/macros", "< Back").classes("back");
 
 		var authorId = macro.author;
-		var author = request.gc.getMember(authorId);
+		var author = req.gc.getMember(authorId);
 		var authorName = author == null ? "" : author.getDisplayName();
 
 		if (authorName.isEmpty()) {
-			var user = request.gc.db.app.discordHandler.getUser(authorId);
+			var user = req.gc.db.app.discordHandler.getUser(authorId);
 
 			if (user != null) {
 				authorName = user.getGlobalName().orElse(user.getUsername());
@@ -135,7 +142,7 @@ public class GuildHandlers {
 		}
 
 		var table = root.content.section("info").table().tbody();
-		table.tr().td().string("Author").end().td().a("/guild/" + request.gc.guildId + "/members/" + authorId, authorName);
+		table.tr().td().string("Author").end().td().a("/guild/" + req.gc.guildId + "/members/" + authorId, authorName);
 
 		if (macro.created == null) {
 			table.tr().td().string("Created").end().td().string("Unknown");
@@ -161,25 +168,41 @@ public class GuildHandlers {
 		return root.asResponse();
 	}
 
-	public static Response memberInfo(ServerRequest request) {
-		var memberId = request.getSnowflake("id");
-		var user = request.gc.db.app.discordHandler.getUser(memberId);
+	public static HTTPResponse memberInfo(AppRequest req) {
+		req.checkLoggedIn();
+
+		var memberId = req.getSnowflake("id");
+		var user = req.gc.db.app.discordHandler.getUser(memberId);
 
 		if (user == null) {
-			throw new NotFoundResponse("User '" + memberId + "' not found!");
+			throw new NotFoundError("User '" + memberId + "' not found!");
 		}
 
-		var member = request.gc.getMember(memberId);
-		var name = member == null ? user.getGlobalName().orElse(user.getUsername()) : member.getDisplayName();
+		var member = req.gc.getMember(memberId);
+		var globalName = user.getGlobalName().orElse(user.getUsername());
+		var name = member == null ? globalName : member.getDisplayName();
 
-		var root = GnomeRootTag.createSimple(request.getPath(), name + " - Members - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
-		root.content.h3().string("ID");
-		root.content.p().string(memberId);
+		var root = req.createRoot(name + " - Members - " + req.gc);
+		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+
+		var info = root.content.div("divwithborder");
+		info.div("spread").strong().string("ID").end().spanstr(memberId);
+		info.div("spread").strong().string("Username").end().spanstr(user.getUsername());
+		info.div("spread").strong().string("Global Name").end().spanstr(globalName);
+
+		if (user.getDiscriminator() != null && !user.getDiscriminator().equals("0")) {
+			info.div("spread").strong().string("Tag").end().spanstr(user.getTag());
+		}
+
+		if (user.isBot()) {
+			info.div("spread").strong().string("Bot").end().spanstr("Yes");
+		}
+
+		info.div("spread").strong().string("Member").end().spanstr(member == null ? "No" : "Yes");
 
 		if (member == null) {
 			try {
-				var ban = request.gc.getGuild().getBan(SnowFlake.convert(memberId)).block();
+				var ban = req.gc.getGuild().getBan(SnowFlake.convert(memberId)).block();
 
 				if (ban != null) {
 					var btag = root.content.div("divwithborder");
@@ -188,25 +211,51 @@ public class GuildHandlers {
 				}
 			} catch (Exception ignore) {
 			}
+		} else {
+			var dn = member.getDisplayName();
+
+			if (!dn.equals(globalName)) {
+				info.div("spread").strong().string("Server Name").end().spanstr(dn);
+			}
+		}
+
+		var macros = new ArrayList<Macro>();
+
+		for (var macro : req.gc.getMacroMap().values()) {
+			if (macro.author == memberId) {
+				macros.add(macro);
+			}
+		}
+
+		if (!macros.isEmpty()) {
+			var btag = root.content.div("divwithborder");
+			btag.h3().string("Macros");
+			var ul = btag.ul();
+
+			for (var macro : macros.stream().sorted().toList()) {
+				ul.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
+			}
 		}
 
 		return root.asResponse();
 	}
 
-	public static Response feedbackList(ServerRequest request) {
-		var list = request.gc.feedback.query()
+	public static HTTPResponse feedbackList(AppRequest req) {
+		req.checkMember();
+
+		var list = req.gc.feedback.query()
 				.toStream()
 				.sorted((o1, o2) -> Integer.compare(o2.getNumber(), o1.getNumber()))
 				.toList();
 
-		var memberCache = request.gc.createMemberCache();
+		var memberCache = req.gc.createMemberCache();
 
 		var object = JSONObject.of();
-		object.put("id", SnowFlake.str(request.gc.guildId));
-		object.put("name", request.gc.name);
+		object.put("id", SnowFlake.str(req.gc.guildId));
+		object.put("name", req.gc.name);
 		var array = object.addArray("feedback");
-		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
-		var owner = request.getAuthLevel().is(AuthLevel.OWNER);
+		var canSee = DiscordFeedback.canSee(req.gc, req.authLevel());
+		var owner = req.authLevel().isOwner();
 
 		for (var feedback : list) {
 			feedback.toJson(array.addObject(), memberCache, canSee, owner);
@@ -215,29 +264,31 @@ public class GuildHandlers {
 		return JSONResponse.of(object);
 	}
 
-	public static Response feedback(ServerRequest request) throws Exception {
-		var id = (int) request.getUnsignedLong("id");
-		var feedback = request.gc.feedback.query().eq("number", id).first();
+	public static HTTPResponse feedback(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var id = req.variable("id").asInt();
+		var feedback = req.gc.feedback.query().eq("number", id).first();
 
 		if (feedback == null) {
-			throw HTTPResponseCode.NOT_FOUND.error("Feedback not found!");
+			throw new NotFoundError("Feedback not found!");
 		}
 
-		var memberCache = request.gc.createMemberCache();
+		var memberCache = req.gc.createMemberCache();
 		var json = JSONObject.of();
-		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
-		feedback.toJson(json, memberCache, canSee, request.getAuthLevel().is(AuthLevel.OWNER));
+		var canSee = DiscordFeedback.canSee(req.gc, req.authLevel());
+		feedback.toJson(json, memberCache, canSee, req.authLevel().isOwner());
 		return JSONResponse.of(json);
 	}
 
-	public static Response appeal(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Appeals - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+	public static HTTPResponse appeal(AppRequest req) {
+		var root = req.createRoot("Appeals - " + req.gc);
+		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
 		root.content.h3().string("Unfortunately, there currently isn't a better appeal process.");
 		root.content.h3().string("If you are banned, join the server with an alt and message a moderator.");
 
-		if (!request.gc.getInviteUrl().isEmpty()) {
-			root.content.h3().a(request.gc.getInviteUrl(), "Click here").end().string(" to join the server.");
+		if (!req.gc.getInviteUrl().isEmpty()) {
+			root.content.h3().a(req.gc.getInviteUrl(), "Click here").end().string(" to join the server.");
 		}
 
 		return root.asResponse();

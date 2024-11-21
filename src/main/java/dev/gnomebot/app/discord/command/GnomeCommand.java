@@ -33,7 +33,7 @@ public class GnomeCommand extends ApplicationCommands {
 		var s = System.currentTimeMillis() - Date.from(event.getTimestamp()).getTime();
 
 		List<String> content = new ArrayList<>();
-		content.add("[Gnome Panel](<" + App.url("") + ">)");
+		content.add("[Gnome Panel](<" + event.context.gc.db.app.url("") + ">)");
 		content.add("Last restart: " + Utils.formatRelativeDate(App.START_INSTANT));
 		content.add("Gnome Response time: **" + s + " ms**");
 
@@ -48,12 +48,12 @@ public class GnomeCommand extends ApplicationCommands {
 	private static void login(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 		var tokenString = event.context.gc.db.getEncodedToken(event.context.sender.getId().asLong(), event.context.sender.getUsername());
-		event.respond("[Click here to open the panel!](<" + App.url("login?logintoken=" + tokenString) + ">)");
+		event.respond("[Click here to open the panel!](<" + event.context.gc.db.app.url("login?logintoken=" + tokenString) + ">) (Do not share this link with others!)");
 	}
 
 	private static void logout(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
-		App.instance.db.invalidateToken(event.context.sender.getId().asLong());
-		event.respond("Your Gnome Panel login tokens have been invalidated!");
+		App.instance.db.invalidateTokens(event.context.sender.getId().asLong());
+		event.respond("All of your Gnome Panel login tokens have been invalidated!");
 	}
 }

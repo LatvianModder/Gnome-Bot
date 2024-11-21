@@ -1,6 +1,6 @@
 package dev.gnomebot.app.util;
 
-import dev.latvian.apps.webutils.json.JSONSerializable;
+import dev.latvian.apps.json.JSONSerializable;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.Nullable;

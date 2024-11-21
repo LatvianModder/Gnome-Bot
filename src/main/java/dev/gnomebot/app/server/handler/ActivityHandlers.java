@@ -4,23 +4,24 @@ import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.json.JSONResponse;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
 import dev.latvian.apps.webutils.data.Color4f;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
-import dev.latvian.apps.webutils.json.JSONResponse;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.Response;
 import org.bson.conversions.Bson;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -46,18 +47,20 @@ public class ActivityHandlers {
 		}
 	}
 
-	public static Response leaderboard(ServerRequest request) throws Exception {
-		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+	public static HTTPResponse leaderboard(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var time = req.variable("days").asInt() * MS_IN_DAY;
 
 		if (time < 0L) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
+			throw new BadRequestError("Invalid timespan!");
 		}
 
-		var limit = request.query("limit").asInt();
-		var channel = request.query("channel").asSnowflake();
-		var role = SnowFlake.convert(request.query("role").asSnowflake());
+		var limit = req.query("limit").asInt();
+		var channel = SnowFlake.num(req.query("channel").asString());
+		var role = SnowFlake.convert(req.query("role").asString());
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
+		var memberMap = req.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -71,14 +74,14 @@ public class ActivityHandlers {
 		}
 
 		if (filter.size() == 1) {
-			agg.add(Aggregates.match(filter.get(0)));
+			agg.add(Aggregates.match(filter.getFirst()));
 		} else if (!filter.isEmpty()) {
 			agg.add(Aggregates.match(Filters.and(filter)));
 		}
 
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
-		for (var document : request.gc.messageXp.aggregate(agg)) {
+		for (var document : req.gc.messageXp.aggregate(agg)) {
 			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
@@ -104,7 +107,7 @@ public class ActivityHandlers {
 				o.put("rank", array.size());
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
-			} catch (Exception ex) {
+			} catch (Exception ignore) {
 			}
 
 			if (limit > 0 && array.size() >= limit) {
@@ -112,21 +115,23 @@ public class ActivityHandlers {
 			}
 		}
 
-		return JSONResponse.of(array);
+		return JSONResponse.of(array).publicCache(Duration.ofMinutes(30L));
 	}
 
-	public static Response leaderboardImage(ServerRequest request) throws Exception {
-		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+	public static HTTPResponse leaderboardImage(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var time = req.variable("days").asInt() * MS_IN_DAY;
 
 		if (time < 0L) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
+			throw new BadRequestError("Invalid timespan!");
 		}
 
-		var limit = request.query("limit").asInt(20);
-		var channel = request.query("channel").asSnowflake();
-		var role = SnowFlake.convert(request.query("role").asSnowflake());
+		var limit = req.query("limit").asInt(20);
+		var channel = SnowFlake.num(req.query("channel").asString());
+		var role = SnowFlake.convert(req.query("role").asString());
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
+		var memberMap = req.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -140,14 +145,14 @@ public class ActivityHandlers {
 		}
 
 		if (filter.size() == 1) {
-			agg.add(Aggregates.match(filter.get(0)));
+			agg.add(Aggregates.match(filter.getFirst()));
 		} else if (!filter.isEmpty()) {
 			agg.add(Aggregates.match(Filters.and(filter)));
 		}
 
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
-		for (var document : request.gc.messageXp.aggregate(agg)) {
+		for (var document : req.gc.messageXp.aggregate(agg)) {
 			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
@@ -175,7 +180,7 @@ public class ActivityHandlers {
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
 				list.add(e);
-			} catch (Exception ex) {
+			} catch (Exception ignored) {
 			}
 
 			if (limit > 0 && list.size() >= limit) {
@@ -184,7 +189,7 @@ public class ActivityHandlers {
 		}
 
 		if (list.isEmpty()) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
+			throw new BadRequestError("Leaderboard is completely empty!");
 		}
 
 		var avatars = new BufferedImage[list.size()];
@@ -194,7 +199,7 @@ public class ActivityHandlers {
 			final var index = i;
 			var thread = new Thread(() -> {
 				try {
-					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
+					avatars[index] = Utils.getAvatar(req.app, list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
 					Log.error(ex.toString());
@@ -212,7 +217,7 @@ public class ActivityHandlers {
 		}
 
 		var canvas = new ImageCanvas();
-		canvas.setFont(request.gc.font.create(36));
+		canvas.setFont(req.gc.font.create(36));
 
 		var w = 0;
 
@@ -267,18 +272,20 @@ public class ActivityHandlers {
 			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
 		}
 
-		return FileResponse.png(canvas.createImage());
+		return HTTPResponse.ok().png(canvas.createImage()).publicCache(Duration.ofMinutes(30L));
 	}
 
-	public static Response rank(ServerRequest request) throws Exception {
-		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+	public static HTTPResponse rank(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var time = req.variable("days").asInt() * MS_IN_DAY;
 
 		if (time < 0L) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
+			throw new BadRequestError("Invalid timespan!");
 		}
 
-		var member = SnowFlake.num(request.variable("member"));
-		var channel = request.query("channel").asLong();
+		var member = SnowFlake.num(req.variable("member").asString());
+		var channel = req.query("channel").asLong();
 
 		var json = JSONObject.of();
 
@@ -342,7 +349,7 @@ public class ActivityHandlers {
 			}
 			 */
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofHours(0L)); // 1L
 	}
 
 	private static class MessageInfo {
@@ -353,15 +360,17 @@ public class ActivityHandlers {
 		public int[] messages;
 	}
 
-	public static Response channels(ServerRequest request) throws Exception {
-		var fast = request.query("fast").asBoolean(false);
+	public static HTTPResponse channels(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var fast = req.query("fast").asBoolean(false);
 
 		Map<Long, MessageInfo> channels = new LinkedHashMap<>();
 
 		try {
-			request.gc.getChannelList()
+			req.gc.getChannelList()
 					.stream()
-					.filter(c -> c.canViewChannel(request.token.userId))
+					.filter(c -> c.canViewChannel(req.token.userId))
 					.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
 					.forEach(c -> {
 						var mi = new MessageInfo();
@@ -370,15 +379,15 @@ public class ActivityHandlers {
 						channels.put(c.id, mi);
 					});
 		} catch (Exception ex) {
-			throw HTTPResponseCode.NOT_FOUND.error("Channel not found!");
+			throw new NotFoundError("Channel not found!");
 		}
 
 		if (channels.isEmpty()) {
-			throw HTTPResponseCode.NOT_FOUND.error("Channels not found!");
+			throw new NotFoundError("Channels not found!");
 		}
 
 		final var now = System.currentTimeMillis();
-		final var oldestMessage = SnowFlake.timestamp(request.gc.guildId);
+		final var oldestMessage = SnowFlake.timestamp(req.gc.guildId);
 		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
@@ -393,7 +402,7 @@ public class ActivityHandlers {
 			filter.add(Filters.eq("channel", mi.id));
 		}
 
-		for (var mc : request.gc.messageCount.query().filter(Filters.or(filter))) {
+		for (var mc : req.gc.messageCount.query().filter(Filters.or(filter))) {
 			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
@@ -420,8 +429,8 @@ public class ActivityHandlers {
 		var w = weeks;
 
 		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(request.gc.guildId));
-		json.put("name", request.gc.name);
+		json.put("id", SnowFlake.str(req.gc.guildId));
+		json.put("name", req.gc.name);
 		json.put("weeks", w);
 
 		var infos = json.addArray("channels");
@@ -463,16 +472,18 @@ public class ActivityHandlers {
 			}
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response members(ServerRequest request) throws Exception {
-		var fast = request.query("fast").asBoolean(false);
+	public static HTTPResponse members(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var fast = req.query("fast").asBoolean(false);
 
 		Map<Long, MessageInfo> members = new LinkedHashMap<>();
 
 		try {
-			var channelList = request.gc.getGuild().getMembers()
+			var channelList = req.gc.getGuild().getMembers()
 					.toStream()
 					.sorted((o1, o2) -> o1.getUsername().compareToIgnoreCase(o2.getUsername())).toList();
 
@@ -483,15 +494,15 @@ public class ActivityHandlers {
 				members.put(mi.id, mi);
 			}
 		} catch (Exception ex) {
-			throw HTTPResponseCode.NOT_FOUND.error("Member not found!");
+			throw new NotFoundError("Member not found!");
 		}
 
 		if (members.isEmpty()) {
-			throw HTTPResponseCode.NOT_FOUND.error("Members not found!");
+			throw new NotFoundError("Members not found!");
 		}
 
 		final var now = System.currentTimeMillis();
-		final var oldestMessage = SnowFlake.timestamp(request.gc.guildId);
+		final var oldestMessage = SnowFlake.timestamp(req.gc.guildId);
 		var weeks = (int) ((now - oldestMessage) / MS_IN_DAY / 7L);
 
 		if (weeks <= 0) {
@@ -503,7 +514,7 @@ public class ActivityHandlers {
 			mi.totalMessages = 0;
 		}
 
-		for (var mc : request.gc.messageCount.query()) {
+		for (var mc : req.gc.messageCount.query()) {
 			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
@@ -532,8 +543,8 @@ public class ActivityHandlers {
 		var w = weeks;
 
 		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(request.gc.guildId));
-		json.put("name", request.gc.name);
+		json.put("id", SnowFlake.str(req.gc.guildId));
+		json.put("name", req.gc.name);
 		json.put("weeks", w);
 
 		var infos = json.addArray("members");
@@ -574,30 +585,32 @@ public class ActivityHandlers {
 			}
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response userMentionLeaderboardImage(ServerRequest request) throws Exception {
-		return mentionLeaderboardImage(request, true);
+	public static HTTPResponse userMentionLeaderboardImage(AppRequest req) throws Exception {
+		req.checkAdmin();
+		return mentionLeaderboardImage(req, true).publicCache(Duration.ofHours(1L));
 	}
 
-	public static Response roleMentionLeaderboardImage(ServerRequest request) throws Exception {
-		return mentionLeaderboardImage(request, false);
+	public static HTTPResponse roleMentionLeaderboardImage(AppRequest req) throws Exception {
+		req.checkAdmin();
+		return mentionLeaderboardImage(req, false).publicCache(Duration.ofHours(1L));
 	}
 
-	private static Response mentionLeaderboardImage(ServerRequest request, boolean isUser) throws Exception {
-		var time = Integer.parseInt(request.variable("days")) * MS_IN_DAY;
+	private static HTTPResponse mentionLeaderboardImage(AppRequest req, boolean isUser) throws Exception {
+		var time = req.variable("days").asInt() * MS_IN_DAY;
 
 		if (time < 0L) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Invalid timespan!");
+			throw new BadRequestError("Invalid timespan!");
 		}
 
-		var mentionId = Long.parseUnsignedLong(request.variable("mention"));
+		var mentionId = req.variable("mention").asULong();
 
-		var limit = request.query("limit").asInt(20);
-		var channel = request.query("channel").asLong();
+		var limit = req.query("limit").asInt(20);
+		var channel = req.query("channel").asLong();
 
-		var memberMap = request.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
+		var memberMap = req.gc.getGuild().getMembers().filter(member -> !member.isBot()).toStream().collect(Collectors.toMap(u -> u.getId().asLong(), member -> member));
 		List<LeaderboardEntry> leaderboardEntries = new ArrayList<>();
 		List<Bson> agg = new ArrayList<>();
 		List<Bson> filter = new ArrayList<>();
@@ -612,14 +625,14 @@ public class ActivityHandlers {
 
 
 		if (filter.size() == 1) {
-			agg.add(Aggregates.match(filter.get(0)));
+			agg.add(Aggregates.match(filter.getFirst()));
 		} else if (!filter.isEmpty()) {
 			agg.add(Aggregates.match(Filters.and(filter)));
 		}
 
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
-		for (var document : request.gc.messageXp.aggregate(agg)) {
+		for (var document : req.gc.messageXp.aggregate(agg)) {
 			var entry = new LeaderboardEntry();
 			entry.userId = document.getLong("_id");
 			entry.xp = ((Number) document.get("xp")).longValue();
@@ -646,7 +659,7 @@ public class ActivityHandlers {
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
 				list.add(e);
-			} catch (Exception ex) {
+			} catch (Exception ignored) {
 			}
 
 			if (limit > 0 && list.size() >= limit) {
@@ -655,7 +668,7 @@ public class ActivityHandlers {
 		}
 
 		if (list.isEmpty()) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Leaderboard is completely empty!");
+			throw new BadRequestError("Leaderboard is completely empty!");
 		}
 
 		var avatars = new BufferedImage[list.size()];
@@ -665,7 +678,7 @@ public class ActivityHandlers {
 			final var index = i;
 			var thread = new Thread(() -> {
 				try {
-					avatars[index] = Utils.getAvatar(list.get(index).id, 42);
+					avatars[index] = Utils.getAvatar(req.app, list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
 					Log.error(ex.toString());
@@ -683,7 +696,7 @@ public class ActivityHandlers {
 		}
 
 		var canvas = new ImageCanvas();
-		canvas.setFont(request.gc.font.create(36));
+		canvas.setFont(req.gc.font.create(36));
 
 		var w = 0;
 
@@ -731,6 +744,6 @@ public class ActivityHandlers {
 			canvas.addImage(100, 3 + i * 45, 42, 42, avatars[i]);
 		}
 
-		return FileResponse.png(canvas.createImage());
+		return HTTPResponse.ok().png(canvas.createImage());
 	}
 }

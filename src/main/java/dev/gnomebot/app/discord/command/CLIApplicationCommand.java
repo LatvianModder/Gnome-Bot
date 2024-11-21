@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.cli.CLIEvent;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
@@ -27,7 +26,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 		private final List<String> responseText = new ArrayList<>();
 
 		public CLIEventFromCommand(ChatInputInteractionEventWrapper e, CommandReader r) {
-			super(e.context.gc, e.context.sender, r);
+			super(e.context.handler.app, e.context.gc, e.context.sender, r);
 			event = e;
 		}
 
@@ -55,7 +54,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 				throw new GnomeException("Only trusted users can use this command!");
 			}
 		} else if (command.trusted == 2) {
-			if (Config.get().owner != event.context.sender.getId().asLong()) {
+			if (event.context.gc.db.app.config.discord.owner != event.context.sender.getId().asLong()) {
 				throw new GnomeException("Only bot owner can use this command!");
 			}
 		}
@@ -88,7 +87,7 @@ public class CLIApplicationCommand extends ApplicationCommands {
 		for (var command : CLICommands.COMMANDS.values()) {
 			if (command.trusted == 1 && !event.context.isTrusted()) {
 				continue;
-			} else if (command.trusted == 2 && Config.get().owner != event.context.sender.getId().asLong()) {
+			} else if (command.trusted == 2 && event.context.gc.db.app.config.discord.owner != event.context.sender.getId().asLong()) {
 				continue;
 			} else if (command.admin && !event.context.isAdmin()) {
 				continue;

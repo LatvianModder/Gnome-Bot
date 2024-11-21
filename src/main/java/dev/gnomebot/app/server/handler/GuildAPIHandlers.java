@@ -4,22 +4,21 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.json.JSONResponse;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.ImageUtils;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
-import dev.latvian.apps.webutils.json.JSONResponse;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.Response;
-import io.javalin.http.BadRequestResponse;
-import io.javalin.http.NotFoundResponse;
 import org.bson.conversions.Bson;
 
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,12 +27,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class GuildAPIHandlers {
-	public static Response guilds(ServerRequest request) throws Exception {
+	public static HTTPResponse guilds(AppRequest req) throws Exception {
+		req.checkLoggedIn();
+
 		var futures = new ArrayList<CompletableFuture<PanelGuildData>>();
 
-		for (var gc : request.app.db.allGuilds()) {
+		for (var gc : req.app.db.allGuilds()) {
 			futures.add(CompletableFuture.supplyAsync(() -> {
-				var authLevel = gc.getAuthLevel(request.token.userId);
+				var authLevel = gc.getAuthLevel(req.token.userId);
 
 				if (authLevel.is(AuthLevel.MEMBER)) {
 					return new PanelGuildData(gc, authLevel);
@@ -56,32 +57,36 @@ public class GuildAPIHandlers {
 			o1.put("authLevel", g.authLevel().name);
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofMinutes(1L));
 	}
 
-	public static Response info(ServerRequest request) {
+	public static HTTPResponse info(AppRequest req) {
+		req.checkMember();
+
 		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(request.gc.guildId));
-		json.put("name", request.gc.name);
-		json.put("owner", request.gc.getGuild().getOwnerId().asString());
-		json.put("prefix", request.gc.legacyPrefix.get());
-		json.put("invite", request.gc.getInviteUrl());
-		return JSONResponse.of(json);
+		json.put("id", SnowFlake.str(req.gc.guildId));
+		json.put("name", req.gc.name);
+		json.put("owner", req.gc.getGuild().getOwnerId().asString());
+		json.put("prefix", req.gc.legacyPrefix.get());
+		json.put("invite", req.gc.getInviteUrl());
+		return JSONResponse.of(json).publicCache(Duration.ofHours(1L));
 	}
 
-	public static Response banner(ServerRequest request) throws Exception {
+	public static HTTPResponse banner(AppRequest req) throws Exception {
 		var image = new BufferedImage(320, 76, BufferedImage.TYPE_INT_ARGB);
 		image.setRGB(1, 1, 0xFFFF0000);
-		return FileResponse.png(image);
+		return HTTPResponse.ok().png(image).publicCache(Duration.ofSeconds(1L));
 	}
 
-	public static Response getSettings(ServerRequest request) {
-		var channels = request.gc.getChannelList();
-		var roles = request.gc.getRoleList();
+	public static HTTPResponse getSettings(AppRequest req) {
+		req.checkMember();
+
+		var channels = req.gc.getChannelList();
+		var roles = req.gc.getRoleList();
 
 		var bs = JSONArray.of();
 
-		for (var setting : request.gc.configHolders.values()) {
+		for (var setting : req.gc.configHolders.values()) {
 			var o = bs.addObject();
 			o.put("id", setting.key.id());
 			o.put("name", setting.key.title());
@@ -90,17 +95,19 @@ public class GuildAPIHandlers {
 			o.put("value", setting.serialize(1));
 		}
 
-		var owner = request.gc.getMember(request.gc.ownerId);
-
 		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(request.gc.guildId));
-		json.put("name", request.gc.name);
-		json.put("canEdit", request.getAuthLevel().is(AuthLevel.OWNER));
+		json.put("id", SnowFlake.str(req.gc.guildId));
+		json.put("name", req.gc.name);
+		json.put("canEdit", req.authLevel().isOwner());
 
-		var ow = json.addObject("owner");
-		ow.put("id", owner.getId().asString());
-		ow.put("name", owner.getUsername());
-		ow.put("nickname", owner.getNickname().orElse(""));
+		var owner = req.gc.getMember(req.gc.ownerId);
+
+		if (owner != null) {
+			var ow = json.addObject("owner");
+			ow.put("id", owner.getId().asString());
+			ow.put("name", owner.getUsername());
+			ow.put("nickname", owner.getNickname().orElse(""));
+		}
 
 		var c = json.addArray("channels");
 
@@ -108,14 +115,14 @@ public class GuildAPIHandlers {
 			var o = c.addObject();
 			o.put("id", SnowFlake.str(channelInfo.id));
 			o.put("name", channelInfo.getName());
-			o.put("visible", channelInfo.canViewChannel(request.token.userId));
+			o.put("visible", channelInfo.canViewChannel(req.token.userId));
 			o.put("xp", channelInfo.getXp());
 		}
 
 		var r = json.addArray("roles");
 
 		for (var role : roles) {
-			if (role.id == request.gc.guildId) {
+			if (role.id == req.gc.guildId) {
 				continue;
 			}
 
@@ -126,44 +133,46 @@ public class GuildAPIHandlers {
 			o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 		}
 
-		if (request.getAuthLevel().is(AuthLevel.ADMIN)) {
+		if (req.authLevel().isAdmin()) {
 			json.put("basicSettings", bs);
 		}
 
 		return JSONResponse.of(json);
 	}
 
-	public static Response updateSetting(ServerRequest request) throws Exception {
-		var holder = request.gc.getConfigHolder(request.variable("key"));
+	public static HTTPResponse updateSetting(AppRequest req) throws Exception {
+		req.checkOwner();
+
+		var holder = req.gc.getConfigHolder(req.variable("key").asString());
 
 		if (holder == null) {
-			throw new NotFoundResponse("Setting ID not found!");
+			throw new NotFoundError("Setting ID not found!");
 		}
 
-		var body = request.getMainBody().getText().trim();
+		var body = req.mainBody().text().trim();
 		var error = holder.validate(1, body);
 
 		if (!error.isEmpty()) {
-			throw new BadRequestResponse(error);
+			throw new BadRequestError(error);
 		}
 
 		try {
 			holder.deserialize(1, body);
 		} catch (Exception ex) {
-			throw new BadRequestResponse("Failed to parse value!");
+			throw new BadRequestError("Failed to parse value!");
 		}
 
 		return JSONResponse.SUCCESS;
 	}
 
-	public static Response icon(ServerRequest request) throws Exception {
-		var size = Integer.parseInt(request.variable("size"));
+	public static HTTPResponse icon(AppRequest req) throws Exception {
+		var size = req.variable("size").asInt();
 
 		if (size <= 0 || size > 1024) {
-			throw HTTPResponseCode.BAD_REQUEST.error("Size " + size + " too large!");
+			throw new BadRequestError("Size " + size + " too large!");
 		}
 
-		var url = request.gc.iconUrl;
+		var url = req.gc.iconUrl;
 		BufferedImage img = null;
 
 		if (!url.isEmpty()) {
@@ -173,7 +182,7 @@ public class GuildAPIHandlers {
 
 			try {
 				img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
-			} catch (Exception ex) {
+			} catch (Exception ignored) {
 			}
 		}
 
@@ -187,63 +196,75 @@ public class GuildAPIHandlers {
 			}
 		}
 
-		return FileResponse.png(img);
+		return HTTPResponse.ok().png(img).publicCache(Duration.ofDays(1L));
 	}
 
-	public static Response feedbackList(ServerRequest request) {
-		var list = request.gc.feedback.query()
+	public static HTTPResponse feedbackList(AppRequest req) {
+		req.checkMember();
+
+		var list = req.gc.feedback.query()
 				.toStream()
 				.sorted((o1, o2) -> Integer.compare(o2.getNumber(), o1.getNumber()))
 				.toList();
 
-		var memberCache = request.gc.createMemberCache();
+		var memberCache = req.gc.createMemberCache();
 
 		var object = JSONObject.of();
-		object.put("id", SnowFlake.str(request.gc.guildId));
-		object.put("name", request.gc.name);
+		object.put("id", SnowFlake.str(req.gc.guildId));
+		object.put("name", req.gc.name);
 		var array = object.addArray("feedback");
-		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
-		var owner = request.getAuthLevel().is(AuthLevel.OWNER);
+		var canSee = DiscordFeedback.canSee(req.gc, req.authLevel());
+		var owner = req.authLevel().isOwner();
 
 		for (var feedback : list) {
 			feedback.toJson(array.addObject(), memberCache, canSee, owner);
 		}
 
-		return JSONResponse.of(object);
+		return JSONResponse.of(object).publicCache(Duration.ofMinutes(1L));
 	}
 
-	public static Response feedback(ServerRequest request) throws Exception {
-		var id = (int) request.getUnsignedLong("id");
-		var feedback = request.gc.feedback.query().eq("number", id).first();
+	public static HTTPResponse feedback(AppRequest req) throws Exception {
+		req.checkMember();
+
+		var id = req.variable("id").asInt();
+		var feedback = req.gc.feedback.query().eq("number", id).first();
 
 		if (feedback == null) {
-			throw HTTPResponseCode.NOT_FOUND.error("Feedback not found!");
+			throw new NotFoundError("Feedback not found!");
 		}
 
-		var memberCache = request.gc.createMemberCache();
+		var memberCache = req.gc.createMemberCache();
 		var json = JSONObject.of();
-		var canSee = DiscordFeedback.canSee(request.gc, request.getAuthLevel());
-		feedback.toJson(json, memberCache, canSee, request.getAuthLevel().is(AuthLevel.OWNER));
+		var canSee = DiscordFeedback.canSee(req.gc, req.authLevel());
+		feedback.toJson(json, memberCache, canSee, req.authLevel().isOwner());
 		return JSONResponse.of(json);
 	}
 
-	public static Response pollList(ServerRequest request) throws Exception {
+	public static HTTPResponse pollList(AppRequest req) throws Exception {
+		req.checkMember();
+
 		return JSONResponse.of(JSONArray.of());
 	}
 
-	public static Response poll(ServerRequest request) throws Exception {
+	public static HTTPResponse poll(AppRequest req) throws Exception {
+		req.checkMember();
+
 		return JSONResponse.of(JSONObject.of());
 	}
 
-	public static Response members(ServerRequest request) throws Exception {
-		return JSONResponse.of(JSONArray.of());
+	public static HTTPResponse members(AppRequest req) throws Exception {
+		req.checkMember();
+
+		return JSONResponse.of(JSONArray.of()).publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response member(ServerRequest request) {
+	public static HTTPResponse member(AppRequest req) {
+		req.checkMember();
+
 		var json = JSONObject.of();
-		var id = request.getSnowflake("member");
+		var id = req.getSnowflake("member");
 		json.put("id", SnowFlake.str(id));
-		var member = request.gc.getMember(id);
+		var member = req.gc.getMember(id);
 
 		if (member != null) {
 			json.put("name", member.getUsername());
@@ -251,28 +272,30 @@ public class GuildAPIHandlers {
 			var col = member.getColor().block().getRGB();
 			json.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
 		} else {
-			json.put("name", request.app.discordHandler.getUserName(id).orElse("Unknown"));
+			json.put("name", req.app.discordHandler.getUserName(id).orElse("Unknown"));
 			json.put("nickname", "");
 			json.put("color", "#FFFFFF");
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response auditLog(ServerRequest request) {
-		var array = JSONArray.of();
-		var limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
-		var skip = Math.max(0, request.query("skip").asInt());
-		var type = request.query("type").asString();
-		var user = request.query("user").asLong();
-		var source = request.query("source").asLong();
-		var channel = request.query("channel").asLong();
-		var message = request.query("message").asLong();
-		var level = request.query("level").asInt();
+	public static HTTPResponse auditLog(AppRequest req) {
+		req.checkAdmin();
 
-		var userCache = request.app.discordHandler.createUserCache();
-		var entryQuery = request.gc.auditLog.query();
-		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
+		var array = JSONArray.of();
+		var limit = Math.max(1, Math.min(500, req.query("limit").asInt(200)));
+		var skip = Math.max(0, req.query("skip").asInt());
+		var type = req.query("type").asString();
+		var user = req.query("user").asLong();
+		var source = req.query("source").asLong();
+		var channel = req.query("channel").asLong();
+		var message = req.query("message").asLong();
+		var level = req.query("level").asInt();
+
+		var userCache = req.app.discordHandler.createUserCache();
+		var entryQuery = req.gc.auditLog.query();
+		var availableChannels = req.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
@@ -281,7 +304,7 @@ public class GuildAPIHandlers {
 				types.add(Filters.eq("type", s));
 			}
 
-			entryQuery.filter(types.size() == 1 ? types.get(0) : Filters.or(types));
+			entryQuery.filter(types.size() == 1 ? types.getFirst() : Filters.or(types));
 		}
 
 		if (user != 0L) {
@@ -321,7 +344,7 @@ public class GuildAPIHandlers {
 					continue;
 				}
 
-				o.put("channel", request.gc.getChannelJson(channelId));
+				o.put("channel", req.gc.getChannelJson(channelId));
 			}
 
 			if (entry.getMessage() != 0L) {
@@ -352,11 +375,13 @@ public class GuildAPIHandlers {
 		return JSONResponse.of(array);
 	}
 
-	public static Response exportMessages(ServerRequest request) {
-		var id = request.getSnowflake("member");
+	public static HTTPResponse exportMessages(AppRequest req) {
+		req.checkAdmin();
+
+		var id = req.getSnowflake("member");
 		var list = new LinkedList<ExportedMessage>();
 
-		for (var m : request.gc.messages.query().eq("user", id)) {
+		for (var m : req.gc.messages.query().eq("user", id)) {
 			var message = new ExportedMessage();
 			message.timestamp = m.getDate().getTime();
 			message.channel = m.getChannelID();
@@ -365,7 +390,7 @@ public class GuildAPIHandlers {
 			list.add(message);
 		}
 
-		return FileResponse.plainText(list.stream()
+		return HTTPResponse.ok().text(list.stream()
 				.sorted(ExportedMessage.COMPARATOR)
 				.map(ExportedMessage::toString)
 				.collect(Collectors.joining("\n"))

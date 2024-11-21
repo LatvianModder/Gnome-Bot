@@ -19,13 +19,15 @@ public abstract class InteractionEventWrapper<T extends InteractionCreateEvent> 
 		return string.replace("&sol;", "/");
 	}
 
+	public final App app;
 	public final T event;
 	public final CommandContext context;
 
-	public InteractionEventWrapper(GuildCollections gc, T e) {
+	public InteractionEventWrapper(App app, GuildCollections gc, T e) {
+		this.app = app;
 		event = e;
 		context = createContext();
-		context.handler = gc == null ? App.instance.discordHandler : gc.db.app.discordHandler;
+		context.handler = app.discordHandler;
 		context.gc = gc;
 		context.channelInfo = gc == null ? null : gc.getOrMakeChannelInfo(e.getInteraction().getChannelId().asLong());
 		context.message = event.getInteraction().getMessage().orElse(null);

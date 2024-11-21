@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.InteractionEventWrapper;
 import discord4j.core.event.domain.interaction.ChatInputAutoCompleteEvent;
@@ -17,8 +18,8 @@ public class ChatCommandSuggestionEvent extends InteractionEventWrapper<ChatInpu
 	public final List<ChatCommandSuggestion> suggestions;
 	public Function<String, String> transformSearch;
 
-	public ChatCommandSuggestionEvent(GuildCollections gc, ChatInputAutoCompleteEvent e, List<ApplicationCommandInteractionOption> o) {
-		super(gc, e);
+	public ChatCommandSuggestionEvent(App app, GuildCollections gc, ChatInputAutoCompleteEvent e, List<ApplicationCommandInteractionOption> o) {
+		super(app, gc, e);
 
 		options = new HashMap<>();
 		CommandOption f = null;

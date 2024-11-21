@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
@@ -21,34 +20,34 @@ public class MacroCommands extends ApplicationCommands {
 	public static final String COMPLEX_PLACEHOLDER = "For info about Complex Messages run /about macro";
 	public static final String HELP = """
 			Extras allow you to add buttons to your macro, change it into script or embed, etc. List of available properties:
-							
+			
 			`clear`
 			Remove all extras when editing
-							
+			
 			`hidden`
 			/macro list will not show this macro
-							
+			
 			`embed ["title"] [#RRGGBB]`
 			Changes macro into embed with optional title
-							
+			
 			`embed_field <"name"> <"value">`
 			Changes macro into embed with optional title
-							
+			
 			`inline_embed_field <"title"> <"value">`
 			Changes macro into embed with optional title
-							
+			
 			`script <js>`
 			Instead of printing text, it runs Text as script instead (WIP!)
-							
+			
 			`url <"name"> <"url">`
 			Adds a URL button
-							
+			
 			`macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
 			Adds a macro button (creates new ephemeral message)
-							
+			
 			`edit_macro <"name"> <macro> [gray|blurple|green|red] [emoji]`
 			Adds a macro button (edits original message)
-							
+			
 			`newrow`
 			Adds new component row (not required for first row)
 			""";
@@ -262,7 +261,7 @@ public class MacroCommands extends ApplicationCommands {
 		list.add("Author: <@" + SnowFlake.str(macro.author) + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
-		event.respond(EmbedBuilder.create().url(App.url("guild/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
+		event.respond(EmbedBuilder.create().url(event.context.gc.db.app.url("guild/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 
 	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long owner) {

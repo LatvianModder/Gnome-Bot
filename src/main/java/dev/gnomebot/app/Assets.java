@@ -14,8 +14,8 @@ public interface Assets {
 			path = "assets/" + filename;
 		}
 
-		public String getPath() {
-			return App.url(path);
+		public String getPath(App app) {
+			return app.url(path);
 		}
 
 		public Path getFilePath() {

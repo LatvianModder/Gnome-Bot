@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.ansi.ANSITable;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -21,10 +21,10 @@ public class ExportedMessage implements Comparable<ExportedMessage> {
 
 	public void toString(int i, String[] row) {
 		row[0] = Integer.toString(i);
-		row[1] = Table.escapeCSVSpecialCharacters(Instant.ofEpochMilli(timestamp).toString());
+		row[1] = ANSITable.escapeCSVSpecialCharacters(Instant.ofEpochMilli(timestamp).toString());
 		row[2] = Long.toUnsignedString(channel);
 		row[3] = channelName;
 		row[4] = Long.toUnsignedString(flags);
-		row[5] = Table.escapeCSVSpecialCharacters(content);
+		row[5] = ANSITable.escapeCSVSpecialCharacters(content);
 	}
 }

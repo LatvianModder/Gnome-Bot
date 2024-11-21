@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.event.domain.interaction.UserInteractionEvent;
@@ -10,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 public class UserInteractionEventWrapper extends ApplicationCommandInteractionEventWrapper<UserInteractionEvent> {
 	public final User user;
 
-	public UserInteractionEventWrapper(GuildCollections gc, UserInteractionEvent e) {
-		super(gc, e);
+	public UserInteractionEventWrapper(App app, GuildCollections gc, UserInteractionEvent e) {
+		super(app, gc, e);
 		user = e.getResolvedUser();
 	}
 

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
@@ -11,8 +12,8 @@ import java.util.Map;
 public class ChatInputInteractionEventWrapper extends ApplicationCommandInteractionEventWrapper<ChatInputInteractionEvent> {
 	public final Map<String, CommandOption> options;
 
-	public ChatInputInteractionEventWrapper(GuildCollections gc, ChatInputInteractionEvent e, List<ApplicationCommandInteractionOption> o) {
-		super(gc, e);
+	public ChatInputInteractionEventWrapper(App app, GuildCollections gc, ChatInputInteractionEvent e, List<ApplicationCommandInteractionOption> o) {
+		super(app, gc, e);
 		options = new HashMap<>();
 
 		for (var option : o) {

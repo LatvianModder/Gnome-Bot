@@ -25,7 +25,7 @@ public class DefineCommand extends ApplicationCommands {
 		event.acknowledge();
 
 		try {
-			var o = Utils.readInternalJson("api/info/define/" + CodingUtils.encodeURL(event.get("word").asString()));
+			var o = Utils.readInternalJson(event.app, "api/info/define/" + CodingUtils.encodeURL(event.get("word").asString()));
 
 			if (o.asBoolean("found")) {
 				var builder = MessageBuilder.create();

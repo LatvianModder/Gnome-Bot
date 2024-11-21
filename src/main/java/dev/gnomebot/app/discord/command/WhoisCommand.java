@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DeferrableInteractionEventWrapper;
 import dev.gnomebot.app.util.EmbedBuilder;
@@ -39,7 +38,7 @@ public class WhoisCommand extends ApplicationCommands {
 				.thumbnail(user.getAvatarUrl(Image.Format.PNG).orElse(user.getDefaultAvatarUrl()));
 
 		if (member != null) {
-			embed.url(App.url("guild/" + member.getGuildId().asString() + "/members/" + member.getId().asString()));
+			embed.url(event.context.gc.db.app.url("guild/" + member.getGuildId().asString() + "/members/" + member.getId().asString()));
 			embed.inlineField("Joined", Utils.formatRelativeDate(member.getJoinTime().orElse(null)));
 
 			if (!member.getRoleIds().isEmpty()) {

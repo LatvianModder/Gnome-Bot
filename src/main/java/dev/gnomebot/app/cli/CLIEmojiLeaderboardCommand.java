@@ -99,7 +99,7 @@ public class CLIEmojiLeaderboardCommand {
 			g.drawString(cs, w - 6 - metrics.stringWidth(cs), 36 + i * 45);
 
 			try {
-				var a = Utils.getEmoji(entry.id, 42);
+				var a = Utils.getEmoji(event.app, entry.id, 42);
 				g.drawImage(a, 100, 3 + i * 45, 42, 42, null);
 			} catch (Exception ex) {
 				g.fillRect(100, 3 + i * 45, 42, 42);

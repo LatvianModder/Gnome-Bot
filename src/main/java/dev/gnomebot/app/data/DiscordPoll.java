@@ -1,7 +1,6 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.MapWrapper;
@@ -75,7 +74,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 		}
 
 		builder.title("Poll #" + getNumber());
-		builder.url(App.url("poll/" + gc.guildId + "/" + getNumber()));
+		builder.url(gc.db.app.url("poll/" + gc.guildId + "/" + getNumber()));
 		builder.description(getContent());
 
 		var sum = 0;

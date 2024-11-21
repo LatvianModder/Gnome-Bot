@@ -99,6 +99,17 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 		getCollection().insertOne(document);
 	}
 
+	public void insertMany(List<Document> documents) {
+		while (documents.size() > 100_000) {
+			getCollection().insertMany(documents.subList(0, 100_000));
+			documents = documents.subList(100_000, documents.size());
+		}
+
+		if (!documents.isEmpty()) {
+			getCollection().insertMany(documents);
+		}
+	}
+
 	public AggregateIterable<Document> aggregate(List<Bson> pipeline) {
 		return getCollection().aggregate(pipeline);
 	}
@@ -109,16 +120,12 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 
 	@Nullable
 	public T findFirst(@Nullable Object id) {
-		if (id == null) {
-			return null;
-		} else if (id instanceof Long l && l == 0L) {
-			return null;
-		} else if (id instanceof Snowflake s && s.asLong() == 0L) {
-			return null;
-		} else if (id instanceof String && id.toString().isEmpty()) {
-			return null;
-		}
-
-		return query(id).first();
+		return switch (id) {
+			case null -> null;
+			case Long l when l == 0L -> null;
+			case Snowflake s when s.asLong() == 0L -> null;
+			case String s when id.toString().isEmpty() -> null;
+			default -> query(id).first();
+		};
 	}
 }

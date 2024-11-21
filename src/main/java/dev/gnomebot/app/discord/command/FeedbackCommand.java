@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord.command;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
@@ -65,7 +64,7 @@ public class FeedbackCommand extends ApplicationCommands {
 		event.context.checkBotPerms(feedbackChannel, Permission.ADD_REACTIONS, Permission.SEND_MESSAGES);
 
 		var m = feedbackChannel.createMessage(EmbedBuilder.create()
-				.url(App.url("feedback/" + event.context.gc.guildId + "/" + number))
+				.url(event.context.gc.db.app.url("feedback/" + event.context.gc.guildId + "/" + number))
 				.title("Loading suggestion #" + number + "...")
 		).block();
 

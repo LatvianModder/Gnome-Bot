@@ -37,7 +37,7 @@ public class LockdownCommand extends ApplicationCommands {
 				event.context.gc.adminLogChannelEmbed(null, event.context.gc.adminLogChannel, spec -> {
 					spec.title("Lockdown mode enabled!");
 					spec.description(Emojis.ALERT.asFormat());
-					spec.thumbnail(Assets.EMERGENCY.getPath());
+					spec.thumbnail(Assets.EMERGENCY.getPath(event.app));
 					spec.author(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 				});
 			}
@@ -55,7 +55,7 @@ public class LockdownCommand extends ApplicationCommands {
 				});
 			}
 
-			event.respond(EmbedBuilder.create("Lockdown mode enabled!", Emojis.ALERT.asFormat()).redColor().thumbnail(Assets.EMERGENCY.getPath()));
+			event.respond(EmbedBuilder.create("Lockdown mode enabled!", Emojis.ALERT.asFormat()).redColor().thumbnail(Assets.EMERGENCY.getPath(event.app)));
 		} else {
 			event.respond("Lockdown mode is already enabled!");
 		}
@@ -84,12 +84,12 @@ public class LockdownCommand extends ApplicationCommands {
 					spec.title("Lockdown mode disabled!");
 					spec.color(EmbedColor.GREEN);
 					spec.description(Emojis.ALERT.asFormat());
-					spec.thumbnail(Assets.EMERGENCY.getPath());
+					spec.thumbnail(Assets.EMERGENCY.getPath(event.app));
 					spec.author(event.context.sender.getUsername(), event.context.sender.getAvatarUrl());
 				});
 			}
 
-			event.respond(EmbedBuilder.create("Lockdown mode disabled!", Emojis.ALERT.asFormat()).greenColor().thumbnail(Assets.EMERGENCY.getPath()));
+			event.respond(EmbedBuilder.create("Lockdown mode disabled!", Emojis.ALERT.asFormat()).greenColor().thumbnail(Assets.EMERGENCY.getPath(event.app)));
 		} else {
 			event.respond("Lockdown mode is already disabled!");
 		}

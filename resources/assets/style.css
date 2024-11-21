@@ -10,7 +10,7 @@
     --accent-hover-color: #22C7BF;
     --accent-warning-hover-color: #C13479;
     --accent-warning-hover-color-end: #3C1A1A;
-    --border-color: #4F5050;
+    --border-color: #4D464F;
     --background-hover-color: #FFFFFF0D;
 }
 
@@ -97,6 +97,8 @@ table td,
 table th {
     border: 1px solid var(--border-color);
     padding: 8px;
+    max-width: 50vw;
+    overflow-wrap: break-word;
 }
 
 table tr:nth-child(even) {
@@ -408,8 +410,8 @@ p.withicon img {
     border-radius: 50%;
 }
 
-table.auditlogtable td {
-    max-width: 15%;
+.auditlogtable td {
+    /*max-width: 15%;*/
 }
 
 details.bantable {
@@ -431,6 +433,7 @@ details.bantable > table {
     border: 1px solid var(--border-color);
     margin: 1em 0;
     padding: 1em;
+    border-radius: 0.5em;
 }
 
 div.content.paste {
@@ -441,4 +444,11 @@ img.inline-img {
     height: 1.2em;
     border: #ffffff61 1px solid;
     vertical-align: sub;
+}
+
+.spread {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
 }

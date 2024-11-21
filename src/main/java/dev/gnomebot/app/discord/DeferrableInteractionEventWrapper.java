@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
@@ -25,8 +26,8 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 	public boolean acknowledged;
 	protected boolean edit = false;
 
-	public DeferrableInteractionEventWrapper(GuildCollections gc, T e) {
-		super(gc, e);
+	public DeferrableInteractionEventWrapper(App app, GuildCollections gc, T e) {
+		super(app, gc, e);
 	}
 
 	@Override

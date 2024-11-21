@@ -63,7 +63,7 @@ public class PasteCommands extends ApplicationCommands {
 				long author = msg.getUserData().id().asLong();
 
 				for (var att : attachments) {
-					buttons.add(Button.link(PasteHandlers.getUrl(channelId.asLong(), messageId.asLong(), att.getId().asLong()), "View " + att.getFilename()));
+					buttons.add(Button.link(PasteHandlers.getUrl(event.context.handler.app, channelId.asLong(), messageId.asLong(), att.getId().asLong()), "View " + att.getFilename()));
 				}
 
 				event.respond(MessageBuilder.create()

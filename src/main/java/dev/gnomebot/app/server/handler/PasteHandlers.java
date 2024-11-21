@@ -3,20 +3,19 @@ package dev.gnomebot.app.server.handler;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.discord.MessageHandler;
-import dev.gnomebot.app.server.GnomeRootTag;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.tinyserver.content.MimeType;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.data.Pair;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.MimeType;
-import dev.latvian.apps.webutils.net.Response;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
@@ -25,13 +24,12 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.AttachmentData;
 import discord4j.discordjson.json.MessageData;
-import io.javalin.http.ForbiddenResponse;
-import io.javalin.http.HttpStatus;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -130,19 +128,19 @@ public class PasteHandlers {
 	public static final int TYPE_NONE = 0;
 	public static final int TYPE_LANGUAGE = 1;
 
-	public static Response pasteRaw(ServerRequest request) {
-		var channelId = request.getSnowflake("channel");
-		var messageId = request.getSnowflake("message");
-		var id0 = request.variable("id").split("!", 2);
+	public static HTTPResponse pasteRaw(AppRequest req) {
+		var channelId = req.getSnowflake("channel");
+		var messageId = req.getSnowflake("message");
+		var id0 = req.variable("id").asString().split("!", 2);
 		var id = SnowFlake.num(id0[0]);
 
 		MessageData message;
 
 		try {
-			message = Objects.requireNonNull(request.app.discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
+			message = Objects.requireNonNull(req.app.discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
 		} catch (Exception ex) {
 			Log.error("Message " + messageId + " not found!");
-			throw HTTPResponseCode.NOT_FOUND.error("Message " + messageId + " not found! " + ex.getMessage());
+			throw new NotFoundError("Message " + messageId + " not found! " + ex.getMessage());
 		}
 
 		AttachmentData attachment = null;
@@ -156,7 +154,7 @@ public class PasteHandlers {
 
 		if (attachment == null) {
 			Log.error("Message " + messageId + " attachments: " + message.attachments().stream().map(a -> a.id().asString() + "/" + a.filename()).collect(Collectors.joining(", ")));
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			throw new NotFoundError("File not found!");
 		}
 
 		var filename = attachment.filename();
@@ -166,11 +164,11 @@ public class PasteHandlers {
 		try {
 			contents = URLRequest.of(attachment.url()).toBytes().block();
 		} catch (Exception ex) {
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			throw new NotFoundError("File not found!");
 		}
 
 		if (contents == null || contents.length == 0) {
-			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
+			throw new NotFoundError("File is empty!");
 		}
 
 		var type = MimeType.TEXT;
@@ -197,30 +195,30 @@ public class PasteHandlers {
 			contents = String.join("\n", lines).getBytes(StandardCharsets.UTF_8);
 		}
 
-		var response = FileResponse.of(HttpStatus.OK, type, contents)
-				.withHeader("Gnome-Paste-Bytes", String.valueOf(contents.length))
-				.withHeader("Gnome-Paste-Filename", filename)
-				.withHeader("Gnome-Paste-Guild", message.guildId().toOptional().map(Id::asString).orElse(""))
-				.withHeader("Gnome-Paste-Channel", SnowFlake.str(channelId))
-				.withHeader("Gnome-Paste-Message", SnowFlake.str(messageId))
-				.withHeader("Gnome-Paste-UserID", message.author().id().asString())
-				.withHeader("Gnome-Paste-UserName", message.author().globalName().orElse(message.author().username()));
+		var response = HTTPResponse.ok().content(contents, type)
+				.header("Gnome-Paste-Bytes", String.valueOf(contents.length))
+				.header("Gnome-Paste-Filename", filename)
+				.header("Gnome-Paste-Guild", message.guildId().toOptional().map(Id::asString).orElse(""))
+				.header("Gnome-Paste-Channel", SnowFlake.str(channelId))
+				.header("Gnome-Paste-Message", SnowFlake.str(messageId))
+				.header("Gnome-Paste-UserID", message.author().id().asString())
+				.header("Gnome-Paste-UserName", message.author().globalName().orElse(message.author().username()));
 
 		if (download) {
-			response = response.withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+			response = response.header("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 		}
 
-		return response;
+		return response.publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response paste(ServerRequest request) throws Exception {
-		if (request.userAgent.contains("PetalBot")) {
-			throw new ForbiddenResponse("Access Denied");
+	public static HTTPResponse paste(AppRequest req) throws Exception {
+		if (req.userAgent().contains("PetalBot")) {
+			throw new ForbiddenError("Access Denied");
 		}
 
-		var channel = request.getSnowflake("channel");
-		var messageId = request.getSnowflake("message");
-		var id0 = request.variable("id").split("!", 2);
+		var channel = req.getSnowflake("channel");
+		var messageId = req.getSnowflake("message");
+		var id0 = req.variable("id").asString().split("!", 2);
 		var id = id0[0];
 		var subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 		byte[] contents;
@@ -228,16 +226,16 @@ public class PasteHandlers {
 		String user;
 
 		try {
-			var req = Utils.internalRequest("paste/" + channel + "/" + messageId + "/" + id + "/raw").toBytes();
-			contents = req.block();
-			filename = req.getHeader("Gnome-Paste-Filename");
-			user = req.getHeader("Gnome-Paste-UserName");
+			var req1 = Utils.internalRequest(req.app, "paste/" + channel + "/" + messageId + "/" + id + "/raw").toBytes();
+			contents = req1.block();
+			filename = req1.getHeader("Gnome-Paste-Filename");
+			user = req1.getHeader("Gnome-Paste-UserName");
 		} catch (Exception ex) {
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			throw new NotFoundError("File not found!");
 		}
 
 		if (contents == null || contents.length == 0) {
-			throw HTTPResponseCode.NOT_FOUND.error("File is empty!");
+			throw new NotFoundError("File is empty!");
 		}
 
 		var archive = filename.endsWith(".zip") || filename.endsWith(".jar");
@@ -260,37 +258,37 @@ public class PasteHandlers {
 				}
 			}
 
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			throw new NotFoundError("File not found!");
 		}
 
 		var url = "/paste/" + channel + "/" + messageId + "/" + id;
 		var rawUrl = url + "/raw";
-		return paste0(filename, contents, user, url, rawUrl, archive, subfile);
+		return paste0(req, filename, contents, user, url, rawUrl, archive, subfile).publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static Response pasteMclogs(ServerRequest request) {
-		var id = request.variable("id");
+	public static HTTPResponse pasteMclogs(AppRequest req) {
+		var id = req.variable("id").asString();
 
 		try {
 			var reqInfo = URLRequest.of("https://api.mclo.gs/1/insights/" + id).toJsonObject();
 
 			try {
-				var req = URLRequest.of("https://api.mclo.gs/1/raw/" + id).toBytes();
-				return paste0(reqInfo.block().asString("title") + ".log", req.block(), "Unknown", "/paste/mclogs/" + id, "https://api.mclo.gs/1/raw/" + id, false, "");
+				var req1 = URLRequest.of("https://api.mclo.gs/1/raw/" + id).toBytes();
+				return paste0(req, reqInfo.block().asString("title") + ".log", req1.block(), "Unknown", "/paste/mclogs/" + id, "https://api.mclo.gs/1/raw/" + id, false, "").publicCache(Duration.ofMinutes(5L));
 			} catch (Exception ex) {
-				throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+				throw new NotFoundError("File not found!");
 			}
 		} catch (Exception ex) {
-			throw HTTPResponseCode.NOT_FOUND.error("File not found!");
+			throw new NotFoundError("File not found!");
 		}
 	}
 
-	private static Response paste0(String filename, byte[] contents, String user, String url, String rawUrl, boolean archive, String subfile) throws Exception {
+	private static HTTPResponse paste0(AppRequest req, String filename, byte[] contents, String user, String url, String rawUrl, boolean archive, String subfile) throws Exception {
 		if (filename.endsWith(".pdf")) {
-			return FileResponse.of(HttpStatus.OK, "application/pdf", contents);
+			return HTTPResponse.ok().content(contents, MimeType.PDF);
 		}
 
-		var root = GnomeRootTag.createSimple(url, filename);
+		var root = req.createRoot(filename);
 		root.head.deferScript("/assets/paste.js");
 
 		var titleTag = root.content.h3().string(filename + " by " + user).a(rawUrl).string(archive ? " [Download]" : " [Raw]");
@@ -328,10 +326,10 @@ public class PasteHandlers {
 
 		if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".gif") || filename.endsWith(".webp")) {
 			// return pasteText.img("data:image/" + filename.substring(filename.lastIndexOf('.') + 1) + ";base64," + Base64.getEncoder().encodeToString(contents));
-			return FileResponse.of(HttpStatus.OK, "image/" + filename.substring(filename.lastIndexOf('.') + 1), contents);
+			return HTTPResponse.ok().content(contents, "image/" + filename.substring(filename.lastIndexOf('.') + 1));
 		} else if (filename.endsWith(".mp4") || filename.endsWith(".avi") || filename.endsWith(".webm")) {
 			// return pasteText.img("data:image/" + filename.substring(filename.lastIndexOf('.') + 1) + ";base64," + Base64.getEncoder().encodeToString(contents));
-			return FileResponse.of(HttpStatus.OK, "video/" + filename.substring(filename.lastIndexOf('.') + 1), contents);
+			return HTTPResponse.ok().content(contents, "video/" + filename.substring(filename.lastIndexOf('.') + 1));
 		} else if (filename.endsWith(".html")) {
 			pasteText.span().raw(new String(contents, StandardCharsets.UTF_8));
 		} else {
@@ -507,13 +505,13 @@ public class PasteHandlers {
 		return root.asResponse();
 	}
 
-	public static Response newPaste(ServerRequest request) throws Exception {
-		var channel = request.getSnowflake("channel");
-		var messageId = request.getSnowflake("message");
-		var id0 = request.variable("id").split("!", 2);
+	public static HTTPResponse newPaste(AppRequest req) throws Exception {
+		var channel = req.getSnowflake("channel");
+		var messageId = req.getSnowflake("message");
+		var id0 = req.variable("id").asString().split("!", 2);
 		var id = id0[0];
 
-		var root = GnomeRootTag.createSimple("/new-paste/" + channel + "/" + messageId + "/" + id, id + " - Paste");
+		var root = req.createRoot("/new-paste/" + channel + "/" + messageId + "/" + id, id + " - Paste");
 		root.head.deferScript("/assets/paste.js");
 
 		var rawTag = root.content.h3().span("", "Loading...").id("paste-title").end().space().a("/paste/" + channel + "/" + messageId + "/" + id + "/raw").id("paste-data").string(" [Raw]");
@@ -528,22 +526,22 @@ public class PasteHandlers {
 		return root.asResponse();
 	}
 
-	public static String getUrl(long channelId, long messageId, long attachmentId) {
-		return App.url("paste/" + channelId + "/" + messageId + "/" + attachmentId);
+	public static String getUrl(App app, long channelId, long messageId, long attachmentId) {
+		return app.url("paste/" + channelId + "/" + messageId + "/" + attachmentId);
 	}
 
 	public static void pasteMessage(Databases db, MessageChannel outputMessageChannel, Message m, String content, List<Attachment> attachments) {
 		var buttons = new ArrayList<Button>();
 
 		for (var attachment : attachments) {
-			buttons.add(Button.link(getUrl(m.getChannelId().asLong(), m.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()));
+			buttons.add(Button.link(getUrl(db.app, m.getChannelId().asLong(), m.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()));
 		}
 
 		var mcLogsMatcher = MCLOGS_PATTERN.matcher(content);
 
 		while (mcLogsMatcher.find()) {
 			var id = mcLogsMatcher.group(1);
-			buttons.add(Button.link(App.url("paste/mclogs/" + id), "View mclo.gs/" + id));
+			buttons.add(Button.link(db.app.url("paste/mclogs/" + id), "View mclo.gs/" + id));
 		}
 
 		if (buttons.isEmpty()) {

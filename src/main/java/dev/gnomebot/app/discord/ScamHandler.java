@@ -104,7 +104,7 @@ public class ScamHandler {
 				try {
 					List<String> list = new ArrayList<>(set);
 					list.sort(null);
-					list.add(0, lastRemoteUpdate.toString());
+					list.addFirst(lastRemoteUpdate.toString());
 					Files.write(AppPaths.BAD_DOMAINS, list);
 				} catch (Exception ex) {
 					ex.printStackTrace();
@@ -143,10 +143,10 @@ public class ScamHandler {
 			if (Files.exists(AppPaths.BAD_DOMAINS)) {
 				try {
 					var lines = Files.readAllLines(AppPaths.BAD_DOMAINS);
-					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.get(0));
+					lastRemoteUpdate = lines.isEmpty() ? null : Instant.parse(lines.getFirst());
 
 					if (lastRemoteUpdate != null) {
-						lines.remove(0);
+						lines.removeFirst();
 					}
 
 					REMOTE_BAD_DOMAINS = new HashSet<>(lines);

@@ -167,8 +167,8 @@ public class EmbedBuilder {
 		return footer == null ? this : footer(footer.text(), footer.iconUrl());
 	}
 
-	public EmbedBuilder footer() {
-		return footer("Powered by GnomeBot", App.url("gnomebot.png"));
+	public EmbedBuilder footer(App app) {
+		return footer("Powered by GnomeBot", app.url("gnomebot.png"));
 	}
 
 	public EmbedBuilder image(String image) {

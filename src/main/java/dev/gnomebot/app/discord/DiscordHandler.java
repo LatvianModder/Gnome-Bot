@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEventType;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
@@ -121,7 +120,7 @@ public class DiscordHandler {
 		// PayloadDeserializer.dispatchTypes.put(EventNames.THREAD_MEMBERS_UPDATE, ThreadMembersUpdate.class);
 		// DispatchHandlers.addHandler(ThreadMembersUpdate.class, ThreadDispatchHandlers::threadMemberUpdate);
 
-		client = Objects.requireNonNull(DiscordClientBuilder.create(Config.get().discord_bot_token)
+		client = Objects.requireNonNull(DiscordClientBuilder.create(app.config.discord.bot_token)
 				.setDefaultAllowedMentions(AllowedMentions.builder().build())
 				.build()
 				.gateway()
@@ -557,7 +556,7 @@ public class DiscordHandler {
 
 			switch (matcher.group(1).trim()) {
 				case "kick" -> {
-					var dm = DM.send(this, user.getUserData(), "You've been kicked from " + gc.getClickableName() + ": **" + reason + "**.\nIf you wish to appeal it, [click here](<" + App.url("/guild/" + guild.getId().asString() + "/appeal") + ">).", true).isPresent();
+					var dm = DM.send(this, user.getUserData(), "You've been kicked from " + gc.getClickableName() + ": **" + reason + "**.\nIf you wish to appeal it, [click here](<" + gc.db.app.url("/guild/" + guild.getId().asString() + "/appeal") + ">).", true).isPresent();
 					guild.kick(user.getId(), reason).block();
 					var msg = "<@" + selfId + "> kicked " + user.getMention() + ": " + reason + " [DM " + Emojis.yesNo(dm).asFormat() + "]";
 

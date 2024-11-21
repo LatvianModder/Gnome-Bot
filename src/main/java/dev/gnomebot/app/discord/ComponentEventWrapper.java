@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
@@ -10,8 +11,8 @@ import java.util.Optional;
 public class ComponentEventWrapper extends DeferrableInteractionEventWrapper<ComponentInteractionEvent> {
 	public final String[] path;
 
-	public ComponentEventWrapper(GuildCollections gc, ComponentInteractionEvent event, String id) {
-		super(gc, event);
+	public ComponentEventWrapper(App app, GuildCollections gc, ComponentInteractionEvent event, String id) {
+		super(app, gc, event);
 
 		path = id.split("/");
 

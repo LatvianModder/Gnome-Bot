@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.webutils.FormattingUtils;
-import dev.latvian.apps.webutils.json.JSONObject;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.component.ActionComponent;
@@ -60,23 +60,23 @@ public class Utils {
 	}
 
 	// TODO: Get rid of this eventually
-	public static URLRequest<InputStream> internalRequest(String path) {
-		return URLRequest.of(App.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
+	public static URLRequest<InputStream> internalRequest(App app, String path) {
+		return URLRequest.of(app.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
 	}
 
-	public static JSONObject readInternalJson(String path) {
+	public static JSONObject readInternalJson(App app, String path) {
 		try {
-			return internalRequest(path).toJsonObject().block();
+			return internalRequest(app, path).toJsonObject().block();
 		} catch (Exception ex) {
 			return null;
 		}
 	}
 
-	public static BufferedImage getAvatar(long id, int size) throws Exception {
+	public static BufferedImage getAvatar(App app, long id, int size) throws Exception {
 		var path = AppPaths.AVATAR_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest("api/info/avatar/" + SnowFlake.str(id) + "/" + size).toImage().block();
+			var img = internalRequest(app, "api/info/avatar/" + SnowFlake.str(id) + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -84,11 +84,11 @@ public class Utils {
 		return ImageIO.read(path.toFile());
 	}
 
-	public static BufferedImage getEmoji(long id, int size) throws Exception {
+	public static BufferedImage getEmoji(App app, long id, int size) throws Exception {
 		var path = AppPaths.EMOJI_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
 
 		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest("api/info/emoji/" + SnowFlake.str(id) + "/" + size).toImage().block();
+			var img = internalRequest(app, "api/info/emoji/" + SnowFlake.str(id) + "/" + size).toImage().block();
 			ImageIO.write(img, "PNG", path.toFile());
 			return img;
 		}
@@ -158,7 +158,7 @@ public class Utils {
 			return null;
 		}
 
-		var footer = m.getEmbeds().get(0).getFooter().orElse(null);
+		var footer = m.getEmbeds().getFirst().getFooter().orElse(null);
 		return footer == null ? null : EmbedCreateFields.Footer.of(footer.getText(), footer.getIconUrl().orElse(null));
 	}
 

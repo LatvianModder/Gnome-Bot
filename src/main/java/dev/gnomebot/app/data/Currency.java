@@ -2,7 +2,7 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.json.JSONObject;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

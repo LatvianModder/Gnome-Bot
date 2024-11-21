@@ -4,7 +4,7 @@ import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.json.JSONObject;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.reaction.ReactionEmoji;
 

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.command.CommandOption;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
@@ -18,8 +19,8 @@ public class ModalEventWrapper extends ComponentEventWrapper {
 	public final Map<String, CommandOption> options;
 	public final Map<String, List<String>> selectMenuOptions;
 
-	public ModalEventWrapper(GuildCollections gc, ModalSubmitInteractionEvent e, String id) {
-		super(gc, e, id);
+	public ModalEventWrapper(App app, GuildCollections gc, ModalSubmitInteractionEvent e, String id) {
+		super(app, gc, e, id);
 		options = new HashMap<>();
 		selectMenuOptions = new HashMap<>();
 		mapOptions(context, e.getComponents(), options, selectMenuOptions);

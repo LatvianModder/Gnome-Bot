@@ -7,7 +7,6 @@ public class WebToken extends WrappedDocument<WebToken> {
 	public final String token;
 	public final long userId;
 	public AuthLevel authLevel = AuthLevel.LOGGED_IN;
-	public boolean justLoggedIn = false;
 
 	public WebToken(WrappedCollection<WebToken> c, MapWrapper d) {
 		super(c, d);

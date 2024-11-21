@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.DiscordHandler;
@@ -146,7 +145,7 @@ public class CommandContext {
 	}
 
 	public boolean isTrusted() {
-		return Config.get().isTrusted(sender.getId().asLong());
+		return handler.app.config.discord.isTrusted(sender.getId().asLong());
 	}
 
 	public boolean isAdmin() {

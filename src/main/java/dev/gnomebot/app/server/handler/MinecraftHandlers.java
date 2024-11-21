@@ -1,22 +1,20 @@
 package dev.gnomebot.app.server.handler;
 
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
-import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.webutils.json.JSON;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
-import dev.latvian.apps.webutils.json.JSONResponse;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.Response;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.webutils.CodingUtils;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import io.javalin.http.BadRequestResponse;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
@@ -37,7 +35,7 @@ public class MinecraftHandlers {
 			.followRedirects(HttpClient.Redirect.NORMAL)
 			.build();
 
-	private static final class VerifyData implements Runnable {
+	public static final class VerifyData implements Runnable {
 		private final GuildCollections gc;
 		private final String token;
 		private final Member user;
@@ -125,7 +123,7 @@ public class MinecraftHandlers {
 		public void run() {
 			try {
 				Thread.sleep(expires.toEpochMilli() - System.currentTimeMillis());
-			} catch (Exception ex) {
+			} catch (Exception ignored) {
 			}
 
 			if (stage < 2) {
@@ -181,40 +179,40 @@ public class MinecraftHandlers {
 		MAP.put(data.token, data);
 	}
 
-	public static Response verify(ServerRequest request) {
-		if (Config.get().microsoft_client_id.isEmpty() || Config.get().microsoft_client_secret.isEmpty()) {
-			throw new BadRequestResponse("This bot does not have microsoft web app set up");
+	public static HTTPResponse verify(AppRequest req) {
+		if (req.app.config.microsoft.client_id.isEmpty() || req.app.config.microsoft.client_secret.isEmpty()) {
+			throw new BadRequestError("This bot does not have microsoft web app set up");
 		}
 
-		var stateStr = request.query("state").asString();
+		var stateStr = req.query("state").asString();
 
 		if (stateStr.equals("success")) {
-			return FileResponse.plainText("Success!\n\nYou can now close this tab.");
+			return HTTPResponse.ok().text("Success!\n\nYou can now close this tab.");
 		} else if (stateStr.equals("error")) {
-			return FileResponse.plainText("Failed to verify your Minecraft account! You can find more info on discord.\n\nYou can now close this tab.");
+			return HTTPResponse.ok().text("Failed to verify your Minecraft account! You can find more info on discord.\n\nYou can now close this tab.");
 		}
 
-		var code = request.query("code").asString();
+		var code = req.query("code").asString();
 		var data = MAP.get(stateStr);
 
 		if (data == null || data.expires.isBefore(Instant.now())) {
-			return FileResponse.plainText("Link expired! Please click Verify button again to generate a new link!");
+			return HTTPResponse.ok().text("Link expired! Please click Verify button again to generate a new link!");
 		}
 
 		if (code != null && !code.isEmpty()) {
 			MAP.remove(data.token);
 
 			try {
-				var profile = verify1(code);
+				var profile = verify1(req, code);
 				data.success(profile.uuid, profile.name);
-				return Response.redirect("/minecraft/verify?state=success");
+				return HTTPResponse.redirect("/minecraft/verify?state=success");
 			} catch (Exception ex) {
 				data.fail(ex.getMessage());
-				return Response.redirect("/minecraft/verify?state=error");
+				return HTTPResponse.redirect("/minecraft/verify?state=error");
 			}
 		} else {
 			data.started();
-			return Response.redirect("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?client_id=" + Config.get().microsoft_client_id + "&scope=XboxLive.signin&response_type=code&redirect_uri=https%3A%2F%2Fgnomebot.dev%2Fminecraft%2Fverify&prompt=select_account&state=" + data.token);
+			return HTTPResponse.redirect("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?client_id=" + req.app.config.microsoft.client_id + "&scope=XboxLive.signin&response_type=code&redirect_uri=https%3A%2F%2Fgnomebot.dev%2Fminecraft%2Fverify&prompt=select_account&state=" + data.token);
 		}
 	}
 
@@ -222,39 +220,39 @@ public class MinecraftHandlers {
 		try {
 			return JSON.DEFAULT.read(resp.body()).readObject();
 		} catch (Exception ex) {
-			throw new BadRequestResponse("Minecraft link error " + stage + ": " + resp.statusCode() + " " + resp.body());
+			throw new BadRequestError("Minecraft link error " + stage + ": " + resp.statusCode() + " " + resp.body());
 		}
 	}
 
-	private static BaseMinecraftProfile verify1(String code) throws Exception {
+	private static BaseMinecraftProfile verify1(AppRequest req, String code) throws Exception {
 		var request = HttpRequest.newBuilder(TOKEN_URI)
 				.header("Content-Type", "application/x-www-form-urlencoded")
 				.header("Accept", "application/x-www-form-urlencoded")
-				.POST(FileResponse.formData(Map.of(
-						"client_id", Config.get().microsoft_client_id,
-						"client_secret", Config.get().microsoft_client_secret,
+				.POST(HttpRequest.BodyPublishers.ofString(CodingUtils.formData(Map.of(
+						"client_id", req.app.config.microsoft.client_id,
+						"client_secret", req.app.config.microsoft.client_secret,
 						"code", code,
 						"grant_type", "authorization_code",
 						"redirect_uri", "https://gnomebot.dev/minecraft/verify",
 						"scope", "xboxlive.signin"
-				)).bodyPublisher()).build();
+				)))).build();
 
 		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("A0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
 			if (!json.containsKey("access_token")) {
-				throw new BadRequestResponse("Minecraft link error A1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error A1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			return getMcProfile(json.asString("access_token"));
 		}
 
 		if (json.asString("error").equals("invalid_grant")) {
-			throw new BadRequestResponse("Login took too long!");
+			throw new BadRequestError("Login took too long!");
 		}
 
-		throw new BadRequestResponse("Minecraft link error A2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
+		throw new BadRequestError("Minecraft link error A2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
 	}
 
 	private static BaseMinecraftProfile getMcProfile(String accessToken) throws Exception {
@@ -271,21 +269,21 @@ public class MinecraftHandlers {
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
 				.header("x-xbl-contract-version", "1")
-				.POST(JSONResponse.of(data).bodyPublisher()).build();
+				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
 		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("B0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
 			if (!json.containsKey("Token")) {
-				throw new BadRequestResponse("Minecraft link error B1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error B1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var xblToken = json.asString("Token");
 			return acquireXsts(xblToken);
 		}
 
-		throw new BadRequestResponse("Minecraft link error B2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
+		throw new BadRequestError("Minecraft link error B2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
 	}
 
 	private static BaseMinecraftProfile acquireXsts(String xblToken) throws Exception {
@@ -302,27 +300,27 @@ public class MinecraftHandlers {
 		var request = HttpRequest.newBuilder(XSTS_AUTH_URI)
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
-				.POST(JSONResponse.of(data).bodyPublisher()).build();
+				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
 		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("C0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
 			if (!json.containsKey("Token") || !json.containsKey("DisplayClaims")) {
-				throw new BadRequestResponse("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var xblXsts = json.asString("Token");
 			var claims = json.asObject("DisplayClaims");
 
 			if (!claims.containsKey("xui")) {
-				throw new BadRequestResponse("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var xui = claims.asArray("xui");
 
 			if (xui.isEmpty() || !xui.asObject(0).containsKey("uhs")) {
-				throw new BadRequestResponse("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error C1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var uhs = xui.asObject(0).asString("uhs");
@@ -330,7 +328,7 @@ public class MinecraftHandlers {
 			try {
 				return acquireMinecraftToken(uhs, xblXsts);
 			} catch (HttpTimeoutException ex) {
-				throw new BadRequestResponse("Timeout while acquiring Minecraft token! It's possible that Minecraft auth servers are down, please try again in few hours!");
+				throw new BadRequestError("Timeout while acquiring Minecraft token! It's possible that Minecraft auth servers are down, please try again in few hours!");
 			}
 		}
 
@@ -338,16 +336,16 @@ public class MinecraftHandlers {
 
 		if (!xerr.isEmpty()) {
 			switch (xerr) {
-				case "2148916233" -> throw new BadRequestResponse("Microsoft account does not have an Xbox account");
-				case "2148916235" -> throw new BadRequestResponse("Accounts from countries where XBox Live is not available or banned");
-				case "2148916236" -> throw new BadRequestResponse("You must complete adult verification on the XBox homepage");
-				case "2148916237" -> throw new BadRequestResponse("Age verification must be completed on the XBox homepage");
-				case "2148916238" -> throw new BadRequestResponse("The account is under the age of 18, an adult must add the account to the family. You may need to check your e-mail.");
-				default -> throw new BadRequestResponse("Xbox XSTS Authentication Error! Code: " + xerr);
+				case "2148916233" -> throw new BadRequestError("Microsoft account does not have an Xbox account");
+				case "2148916235" -> throw new BadRequestError("Accounts from countries where XBox Live is not available or banned");
+				case "2148916236" -> throw new BadRequestError("You must complete adult verification on the XBox homepage");
+				case "2148916237" -> throw new BadRequestError("Age verification must be completed on the XBox homepage");
+				case "2148916238" -> throw new BadRequestError("The account is under the age of 18, an adult must add the account to the family. You may need to check your e-mail.");
+				default -> throw new BadRequestError("Xbox XSTS Authentication Error! Code: " + xerr);
 			}
 		}
 
-		throw new BadRequestResponse("Minecraft link error C2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
+		throw new BadRequestError("Minecraft link error C2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
 	}
 
 	private static BaseMinecraftProfile acquireMinecraftToken(String xblUhs, String xblXsts) throws Exception {
@@ -357,14 +355,14 @@ public class MinecraftHandlers {
 		var request = HttpRequest.newBuilder(MC_XBOX_AUTH_URI)
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
-				.POST(JSONResponse.of(data).bodyPublisher()).build();
+				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
 		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("D0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
 			if (!json.containsKey("access_token")) {
-				throw new BadRequestResponse("Minecraft link error D1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error D1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var mcAccessToken = json.asString("access_token");
@@ -372,10 +370,10 @@ public class MinecraftHandlers {
 		}
 
 		if (json.asString("path").equals("/authentication/login_with_xbox")) {
-			throw new BadRequestResponse("Error while acquiring Minecraft token! It's possible that Minecraft auth servers are down, please try again in a while!");
+			throw new BadRequestError("Error while acquiring Minecraft token! It's possible that Minecraft auth servers are down, please try again in a while!");
 		}
 
-		throw new BadRequestResponse("Minecraft link error D2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
+		throw new BadRequestError("Minecraft link error D2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
 	}
 
 	private static BaseMinecraftProfile checkMcProfile(String mcAccessToken) throws Exception {
@@ -388,7 +386,7 @@ public class MinecraftHandlers {
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
 			if (!json.containsKey("name") || !json.containsKey("id")) {
-				throw new BadRequestResponse("Minecraft link error E1: " + JSON.DEFAULT.writePretty(json));
+				throw new BadRequestError("Minecraft link error E1: " + JSON.DEFAULT.writePretty(json));
 			}
 
 			var name = json.asString("name");
@@ -397,13 +395,13 @@ public class MinecraftHandlers {
 		}
 
 		if (json.asString("error").equals("NOT_FOUND")) {
-			throw new BadRequestResponse("This Microsoft account isn't linked with a Minecraft profile!");
+			throw new BadRequestError("This Microsoft account isn't linked with a Minecraft profile!");
 		}
 
 		if (resp.statusCode() == 503) {
-			throw new BadRequestResponse("Error while acquiring Minecraft profile! It's possible that Minecraft auth servers are down, please try again in a while!");
+			throw new BadRequestError("Error while acquiring Minecraft profile! It's possible that Minecraft auth servers are down, please try again in a while!");
 		}
 
-		throw new BadRequestResponse("Minecraft link error E2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
+		throw new BadRequestError("Minecraft link error E2 " + resp.statusCode() + ": " + JSON.DEFAULT.writePretty(json));
 	}
 }

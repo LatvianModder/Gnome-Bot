@@ -7,7 +7,6 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.ping.InteractionDocument;
 import dev.gnomebot.app.util.MapWrapper;
@@ -18,8 +17,6 @@ import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
-import io.javalin.http.Context;
-import io.javalin.websocket.WsConnectContext;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +43,6 @@ public class Databases {
 	public final Map<Integer, Macro> allMacros;
 	public final Map<Long, ChannelSettings> channelSettings;
 
-	public final WrappedCollection<WebLogEntry> webLogDB;
 	private final WrappedCollection<WebToken> webTokensDB;
 	public final WrappedCollection<BasicDocument> mmShowcaseDB;
 	public final WrappedCollection<UserWebhook> userWebhooksDB;
@@ -60,7 +56,7 @@ public class Databases {
 	public Databases(App m) {
 		app = m;
 
-		mongoClient = MongoClients.create(Config.get().db_uri);
+		mongoClient = MongoClients.create(app.config.db.uri);
 		database = mongoClient.getDatabase("gnomebot");
 
 		collections = new LinkedHashMap<>();
@@ -68,7 +64,6 @@ public class Databases {
 		allMacros = new HashMap<>();
 		channelSettings = new HashMap<>();
 
-		webLogDB = create(database, "web_log", WebLogEntry::new).expiresAfterMonth("timestamp_expire", "timestamp", null);
 		webTokensDB = create(database, "web_tokens", WebToken::new);
 		mmShowcaseDB = create(database, "mm_showcase", BasicDocument::new);
 		userWebhooksDB = create(database, "user_webhooks", UserWebhook::new);
@@ -166,79 +161,11 @@ public class Databases {
 	}
 
 	@Nullable
-	public WebToken getToken(Context ctx) {
-		var a = ctx.header("Authorization");
-
-		if (a != null && a.startsWith("Bearer ")) {
-			var token = a.substring(7);
-
-			if (token.equals(selfToken.token)) {
-				return selfToken;
-			}
-
-			return getToken(token);
-		}
-
-		var c = ctx.cookie("gnometoken");
-
-		if (c != null && !c.isEmpty()) {
-			if (c.equals(selfToken.token)) {
-				return selfToken;
-			}
-
-			return getToken(c);
-		}
-
-		var q = ctx.queryParam("logintoken");
-
-		if (q != null && !q.isEmpty()) {
-			var token = new String(Base64.getUrlDecoder().decode(q), StandardCharsets.UTF_8);
-			var webToken = getToken(token);
-
-			if (webToken != null) {
-				webToken.justLoggedIn = true;
-				ctx.cookie("gnometoken", webToken.token, 31536000);
-				return webToken;
-			}
-		}
-
-		return null;
-	}
-
-	@Nullable
-	public WebToken getToken(WsConnectContext ctx) {
-		var a = ctx.header("Authorization");
-
-		if (a != null && a.startsWith("Bearer ")) {
-			var token = a.substring(7);
-
-			if (token.equals(selfToken.token)) {
-				return selfToken;
-			}
-
-			return getToken(token);
-		}
-
-		var c = ctx.cookie("gnometoken");
-
-		if (c != null && !c.isEmpty()) {
-			if (c.equals(selfToken.token)) {
-				return selfToken;
-			}
-
-			return getToken(c);
-		}
-
-		// WS don't need to handle query param login
-		return null;
-	}
-
-	@Nullable
 	public WebToken getToken(String token) {
 		return webTokensDB.findFirst(token);
 	}
 
-	public void invalidateToken(long user) {
+	public void invalidateTokens(long user) {
 		webTokensDB.query().eq("user", user).many().delete();
 	}
 

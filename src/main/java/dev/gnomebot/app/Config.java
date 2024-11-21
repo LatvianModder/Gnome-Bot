@@ -1,102 +1,57 @@
 package dev.gnomebot.app;
 
-import dev.gnomebot.app.discord.WebHook;
-import dev.gnomebot.app.util.ConfigFile;
-import dev.gnomebot.app.util.SnowFlake;
-import dev.gnomebot.app.util.URLRequest;
-import dev.latvian.apps.ansi.log.Log;
-
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
+import dev.gnomebot.app.discord.WebHookDestination;
 
 public class Config {
-	private static Config inst;
-
-	public static Config get() {
-		if (inst == null) {
-			try {
-				inst = new Config(AppPaths.CONFIG_FILE);
-			} catch (Exception ex) {
-				throw new RuntimeException(ex);
-			}
-		}
-
-		return inst;
+	public static class Web {
+		public String panel_url = "";
+		public int port = 0;
 	}
 
-	public final int port;
-	public final String restart_button_token;
-	public final String panel_url;
-	public final String db_uri;
-	public final String discord_bot_token;
-	public final WebHook death_webhook;
-	public final WebHook gnome_mention_webhook;
-	public final WebHook gnome_dm_webhook;
-	public final WebHook rust_plus_webhook;
-	public final long gnome_dm_channel_id;
-	public final long owner;
-	public final Set<Long> trusted;
-	public final String wolfram_alpha_token;
-	public final boolean require_cloudflare;
-	public final String microsoft_client_id;
-	public final String microsoft_client_secret;
+	public static class DB {
+		public String uri = "mongodb://localhost:27017";
+	}
 
-	private Config(Path file) {
-		var c = new ConfigFile(file);
+	public static class Discord {
+		public String bot_token = "";
+		public String restart_button_token = "";
+		public WebHookDestination gnome_mention_webhook = null;
+		public long gnome_dm_channel_id = 0L;
+		public WebHookDestination gnome_dm_webhook = null;
+		public WebHookDestination death_webhook = null;
+		public long owner = 0L;
+		public long[] trusted = new long[0];
 
-		port = c.getInt("port", 26609);
-		restart_button_token = c.getString("restart_button_token", "none");
-
-		var defUrl = "";
-
-		if (!c.has("panel_url")) {
-			try {
-				defUrl = "http://" + URLRequest.of("https://api.ipify.org").toJoinedString().block().trim() + ":" + port;
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				defUrl = "http://localhost:" + port;
+		public boolean isTrusted(long id) {
+			if (owner == id) {
+				return true;
 			}
-		}
 
-		panel_url = c.getString("panel_url", defUrl) + "/";
-		db_uri = c.getString("db_uri", "mongodb://localhost:27017");
-		discord_bot_token = c.getString("discord_bot_token", "");
-		death_webhook = new WebHook(c.getString("death_webhook", ""));
-		gnome_mention_webhook = new WebHook(c.getString("gnome_mention_webhook", ""));
-		gnome_dm_webhook = new WebHook(c.getString("gnome_dm_webhook", ""));
-		rust_plus_webhook = new WebHook(c.getString("rust_plus_webhook", ""));
-		gnome_dm_channel_id = c.getSnowflake("gnome_dm_channel_id");
-		owner = c.getSnowflake("owner");
-
-		trusted = new HashSet<>();
-
-		for (var s : c.getStringList("trusted")) {
-			try {
-				var id = SnowFlake.num(s);
-
-				if (id != 0L) {
-					trusted.add(id);
+			for (long l : trusted) {
+				if (l == id) {
+					return true;
 				}
-			} catch (Exception ex) {
-				Log.error("Invalid trusted ID: " + s + ", must be their snowflake ID");
 			}
+
+			return false;
 		}
-
-		wolfram_alpha_token = c.getString("wolfram_alpha_token", "");
-		require_cloudflare = c.getBoolean("require_cloudflare", true);
-		microsoft_client_id = c.getString("microsoft_client_id", "");
-		microsoft_client_secret = c.getString("microsoft_client_secret", "");
-
-		if (port < 1024 || port > 65535) {
-			throw new IllegalArgumentException("Port has to be between [1024, 65535]!");
-		}
-
-		c.save();
-		Log.success("Loaded Gnome config with panel URL: " + panel_url);
 	}
 
-	public boolean isTrusted(long id) {
-		return owner == id || trusted.contains(id);
+	public static class CloudFlare {
+		public boolean required = true;
+		public String email = "";
+		public String api_key = "";
 	}
+
+	public static class Microsoft {
+		public String client_id = "";
+		public String client_secret = "";
+	}
+
+	public Web web = new Web();
+	public DB db = new DB();
+	public Discord discord = new Discord();
+	public String wolfram_alpha_token = "";
+	public CloudFlare cloudflare = new CloudFlare();
+	public Microsoft microsoft = new Microsoft();
 }

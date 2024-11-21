@@ -1,12 +1,12 @@
 package dev.gnomebot.app.util;
 
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.data.Either;
-import dev.latvian.apps.webutils.json.JSON;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
-import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -45,12 +45,12 @@ public class URLRequest<T> {
 	}
 
 	public static class UnsuccesfulRequestException extends IllegalStateException {
-		public final HttpStatus status;
+		public final HTTPStatus status;
 		public final String response;
 
-		public UnsuccesfulRequestException(HttpStatus status, String response) {
-			super("Error " + status.getCode() + ": " + response);
-			this.status = status;
+		public UnsuccesfulRequestException(int code, String response) {
+			super("Error " + code + ": " + response);
+			this.status = HTTPStatus.fromCode(code);
 			this.response = response;
 		}
 	}
@@ -378,7 +378,7 @@ public class URLRequest<T> {
 				}
 			}
 
-			throw new UnsuccesfulRequestException(HttpStatus.forStatus(code), sb.toString().trim());
+			throw new UnsuccesfulRequestException(code, sb.toString().trim());
 		}
 	}
 

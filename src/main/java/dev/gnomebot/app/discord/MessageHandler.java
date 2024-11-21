@@ -507,7 +507,7 @@ public class MessageHandler {
 		var handleQuotes = 0;
 
 		try {
-			handleQuotes = QuoteHandler.handle(gc, message, channelInfo, member);
+			handleQuotes = QuoteHandler.handle(handler.app, gc, message, channelInfo, member);
 		} catch (Exception ex) {
 			Log.error("Failed to read message: " + ex);
 		}
@@ -535,7 +535,7 @@ public class MessageHandler {
 					spec.author(member.getTag(), member.getAvatarUrl());
 
 					if (!images.isEmpty()) {
-						spec.thumbnail(images.get(0).toString());
+						spec.thumbnail(images.getFirst().toString());
 					}
 				});
 			} else {
@@ -545,7 +545,7 @@ public class MessageHandler {
 					spec.author(member.getTag(), member.getAvatarUrl());
 
 					if (!images.isEmpty()) {
-						spec.thumbnail(images.get(0).toString());
+						spec.thumbnail(images.getFirst().toString());
 					}
 				});
 			}
@@ -670,7 +670,7 @@ public class MessageHandler {
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
 					outputMessageChannel.createMessage("ok").subscribe();
 				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().asLong() == gc.db.app.discordHandler.selfId) {
-					outputMessageChannel.createMessage(Assets.REPLY_PING.getPath()).subscribe();
+					outputMessageChannel.createMessage(Assets.REPLY_PING.getPath(handler.app)).subscribe();
 				} else {
 					outputMessageChannel.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
 				}

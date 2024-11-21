@@ -1,29 +1,25 @@
 package dev.gnomebot.app.server.handler;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.server.HTTPResponseCode;
-import dev.gnomebot.app.server.ServerRequest;
+import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
+import dev.latvian.apps.json.JSONResponse;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.ImageUtils;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
-import dev.latvian.apps.webutils.json.JSONResponse;
-import dev.latvian.apps.webutils.net.FileResponse;
-import dev.latvian.apps.webutils.net.MimeType;
-import dev.latvian.apps.webutils.net.Response;
 import discord4j.core.util.ImageUtil;
 import discord4j.rest.util.Image;
-import io.javalin.http.HttpStatus;
-import io.javalin.http.NotFoundResponse;
 
 import javax.imageio.ImageIO;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.HashSet;
 
 import static discord4j.rest.util.Image.Format.GIF;
@@ -32,43 +28,43 @@ import static discord4j.rest.util.Image.Format.PNG;
 public class InfoHandlers {
 	public static final int[] VALID_SIZES = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
-	public static Response ping(ServerRequest request) {
-		return JSONResponse.SUCCESS;
+	public static HTTPResponse ping(AppRequest req) {
+		return HTTPResponse.ok();
 	}
 
-	public static Response user(ServerRequest request) {
-		var size = request.query("size").asString("128");
-		var id = request.getSnowflake("user");
+	public static HTTPResponse user(AppRequest req) {
+		var size = req.query("size").asInt(128);
+		var id = req.getSnowflake("user");
 
 		// App.info("Getting info for " + id.asString());
 
 		var json = JSONObject.of();
 		json.put("id", SnowFlake.str(id));
-		var userData = request.app.discordHandler.getUserData(id);
+		var userData = req.app.discordHandler.getUserData(id);
 
 		if (userData != null) {
 			json.put("name", userData.username());
 			json.put("discriminator", userData.discriminator());
-			json.put("avatar_url", App.url("api/info/avatar/" + id + "/" + size));
+			json.put("avatar_url", req.app.url("api/info/avatar/" + id + "/" + size));
 			json.put("bot", userData.bot().toOptional().orElse(false));
 		} else {
 			json.put("name", "Deleted User");
 			json.put("discriminator", "0000");
-			json.put("avatar_url", App.url("api/info/avatar/" + id + "/" + size));
+			json.put("avatar_url", req.app.url("api/info/avatar/" + id + "/" + size));
 			json.put("bot", false);
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofHours(1L));
 	}
 
-	public static Response avatar(ServerRequest request) throws Exception {
-		var size = Integer.parseInt(request.variable("size"));
+	public static HTTPResponse avatar(AppRequest req) throws Exception {
+		var size = req.variable("size").asInt();
 
 		if (size <= 0 || size > 4096) {
-			throw HTTPResponseCode.BAD_REQUEST.error("size_too_large");
+			throw new BadRequestError("Size too large");
 		}
 
-		var id = request.getSnowflake("user");
+		var id = req.getSnowflake("user");
 		String url;
 
 		var sizeToRetrieve = 4096;
@@ -79,7 +75,7 @@ public class InfoHandlers {
 			}
 		}
 
-		var userData = request.app.discordHandler.getUserData(id);
+		var userData = req.app.discordHandler.getUserData(id);
 		var avatar = userData == null ? null : userData.avatar().orElse(null);
 
 		if (avatar != null && avatar.startsWith("a_")) {
@@ -104,17 +100,17 @@ public class InfoHandlers {
 			}
 		}
 
-		return FileResponse.png(img);
+		return HTTPResponse.ok().png(img).publicCache(Duration.ofDays(1L));
 	}
 
-	public static Response emoji(ServerRequest request) throws Exception {
-		var size = Integer.parseInt(request.variable("size"));
+	public static HTTPResponse emoji(AppRequest req) throws Exception {
+		var size = req.variable("size").asInt();
 
 		if (size <= 0 || size > 4096) {
-			throw HTTPResponseCode.BAD_REQUEST.error("size_too_large");
+			throw new BadRequestError("Size too large");
 		}
 
-		var id = request.getSnowflake("emoji");
+		var id = req.getSnowflake("emoji");
 		var url = ImageUtil.getUrl("emojis/" + id, Image.Format.PNG);
 
 		var sizeToRetrieve = 4096;
@@ -139,11 +135,11 @@ public class InfoHandlers {
 			}
 		}
 
-		return FileResponse.png(img);
+		return HTTPResponse.ok().png(img).publicCache(Duration.ofDays(1L));
 	}
 
-	public static Response define(ServerRequest request) throws Exception {
-		var word = request.variable("word");
+	public static HTTPResponse define(AppRequest req) throws Exception {
+		var word = req.variable("word");
 
 		var json = JSONObject.of();
 		json.put("found", false);
@@ -197,12 +193,12 @@ public class InfoHandlers {
 			ex.printStackTrace();
 		}
 
-		return JSONResponse.of(json);
+		return JSONResponse.of(json).publicCache(Duration.ofMinutes(1L));
 	}
 
-	public static Response videoThumbnail(ServerRequest request) throws Exception {
-		var message = request.app.discordHandler.client.getMessageById(SnowFlake.convert(request.getSnowflake("channel")), SnowFlake.convert(request.getSnowflake("message"))).block();
-		var attachmentId = request.getSnowflake("attachment");
+	public static HTTPResponse videoThumbnail(AppRequest req) throws Exception {
+		var message = req.app.discordHandler.client.getMessageById(SnowFlake.convert(req.getSnowflake("channel")), SnowFlake.convert(req.getSnowflake("message"))).block();
+		var attachmentId = req.getSnowflake("attachment");
 
 		for (var a : message.getAttachments()) {
 			if (a.getId().asLong() == attachmentId) {
@@ -215,12 +211,10 @@ public class InfoHandlers {
 				g.drawImage(img1, (img.getWidth() - tsize) / 2, (img.getHeight() - tsize) / 2, tsize, tsize, null);
 				g.dispose();
 
-				var out = new ByteArrayOutputStream();
-				ImageIO.write(img, "jpeg", out);
-				return FileResponse.of(HttpStatus.OK, MimeType.JPEG, out.toByteArray());
+				return HTTPResponse.ok().jpeg(img).publicCache(Duration.ofDays(1L));
 			}
 		}
 
-		throw new NotFoundResponse("Attachment not found");
+		throw new NotFoundError("Attachment not found");
 	}
 }

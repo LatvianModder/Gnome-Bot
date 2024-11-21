@@ -31,10 +31,10 @@ import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.JavaANSI;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.data.MutableInt;
-import dev.latvian.apps.webutils.json.JSON;
-import dev.latvian.apps.webutils.json.JSONObject;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
@@ -54,6 +54,7 @@ import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.Image;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
+import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -95,9 +96,12 @@ public class GuildCollections {
 	public final WrappedCollection<DiscordPoll> polls;
 	public final WrappedCollection<DiscordMessageCount> messageCount;
 	public final WrappedCollection<DiscordMessageXP> messageXp;
+
 	public final WrappedCollection<GnomeAuditLogEntry> auditLog;
+	public final WrappedCollection<JoinLogEntry> joinLog;
 	public final WrappedCollection<GnomeAuditLogEntry> voiceLog;
 	public final WrappedCollection<GnomeAuditLogEntry> reactionLog;
+	public final WrappedCollection<CommandLogEntry> commandLog;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
 
 	public final Map<ConfigKey<?, ?>, ConfigHolder<?>> configHolders = new IdentityHashMap<>();
@@ -191,8 +195,10 @@ public class GuildCollections {
 		messageCount = create("message_count", DiscordMessageCount::new);
 		messageXp = create("message_xp", DiscordMessageXP::new);
 		auditLog = create("audit_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
+		joinLog = create("join_log", JoinLogEntry::new);
 		voiceLog = create("voice_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
 		reactionLog = create("reaction_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
+		commandLog = create("command_log", CommandLogEntry::new);
 		memberLogThreads = create("member_log_threads", ThreadLocation::new);
 
 		if (Files.exists(paths.config)) {
@@ -410,7 +416,7 @@ public class GuildCollections {
 
 		if (priority != null) {
 			c.remove(priority);
-			c.add(0, priority);
+			c.addFirst(priority);
 		}
 
 		for (var channel : c) {
@@ -817,7 +823,7 @@ public class GuildCollections {
 	}
 
 	public void pushRecentUser(long userId, String tag) {
-		if (!recentUsers.isEmpty() && recentUsers.get(0).id() == userId) {
+		if (!recentUsers.isEmpty() && recentUsers.getFirst().id() == userId) {
 			return;
 		}
 
@@ -830,10 +836,10 @@ public class GuildCollections {
 		recentUserSuggestions = null;
 		var user = new RecentUser(userId, tag);
 		recentUsers.remove(user);
-		recentUsers.add(0, user);
+		recentUsers.addFirst(user);
 
 		if (recentUsers.size() > 1000) {
-			recentUsers.remove(recentUsers.size() - 1);
+			recentUsers.removeLast();
 		}
 	}
 
@@ -1105,5 +1111,15 @@ public class GuildCollections {
 		}
 
 		return relatedGuilds;
+	}
+
+	public void logCommand(long user, long channel, long message, String command, String fullCommand) {
+		var doc = new Document();
+		doc.put("user", user);
+		doc.put("channel", channel);
+		doc.put("message", message);
+		doc.put("command", command);
+		doc.put("full_command", fullCommand);
+		commandLog.insert(doc);
 	}
 }

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.discord;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
@@ -35,7 +36,7 @@ public class QuoteHandler {
 		return builder.toString();
 	}
 
-	public static int handle(GuildCollections gc, Message message, ChannelInfo channel, Member member) {
+	public static int handle(App app, GuildCollections gc, Message message, ChannelInfo channel, Member member) {
 		if (member.isBot() && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
 			return 0;
 		}
@@ -48,7 +49,7 @@ public class QuoteHandler {
 		var mentionsAdmin = false;
 		ChannelService service = null;
 		ChannelInfo channel1 = null;
-		WebHook webHook = null;
+		WebHookDestination webHook = null;
 
 		var messageBuilder = MessageBuilder.create();
 		var remaining = new StringBuilder();
@@ -126,7 +127,7 @@ public class QuoteHandler {
 			if (thumbnailUrl.isEmpty()) {
 				for (var embed : m.embeds()) {
 					if (!embed.video().isAbsent()) {
-						thumbnailUrl = Assets.VIDEO.getPath();
+						thumbnailUrl = Assets.VIDEO.getPath(app);
 						break;
 					}
 				}

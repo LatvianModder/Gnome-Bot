@@ -81,7 +81,7 @@ public class ImportMessagesCommand {
 				} catch (AppTaskCancelledException ex) {
 					context.reply("Imported " + ch.getMention() + " in " + TimeUtils.prettyTimeString((System.currentTimeMillis() - nowChannel) / 1000L));
 					channelsLeft.remove(pair);
-					channelsLeft.add(0, Pair.of(ch, lastId));
+					channelsLeft.addFirst(Pair.of(ch, lastId));
 					break;
 				} catch (Exception ex) {
 					Log.error("Error! " + ch.getName() + ": " + ex);

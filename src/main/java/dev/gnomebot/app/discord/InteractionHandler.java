@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.Vote;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
@@ -57,9 +56,9 @@ public class InteractionHandler {
 		var command = InteractionType.CHAT_INPUT.builders.get(event.getCommandName());
 		var options = event.getOptions();
 
-		while (command != null && options.size() == 1 && options.get(0).getValue().isEmpty()) {
-			command = command.getSub(options.get(0).getName());
-			options = options.get(0).getOptions();
+		while (command != null && options.size() == 1 && options.getFirst().getValue().isEmpty()) {
+			command = command.getSub(options.getFirst().getName());
+			options = options.getFirst().getOptions();
 		}
 
 		if (command != null && !command.supportsDM && gc == null) {
@@ -68,7 +67,7 @@ public class InteractionHandler {
 		}
 
 		try {
-			var w = new ChatInputInteractionEventWrapper(gc, event, options);
+			var w = new ChatInputInteractionEventWrapper(handler.app, gc, event, options);
 
 			if (command != null) {
 				if (App.debug) {
@@ -124,7 +123,7 @@ public class InteractionHandler {
 		}
 
 		try {
-			var w = new UserInteractionEventWrapper(gc, event);
+			var w = new UserInteractionEventWrapper(handler.app, gc, event);
 
 			if (command != null) {
 				try {
@@ -154,7 +153,7 @@ public class InteractionHandler {
 		}
 
 		try {
-			var w = new MessageInteractionEventWrapper(gc, event);
+			var w = new MessageInteractionEventWrapper(handler.app, gc, event);
 
 			if (command != null) {
 				try {
@@ -182,7 +181,7 @@ public class InteractionHandler {
 
 			if (member != null) {
 				var customId = event.getCustomId();
-				var eventWrapper = new ComponentEventWrapper(gc, event, customId);
+				var eventWrapper = new ComponentEventWrapper(handler.app, gc, event, customId);
 
 				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -213,7 +212,7 @@ public class InteractionHandler {
 			if (member != null) {
 				var customId = event.getCustomId();
 
-				var eventWrapper = new ComponentEventWrapper(gc, event, customId);
+				var eventWrapper = new ComponentEventWrapper(handler.app, gc, event, customId);
 
 				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -241,7 +240,7 @@ public class InteractionHandler {
 
 			if (member != null) {
 				var customId = event.getCustomId();
-				var eventWrapper = new ModalEventWrapper(gc, event, customId);
+				var eventWrapper = new ModalEventWrapper(handler.app, gc, event, customId);
 
 				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(customId, new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
 					return;
@@ -273,14 +272,14 @@ public class InteractionHandler {
 		var command = InteractionType.CHAT_INPUT.builders.get(event.getCommandName());
 		var options = event.getOptions();
 
-		while (command != null && options.size() == 1 && options.get(0).getValue().isEmpty()) {
-			command = command.getSub(options.get(0).getName());
-			options = options.get(0).getOptions();
+		while (command != null && options.size() == 1 && options.getFirst().getValue().isEmpty()) {
+			command = command.getSub(options.getFirst().getName());
+			options = options.getFirst().getOptions();
 		}
 
 		try {
 			if (command != null) {
-				var eventWrapper = new ChatCommandSuggestionEvent(gc, event, options);
+				var eventWrapper = new ChatCommandSuggestionEvent(handler.app, gc, event, options);
 
 				if (eventWrapper.focused != null) {
 					// App.info(eventWrapper.focused.name + " " + command + " " + optionsToString(new StringBuilder(), options));
@@ -356,8 +355,8 @@ public class InteractionHandler {
 		switch (event.path[0]) {
 			case "none" -> event.acknowledge();
 			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
-			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.get(0));
-			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.get(0));
+			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.getFirst());
+			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.getFirst());
 			default -> {
 				Log.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);
@@ -390,7 +389,7 @@ public class InteractionHandler {
 	// Actions //
 
 	private static void restartBot(DeferrableInteractionEventWrapper<?> event, String token) {
-		if (Config.get().restart_button_token.equals(token)) {
+		if (event.context.gc.db.app.config.discord.restart_button_token.equals(token)) {
 			event.edit().respond(MessageBuilder.create("# Restart Gnome Bot\nLast clicked by " + event.context.sender.getMention() + " " + Utils.formatRelativeDate(Instant.now())));
 			event.context.handler.app.restart();
 		} else if (event.requiresTextResponse()) {

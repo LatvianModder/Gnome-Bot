@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.json.JSONObject;
 import discord4j.core.object.entity.User;
 
 import java.util.HashMap;

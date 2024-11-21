@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
@@ -119,10 +118,10 @@ public class DM {
 
 	// async this
 	private static void sendInDmChannel(DiscordHandler handler, @Nullable PrivateChannel privateChannel, UserData user, MessageBuilder message) {
-		var dmChannelId = Config.get().gnome_dm_channel_id;
+		var dmChannelId = handler.app.config.discord.gnome_dm_channel_id;
 
 		if (dmChannelId == 0L) {
-			Config.get().gnome_dm_webhook.execute(message);
+			handler.app.config.discord.gnome_dm_webhook.execute(message);
 		} else {
 			var dmChannel = DM_CHANNELS_USER.get(user.id().asLong());
 			var save = false;
@@ -146,7 +145,7 @@ public class DM {
 				saveDmChannels();
 			}
 
-			Config.get().gnome_dm_webhook.withThread(null, dmChannel.messageId).execute(message);
+			handler.app.config.discord.gnome_dm_webhook.withThread(null, dmChannel.messageId).execute(message);
 		}
 	}
 
@@ -158,7 +157,7 @@ public class DM {
 				sendInDmChannel(handler, null, user, MessageBuilder.create()
 						.content(message.getContent())
 						.webhookName("Gnome")
-						.webhookAvatarUrl(Assets.AVATAR.getPath())
+						.webhookAvatarUrl(Assets.AVATAR.getPath(handler.app))
 				);
 			}
 
@@ -202,7 +201,7 @@ public class DM {
 		sendInDmChannel(handler, privateChannel, author, MessageBuilder.create()
 				.content(content)
 				.webhookName("Gnome")
-				.webhookAvatarUrl(Assets.AVATAR.getPath())
+				.webhookAvatarUrl(Assets.AVATAR.getPath(handler.app))
 		);
 	}
 }

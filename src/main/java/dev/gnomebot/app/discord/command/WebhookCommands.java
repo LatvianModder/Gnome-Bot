@@ -4,7 +4,7 @@ import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.complex.ComplexMessage;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
-import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.component.TextInput;
@@ -87,7 +87,7 @@ public class WebhookCommands extends ApplicationCommands {
 		List<String> list = new ArrayList<>();
 
 		for (var webhook : event.context.gc.db.userWebhooksDB.query().eq("user", event.context.sender.getId().asLong())) {
-			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHook.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
+			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHookDestination.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
 		}
 
 		event.respond(list.isEmpty() ? "None" : String.join("\n", list));

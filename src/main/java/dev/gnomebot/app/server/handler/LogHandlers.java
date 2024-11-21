@@ -3,12 +3,11 @@ package dev.gnomebot.app.server.handler;
 import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
-import dev.gnomebot.app.server.GnomeRootTag;
-import dev.gnomebot.app.server.ServerRequest;
-import dev.latvian.apps.webutils.ansi.Table;
+import dev.gnomebot.app.server.AppRequest;
+import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
 import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.data.Pair;
-import dev.latvian.apps.webutils.net.Response;
+import dev.latvian.apps.webutils.html.HTMLTable;
 import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
@@ -23,8 +22,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class LogHandlers {
-	public static Response mutes(ServerRequest request) {
-		var root = GnomeRootTag.createSimple(request.getPath(), "Mutes - " + request.gc);
+	public static HTTPResponse mutes(AppRequest request) {
+		request.checkAdmin();
+
+		var root = request.createRoot("Mutes - " + request.gc);
 		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
 
 		var list = root.content.ul();
@@ -51,22 +52,24 @@ public class LogHandlers {
 		return root.asResponse();
 	}
 
-	public static Response auditLog(ServerRequest request) {
-		var limit = Math.max(1, Math.min(500, request.query("limit").asInt(200)));
-		var skip = Math.max(0, request.query("skip").asInt());
-		var type = request.query("type").asString();
-		var user = request.query("user").asLong();
-		var source = request.query("source").asLong();
-		var channel = request.query("channel").asLong();
-		var message = request.query("message").asLong();
-		var level = request.query("level").asInt();
+	public static HTTPResponse auditLog(AppRequest req) {
+		req.checkAdmin();
 
-		var root = GnomeRootTag.createSimple(request.getPath(), "Audit Log - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+		var limit = Math.max(1, Math.min(500, req.query("limit").asInt(200)));
+		var skip = Math.max(0, req.query("skip").asInt());
+		var type = req.query("type").asString();
+		var user = req.query("user").asLong();
+		var source = req.query("source").asLong();
+		var channel = req.query("channel").asLong();
+		var message = req.query("message").asLong();
+		var level = req.query("level").asInt();
 
-		var userCache = request.app.discordHandler.createUserCache();
-		var entryQuery = request.gc.auditLog.query();
-		var availableChannels = request.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(request.member.getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
+		var root = req.createRoot("Audit Log - " + req.gc);
+		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+
+		var userCache = req.app.discordHandler.createUserCache();
+		var entryQuery = req.gc.auditLog.query();
+		var availableChannels = req.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
@@ -75,7 +78,7 @@ public class LogHandlers {
 				types.add(Filters.eq("type", s));
 			}
 
-			entryQuery.filter(types.size() == 1 ? types.get(0) : Filters.or(types));
+			entryQuery.filter(types.size() == 1 ? types.getFirst() : Filters.or(types));
 		}
 
 		if (user != 0L) {
@@ -98,9 +101,11 @@ public class LogHandlers {
 			entryQuery.filter(Filters.gte("level", level));
 		}
 
-		var table = new Table("Timestamp", "Type", "Channel", "User", "Content", "Source");
+		var table = new HTMLTable("#", "Timestamp", "Type", "Channel", "User", "Content", "Source");
 
-		for (var entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
+		int i = 0;
+
+		for (var entry : entryQuery.limit(limit).skip(skip).descending("_id")) {
 			var t = entry.getType();
 
 			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(entry.getUser()).map(User::isBot).orElse(false)) {
@@ -108,9 +113,12 @@ public class LogHandlers {
 			}
 
 			var cells = table.addRow();
+			i++;
+			int j = i + skip;
 
-			cells[0].value(entry.getDate().toInstant().toString());
-			cells[1].value(t.displayName);
+			cells.set(0, tag -> tag.string(j));
+			cells.set(1, tag -> tag.string(entry.getDate().toInstant()));
+			cells.set(2, tag -> tag.string(t.displayName));
 
 			if (entry.getChannel() != 0L) {
 				var channelId = entry.getChannel();
@@ -119,30 +127,32 @@ public class LogHandlers {
 					continue;
 				}
 
-				cells[2].value("#" + request.gc.getChannelName(channelId));
+				cells.set(3, tag -> tag.string("#" + req.gc.getChannelName(channelId)));
 			}
 
 			if (entry.getUser() != 0L) {
-				cells[3].value(userCache.getUsername(entry.getUser()));
+				cells.set(4, tag -> tag.a("/guild/" + req.gc.guildId + "/members/" + entry.getUser(), userCache.getUsername(entry.getUser())));
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.CONTENT)) {
-				cells[4].value(entry.getContent());
+				cells.set(5, tag -> tag.string(entry.getContent()));
 			}
 
 			if (entry.getSource() != 0L) {
-				cells[5].value(userCache.getUsername(entry.getSource()));
+				cells.set(6, tag -> tag.a("/guild/" + req.gc.guildId + "/members/" + entry.getSource(), userCache.getUsername(entry.getSource())));
 			}
 		}
 
-		root.content.add(table.toTag().classes("auditlogtable"));
+		root.content.div("auditlogtable").add(table);
 		return root.asResponse();
 	}
 
 	private record BanEntry(String id, String name, String displayName, String reason, String discriminator) {
 	}
 
-	public static Response bans(ServerRequest request) {
+	public static HTTPResponse bans(AppRequest request) {
+		request.checkAdmin();
+
 		var list = new ArrayList<BanEntry>();
 		// int count = 0;
 
@@ -172,7 +182,7 @@ public class LogHandlers {
 
 		list.sort((o1, o2) -> o1.name.compareToIgnoreCase(o2.name));
 
-		var root = GnomeRootTag.createSimple(request.getPath(), "Bans - " + request.gc);
+		var root = request.createRoot("Bans - " + request.gc);
 		root.content.style("width:100%");
 		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
 
@@ -212,32 +222,35 @@ public class LogHandlers {
 				continue;
 			}
 
-			var table = new Table("#", "Name", "Reason");
+			var table = new HTMLTable("#", "Name", "Reason");
 			var indexFormat = "%0" + String.valueOf(list1.size()).length() + "d";
 
 			for (var i = 0; i < list1.size(); i++) {
 				var entry = list1.get(i);
 				var cells = table.addRow();
+				final int j = i;
 
-				cells[0].value(String.format(indexFormat, i + 1));
+				cells.set(0, tag -> tag.string(String.format(indexFormat, j + 1)));
 
 				var name = badNamePattern.matcher(entry.name).find() ? "(Cringe Name)" : entry.name;
 				var displayName = entry.displayName.isEmpty() ? "" : badNamePattern.matcher(entry.displayName).find() ? "(Cringe Name)" : entry.displayName;
 
-				var nameTag = cells[1].tag().a("/guild/" + request.gc.guildId + "/members/" + entry.id);
+				cells.set(1, tag -> {
+					var nameTag = tag.a("/guild/" + request.gc.guildId + "/members/" + entry.id);
 
-				if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
-					nameTag.string("(Cringe Name)");
-				} else if (displayName.equals("(Cringe Name)") || displayName.isEmpty()) {
-					nameTag.string(name + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
-				} else {
-					nameTag.string(displayName + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
-				}
+					if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
+						nameTag.string("(Cringe Name)");
+					} else if (displayName.equals("(Cringe Name)") || displayName.isEmpty()) {
+						nameTag.string(name + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
+					} else {
+						nameTag.string(displayName + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
+					}
+				});
 
-				cells[2].value(entry.reason);
+				cells.set(2, tag -> tag.string(entry.reason));
 			}
 
-			root.content.paired("details").classes("bantable").paired("summary").string(listEntry.a() + " [" + list1.size() + "]").end().add(table.toTag());
+			root.content.paired("details").classes("bantable").paired("summary").string(listEntry.a() + " [" + list1.size() + "]").end().add(table);
 		}
 
 		deletedUserReasons.remove("");

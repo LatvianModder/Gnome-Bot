@@ -1,8 +1,8 @@
 package dev.gnomebot.app.util;
 
-import dev.latvian.apps.webutils.json.JSON;
-import dev.latvian.apps.webutils.json.JSONArray;
-import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.json.JSON;
+import dev.latvian.apps.json.JSONArray;
+import dev.latvian.apps.json.JSONObject;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

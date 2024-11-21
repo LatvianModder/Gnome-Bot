@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 
@@ -30,7 +29,7 @@ public class TimestampCommand extends ApplicationCommands {
 
 		var request = URLRequest.of("https://api.wolframalpha.com/v1/result").toBytes();
 		request.query("i", input + " to unix timestamp");
-		request.query("appid", Config.get().wolfram_alpha_token);
+		request.query("appid", event.context.gc.db.app.config.wolfram_alpha_token);
 
 		var bytes = request.block();
 		var contentType = request.getHeader("Content-Type");

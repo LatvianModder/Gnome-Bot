@@ -27,4 +27,20 @@ public enum AuthLevel {
 	public boolean is(AuthLevel level) {
 		return ordinal() >= level.ordinal();
 	}
+
+	public boolean isLoggedIn() {
+		return is(LOGGED_IN);
+	}
+
+	public boolean isMember() {
+		return is(MEMBER);
+	}
+
+	public boolean isAdmin() {
+		return is(ADMIN);
+	}
+
+	public boolean isOwner() {
+		return is(OWNER);
+	}
 }

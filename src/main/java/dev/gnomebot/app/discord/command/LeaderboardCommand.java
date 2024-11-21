@@ -3,7 +3,7 @@ package dev.gnomebot.app.discord.command;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
-import io.javalin.http.HttpStatus;
+import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
@@ -40,14 +40,14 @@ public class LeaderboardCommand extends ApplicationCommands {
 			url += "&role=" + role.id;
 		}
 
-		var req = Utils.internalRequest(url).timeout(30000).toImage();
+		var req = Utils.internalRequest(event.app, url).timeout(30000).toImage();
 
 		try {
 			var imageData = new ByteArrayOutputStream();
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
-			if (ex.status == HttpStatus.BAD_REQUEST) {
+			if (ex.status == HTTPStatus.BAD_REQUEST) {
 				event.respond("This leaderboard has no data!");
 			}
 		} catch (Exception ex) {

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
@@ -39,7 +39,7 @@ public final class ChannelInfo {
 	private final LazyOptional<RestChannel> rest;
 	private final LazyOptional<ChannelData> channelData;
 	private final LazyOptional<TopLevelGuildChannel> topLevelChannel;
-	private final LazyOptional<WebHook> webHook;
+	private final LazyOptional<WebHookDestination> webHook;
 	private Map<Long, PermissionSet> cachedPermissions;
 
 	public ChannelInfo(GuildCollections g, long _id, ChannelSettings s) {
@@ -81,7 +81,7 @@ public final class ChannelInfo {
 				}
 
 				if (webhook != null) {
-					return new WebHook(this, webhook);
+					return new WebHookDestination(this, webhook);
 				}
 			}
 
@@ -246,7 +246,7 @@ public final class ChannelInfo {
 		return checkPermissions(memberId, Permission.VIEW_CHANNEL);
 	}
 
-	public Optional<WebHook> getWebHook() {
+	public Optional<WebHookDestination> getWebHook() {
 		if (threadParent != null) {
 			return threadParent.getWebHook().map(w -> w.withThread(this, id));
 		}

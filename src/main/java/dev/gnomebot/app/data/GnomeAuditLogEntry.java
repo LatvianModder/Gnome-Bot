@@ -31,18 +31,15 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	}
 
 	public enum Type {
-		REACTION_ADDED("reaction_added", "Added Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, gc -> gc.reactionLog),
-		REACTION_REMOVED("reaction_removed", "Removed Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, gc -> gc.reactionLog),
-		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, gc -> gc.voiceLog),
-		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, gc -> gc.voiceLog),
+		REACTION_ADDED("reaction_added", "Added Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, 0, gc -> gc.reactionLog),
+		REACTION_REMOVED("reaction_removed", "Removed Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, 1, gc -> gc.reactionLog),
+		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, 0, gc -> gc.voiceLog),
+		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, 1, gc -> gc.voiceLog),
 
-		JOIN("join", "Joined", 1, Flags.USER_AUDIT_LOG | Flags.EXTRA),
-		LEAVE("leave", "Left", 1, Flags.USER_AUDIT_LOG | Flags.CONTENT | Flags.EXTRA),
-		COMMAND("command", "Command", 1, Flags.CONTENT),
 		ECHO("echo", "Echo", 1, Flags.CONTENT),
 
 		ADMIN_PING("admin_ping", "Admin Ping", 2, 0),
-		DISCORD_INVITE("discord_invite", "Discord Invite", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
+		DISCORD_INVITE("discord_invite", "Discord Invite", 2, Flags.USER_AUDIT_LOG | Flags.CONTENT | Flags.REVOCABLE),
 		IP_ADDRESS("ip_address", "IP Address", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
 		URL_SHORTENER("url_shortener", "URL Shortener", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
 		SCAM("scam", "Potential Scam", 2, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
@@ -77,16 +74,18 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		public final String name;
 		public final String displayName;
 		public final int flags;
+		public final int customId;
 		public final Function<GuildCollections, WrappedCollection<GnomeAuditLogEntry>> collection;
 
 		Type(String n, String dn, int l, int f) {
-			this(n, dn, l, f, gc -> gc.auditLog);
+			this(n, dn, l, f, -1, gc -> gc.auditLog);
 		}
 
-		Type(String n, String dn, int l, int f, Function<GuildCollections, WrappedCollection<GnomeAuditLogEntry>> collection) {
-			name = n;
-			displayName = dn;
-			flags = l | f | (l == 0 ? Flags.EXPIRES : 0);
+		Type(String n, String dn, int l, int f, int customId, Function<GuildCollections, WrappedCollection<GnomeAuditLogEntry>> collection) {
+			this.name = n;
+			this.displayName = dn;
+			this.flags = l | f | (l == 0 ? Flags.EXPIRES : 0);
+			this.customId = customId;
 			this.collection = collection;
 		}
 
@@ -180,7 +179,13 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		public Document build() {
 			var id = new ObjectId();
 			var doc = new Document("_id", id);
-			doc.put("type", type.name);
+
+			if (type.customId != -1) {
+				doc.put("type", type.customId);
+			} else {
+				doc.put("type", type.name);
+			}
+
 			doc.put("flags", flags);
 
 			if (type.has(Flags.EXPIRES)) {

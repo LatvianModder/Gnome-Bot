@@ -66,7 +66,7 @@ public class WatchdogThread extends Thread {
 			if (majorErrors >= MAX_ERRORS) {
 				majorErrors = MAX_ERRORS - 1;
 				majorError("Timed out");
-				Config.get().death_webhook.execute(MessageBuilder.create().content(errorList));
+				app.config.discord.death_webhook.execute(MessageBuilder.create().content(errorList));
 				app.restart();
 				break;
 			}

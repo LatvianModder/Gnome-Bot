@@ -2,7 +2,6 @@ package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.BrainEventType;
-import dev.gnomebot.app.Config;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
@@ -59,7 +58,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 			var destinations = new ArrayList<PingDestination>();
 			var list = new ArrayList<UserPingInstance>();
 
-			var gnomePingsWebHook = Config.get().gnome_mention_webhook;
+			var gnomePingsWebHook = db.app.config.discord.gnome_mention_webhook;
 
 			if (gnomePingsWebHook.id != 0L) {
 				list.add(new UserPingInstance(new Ping[]{new Ping(Pattern.compile("gnom|" + db.app.discordHandler.selfId, Pattern.CASE_INSENSITIVE), true)}, 0L, gnomePingsWebHook, UserPingConfig.DEFAULT));
@@ -81,8 +80,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 							if (ex.getMessage().startsWith("You must message ")) {
 								Log.warn(db.app.discordHandler.getUserName(userId) + " / " + userId + " needs to DM Gnome");
 							} else {
-								Log.warn(userId + " pings were misconfigured");
-								ex.printStackTrace();
+								Log.warn(userId + " pings were misconfigured: " + ex);
 							}
 
 							return Pair.of(userId, List.of());
@@ -107,7 +105,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 						if (!destinations.isEmpty()) {
 							if (destinations.size() == 1) {
-								list.add(builder.buildInstance(userId, destinations.get(0)));
+								list.add(builder.buildInstance(userId, destinations.getFirst()));
 							} else {
 								list.add(builder.buildInstance(userId, new PingDestinationBundle(destinations.toArray(PingDestinationBundle.EMPTY_ARRAY))));
 							}

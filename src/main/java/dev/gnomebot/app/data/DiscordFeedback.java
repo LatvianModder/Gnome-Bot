@@ -1,7 +1,6 @@
 package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.MemberCache;
@@ -9,7 +8,7 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.json.JSONObject;
+import dev.latvian.apps.json.JSONObject;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.rest.util.Color;
 import org.jetbrains.annotations.Nullable;
@@ -137,7 +136,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 			builder.title("Suggestion #" + getNumber() + " - " + status.titleSuffix);
 		}
 
-		builder.url(App.url("guild/feedback/" + gc.guildId + "/" + getNumber()));
+		builder.url(gc.db.app.url("guild/feedback/" + gc.guildId + "/" + getNumber()));
 		builder.description(getContent());
 		builder.field(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.field(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
@@ -158,7 +157,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public static boolean canSee(GuildCollections gc, AuthLevel authLevel) {
-		return !gc.anonymousFeedback.get() || authLevel.is(AuthLevel.OWNER) || (gc.adminsBypassAnonFeedback.get() && authLevel.is(AuthLevel.ADMIN));
+		return !gc.anonymousFeedback.get() || authLevel.isOwner() || (gc.adminsBypassAnonFeedback.get() && authLevel.isAdmin());
 	}
 
 	public void toJson(JSONObject json, MemberCache memberCache, boolean canSee, boolean owner) {

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.data;
 
-import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
 
@@ -27,7 +27,7 @@ public class UserWebhook extends WrappedDocument<UserWebhook> {
 		return document.getLong("user");
 	}
 
-	public WebHook createWebhook() {
-		return new WebHook(getWebhookID() + "/" + getWebhookToken());
+	public WebHookDestination createWebhook() {
+		return new WebHookDestination(getWebhookID() + "/" + getWebhookToken());
 	}
 }

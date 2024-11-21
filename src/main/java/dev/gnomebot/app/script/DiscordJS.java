@@ -2,7 +2,7 @@ package dev.gnomebot.app.script;
 
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.EmbedColor;
-import dev.gnomebot.app.discord.WebHook;
+import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.script.event.ComponentEventJS;
 import dev.gnomebot.app.script.event.EventHandler;
 import dev.gnomebot.app.script.event.MessageEventJS;
@@ -67,7 +67,7 @@ public class DiscordJS {
 						ScriptableObject.putProperty(scope, "WrappedId", new NativeJavaClass(cx, scope, WrappedId.class), cx);
 						ScriptableObject.putProperty(scope, "Discord", new NativeJavaObject(scope, this, TypeInfo.of(DiscordJS.class), cx), cx);
 						ScriptableObject.putProperty(scope, "EmbedColor", new NativeJavaClass(cx, scope, EmbedColor.class), cx);
-						ScriptableObject.putProperty(scope, "WebHook", new NativeJavaClass(cx, scope, WebHook.class), cx);
+						ScriptableObject.putProperty(scope, "WebHook", new NativeJavaClass(cx, scope, WebHookDestination.class), cx);
 						ScriptableObject.putProperty(scope, "WebhookExecuteRequest", new NativeJavaClass(cx, scope, WebhookExecuteRequest.class), cx);
 
 						cx.evaluateReader(scope, reader, rfile.toString(), 1, null);

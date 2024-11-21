@@ -20,6 +20,7 @@ import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.AuditLogQuerySpec;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,9 +83,9 @@ public class MemberHandler {
 		var member = event.getMember();
 		var nowSecond = Instant.now().getEpochSecond();
 
-		var accountAge = nowSecond - member.getId().getTimestamp().getEpochSecond();
+		int accountAge = (int) (nowSecond - member.getId().getTimestamp().getEpochSecond());
 
-		if (accountAge <= 604800L && gc.logNewAccountsChannel.isSet()) {
+		if (accountAge <= 604800 && gc.logNewAccountsChannel.isSet()) {
 			var sb = member.getMention() +
 					" (" +
 					member.getTag() +
@@ -93,11 +94,9 @@ public class MemberHandler {
 			gc.logNewAccountsChannel.messageChannel().ifPresent(c -> c.createMessage(sb).subscribe());
 		}
 
-		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.JOIN)
-				.user(member)
-				.flags(GnomeAuditLogEntry.Flags.LOCKDOWN, gc.lockdownMode.get())
-				.extra("account_age", accountAge)
-		);
+		var doc = new Document();
+		doc.put("user", member.getId().asLong());
+		gc.joinLog.insert(doc);
 
 		if (gc.lockdownMode.get()) {
 			if (gc.logLeavingChannel.isSet()) {
@@ -152,14 +151,13 @@ public class MemberHandler {
 
 	public static void left(DiscordHandler handler, GuildCollections gc, MemberLeaveEvent event) {
 		var member = event.getMember().orElse(null);
-		var mems = member == null || member.getJoinTime().isEmpty() ? 0L : Instant.now().getEpochSecond() - member.getJoinTime().get().getEpochSecond();
+		var nowSecond = Instant.now().getEpochSecond();
+		var mems = member == null || member.getJoinTime().isEmpty() ? 0 : (int) (nowSecond - member.getJoinTime().get().getEpochSecond());
 
-		gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.LEAVE)
-				.user(event.getUser())
-				.content(TimeUtils.prettyTimeString(mems))
-				.flags(GnomeAuditLogEntry.Flags.LOCKDOWN, gc.lockdownMode.get())
-				.extra("member_for", mems)
-		);
+		var doc = new Document();
+		doc.put("user", event.getUser().getId().asLong());
+		doc.put("member_for", mems);
+		gc.joinLog.insert(doc);
 
 		// App.info(Utils.ANSI_GREEN + event.getUser().getUsername() + Utils.ANSI_RESET + " has left the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server! (" + Utils.prettyTimeString(mems) + " of membership)");
 		BrainEventType.MEMBER_LEFT.build(gc.guildId).post();

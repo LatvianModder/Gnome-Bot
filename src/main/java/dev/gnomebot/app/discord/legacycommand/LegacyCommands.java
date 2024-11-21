@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.latvian.apps.ansi.JavaANSI;
@@ -74,11 +73,12 @@ public final class LegacyCommands {
 		} else if (!ignorePermissions && !command.callback.hasPermission(command, context)) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "You don't have permission to use this command!").reaction(Emojis.POLICE_CAR);
 		} else {
-			context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.COMMAND)
-					.channel(context.channelInfo.id)
-					.message(context.message)
-					.user(context.sender)
-					.content(content)
+			context.gc.logCommand(
+					context.sender.getId().asLong(),
+					context.channelInfo.id,
+					context.message.getId().asLong(),
+					command.name,
+					content
 			);
 
 			command.callback.run(context, reader);

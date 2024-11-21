@@ -92,7 +92,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 
 	public UpdateResult update(List<Bson> updates) {
 		if (!updates.isEmpty()) {
-			return update(updates.size() == 1 ? updates.get(0) : Updates.combine(updates));
+			return update(updates.size() == 1 ? updates.getFirst() : Updates.combine(updates));
 		}
 
 		return CollectionQuery.ZERO_UPDATES;

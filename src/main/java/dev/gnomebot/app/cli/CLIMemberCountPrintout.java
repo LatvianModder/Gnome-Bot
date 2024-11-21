@@ -1,7 +1,7 @@
 package dev.gnomebot.app.cli;
 
 import dev.gnomebot.app.util.SnowFlake;
-import dev.latvian.apps.webutils.ansi.Table;
+import dev.latvian.apps.ansi.ANSITable;
 
 import java.time.Instant;
 
@@ -13,7 +13,7 @@ public class CLIMemberCountPrintout {
 	private static void run(CLIEvent event) throws Exception {
 		var role = event.reader.readRole().orElse(null);
 
-		var table = new Table("ID", "Tag");
+		var table = new ANSITable("ID", "Tag");
 
 		for (var member : event.gc.getMembers()) {
 			if (role == null || member.getRoleIds().contains(SnowFlake.convert(role.id))) {

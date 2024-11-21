@@ -17,10 +17,11 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
+public class Macro implements Comparable<Macro>, Callable<String> {
 	public final GuildCollections guild;
 	private final Lazy<String> content;
 	public HexId32 id = HexId32.NONE;
@@ -224,7 +225,7 @@ public class Macro implements Comparable<Macro>, Lazy.LazySupplier<String> {
 	}
 
 	@Override
-	public String get() throws Exception {
+	public String call() throws Exception {
 		var path = getContentPath(false);
 
 		if (Files.exists(path)) {

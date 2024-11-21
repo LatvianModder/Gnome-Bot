@@ -14,6 +14,7 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.component.ActionRow;
@@ -21,7 +22,6 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import io.javalin.http.HttpStatus;
 
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
@@ -65,7 +65,7 @@ public class DisplayCommands extends ApplicationCommands {
 			length += s.length() + 1;
 
 			if (length >= 2000) {
-				list.add(0, Pair.of("More results! Refine your filter!", ""));
+				list.addFirst(Pair.of("More results! Refine your filter!", ""));
 				break;
 			}
 		}
@@ -109,12 +109,12 @@ public class DisplayCommands extends ApplicationCommands {
 				length += s.length() + 1;
 
 				if (length >= 2000) {
-					list.add(0, "More results! Refine your filter!");
+					list.addFirst("More results! Refine your filter!");
 					break;
 				}
 			}
 
-			list.add(0, "Found " + count + " messages");
+			list.addFirst("Found " + count + " messages");
 		}
 
 		if (activity) {
@@ -225,8 +225,8 @@ public class DisplayCommands extends ApplicationCommands {
 		m.edit(MessageBuilder.create("Done!").toMessageEditSpec()).subscribe();
 
 		c.createMessage(MessageBuilder.create().addFile(event.context.gc.guildId + "-" + memberId.asString() + "-" + Instant.now() + ".csv", out.toByteArray()).toMessageCreateSpec()).flatMap(dm -> {
-			var attachment = dm.getAttachments().get(0);
-			return dm.edit(MessageBuilder.create().addComponent(ActionRow.of(Button.link(PasteHandlers.getUrl(dm.getChannelId().asLong(), dm.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()))).toMessageEditSpec());
+			var attachment = dm.getAttachments().getFirst();
+			return dm.edit(MessageBuilder.create().addComponent(ActionRow.of(Button.link(PasteHandlers.getUrl(event.app, dm.getChannelId().asLong(), dm.getId().asLong(), attachment.getId().asLong()), "View " + attachment.getFilename()))).toMessageEditSpec());
 		}).block();
 
 		event.respond("Done! Check your DMs!");
@@ -358,14 +358,14 @@ public class DisplayCommands extends ApplicationCommands {
 			url += "&role=" + role.id;
 		}
 
-		var req = Utils.internalRequest(url).timeout(30000).toImage();
+		var req = Utils.internalRequest(event.app, url).timeout(30000).toImage();
 
 		try {
 			var imageData = new ByteArrayOutputStream();
 			ImageIO.write(req.block(), "PNG", imageData);
 			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
 		} catch (URLRequest.UnsuccesfulRequestException ex) {
-			if (ex.status == HttpStatus.BAD_REQUEST) {
+			if (ex.status == HTTPStatus.BAD_REQUEST) {
 				event.respond("This leaderboard has no data!");
 			}
 		} catch (Exception ex) {

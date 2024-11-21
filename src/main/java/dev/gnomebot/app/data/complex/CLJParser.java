@@ -44,10 +44,10 @@ public class CLJParser {
 			var obj = this;
 
 			while (true) {
-				list.add(0, obj);
+				list.addFirst(obj);
 
 				if (obj.get(0) instanceof CLJObject o) {
-					obj.args.remove(0);
+					obj.args.removeFirst();
 					obj = o;
 				} else {
 					break;
@@ -73,7 +73,7 @@ public class CLJParser {
 					reader.skipSpace();
 
 					if (n instanceof CLJObject cljo) {
-						cljo.args.add(0, obj);
+						cljo.args.addFirst(obj);
 						obj = cljo;
 					} else {
 						break;
