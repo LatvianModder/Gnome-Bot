@@ -152,8 +152,6 @@ public class GuildCollections {
 	private final Map<Long, Long> appealThreadCache;
 	private List<RelatedGuild.Group> relatedGuilds;
 
-	public boolean advancedLogging = false;
-
 	public GuildCollections(Databases d, long g) {
 		db = d;
 		guildId = g;
@@ -302,6 +300,14 @@ public class GuildCollections {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	public String url() {
+		return "/guilds/" + paths.key;
+	}
+
+	public String apiUrl() {
+		return "/api/guilds/" + paths.key;
 	}
 
 	public void saveConfig() {
@@ -480,10 +486,15 @@ public class GuildCollections {
 		return c == null ? SnowFlake.str(channel) : c.getName();
 	}
 
+	public String getChannelDisplayName(long channel) {
+		// TODO: Only use # for standard channels
+		return "#" + getChannelName(channel);
+	}
+
 	public JSONObject getChannelJson(long channel) {
 		var json = JSONObject.of();
 		json.put("id", SnowFlake.str(channel));
-		json.put("name", getChannelName(channel));
+		json.put("name", getChannelDisplayName(channel));
 		return json;
 	}
 
@@ -605,20 +616,6 @@ public class GuildCollections {
 	public void channelUpdated(@Nullable CategorizableChannel old, TopLevelGuildMessageChannel channel, boolean deleted) {
 		BrainEventType.REFRESHED_CHANNEL_CACHE.build(this).post();
 		refreshCache();
-
-		if (advancedLogging) {
-			Log.info("Channel updated: " + this + "/#" + channel.getName());
-
-			if (old != null) {
-				if (!old.getName().equals(channel.getName())) {
-					Log.info("> Name " + old.getName() + " -> " + channel.getName());
-				}
-
-				if (old.getRawPosition() != channel.getRawPosition()) {
-					Log.info("> Position " + old.getRawPosition() + " -> " + channel.getRawPosition());
-				}
-			}
-		}
 
 		if (!deleted) {
 			db.channelSettings(channel.getId().asLong()).updateFrom(channel);
@@ -1121,5 +1118,14 @@ public class GuildCollections {
 		doc.put("command", command);
 		doc.put("full_command", fullCommand);
 		commandLog.insert(doc);
+	}
+
+	public String getRoleName(long id) {
+		var ri = getRoleMap().get(id);
+		return ri == null ? SnowFlake.str(id) : ri.name;
+	}
+
+	public String getRoleDisplayName(long id) {
+		return "@" + getRoleName(id);
 	}
 }

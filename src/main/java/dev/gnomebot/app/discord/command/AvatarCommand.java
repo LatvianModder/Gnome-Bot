@@ -21,13 +21,13 @@ public class AvatarCommand extends ApplicationCommands {
 		var user = event.get("user").asUser().get();
 		var member = event.get("user").asOptionalMember().orElse(null);
 
-		var avatarUrl = Utils.getAvatarUrl(user, guild ? member : null);
+		var avatarUrl = Utils.getAvatarURL(user, guild ? member : null);
 		var animated = avatarUrl.endsWith(".gif");
 		var data = URLRequest.of(avatarUrl + "?size=4096").toBytes().block();
 		event.respond(MessageBuilder.create(user.getMention()).addFile(user.getId().asString() + (animated ? ".gif" : ".png"), data));
 	}
 
 	public static void memberInteraction(Member member, ComponentEventWrapper event) {
-		event.respond(Utils.getAvatarUrl(member, member) + "?size=4096");
+		event.respond(Utils.getAvatarURL(member, member) + "?size=4096");
 	}
 }

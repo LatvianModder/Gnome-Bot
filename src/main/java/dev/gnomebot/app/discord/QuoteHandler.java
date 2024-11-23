@@ -153,7 +153,7 @@ public class QuoteHandler {
 			if (authorMember != null) {
 				quoteEmbed.author("➤ " + authorMember.getDisplayName(), authorMember.getAvatarUrl(), quoteURL);
 			} else {
-				quoteEmbed.author("➤ " + author.globalName().orElse(author.username()), Utils.getAvatarUrl(author), quoteURL);
+				quoteEmbed.author("➤ " + author.globalName().orElse(author.username()), Utils.getAvatarURL(author) + "?size=32", quoteURL);
 			}
 
 			quoteEmbed.color(EmbedColor.GRAY);

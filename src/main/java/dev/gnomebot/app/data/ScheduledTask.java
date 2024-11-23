@@ -102,7 +102,7 @@ public class ScheduledTask extends WrappedDocument<ScheduledTask> {
 					spec.field("Reason", reason);
 				}
 
-				spec.author(data.username() + " has been unmuted!", Utils.getAvatarUrl(data));
+				spec.author(data.username() + " has been unmuted!", Utils.getAvatarURL(data) + "?size=32");
 			});
 		}
 	}

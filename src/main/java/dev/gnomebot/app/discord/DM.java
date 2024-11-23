@@ -191,7 +191,7 @@ public class DM {
 		sendInDmChannel(handler, privateChannel, author, MessageBuilder.create()
 				.content(builder.toString().trim())
 				.webhookName(author.globalName().orElse(author.username()))
-				.webhookAvatarUrl(Utils.getAvatarUrl(author))
+				.webhookAvatarUrl(Utils.getAvatarURL(author))
 		);
 	}
 

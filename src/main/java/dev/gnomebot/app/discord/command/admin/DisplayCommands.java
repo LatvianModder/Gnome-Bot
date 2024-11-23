@@ -162,33 +162,16 @@ public class DisplayCommands extends ApplicationCommands {
 		var list = new LinkedList<ExportedMessage>();
 
 		var channelPattern = Pattern.compile("<#(\\d+)>");
-		Map<Long, String> channelNameMap = new HashMap<>() {
-			@Override
-			public String get(Object key) {
-				var s = super.get(key);
+		Map<Long, String> channelNameMap = new HashMap<>();
 
-				if (s == null) {
-					s = "#" + key.toString();
-
-					try {
-						s = event.context.gc.getChannelName((Long) key);
-					} catch (Exception ex) {
-					}
-
-					super.put((Long) key, s);
-				}
-
-				return s;
-			}
-		};
-
-		Function<MatchResult, String> channelNameReplacer = matchResult -> channelNameMap.get(Long.parseUnsignedLong(matchResult.group(1)));
+		Function<Long, String> computeFunc = event.context.gc::getChannelDisplayName;
+		Function<MatchResult, String> channelNameReplacer = matchResult -> channelNameMap.computeIfAbsent(Long.parseUnsignedLong(matchResult.group(1)), computeFunc);
 
 		for (var msg : event.context.gc.messages.query().eq("user", memberId.asLong())) {
 			var emessage = new ExportedMessage();
 			emessage.timestamp = msg.getDate().getTime();
 			emessage.channel = msg.getChannelID();
-			emessage.channelName = channelNameMap.get(emessage.channel);
+			emessage.channelName = channelNameMap.computeIfAbsent(emessage.channel, computeFunc);
 			emessage.flags = msg.flags;
 			emessage.content = channelPattern.matcher(msg.getContent()).replaceAll(channelNameReplacer);
 			list.add(emessage);
@@ -348,7 +331,7 @@ public class DisplayCommands extends ApplicationCommands {
 		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
 		var role = event.get("role").asRole().orElse(null);
 
-		var url = "api/guild/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + event.context.gc.guildId + "/" + mentionId + "/" + days + "?limit=" + limit;
+		var url = "api/guilds/" + event.context.gc.guildId + "/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + mentionId + "/" + days + "?limit=" + limit;
 
 		if (channelInfo != null) {
 			url += "&channel=" + channelInfo.id;

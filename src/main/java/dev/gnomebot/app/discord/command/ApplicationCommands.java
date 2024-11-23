@@ -66,7 +66,6 @@ public class ApplicationCommands {
 
 		add(GnomeCommand.COMMAND);
 		add(GnomeAdminCommand.COMMAND);
-		add(CLIApplicationCommand.COMMAND);
 
 		add(AboutCommand.COMMAND);
 		add(AvatarCommand.COMMAND);

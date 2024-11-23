@@ -4,11 +4,12 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.server.AppRequest;
+import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
 import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.html.HTMLTable;
-import discord4j.core.object.entity.User;
 import discord4j.discordjson.json.BanData;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.PaginationUtil;
@@ -16,37 +17,35 @@ import org.bson.conversions.Bson;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class LogHandlers {
-	public static HTTPResponse mutes(AppRequest request) {
-		request.checkAdmin();
+	private static final Pattern USER_PATTERN = Pattern.compile("<@!?(\\d+)>", Pattern.CASE_INSENSITIVE);
+	private static final Pattern ROLE_PATTERN = Pattern.compile("<@&(\\d+)>", Pattern.CASE_INSENSITIVE);
 
-		var root = request.createRoot("Mutes - " + request.gc);
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+	public static HTTPResponse mutes(AppRequest req) {
+		req.checkAdmin();
+
+		var root = req.createRoot("Mutes - " + req.gc);
+		root.content.a(req.gc.url(), "< Back").classes("back");
 
 		var list = root.content.ul();
-		var members = new ArrayList<Pair<Long, String>>();
+		var members = new ArrayList<Pair<Long, Long>>();
 
-		for (var task : request.app.scheduledTasks) {
-			if (task.guildId == request.gc.guildId && task.type.equals(ScheduledTask.UNMUTE)) {
-				var m = request.gc.getMember(task.userId);
-
-				if (m != null) {
-					members.add(Pair.of(task.userId, m.getDisplayName()));
-				} else {
-					members.add(Pair.of(task.userId, request.app.discordHandler.getUserName(task.userId).orElse("Unknown")));
-				}
+		for (var task : req.app.scheduledTasks) {
+			if (task.guildId == req.gc.guildId && task.type.equals(ScheduledTask.UNMUTE)) {
+				members.add(Pair.of(task.userId, task.end));
 			}
 		}
 
-		members.sort((o1, o2) -> o1.b().compareToIgnoreCase(o2.b()));
+		members.sort(Comparator.comparingLong(Pair::b));
 
 		for (var member : members) {
-			list.li().a("/guild/" + request.gc.guildId + "/members/" + member.a(), member.b());
+			GuildAPIHandlers.member(list.li(), req.gc, member.a());
 		}
 
 		return root.asResponse();
@@ -65,14 +64,13 @@ public class LogHandlers {
 		var level = req.query("level").asInt();
 
 		var root = req.createRoot("Audit Log - " + req.gc);
-		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+		root.content.a(req.gc.url(), "< Back").classes("back");
 
-		var userCache = req.app.discordHandler.createUserCache();
 		var entryQuery = req.gc.auditLog.query();
 		var availableChannels = req.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
-			List<Bson> types = new ArrayList<>();
+			var types = new ArrayList<Bson>();
 
 			for (var s : type.split(",")) {
 				types.add(Filters.eq("type", s));
@@ -108,10 +106,6 @@ public class LogHandlers {
 		for (var entry : entryQuery.limit(limit).skip(skip).descending("_id")) {
 			var t = entry.getType();
 
-			if (t.has(GnomeAuditLogEntry.Flags.BOT_USER_IGNORED) && entry.getUser() != 0L && userCache.get(entry.getUser()).map(User::isBot).orElse(false)) {
-				continue;
-			}
-
 			var cells = table.addRow();
 			i++;
 			int j = i + skip;
@@ -127,19 +121,23 @@ public class LogHandlers {
 					continue;
 				}
 
-				cells.set(3, tag -> tag.string("#" + req.gc.getChannelName(channelId)));
+				cells.set(3, tag -> GuildAPIHandlers.channel(tag, req.gc, channelId));
 			}
 
 			if (entry.getUser() != 0L) {
-				cells.set(4, tag -> tag.a("/guild/" + req.gc.guildId + "/members/" + entry.getUser(), userCache.getUsername(entry.getUser())));
+				cells.set(4, tag -> GuildAPIHandlers.member(tag, req.gc, entry.getUser()));
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.CONTENT)) {
-				cells.set(5, tag -> tag.string(entry.getContent()));
+				cells.set(5, tag -> {
+					tag.string(entry.getContent());
+					tag.replace(USER_PATTERN, (tag1, matcher) -> GuildAPIHandlers.member(tag1, req.gc, SnowFlake.num(matcher.group(1))));
+					tag.replace(ROLE_PATTERN, (tag1, matcher) -> GuildAPIHandlers.role(tag1, req.gc, SnowFlake.num(matcher.group(1))));
+				});
 			}
 
 			if (entry.getSource() != 0L) {
-				cells.set(6, tag -> tag.a("/guild/" + req.gc.guildId + "/members/" + entry.getSource(), userCache.getUsername(entry.getSource())));
+				cells.set(6, tag -> GuildAPIHandlers.member(tag, req.gc, entry.getSource()));
 			}
 		}
 
@@ -147,16 +145,16 @@ public class LogHandlers {
 		return root.asResponse();
 	}
 
-	private record BanEntry(String id, String name, String displayName, String reason, String discriminator) {
+	private record BanEntry(String id, String name, String reason, String icon) {
 	}
 
-	public static HTTPResponse bans(AppRequest request) {
-		request.checkAdmin();
+	public static HTTPResponse bans(AppRequest req) {
+		req.checkAdmin();
 
 		var list = new ArrayList<BanEntry>();
 		// int count = 0;
 
-		var guild = request.gc.getGuild();
+		var guild = req.gc.getGuild();
 
 		var badNamePattern = Pattern.compile("[^\\w-.()!$^*+=~\\s]");
 
@@ -173,18 +171,17 @@ public class LogHandlers {
 			list.add(new BanEntry(
 							u.id().asString(),
 							u.username(),
-					u.globalName().orElse(""),
 					entry.reason().orElse(""),
-					u.discriminator().equals("0") ? "" : u.discriminator()
+					Utils.getAvatarURL(u)
 					)
 			);
 		}
 
 		list.sort((o1, o2) -> o1.name.compareToIgnoreCase(o2.name));
 
-		var root = request.createRoot("Bans - " + request.gc);
+		var root = req.createRoot("Bans - " + req.gc);
 		root.content.style("width:100%");
-		root.content.a("/guild/" + request.gc.guildId, "< Back").classes("back");
+		root.content.a(req.gc.url(), "< Back").classes("back");
 
 		var spamList = new ArrayList<BanEntry>();
 		var hackList = new ArrayList<BanEntry>();
@@ -199,7 +196,7 @@ public class LogHandlers {
 		for (var entry : list) {
 			var reason = entry.reason.trim().toLowerCase();
 
-			if (!entry.discriminator.isEmpty() && entry.name.length() == 21 && entry.name.startsWith("Deleted User ")) {
+			if (entry.name.length() == 25 && entry.name.startsWith("deleted_user_")) {
 				deletedUsers++;
 				deletedUserReasons.computeIfAbsent(reason, r -> Pair.of(entry.reason, new MutableInt())).b().add(1);
 			} else if (reason.isEmpty()) {
@@ -231,22 +228,7 @@ public class LogHandlers {
 				final int j = i;
 
 				cells.set(0, tag -> tag.string(String.format(indexFormat, j + 1)));
-
-				var name = badNamePattern.matcher(entry.name).find() ? "(Cringe Name)" : entry.name;
-				var displayName = entry.displayName.isEmpty() ? "" : badNamePattern.matcher(entry.displayName).find() ? "(Cringe Name)" : entry.displayName;
-
-				cells.set(1, tag -> {
-					var nameTag = tag.a("/guild/" + request.gc.guildId + "/members/" + entry.id);
-
-					if (name.equals("(Cringe Name)") && displayName.equals("(Cringe Name)")) {
-						nameTag.string("(Cringe Name)");
-					} else if (displayName.equals("(Cringe Name)") || displayName.isEmpty()) {
-						nameTag.string(name + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
-					} else {
-						nameTag.string(displayName + (entry.discriminator.isEmpty() ? "" : "#" + entry.discriminator));
-					}
-				});
-
+				cells.set(1, tag -> GuildAPIHandlers.member(tag, req.gc, SnowFlake.num(entry.id)).attr("data-lookup").img(entry.icon + "?size=24").lazyLoading().end().string(entry.name));
 				cells.set(2, tag -> tag.string(entry.reason));
 			}
 

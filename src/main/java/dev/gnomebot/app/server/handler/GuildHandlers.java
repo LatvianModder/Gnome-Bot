@@ -45,8 +45,8 @@ public class GuildHandlers {
 
 		for (var data : guilds) {
 			var line = root.content.p().classes("withicon");
-			line.img("/api/guild/icon/" + data.gc().guildId + "/128").lazyLoading();
-			line.a("/guild/" + data.gc().guildId).string(data.gc().toString());
+			line.img(data.gc().apiUrl() + "/icon/128").lazyLoading();
+			line.a(data.gc().url(), data.gc().toString());
 		}
 
 		return root.asResponse();
@@ -56,15 +56,15 @@ public class GuildHandlers {
 		req.checkMember();
 
 		var root = req.createRoot(req.gc.toString());
-		root.content.h3().a("/guild/" + req.gc.guildId + "/audit-log", "Audit Log");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/macros", "Macros");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/bans", "Bans");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/mutes", "Mutes");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/message-log", "Message Log");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/voice-log", "Voice Log");
-		root.content.h3().a("/guild/" + req.gc.guildId + "/reaction-log", "Reaction Log");
+		root.content.h3().a(req.gc.url() + "/audit-log", "Audit Log");
+		root.content.h3().a(req.gc.url() + "/macros", "Macros");
+		root.content.h3().a(req.gc.url() + "/bans", "Bans");
+		root.content.h3().a(req.gc.url() + "/mutes", "Mutes");
+		root.content.h3().a(req.gc.url() + "/message-log", "Message Log");
+		root.content.h3().a(req.gc.url() + "/voice-log", "Voice Log");
+		root.content.h3().a(req.gc.url() + "/reaction-log", "Reaction Log");
 		// root.content.p().string("Uh... nothing for now...");
-		// root.content.p().a("/guild/" + request.gc.guildId.asString()).string("For now you can go to old page.");
+		// root.content.p().a(req.gc.url()).string("For now you can go to old page.");
 		return root.asResponse();
 	}
 
@@ -72,7 +72,7 @@ public class GuildHandlers {
 		req.checkLoggedIn();
 
 		var root = req.createRoot("Macros - " + req.gc);
-		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+		root.content.a(req.gc.url(), "< Back").classes("back");
 
 		var slashMacros = root.content.section("macros-slash").classes("divborder").div().h3().string("Macros with Slash Command").end().ol();
 
@@ -92,9 +92,9 @@ public class GuildHandlers {
 						throw new NullPointerException();
 					}
 
-					slashMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
+					GuildAPIHandlers.macro(slashMacros.li(), macro);
 				} catch (Exception ex) {
-					slashMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name + " (⚠️ Broken!)").classes("");
+					GuildAPIHandlers.macro(slashMacros.li(), macro).classes("broken");
 				}
 			}
 		}
@@ -102,7 +102,7 @@ public class GuildHandlers {
 		var allMacros = root.content.section("macros").classes("divborder").div().h3().string("All Macros").end().ol();
 
 		for (var macro : macros) {
-			allMacros.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
+			GuildAPIHandlers.macro(allMacros.li(), macro);
 		}
 
 		return root.asResponse();
@@ -127,22 +127,12 @@ public class GuildHandlers {
 		}
 
 		var root = req.createRoot(macro.name + " - Macros - " + req.gc);
-		root.content.a("/guild/" + req.gc.guildId + "/macros", "< Back").classes("back");
+		root.content.a(req.gc.url() + "/macros", "< Back").classes("back");
 
 		var authorId = macro.author;
-		var author = req.gc.getMember(authorId);
-		var authorName = author == null ? "" : author.getDisplayName();
-
-		if (authorName.isEmpty()) {
-			var user = req.gc.db.app.discordHandler.getUser(authorId);
-
-			if (user != null) {
-				authorName = user.getGlobalName().orElse(user.getUsername());
-			}
-		}
 
 		var table = root.content.section("info").table().tbody();
-		table.tr().td().string("Author").end().td().a("/guild/" + req.gc.guildId + "/members/" + authorId, authorName);
+		GuildAPIHandlers.member(table.tr().td().string("Author").end().td(), req.gc, authorId);
 
 		if (macro.created == null) {
 			table.tr().td().string("Created").end().td().string("Unknown");
@@ -183,12 +173,16 @@ public class GuildHandlers {
 		var name = member == null ? globalName : member.getDisplayName();
 
 		var root = req.createRoot(name + " - Members - " + req.gc);
-		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+		root.content.a(req.gc.url(), "< Back").classes("back");
 
 		var info = root.content.div("divwithborder");
 		info.div("spread").strong().string("ID").end().spanstr(memberId);
 		info.div("spread").strong().string("Username").end().spanstr(user.getUsername());
 		info.div("spread").strong().string("Global Name").end().spanstr(globalName);
+
+		if (member != null && member.getNickname().isPresent()) {
+			info.div("spread").strong().string("Nickname").end().spanstr(member.getNickname().get());
+		}
 
 		if (user.getDiscriminator() != null && !user.getDiscriminator().equals("0")) {
 			info.div("spread").strong().string("Tag").end().spanstr(user.getTag());
@@ -233,7 +227,7 @@ public class GuildHandlers {
 			var ul = btag.ul();
 
 			for (var macro : macros.stream().sorted().toList()) {
-				ul.li().a("/guild/" + req.gc.guildId + "/macros/" + macro.id, macro.name);
+				GuildAPIHandlers.macro(ul.li(), macro);
 			}
 		}
 
@@ -283,7 +277,7 @@ public class GuildHandlers {
 
 	public static HTTPResponse appeal(AppRequest req) {
 		var root = req.createRoot("Appeals - " + req.gc);
-		root.content.a("/guild/" + req.gc.guildId, "< Back").classes("back");
+		root.content.a(req.gc.url(), "< Back").classes("back");
 		root.content.h3().string("Unfortunately, there currently isn't a better appeal process.");
 		root.content.h3().string("If you are banned, join the server with an alt and message a moderator.");
 

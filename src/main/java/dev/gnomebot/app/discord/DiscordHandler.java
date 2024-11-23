@@ -2,7 +2,6 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEventType;
-import dev.gnomebot.app.cli.CLICommands;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
@@ -156,7 +155,6 @@ public class DiscordHandler {
 		Log.info("Looking for commands");
 		LegacyCommands.find();
 		ApplicationCommands.findCommands();
-		CLICommands.find();
 		CustomInteractionTypes.init();
 
 		Log.info("Loading discord handler events...");
@@ -344,7 +342,7 @@ public class DiscordHandler {
 	}
 
 	private <T extends Entity> void checkDifference(GuildCollections gc, MutableLong b, T oldM, T newM, Function<T, ?> value, String name) {
-		if (!gc.advancedLogging && b.value > 0L) {
+		if (b.value > 0L) {
 			return;
 		}
 
@@ -353,14 +351,6 @@ public class DiscordHandler {
 
 		if (!Objects.equals(o, n)) {
 			b.value++;
-
-			if (gc.advancedLogging) {
-				if (b.value == 1L) {
-					Log.info(newM.getClass().getSimpleName() + " updated: " + this + "/" + getEntityName(newM));
-				}
-
-				Log.info("> " + name + " " + o + " -> " + n);
-			}
 		}
 	}
 
@@ -368,22 +358,6 @@ public class DiscordHandler {
 		if (event.getNewAvatar().isPresent() || event.getNewDiscriminator().isPresent() || event.getNewUsername().isPresent()) {
 			var gc = app.db.guild(event.getGuildId());
 			gc.memberUpdated(event.getUserId().asLong(), 0);
-
-			if (gc.advancedLogging) {
-				Log.info("Member updated: " + this + "/" + event.getUserId());
-
-				if (event.getNewUsername().isPresent()) {
-					Log.info("> Username " + event.getNewUsername().get());
-				}
-
-				if (event.getNewAvatar().isPresent()) {
-					Log.info("> Avatar " + event.getNewAvatar().get());
-				}
-
-				if (event.getNewDiscriminator().isPresent()) {
-					Log.info("> Discriminator " + event.getNewDiscriminator().get());
-				}
-			}
 		}
 	}
 
@@ -556,7 +530,7 @@ public class DiscordHandler {
 
 			switch (matcher.group(1).trim()) {
 				case "kick" -> {
-					var dm = DM.send(this, user.getUserData(), "You've been kicked from " + gc.getClickableName() + ": **" + reason + "**.\nIf you wish to appeal it, [click here](<" + gc.db.app.url("/guild/" + guild.getId().asString() + "/appeal") + ">).", true).isPresent();
+					var dm = DM.send(this, user.getUserData(), "You've been kicked from " + gc.getClickableName() + ": **" + reason + "**.\nIf you wish to appeal it, [click here](<" + gc.db.app.url("/guilds/" + guild.getId().asString() + "/appeal") + ">).", true).isPresent();
 					guild.kick(user.getId(), reason).block();
 					var msg = "<@" + selfId + "> kicked " + user.getMention() + ": " + reason + " [DM " + Emojis.yesNo(dm).asFormat() + "]";
 

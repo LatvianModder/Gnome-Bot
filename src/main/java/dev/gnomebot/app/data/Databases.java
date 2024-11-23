@@ -105,6 +105,25 @@ public class Databases {
 		}
 	}
 
+	@Nullable
+	public GuildCollections guildOrNull(String path) {
+		for (var gc : allGuilds()) {
+			if (gc.paths.key.equals(path)) {
+				return gc;
+			}
+		}
+
+		try {
+			if (path.length() == 8) {
+				return guildOrNull(Long.parseUnsignedLong(path, 16));
+			} else {
+				return guildOrNull(Long.parseUnsignedLong(path));
+			}
+		} catch (Exception ignore) {
+			return null;
+		}
+	}
+
 	public GuildCollections guild(long id) {
 		synchronized (guildLock) {
 			return guildCollections.computeIfAbsent(id, g -> new GuildCollections(this, g));
@@ -162,7 +181,7 @@ public class Databases {
 
 	@Nullable
 	public WebToken getToken(String token) {
-		return webTokensDB.findFirst(token);
+		return token.equals(selfToken.token) ? selfToken : webTokensDB.findFirst(token);
 	}
 
 	public void invalidateTokens(long user) {

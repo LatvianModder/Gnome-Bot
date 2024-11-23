@@ -16,6 +16,7 @@ import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
 import dev.latvian.apps.tinyserver.http.response.error.HTTPError;
 import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
 import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
+import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.tinyserver.http.response.error.client.UnauthorizedError;
 import dev.latvian.apps.webutils.html.TagFunction;
 import discord4j.core.object.entity.Member;
@@ -137,7 +138,7 @@ public class AppRequest extends HTTPRequest {
 		}
 
 		if (variables().containsKey("guild")) {
-			gc = app.db.guildOrNull(variable("guild").asULong());
+			gc = app.db.guildOrNull(variable("guild").asString());
 
 			if (gc != null && token != null) {
 				var lvl = gc.getAuthLevel(token.userId);
@@ -315,4 +316,14 @@ public class AppRequest extends HTTPRequest {
 		return bodyList;
 	}
 	 */
+
+	public GuildCollections guild(String path) {
+		var gc = app.db.guildOrNull(path);
+
+		if (gc == null) {
+			throw new NotFoundError("Guild " + path + " not found");
+		}
+
+		return gc;
+	}
 }

@@ -261,7 +261,7 @@ public class MacroCommands extends ApplicationCommands {
 		list.add("Author: <@" + SnowFlake.str(macro.author) + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
-		event.respond(EmbedBuilder.create().url(event.context.gc.db.app.url("guild/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
+		event.respond(EmbedBuilder.create().url(event.context.gc.db.app.url("guilds/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
 	}
 
 	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long owner) {

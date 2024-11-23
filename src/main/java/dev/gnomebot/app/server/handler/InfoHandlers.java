@@ -1,6 +1,7 @@
 package dev.gnomebot.app.server.handler;
 
 import dev.gnomebot.app.Assets;
+import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
@@ -10,7 +11,10 @@ import dev.latvian.apps.json.JSONResponse;
 import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
 import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
 import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
+import dev.latvian.apps.tinyserver.http.response.error.client.UnauthorizedError;
 import dev.latvian.apps.webutils.ImageUtils;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.User;
 import discord4j.core.util.ImageUtil;
 import discord4j.rest.util.Image;
 
@@ -20,7 +24,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.function.Function;
 
 import static discord4j.rest.util.Image.Format.GIF;
 import static discord4j.rest.util.Image.Format.PNG;
@@ -216,5 +222,78 @@ public class InfoHandlers {
 		}
 
 		throw new NotFoundError("Attachment not found");
+	}
+
+	private static void appendUserData(JSONObject json, User user, boolean removed) {
+		json.put("id", user.getId().asString());
+		json.put("name", user.getUsername());
+		json.put("display_name", user instanceof Member m ? m.getDisplayName() : user.getGlobalName().orElse(user.getUsername()));
+		json.put("icon", user instanceof Member m ? m.getEffectiveAvatarUrl() : user.getAvatarUrl());
+
+		if (removed) {
+			json.put("removed", true);
+		}
+
+		if (user.isBot()) {
+			json.put("bot", true);
+		}
+	}
+
+	public static HTTPResponse lookup(AppRequest req) {
+		req.checkLoggedIn();
+		var result = JSONObject.of();
+
+		var gcs = new HashMap<String, GuildCollections>();
+		var gcLookup = (Function<String, GuildCollections>) id -> {
+			var gc1 = req.guild(id);
+
+			if (!gc1.getAuthLevel(req.token.userId).isMember()) {
+				throw new UnauthorizedError("You do not have permission to view this guild");
+			}
+
+			return gc1;
+		};
+
+		var data = req.variable("data").asString();
+		var s = data.split("/");
+
+		switch (s[0]) {
+			case "u" -> {
+				var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[1], 16));
+				appendUserData(result, user, false);
+			}
+			case "m" -> {
+				var gc = gcs.computeIfAbsent(s[1], gcLookup);
+
+				try {
+					var mem = gc.getMember(Long.parseUnsignedLong(s[2], 16));
+					appendUserData(result, mem, false);
+
+					int c = mem.getColor().block().getRGB();
+
+					if (c != 0) {
+						result.put("color", "%06X".formatted(c));
+					}
+				} catch (Exception ignore) {
+					var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[2], 16));
+					appendUserData(result, user, true);
+				}
+			}
+			case "r" -> {
+				var gc = gcs.computeIfAbsent(s[1], gcLookup);
+				var role = gc.getRoleMap().get(Long.parseUnsignedLong(s[2], 16));
+
+				if (role == null) {
+					throw new NotFoundError();
+				}
+
+				result.put("id", SnowFlake.str(role.id));
+				result.put("name", role.name);
+				result.put("display_name", "@" + role.name);
+				result.put("color", "%06X".formatted(role.color.getRGB()));
+			}
+		}
+
+		return JSONResponse.of(result);
 	}
 }

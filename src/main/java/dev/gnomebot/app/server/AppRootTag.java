@@ -13,6 +13,7 @@ public class AppRootTag extends RootTag {
 		this.app = req.app;
 		this.head.meta("name", "theme-color", "content", "#262728");
 		this.head.stylesheet("/assets/style.css");
+		this.head.deferScript("/assets/script.js");
 		this.body.iframe("invisibleframe").style("display:none;");
 		this.content = body.div().classes("content");
 		this.content.h1().string(title);

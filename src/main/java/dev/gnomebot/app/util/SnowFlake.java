@@ -30,6 +30,14 @@ public class SnowFlake {
 		return 1420070400000L + (id >>> 22);
 	}
 
+	public static boolean isNewer(long a, long b) {
+		return timestamp(a) > timestamp(b);
+	}
+
+	public static boolean isOlder(long a, long b) {
+		return timestamp(a) < timestamp(b);
+	}
+
 	public static long oldest(long a, long b) {
 		return timestamp(a) < timestamp(b) ? a : b;
 	}

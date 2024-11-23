@@ -3,8 +3,11 @@ package dev.gnomebot.app.server.handler;
 import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import dev.gnomebot.app.data.DiscordMessage;
+import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.AppRequest;
+import dev.gnomebot.app.util.LeaderboardEntry;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
@@ -17,6 +20,7 @@ import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.canvas.ImageCanvas;
 import dev.latvian.apps.webutils.data.Color4f;
+import dev.latvian.apps.webutils.data.MutableInt;
 import org.bson.conversions.Bson;
 
 import java.awt.Color;
@@ -24,6 +28,7 @@ import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,20 +37,6 @@ import java.util.stream.Collectors;
 
 public class ActivityHandlers {
 	public static final long MS_IN_DAY = 86400000L;
-
-	public static class LeaderboardEntry implements Comparable<LeaderboardEntry> {
-		public long userId;
-		public long xp;
-
-		@Override
-		public int compareTo(LeaderboardEntry o) {
-			if (xp == o.xp) {
-				return Long.compare(userId, o.userId);
-			}
-
-			return Long.compare(o.xp, xp);
-		}
-	}
 
 	public static HTTPResponse leaderboard(AppRequest req) throws Exception {
 		req.checkMember();
@@ -82,9 +73,8 @@ public class ActivityHandlers {
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
 		for (var document : req.gc.messageXp.aggregate(agg)) {
-			var entry = new LeaderboardEntry();
-			entry.userId = document.getLong("_id");
-			entry.xp = ((Number) document.get("xp")).longValue();
+			var entry = new LeaderboardEntry(document.getLong("_id"));
+			entry.value = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
 		}
 
@@ -94,7 +84,7 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(entry.userId);
+				var member = memberMap.get(entry.id);
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
@@ -103,7 +93,7 @@ public class ActivityHandlers {
 				var o = array.addObject();
 				o.put("id", member.getId().asString());
 				o.put("name", member.getDisplayName());
-				o.put("xp", entry.xp);
+				o.put("xp", entry.value);
 				o.put("rank", array.size());
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
@@ -153,19 +143,18 @@ public class ActivityHandlers {
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
 		for (var document : req.gc.messageXp.aggregate(agg)) {
-			var entry = new LeaderboardEntry();
-			entry.userId = document.getLong("_id");
-			entry.xp = ((Number) document.get("xp")).longValue();
+			var entry = new LeaderboardEntry(document.getLong("_id"));
+			entry.value = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
 		}
 
 		leaderboardEntries.sort(null);
 
-		List<LeaderboardCommandEntry> list = new ArrayList<>(limit);
+		var list = new ArrayList<LeaderboardCommandEntry>(limit);
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(entry.userId);
+				var member = memberMap.get(entry.id);
 
 				if (member == null || role.asLong() != 0L && !member.getRoleIds().contains(role)) {
 					continue;
@@ -175,7 +164,7 @@ public class ActivityHandlers {
 				e.id = member.getId().asLong();
 				e.name = member.getDisplayName();
 				e.altName = member.getUsername();
-				e.xp = FormattingUtils.format(entry.xp);
+				e.xp = FormattingUtils.format(entry.value);
 				e.rank = list.size() + 1;
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
@@ -301,7 +290,7 @@ public class ActivityHandlers {
 
 			/*
 			try {
-				JsonArray leaderboardJson = Utils.internalRequest("api/guild/activity/leaderboard/" + event.context.gc.guildId.asString() + "/" + days).timeout(5000).toJson().block().getAsJsonArray();
+				JsonArray leaderboardJson = Utils.internalRequest(event.context.gc.apiUrl() + "/activity/leaderboard/" + days).timeout(5000).toJson().block().getAsJsonArray();
 				String id = m.getId().asString();
 
 				for (JsonElement e : leaderboardJson) {
@@ -633,9 +622,8 @@ public class ActivityHandlers {
 		agg.add(Aggregates.group("$user", Accumulators.sum("xp", "$xp")));
 
 		for (var document : req.gc.messageXp.aggregate(agg)) {
-			var entry = new LeaderboardEntry();
-			entry.userId = document.getLong("_id");
-			entry.xp = ((Number) document.get("xp")).longValue();
+			var entry = new LeaderboardEntry(document.getLong("_id"));
+			entry.value = ((Number) document.get("xp")).longValue();
 			leaderboardEntries.add(entry);
 		}
 
@@ -645,7 +633,7 @@ public class ActivityHandlers {
 
 		for (var entry : leaderboardEntries) {
 			try {
-				var member = memberMap.get(entry.userId);
+				var member = memberMap.get(entry.id);
 
 				if (member == null) {
 					continue;
@@ -654,7 +642,7 @@ public class ActivityHandlers {
 				var e = new LeaderboardCommandEntry();
 				e.id = member.getId().asLong();
 				e.name = member.getDisplayName();
-				e.xp = FormattingUtils.format(entry.xp);
+				e.xp = FormattingUtils.format(entry.value);
 				e.rank = list.size() + 1;
 				var col = member.getColor().block().getRGB() & 0xFFFFFF;
 				e.color = col == 0 ? 0xFFFFFF : col;
@@ -745,5 +733,70 @@ public class ActivityHandlers {
 		}
 
 		return HTTPResponse.ok().png(canvas.createImage());
+	}
+
+	public static HTTPResponse channelRoleMentions(AppRequest req) {
+		req.checkAdmin();
+
+		var json = JSONArray.of();
+
+		var role = req.gc.getRoleMap().get(req.variable("role").asULong());
+
+		if (role == null) {
+			throw new NotFoundError("Role not found!");
+		}
+
+		var map = new HashMap<Long, MutableInt>();
+
+		for (var msg : req.gc.messages.query()
+				.filter(Filters.bitsAllSet("flags", DiscordMessage.FLAG_MENTIONS_ROLES))
+				.filter(Filters.bitsAllClear("flags", DiscordMessage.FLAG_BOT))
+				.filter(Filters.eq("role_mentions", role.id))
+				.projectionFields("channel")
+		) {
+			map.computeIfAbsent(msg.getChannelID(), MutableInt.MAP_VALUE).add(1);
+		}
+
+		map.entrySet().stream().sorted((o1, o2) -> Integer.compare(o2.getValue().value, o1.getValue().value)).forEachOrdered(e -> {
+			var o = json.addObject();
+			o.put("channel", req.gc.getChannelJson(e.getKey()));
+			o.put("mentions", e.getValue().value);
+		});
+
+		return JSONResponse.of(json);
+	}
+
+	public static HTTPResponse emojiLeaderboard(AppRequest req) {
+		req.checkAdmin();
+
+		var json = JSONArray.of();
+
+		var c = req.query("channel").asULong();
+		var emojiMap = new HashMap<String, LeaderboardEntry>();
+
+		for (var message : req.gc.messages.query().filter(c == 0L ? Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN) : Filters.and(Filters.eq("channel", c), Filters.regex("content", Emojis.GUILD_EMOJI_PATTERN)))) {
+			var matcher = Emojis.GUILD_EMOJI_PATTERN_GROUPS.matcher(message.getContent());
+
+			while (matcher.find()) {
+				var entry = emojiMap.computeIfAbsent(matcher.group(1).toLowerCase(), LeaderboardEntry::new);
+				var id = SnowFlake.num(matcher.group(2));
+
+				if (entry.id == 0L || SnowFlake.isNewer(id, entry.id)) {
+					entry.id = id;
+				}
+
+				entry.value++;
+			}
+		}
+
+		emojiMap.values().stream().sorted().limit(50L).forEachOrdered(entry -> {
+			var o = json.addObject();
+			var e = o.addObject("emoji");
+			e.put("id", SnowFlake.str(entry.id));
+			e.put("name", entry.name);
+			o.put("uses", entry.value);
+		});
+
+		return JSONResponse.of(json);
 	}
 }

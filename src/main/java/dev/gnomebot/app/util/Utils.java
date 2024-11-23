@@ -61,7 +61,7 @@ public class Utils {
 
 	// TODO: Get rid of this eventually
 	public static URLRequest<InputStream> internalRequest(App app, String path) {
-		return URLRequest.of(app.url(path)).addHeader("Authorization", "Bearer " + App.instance.db.selfToken.token);
+		return URLRequest.of(app.url(path)).addHeader("Authorization", "Bearer " + app.db.selfToken.token);
 	}
 
 	public static JSONObject readInternalJson(App app, String path) {
@@ -162,17 +162,16 @@ public class Utils {
 		return footer == null ? null : EmbedCreateFields.Footer.of(footer.getText(), footer.getIconUrl().orElse(null));
 	}
 
-	@Nullable
-	public static String getAvatarUrl(UserData data) {
-		return data.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + data.avatar().get() + ".png?size=128") : null;
+	public static String getAvatarURL(UserData data) {
+		var a = data.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + data.avatar().get() + ".png") : null;
+		return a == null ? ("https://cdn.discordapp.com/embed/avatars/" + ((data.id().asLong() >> 22) % 6L) + ".png") : a;
 	}
 
-	@Nullable
-	public static String getAvatarUrl(UserData data, PartialMemberData memberData) {
-		return memberData.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + memberData.avatar().get() + ".png?size=128") : getAvatarUrl(data);
+	public static String getAvatarURL(UserData data, PartialMemberData memberData) {
+		return memberData.avatar().isPresent() ? ("https://cdn.discordapp.com/avatars/" + data.id().asString() + "/" + memberData.avatar().get() + ".png") : getAvatarURL(data);
 	}
 
-	public static String getAvatarUrl(User user, @Nullable Member member) {
+	public static String getAvatarURL(User user, @Nullable Member member) {
 		if (member != null) {
 			var animated = member.hasAnimatedGuildAvatar();
 			return member.getGuildAvatarUrl(animated ? GIF : PNG).orElse(member.getAvatarUrl());

@@ -4,6 +4,8 @@ import com.mongodb.client.model.Filters;
 import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
+import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
@@ -15,6 +17,7 @@ import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
 import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
 import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.ImageUtils;
+import dev.latvian.apps.webutils.html.Tag;
 import org.bson.conversions.Bson;
 
 import java.awt.image.BufferedImage;
@@ -27,6 +30,26 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class GuildAPIHandlers {
+	public static Tag channel(Tag parent, GuildCollections gc, long id) {
+		return parent.a(gc.url() + "/channels/" + id, gc.getChannelDisplayName(id));
+	}
+
+	public static Tag user(Tag parent, long id) {
+		return parent.a("/users/" + id).attr("data-lookup", "u/%016X".formatted(id));
+	}
+
+	public static Tag member(Tag parent, GuildCollections gc, long id) {
+		return parent.a(gc.url() + "/members/" + id).attr("data-lookup", "m/%016X/%016X".formatted(gc.guildId, id));
+	}
+
+	public static Tag role(Tag parent, GuildCollections gc, long id) {
+		return parent.a(gc.url() + "/roles/" + id, gc.getRoleDisplayName(id));
+	}
+
+	public static Tag macro(Tag parent, Macro macro) {
+		return parent.a(macro.guild.url() + "/macros/" + macro.id, macro.name);
+	}
+
 	public static HTTPResponse guilds(AppRequest req) throws Exception {
 		req.checkLoggedIn();
 
@@ -54,7 +77,7 @@ public class GuildAPIHandlers {
 			o1.put("id", SnowFlake.str(g.gc().guildId));
 			o1.put("name", g.gc().toString());
 			o1.put("owner", SnowFlake.str(g.gc().ownerId));
-			o1.put("authLevel", g.authLevel().name);
+			o1.put("auth_level", g.authLevel().name);
 		}
 
 		return JSONResponse.of(json).publicCache(Duration.ofMinutes(1L));

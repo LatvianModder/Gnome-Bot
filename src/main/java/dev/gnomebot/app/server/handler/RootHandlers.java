@@ -24,7 +24,7 @@ public class RootHandlers {
 		}
 
 		var ul = root.content.ul();
-		ul.li().a("/guild").string("Browse Guilds");
+		ul.li().a("/guilds").string("Browse Guilds");
 		ul.li().a("/logout").string("Log Out");
 		return root.asResponse();
 	}
@@ -77,7 +77,7 @@ public class RootHandlers {
 		return HTTPResponse.ok().text("""
 				User-agent: *
 				Disallow: /paste/*
-				Disallow: /guild/*
+				Disallow: /guilds/*
 				Allow: /""").publicCache(Duration.ofDays(1L));
 	}
 }

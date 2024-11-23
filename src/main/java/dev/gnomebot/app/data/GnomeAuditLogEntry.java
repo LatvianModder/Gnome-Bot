@@ -22,7 +22,7 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		// int OLD_CONTENT = 1 << 4;
 		int EXTRA = 1 << 5;
 		int REVOCABLE = 1 << 6;
-		int BOT_USER_IGNORED = 1 << 7;
+		// int BOT_USER_IGNORED = 1 << 7;
 		int DM = 1 << 8;
 		int LOCKDOWN = 1 << 9;
 		int DELETED_MESSAGES = 1 << 10;
@@ -31,8 +31,8 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 	}
 
 	public enum Type {
-		REACTION_ADDED("reaction_added", "Added Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, 0, gc -> gc.reactionLog),
-		REACTION_REMOVED("reaction_removed", "Removed Reaction", 0, Flags.EXPIRES | Flags.CONTENT | Flags.BOT_USER_IGNORED, 1, gc -> gc.reactionLog),
+		REACTION_ADDED("reaction_added", "Added Reaction", 0, Flags.EXPIRES | Flags.CONTENT, 0, gc -> gc.reactionLog),
+		REACTION_REMOVED("reaction_removed", "Removed Reaction", 0, Flags.EXPIRES | Flags.CONTENT, 1, gc -> gc.reactionLog),
 		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, 0, gc -> gc.voiceLog),
 		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, 1, gc -> gc.voiceLog),
 
