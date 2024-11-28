@@ -1,7 +1,5 @@
 package dev.gnomebot.app;
 
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.data.ping.PingHandler;
@@ -38,16 +36,24 @@ import dev.latvian.apps.tinyserver.HTTPServer;
 import dev.latvian.apps.tinyserver.OptionalString;
 import dev.latvian.apps.tinyserver.http.file.FileResponseHandler;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.TimeUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.discordjson.json.BanData;
+import discord4j.discordjson.json.UserData;
+import discord4j.rest.route.Routes;
+import discord4j.rest.util.PaginationUtil;
 import org.jetbrains.annotations.Nullable;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -360,16 +366,20 @@ public class App {
 		var count = new AtomicLong(0L);
 		var max = new AtomicLong(0L);
 		var done = new AtomicBoolean(false);
-		long now = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 
 		var countThread = new Thread(() -> {
 			try {
 				while (!done.get()) {
 					Thread.sleep(5000L);
-					Log.warn("%,d / %,d".formatted(count.get(), max.get()));
+					long c = count.get();
+					long m = max.get();
+					double p = c / (double) m;
+					long eta = (long) ((System.currentTimeMillis() - start) / p * (1D - p));
+					Log.debug("%,d / %,d, ETA %s".formatted(c, m, TimeUtils.prettyTimeString(eta / 1000L)));
 				}
 
-				Log.success("Done %,d / %,d in %.02f s".formatted(count.get(), max.get(), (System.currentTimeMillis() - now) / 1000F));
+				Log.success("Done %,d / %,d in %.02f s".formatted(count.get(), max.get(), (System.currentTimeMillis() - start) / 1000F));
 			} catch (Exception ignored) {
 			}
 		});
@@ -385,7 +395,7 @@ public class App {
 					args1.put(entry.getKey(), OptionalString.of(entry.getValue()));
 				}
 
-				port(args1, now, count, max);
+				port(args1, start, count, max);
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
@@ -397,9 +407,45 @@ public class App {
 		thread.start();
 	}
 
-	private void port(Map<String, OptionalString> args, long now, AtomicLong count, AtomicLong max) throws Throwable {
-		var mm = db.guild(Snowflake.of(166630061217153024L));
+	public static final HashSet<Long> IGNORED_BANS = new HashSet<>();
 
+	private void port(Map<String, OptionalString> args, long start, AtomicLong count, AtomicLong max) throws Throwable {
+		var guild = db.guild(Snowflake.of(166630061217153024L)).getGuild();
+		var toBan = new ArrayList<UserData>();
+
+		// Required until D4J fixes ban pagination
+		for (var entry : PaginationUtil.paginateAfter(params -> Routes.GUILD_BANS_GET.newRequest(guild.getId().asLong())
+				.query(params)
+				.exchange(guild.getClient().getCoreResources().getRouter())
+				.bodyToMono(BanData[].class)
+				.flatMapMany(Flux::fromArray), data -> data.user().id().asLong(), 0L, 1000).toIterable()) {
+			var u = entry.user();
+			// count++;
+			// App.info("Ban #%05d %s: %s".formatted(count, u.username(), entry.reason().orElse("Unknown")));
+
+			var name = u.username();
+			var reason = entry.reason().orElse("").trim().toLowerCase();
+
+			if (reason.isEmpty() || name.length() == 25 && name.startsWith("deleted_user_")) {
+				toBan.add(u);
+			}
+		}
+
+		max.set(toBan.size());
+		toBan.sort((a, b) -> a.username().compareToIgnoreCase(b.username()));
+
+		for (var u : toBan) {
+			if (count.addAndGet(1L) % 50L == 0L) {
+				Log.warn("Sleeping...");
+				Thread.sleep(10000L);
+			}
+
+			IGNORED_BANS.add(u.id().asLong());
+			Log.warn("Unbanning " + u.username());
+			guild.unban(SnowFlake.convert(u.id().asLong())).block();
+		}
+
+		/*
 		// DELETE
 		for (var gc : db.allGuilds()) {
 			Log.info("Porting " + gc);
@@ -410,6 +456,7 @@ public class App {
 			gc.voiceLog.query().filter(Filters.or(Filters.eq("type", "join_voice"))).many().update(Updates.set("type", 0));
 			gc.voiceLog.query().filter(Filters.or(Filters.eq("type", "leave_voice"))).many().update(Updates.set("type", 1));
 		}
+		 */
 
 		/*
 		// MOVE

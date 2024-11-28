@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
@@ -256,6 +257,12 @@ public class MemberHandler {
 	public static void unbanned(DiscordHandler handler, UnbanEvent event) {
 		var gc = handler.app.db.guild(event.getGuildId());
 		updateMember(gc, event.getUser(), null, ACTION_UNBANNED, gc.members.findFirst(event.getUser()), null);
+
+		var name = event.getUser().getUsername();
+
+		if (App.IGNORED_BANS.contains(event.getUser().getId().asLong()) || name.length() == 25 && name.startsWith("deleted_user_")) {
+			return;
+		}
 
 		gc.adminLogChannelEmbed(event.getUser().getUserData(), gc.adminLogChannel, spec -> {
 			spec.color(EmbedColor.GREEN);

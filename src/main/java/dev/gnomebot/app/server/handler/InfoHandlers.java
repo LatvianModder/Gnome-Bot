@@ -259,14 +259,14 @@ public class InfoHandlers {
 
 		switch (s[0]) {
 			case "u" -> {
-				var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[1], 16));
+				var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[1]));
 				appendUserData(result, user, false);
 			}
 			case "m" -> {
 				var gc = gcs.computeIfAbsent(s[1], gcLookup);
 
 				try {
-					var mem = gc.getMember(Long.parseUnsignedLong(s[2], 16));
+					var mem = gc.getMember(Long.parseUnsignedLong(s[2]));
 					appendUserData(result, mem, false);
 
 					int c = mem.getColor().block().getRGB();
@@ -275,13 +275,13 @@ public class InfoHandlers {
 						result.put("color", "%06X".formatted(c));
 					}
 				} catch (Exception ignore) {
-					var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[2], 16));
+					var user = req.app.discordHandler.getUser(Long.parseUnsignedLong(s[2]));
 					appendUserData(result, user, true);
 				}
 			}
 			case "r" -> {
 				var gc = gcs.computeIfAbsent(s[1], gcLookup);
-				var role = gc.getRoleMap().get(Long.parseUnsignedLong(s[2], 16));
+				var role = gc.getRoleMap().get(Long.parseUnsignedLong(s[2]));
 
 				if (role == null) {
 					throw new NotFoundError();

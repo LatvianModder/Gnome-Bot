@@ -7,7 +7,6 @@ import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.webutils.data.MutableInt;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.html.HTMLTable;
 import discord4j.discordjson.json.BanData;
@@ -18,7 +17,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -156,8 +154,6 @@ public class LogHandlers {
 
 		var guild = req.gc.getGuild();
 
-		var badNamePattern = Pattern.compile("[^\\w-.()!$^*+=~\\s]");
-
 		// Required until D4J fixes ban pagination
 		for (var entry : PaginationUtil.paginateAfter(params -> Routes.GUILD_BANS_GET.newRequest(guild.getId().asLong())
 				.query(params)
@@ -189,7 +185,6 @@ public class LogHandlers {
 		var otherList = new ArrayList<BanEntry>();
 		var noReasonList = new ArrayList<BanEntry>();
 		var deletedUsers = 0;
-		var deletedUserReasons = new HashMap<String, Pair<String, MutableInt>>();
 
 		var lists = List.of(Pair.of("Spam / Scam", spamList), Pair.of("Hacks", hackList), Pair.of("LFG", lfgList), Pair.of("Other", otherList), Pair.of("Unknown Reason", noReasonList));
 
@@ -198,8 +193,9 @@ public class LogHandlers {
 
 			if (entry.name.length() == 25 && entry.name.startsWith("deleted_user_")) {
 				deletedUsers++;
-				deletedUserReasons.computeIfAbsent(reason, r -> Pair.of(entry.reason, new MutableInt())).b().add(1);
-			} else if (reason.isEmpty()) {
+			}
+
+			if (reason.isEmpty()) {
 				noReasonList.add(entry);
 			} else if (reason.contains("lfg")) {
 				lfgList.add(entry);
@@ -235,16 +231,7 @@ public class LogHandlers {
 			root.content.paired("details").classes("bantable").paired("summary").string(listEntry.a() + " [" + list1.size() + "]").end().add(table);
 		}
 
-		deletedUserReasons.remove("");
-
-		if (deletedUsers > 0) {
-			var ul = root.content.paired("details").classes("bantable").paired("summary").string("Deleted Users [" + deletedUsers + "]").end().ul();
-
-			for (var reason : deletedUserReasons.values().stream().sorted((o1, o2) -> Integer.compare(o2.b().value, o1.b().value)).toList()) {
-				ul.li().string(reason.a() + " [" + reason.b().value + "]");
-			}
-		}
-
+		root.content.p().string("Total: " + list.size() + ", Deleted Users: " + deletedUsers);
 		return root.asResponse();
 	}
 }

@@ -31,19 +31,19 @@ import java.util.stream.Collectors;
 
 public class GuildAPIHandlers {
 	public static Tag channel(Tag parent, GuildCollections gc, long id) {
-		return parent.a(gc.url() + "/channels/" + id, gc.getChannelDisplayName(id));
+		return parent.a(gc.url() + "/channels/" + Long.toUnsignedString(id), gc.getChannelDisplayName(id));
 	}
 
 	public static Tag user(Tag parent, long id) {
-		return parent.a("/users/" + id).attr("data-lookup", "u/%016X".formatted(id));
+		return parent.a("/users/" + id).attr("data-lookup", "u/" + Long.toUnsignedString(id));
 	}
 
 	public static Tag member(Tag parent, GuildCollections gc, long id) {
-		return parent.a(gc.url() + "/members/" + id).attr("data-lookup", "m/%016X/%016X".formatted(gc.guildId, id));
+		return parent.a(gc.url() + "/members/" + id).attr("data-lookup", "m/" + gc.paths.key + "/" + Long.toUnsignedString(id));
 	}
 
 	public static Tag role(Tag parent, GuildCollections gc, long id) {
-		return parent.a(gc.url() + "/roles/" + id, gc.getRoleDisplayName(id));
+		return parent.a(gc.url() + "/roles/" + Long.toUnsignedString(id)).attr("data-lookup", "r/" + gc.paths.key + "/" + Long.toUnsignedString(id));
 	}
 
 	public static Tag macro(Tag parent, Macro macro) {
