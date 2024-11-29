@@ -10,7 +10,6 @@ import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
-import dev.gnomebot.app.script.DiscordJS;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
 import dev.gnomebot.app.server.handler.GuildAPIHandlers;
@@ -343,10 +342,6 @@ public class App {
 		CharMap.load();
 		GuildPaths.CUSTOM_NAMES.invalidate();
 		GuildPaths.INVERTED_CUSTOM_NAMES.invalidate();
-
-		for (var gc : db.guildCollections.values()) {
-			gc.discordJS = new DiscordJS(gc, false);
-		}
 	}
 
 	public void schedule(Duration timer, String type, long guild, long channel, long user, String content) {

@@ -9,9 +9,6 @@ version '1.0.0'
 archivesBaseName = 'gnome-bot'
 mainClassName = 'dev.gnomebot.app.App'
 
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
-
 compileJava.options.encoding = 'UTF-8'
 
 tasks.withType(JavaCompile) {
@@ -29,17 +26,9 @@ repositories {
 	//maven { url 'https://jitpack.io' }
 
 	maven {
-		url "https://www.cursemaven.com"
-		content {
-			includeGroup "curse.maven"
-		}
-	}
-
-	maven {
 		url "https://maven.latvian.dev/releases"
 		content {
 			includeGroup "dev.latvian.apps"
-			includeGroup "dev.latvian.mods"
 		}
 	}
 
@@ -52,10 +41,8 @@ dependencies {
 	implementation('dev.latvian.apps:tiny-java-server:1.0.0-build.25')
 	implementation('dev.latvian.apps:ansi:1.0.0-build.9')
 	implementation('dev.latvian.apps:json:1.0.0-build.4')
-	implementation('dev.latvian.apps:webutils:1.1.0-build.66')
-	implementation('dev.latvian.mods:rhino:2101.2.5-build.54') { transitive = false }
-	implementation('com.google.code.gson:gson:2.10.1') // Required by Rhino
 	// implementation('net.dv8tion:JDA:5.2.1')
+	implementation('dev.latvian.apps:webutils:1.1.0-build.66')
 	implementation('com.discord4j:discord4j-core:3.3.0-SNAPSHOT') { changing = true }
 	implementation('org.mongodb:mongodb-driver-sync:5.0.0')
 	implementation('org.slf4j:slf4j-simple:2.0.7')

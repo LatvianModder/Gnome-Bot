@@ -18,9 +18,6 @@ import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.script.DiscordJS;
-import dev.gnomebot.app.script.WrappedGuild;
-import dev.gnomebot.app.script.WrappedId;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MapWrapper;
@@ -77,10 +74,8 @@ import java.util.stream.Stream;
 public class GuildCollections {
 	public final Databases db;
 	public final long guildId;
-	public final WrappedId wrappedId;
 	public final GuildPaths paths;
 	public final MongoDatabase database;
-	public DiscordJS discordJS;
 
 	public String name;
 	public String iconUrl;
@@ -137,7 +132,6 @@ public class GuildCollections {
 	public final ConfigHolder<List<String>> reportOptions = config(GuildConfig.REPORT_OPTIONS);
 	public final ConfigHolder<Boolean> autoMuteEmbed = config(GuildConfig.AUTO_MUTE_EMBED);
 
-	private WrappedGuild wrappedGuild;
 	private Map<Long, ChannelInfo> channelMap;
 	private List<ChannelInfo> channelList;
 	private Map<String, ChannelInfo> uniqueChannelNameMap;
@@ -155,7 +149,6 @@ public class GuildCollections {
 	public GuildCollections(Databases d, long g) {
 		db = d;
 		guildId = g;
-		wrappedId = new WrappedId(g);
 		paths = AppPaths.getGuildPaths(g);
 
 		var dbid = SnowFlake.str(guildId);
@@ -259,8 +252,6 @@ public class GuildCollections {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-
-		discordJS = new DiscordJS(this, false);
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
@@ -566,7 +557,6 @@ public class GuildCollections {
 
 	private void refreshCache() {
 		refreshChannelCache();
-		wrappedGuild = null;
 		roleMap = null;
 		roleList = null;
 		uniqueRoleNameMap = null;
@@ -763,14 +753,6 @@ public class GuildCollections {
 		} catch (Exception ex) {
 			Log.info(ANSI.orange("Failed to write to audit log [" + builder.type.name + "]: ").append(ANSI.darkRed(ex)));
 		}
-	}
-
-	public WrappedGuild getWrappedGuild() {
-		if (wrappedGuild == null) {
-			wrappedGuild = new WrappedGuild(discordJS, this);
-		}
-
-		return wrappedGuild;
 	}
 
 	public Stream<Member> getMemberStream() {

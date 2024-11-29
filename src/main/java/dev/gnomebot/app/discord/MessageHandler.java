@@ -16,14 +16,12 @@ import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.discord.legacycommand.LegacyCommands;
-import dev.gnomebot.app.script.event.MessageEventJS;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
-import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
@@ -201,6 +199,8 @@ public class MessageHandler {
 			if (message != null) {
 				message.edit(gc, event.getCurrentContent().get(), !message.is(DiscordMessage.FLAG_BOT));
 			}
+
+			Hardcoded.messageEdited(gc, event);
 		}
 	}
 
@@ -569,23 +569,8 @@ public class MessageHandler {
 
 		var macroPrefix = context.gc.macroPrefix.get();
 
-		if (gc.discordJS.onMessage.hasListeners() || !gc.discordJS.customMacros.isEmpty()) {
-			var messageEventJS = new MessageEventJS(gc.getWrappedGuild().channels.get(SnowFlake.str(channelInfo.id)).getMessage(message), totalMessages, totalXp);
-
-			if (content.length() > macroPrefix.length() && content.startsWith(macroPrefix)) {
-				var reader = new CommandReader(context.gc, content.substring(macroPrefix.length()));
-				var consumer = gc.discordJS.customMacros.get(reader.readString().orElse(""));
-
-				if (consumer != null) {
-					messageEventJS.reader = reader;
-					consumer.accept(messageEventJS);
-					return;
-				}
-			}
-
-			if (gc.discordJS.onMessage.post("", messageEventJS)) {
-				return;
-			}
+		if (Hardcoded.message(gc, message, channelInfo, member, contentNoEmojis)) {
+			return;
 		}
 
 		if (channelInfo.settings.autoUpvote && channelInfo.threadParent == null) {
@@ -686,9 +671,7 @@ public class MessageHandler {
 			Log.info("Extended " + channelInfo.getName() + " expiration");
 		}
 
-		if (gc.discordJS.onAfterMessage.hasListeners()) {
-			gc.discordJS.onAfterMessage.post("", new MessageEventJS(gc.getWrappedGuild().channels.get(SnowFlake.str(channelInfo.id)).getMessage(message), totalMessages, totalXp));
-		}
+		Hardcoded.afterMessage(gc, message, member, totalMessages, totalXp, contentNoEmojis);
 	}
 
 	private static boolean handleLegacyCommand(CommandContext context, String content) {

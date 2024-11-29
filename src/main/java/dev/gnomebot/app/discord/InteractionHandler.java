@@ -25,8 +25,6 @@ import dev.gnomebot.app.discord.command.admin.UnmuteCommand;
 import dev.gnomebot.app.discord.command.admin.WarnCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import dev.gnomebot.app.script.event.ComponentEventJS;
-import dev.gnomebot.app.script.event.ModalEventJS;
 import dev.gnomebot.app.server.handler.MinecraftHandlers;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.OngoingAction;
@@ -183,10 +181,6 @@ public class InteractionHandler {
 				var customId = event.getCustomId();
 				var eventWrapper = new ComponentEventWrapper(handler.app, gc, event, customId);
 
-				if (gc.discordJS.onButton.hasListeners() && gc.discordJS.onButton.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
-					return;
-				}
-
 				try {
 					try {
 						button(eventWrapper);
@@ -214,10 +208,6 @@ public class InteractionHandler {
 
 				var eventWrapper = new ComponentEventWrapper(handler.app, gc, event, customId);
 
-				if (gc.discordJS.onSelectMenu.hasListeners() && gc.discordJS.onSelectMenu.post(customId, new ComponentEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
-					return;
-				}
-
 				try {
 					try {
 						selectMenu(eventWrapper, event.getValues());
@@ -241,10 +231,6 @@ public class InteractionHandler {
 			if (member != null) {
 				var customId = event.getCustomId();
 				var eventWrapper = new ModalEventWrapper(handler.app, gc, event, customId);
-
-				if (gc.discordJS.onModal.hasListeners() && gc.discordJS.onModal.post(customId, new ModalEventJS(customId, gc.getWrappedGuild().getUser(member.getId().asString()), eventWrapper))) {
-					return;
-				}
 
 				try {
 					try {
