@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.Macro;
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
@@ -183,7 +184,9 @@ public class MacroCommands extends ApplicationCommands {
 		event.context.gc.saveMacroMap();
 		event.context.channelInfo.createMessage(event.context.sender.getMention() + " updated macro " + macro.chatFormatted(true) + "!").block();
 
-		macro.createMessageOrTimeout(event.context.gc, null, event.context.sender.getId().asLong()).thenAccept(preview -> {
+		var ctx = new ComplexMessageRenderContext(event.context.gc, event.context.sender.getId().asLong());
+
+		macro.createMessageOrTimeout(ctx).thenAccept(preview -> {
 			preview.content("Preview:\n\n" + preview.getContent());
 			preview.ephemeral(true);
 			event.respond(preview);
@@ -261,22 +264,26 @@ public class MacroCommands extends ApplicationCommands {
 		list.add("Author: <@" + SnowFlake.str(macro.author) + ">");
 		list.add("Created: " + Utils.formatRelativeDate(macro.created));
 		list.add("Uses: " + macro.getUses());
-		event.respond(EmbedBuilder.create().url(event.context.gc.db.app.url("guilds/" + event.context.gc.guildId + "/macros/" + macro.id)).title("Macro '" + macro.name + "'").description(list));
+		event.respond(EmbedBuilder.create().url(event.context.gc.db.app.url(macro.url())).title("Macro '" + macro.name + "'").description(list));
 	}
 
-	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long owner) {
+	public static void macroButtonCallback(ComponentEventWrapper event, long guildId, String name, long senderId) {
 		var macro = (guildId == event.context.gc.guildId ? event.context.gc : event.context.gc.db.guild(guildId)).getMacroFromCommand(name);
 
-		if (owner != 0L) {
-			if (owner != event.context.sender.getId().asLong()) {
-				event.acknowledge();
-			} else {
-				macro.addUse();
-				macro.createMessageOrTimeout(event.context.gc, null, owner).thenAccept(m -> event.edit().respond(m.ephemeral(true)));
-			}
+		// event.acknowledge();
+
+		if (senderId != 0L && senderId == event.context.sender.getId().asLong()) {
+			macro.addUse();
+			var ctx = new ComplexMessageRenderContext(event.context.gc, senderId);
+			macro.createMessageOrTimeout(ctx).thenAccept(m -> event.edit().respond(m.ephemeral(true)));
 		} else {
 			macro.addUse();
-			macro.createMessageOrTimeout(event.context.gc, null, event.context.sender.getId().asLong()).thenAccept(m -> event.respond(m.ephemeral(true)));
+			var ctx = new ComplexMessageRenderContext(event.context.gc, event.context.sender.getId().asLong());
+			macro.createMessageOrTimeout(ctx).thenAccept(m -> event.respond(m.ephemeral(true)));
 		}
+	}
+
+	public static void macroMenuCallback(ComponentEventWrapper event, long guildId, String name, long senderId, String valueId) {
+		macroButtonCallback(event, guildId, valueId, senderId);
 	}
 }

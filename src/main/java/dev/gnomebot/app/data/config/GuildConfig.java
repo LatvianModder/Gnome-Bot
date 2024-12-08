@@ -4,7 +4,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.Font;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public interface GuildConfig {
@@ -47,9 +46,7 @@ public interface GuildConfig {
 	ConfigKey<Boolean, ConfigHolder<Boolean>> ADMINS_BYPASS_ANON_FEEDBACK = key(BooleanConfigType.DEFAULT, "admins_bypass_anon_feedback", "Admins Bypass Anonymous Feedback", true);
 	ConfigKey<Font, FontConfigType.Holder> FONT = key(FontConfigType.DEFAULT, "font", "Font");
 	ConfigKey<Integer, ConfigHolder<Integer>> AUTO_MUTE_URL_SHORTENER = key(new IntConfigType(0, 43800), "auto_mute_url_shortener", "Auto-mute URL Shortener");
-	ConfigKey<Integer, ConfigHolder<Integer>> AUTO_MUTE_SCAM_URL = key(new IntConfigType(0, 43800), "auto_mute_scam_url", "Auto-mute Scam URL");
 	ConfigKey<Boolean, ConfigHolder<Boolean>> AUTO_PASTE = key(BooleanConfigType.DEFAULT, "auto_paste", "Auto-paste", true);
-	ConfigKey<List<String>, ConfigHolder<List<String>>> REPORT_OPTIONS = key(StringConfigType.DEFAULT.asList(), "report_options", "Report Options"); // "Scam", "Spam", "NSFW", "Hacks"
 	ConfigKey<Boolean, ConfigHolder<Boolean>> AUTO_MUTE_EMBED = key(BooleanConfigType.DEFAULT, "auto_mute_embed", "Auto-mute Embed", true);
 
 	@Nullable
@@ -61,7 +58,6 @@ public interface GuildConfig {
 			case "custom_command_prefix" -> MACRO_PREFIX;
 			case "anonymous_feedback_admin_bypass" -> ADMINS_BYPASS_ANON_FEEDBACK;
 			case "automute_url_shortener" -> AUTO_MUTE_URL_SHORTENER;
-			case "automute_scam_url" -> AUTO_MUTE_SCAM_URL;
 			default -> MAP.get(id);
 		};
 	}

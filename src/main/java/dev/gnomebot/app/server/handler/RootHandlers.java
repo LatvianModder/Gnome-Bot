@@ -40,7 +40,7 @@ public class RootHandlers {
 			} else {
 				root.content.p().string("You've successfully logged in, " + req.token.getName() + "!");
 				root.content.p().string("You can now close this page.");
-				root.content.p().a("/guild").string("You can click here to browse guild list.");
+				root.content.p().a("/guilds").string("You can click here to browse guild list.");
 			}
 
 			return root.asResponse();

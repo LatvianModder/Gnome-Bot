@@ -4,7 +4,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.GuildPaths;
 import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.data.config.ConfigHolder;
@@ -127,9 +126,7 @@ public class GuildCollections {
 	public final ConfigHolder<Boolean> adminsBypassAnonFeedback = config(GuildConfig.ADMINS_BYPASS_ANON_FEEDBACK);
 	public final FontConfigType.Holder font = config(GuildConfig.FONT);
 	public final ConfigHolder<Integer> autoMuteUrlShortener = config(GuildConfig.AUTO_MUTE_URL_SHORTENER);
-	public final ConfigHolder<Integer> autoMuteScamUrl = config(GuildConfig.AUTO_MUTE_SCAM_URL);
 	public final ConfigHolder<Boolean> autoPaste = config(GuildConfig.AUTO_PASTE);
-	public final ConfigHolder<List<String>> reportOptions = config(GuildConfig.REPORT_OPTIONS);
 	public final ConfigHolder<Boolean> autoMuteEmbed = config(GuildConfig.AUTO_MUTE_EMBED);
 
 	private Map<Long, ChannelInfo> channelMap;
@@ -564,7 +561,6 @@ public class GuildCollections {
 	}
 
 	public void guildUpdated(@Nullable Guild g) {
-		BrainEventType.REFRESHED_GUILD_CACHE.build(this).post();
 		refreshCache();
 		var saveInfo = false;
 
@@ -604,7 +600,6 @@ public class GuildCollections {
 	}
 
 	public void channelUpdated(@Nullable CategorizableChannel old, TopLevelGuildMessageChannel channel, boolean deleted) {
-		BrainEventType.REFRESHED_CHANNEL_CACHE.build(this).post();
 		refreshCache();
 
 		if (!deleted) {
@@ -613,7 +608,6 @@ public class GuildCollections {
 	}
 
 	public void roleUpdated(long roleId, boolean deleted) {
-		BrainEventType.REFRESHED_ROLE_CACHE.build(this).post();
 		refreshCache();
 	}
 

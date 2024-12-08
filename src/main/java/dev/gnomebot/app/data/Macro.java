@@ -1,18 +1,20 @@
 package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.AppPaths;
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.MacroCommands;
-import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.webutils.data.HexId32;
 import dev.latvian.apps.webutils.data.Lazy;
 import dev.latvian.apps.webutils.data.Pair;
+import dev.latvian.apps.webutils.html.Tag;
+import dev.latvian.apps.webutils.html.TagFunction;
 import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,8 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Macro implements Comparable<Macro>, Callable<String> {
-	public final GuildCollections guild;
+public class Macro implements Comparable<Macro>, Callable<String>, TagFunction {
+	public final GuildCollections gc;
 	private final Lazy<String> content;
 	public HexId32 id = HexId32.NONE;
 	public String stringId = "";
@@ -31,18 +33,20 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 	public Instant created = null;
 	public long slashCommand = 0L;
 	private String description;
+	public String displayName = "";
+	public ReactionEmoji emoji = null;
 
 	private ChatCommandSuggestion chatCommandSuggestion;
 	private Pair<ContentType, Object> cachedContent;
 
-	public Macro(GuildCollections guild) {
-		this.guild = guild;
+	public Macro(GuildCollections gc) {
+		this.gc = gc;
 		this.content = Lazy.of(this);
 	}
 
 	public Path getContentPath(boolean write) {
 		var ids = id.toString();
-		var dir = guild.paths.macros.resolve(ids.substring(0, 2));
+		var dir = gc.paths.macros.resolve(ids.substring(0, 2));
 
 		if (write) {
 			dir = AppPaths.makeDir(dir);
@@ -78,29 +82,33 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 
 	public Pair<ContentType, Object> getCachedContent() {
 		if (cachedContent == null) {
-			cachedContent = ContentType.parse(guild, getContent());
+			cachedContent = ContentType.parse(gc, getContent());
 		}
 
 		return cachedContent;
 
 	}
 
-	public MessageBuilder createMessage(GuildCollections gc, @Nullable CommandReader reader, long sender) {
+	public MessageBuilder createMessage(ComplexMessageRenderContext ctx) {
 		var cached = getCachedContent();
-		return cached.a().render(gc, reader, cached.b(), sender);
+		var ctx2 = ctx.copy();
+		ctx2.sourceGuild = gc;
+		ctx2.cached = cached.b();
+		ctx2.macro = this;
+		return cached.a().render(ctx2);
 	}
 
-	public CompletableFuture<MessageBuilder> createMessageOrTimeout(GuildCollections gc, @Nullable CommandReader reader, long sender) {
-		return CompletableFuture.supplyAsync(() -> createMessage(gc, reader, sender)).completeOnTimeout(MessageBuilder.create("Macro timed out!"), 2500L, TimeUnit.MILLISECONDS);
+	public CompletableFuture<MessageBuilder> createMessageOrTimeout(ComplexMessageRenderContext ctx) {
+		return CompletableFuture.supplyAsync(() -> createMessage(ctx)).completeOnTimeout(MessageBuilder.create("Macro timed out!"), 2500L, TimeUnit.MILLISECONDS);
 	}
 
 	public void rename(String rename) {
 		var l = setSlashCommand(false);
 
-		guild.getMacroMap().remove(stringId);
+		gc.getMacroMap().remove(stringId);
 		stringId = rename.toLowerCase();
 		name = rename;
-		guild.getMacroMap().put(stringId, this);
+		gc.getMacroMap().put(stringId, this);
 
 		if (l != 0L && !isHidden()) {
 			setSlashCommand(true);
@@ -109,7 +117,7 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 
 	public long setSlashCommand(boolean b) {
 		if (b) {
-			var data = guild.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(guild.db.app.discordHandler.selfId, guild.guildId, buildCommand()).block();
+			var data = gc.getClient().getRestClient().getApplicationService().createGuildApplicationCommand(gc.db.app.discordHandler.selfId, gc.guildId, buildCommand()).block();
 
 			var id = data == null ? 0L : data.id().asLong();
 
@@ -121,7 +129,7 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 		} else {
 			if (slashCommand != 0L) {
 				try {
-					guild.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(guild.db.app.discordHandler.selfId, guild.guildId, slashCommand).block();
+					gc.getClient().getRestClient().getApplicationService().deleteGuildApplicationCommand(gc.db.app.discordHandler.selfId, gc.guildId, slashCommand).block();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -135,7 +143,7 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 
 	public String getDescription() {
 		if (description == null) {
-			description = "Macro created by " + guild.db.app.discordHandler.getUserName(this.author).orElse("Deleted User");
+			description = "Macro created by " + gc.db.app.discordHandler.getUserName(this.author).orElse("Deleted User");
 		}
 
 		return description;
@@ -188,16 +196,20 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 	}
 
 	public int getUses() {
-		return guild.getMacroUses(id.getAsInt());
+		return gc.getMacroUses(id.getAsInt());
 	}
 
 	public void addUse() {
-		guild.addMacroUse(id.getAsInt());
+		gc.addMacroUse(id.getAsInt());
 	}
 
 	@Override
 	public int compareTo(@NotNull Macro o) {
 		return stringId.compareToIgnoreCase(o.stringId);
+	}
+
+	public String getDisplayName() {
+		return displayName.isEmpty() ? name : displayName;
 	}
 
 	public String chatFormatted() {
@@ -233,5 +245,24 @@ public class Macro implements Comparable<Macro>, Callable<String> {
 		}
 
 		return "";
+	}
+
+	public String url() {
+		return gc.url() + "/macros/" + id;
+	}
+
+	@Override
+	public void acceptTag(Tag parent) {
+		acceptTag0(parent);
+	}
+
+	public Tag acceptTag0(Tag parent) {
+		var t = parent.a(gc.url() + "/macros/" + id, name);
+
+		if (getCachedContent().a() == ContentType.MACRO_BUNDLE) {
+			t.classes("macro-bundle");
+		}
+
+		return t;
 	}
 }

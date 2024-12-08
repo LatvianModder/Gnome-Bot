@@ -2,7 +2,6 @@ package dev.gnomebot.app.data;
 
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
@@ -112,7 +111,6 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 
 		if (deleted) {
 			gc.messages.query(getUID()).delete();
-			BrainEventType.MESSAGE_DELETED.build(gc.guildId).post();
 
 			if (App.debug) {
 				Log.info(gc + "/" + getUserID() + " deleted message: " + getContent());
@@ -121,7 +119,6 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 			gc.messages.query(getUID()).update(Updates.bitwiseOr("flags", DiscordMessage.FLAG_EDITED), Updates.set("content", newContent));
 
 			if (!is(DiscordMessage.FLAG_BOT)) {
-				BrainEventType.MESSAGE_EDITED.build(gc.guildId).post();
 
 				if (App.debug) {
 					Log.info(gc + "/" + getUserID() + " edited message: " + getContent() + " -> " + newContent);

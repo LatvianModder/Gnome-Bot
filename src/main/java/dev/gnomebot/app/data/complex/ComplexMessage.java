@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ComplexMessage implements ComplexMessageContext.TextHolder {
+public class ComplexMessage implements ComplexMessageParseContext.TextHolder {
 	public static boolean has(Message message) {
 		return !message.getData().embeds().isEmpty() || !message.getData().components().isAbsent();
 	}
@@ -40,7 +40,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 
 	public static ComplexMessage parse(GuildCollections gc, List<String> lines) {
 		var complex = new ComplexMessage(gc);
-		var ctx = new ComplexMessageContext();
+		var ctx = new ComplexMessageParseContext();
 		ctx.textHolder = complex;
 
 		List<String> contentBlockLines = null;
@@ -178,17 +178,17 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return complex;
 	}
 
-	public final GuildCollections guild;
+	public final GuildCollections sourceGuild;
 	public List<String> content = new ArrayList<>();
 	public List<MEEmbed> embeds = new ArrayList<>();
 	public List<MELayoutComponent> components = new ArrayList<>();
 
-	public ComplexMessage(GuildCollections guild) {
-		this.guild = guild;
+	public ComplexMessage(GuildCollections sourceGuild) {
+		this.sourceGuild = sourceGuild;
 	}
 
 	@Override
-	public void acceptText(ComplexMessageContext ctx, String s) {
+	public void acceptText(ComplexMessageParseContext ctx, String s) {
 		content.add(s);
 	}
 
@@ -225,7 +225,9 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 		return lines;
 	}
 
-	public void apply(GuildCollections targetGuild, MessageBuilder builder, long sender) {
+	public void apply(MessageBuilder builder, ComplexMessageRenderContext ctx) {
+		var ctx2 = ctx.copy();
+		ctx2.sourceGuild = sourceGuild;
 		builder.content(content);
 
 		if (embeds.isEmpty()) {
@@ -240,7 +242,7 @@ public class ComplexMessage implements ComplexMessageContext.TextHolder {
 			builder.noComponents();
 		} else {
 			for (var lc : components) {
-				builder.addComponent(lc.toLayoutComponent(guild, targetGuild, sender));
+				builder.addComponent(lc.toLayoutComponent(ctx2));
 			}
 		}
 	}

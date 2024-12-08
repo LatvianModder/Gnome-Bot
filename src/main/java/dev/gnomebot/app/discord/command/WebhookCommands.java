@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.data.ContentType;
 import dev.gnomebot.app.data.complex.ComplexMessage;
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.WebHookDestination;
@@ -114,7 +115,9 @@ public class WebhookCommands extends ApplicationCommands {
 		}
 
 		var content = ContentType.parse(event.context.gc, event.get("content").asString());
-		var message = content.a().render(event.context.gc, null, content.b(), 0L);
+		var ctx = new ComplexMessageRenderContext(event.context.gc, 0L);
+		ctx.cached = content.b();
+		var message = content.a().render(ctx);
 
 		if (editId == 0L) {
 			message.webhookName(event.get("username").asString(event.context.gc.toString()));

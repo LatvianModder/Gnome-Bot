@@ -1,9 +1,9 @@
 package dev.gnomebot.app.data;
 
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.ansi.log.Log;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,19 +39,19 @@ public class MacroBundle {
 
 	public final Map<String, Item> macros = new LinkedHashMap<>();
 
-	public MessageBuilder render(GuildCollections gc, @Nullable CommandReader reader, long sender) {
-		if (reader == null) {
+	public MessageBuilder render(ComplexMessageRenderContext ctx) {
+		if (ctx.reader == null) {
 			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}
 
-		Log.info(reader.toString());
+		Log.info(ctx.reader.toString());
 
-		var item = macros.get(reader.readString().orElse(""));
+		var item = macros.get(ctx.reader.readString().orElse(""));
 
 		if (item == null) {
 			return MessageBuilder.create(String.join(" • ", macros.keySet())).noComponents().noEmbeds();
 		}
 
-		return item.macro.createMessage(gc, reader, sender);
+		return item.macro.createMessage(ctx);
 	}
 }

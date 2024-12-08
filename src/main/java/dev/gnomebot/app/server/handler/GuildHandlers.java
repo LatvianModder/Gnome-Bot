@@ -6,9 +6,11 @@ import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
+import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.json.JSONResponse;
 import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
 import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
 import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.data.HexId32;
@@ -17,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class GuildHandlers {
@@ -63,6 +64,7 @@ public class GuildHandlers {
 		root.content.h3().a(req.gc.url() + "/message-log", "Message Log");
 		root.content.h3().a(req.gc.url() + "/voice-log", "Voice Log");
 		root.content.h3().a(req.gc.url() + "/reaction-log", "Reaction Log");
+		root.content.h3().a(req.gc.url() + "/command-log", "Command Log");
 		// root.content.p().string("Uh... nothing for now...");
 		// root.content.p().a(req.gc.url()).string("For now you can go to old page.");
 		return root.asResponse();
@@ -92,9 +94,9 @@ public class GuildHandlers {
 						throw new NullPointerException();
 					}
 
-					GuildAPIHandlers.macro(slashMacros.li(), macro);
+					slashMacros.li().add(macro);
 				} catch (Exception ex) {
-					GuildAPIHandlers.macro(slashMacros.li(), macro).classes("broken");
+					macro.acceptTag0(slashMacros.li()).classes("broken");
 				}
 			}
 		}
@@ -102,7 +104,7 @@ public class GuildHandlers {
 		var allMacros = root.content.section("macros").classes("divborder").div().h3().string("All Macros").end().ol();
 
 		for (var macro : macros) {
-			GuildAPIHandlers.macro(allMacros.li(), macro);
+			allMacros.li().add(macro);
 		}
 
 		return root.asResponse();
@@ -113,7 +115,7 @@ public class GuildHandlers {
 
 		var macro = req.gc.db.allMacros.get(HexId32.of(req.variable("id")).getAsInt());
 
-		if (macro == null || macro.guild != req.gc) {
+		if (macro == null || macro.gc != req.gc) {
 			throw new NotFoundError("Macro '" + req.variable("id") + "' not found!");
 		}
 
@@ -140,7 +142,8 @@ public class GuildHandlers {
 			table.tr().td().string("Created").end().td().time(macro.created).string(macro.created.toString());
 		}
 
-		table.tr().td().string("Uses").end().td().string(macro.getUses());
+		table.tr().td().string("Type").end().td().string(macro.getCachedContent().a().name);
+		table.tr().td().a(macro.gc.url() + "/command-log?command=" + macro.id, "Uses").end().td().string(macro.getUses());
 
 		if (macro.slashCommand == 0L) {
 			table.tr().td().string("Slash Command").end().td().string("Disabled").space().a("?slash=1", "(Enable)");
@@ -149,13 +152,79 @@ public class GuildHandlers {
 			table.tr().td().string("Slash Command ID").end().td().string(Long.toUnsignedString(macro.slashCommand));
 		}
 
-		var newlinePattern = Pattern.compile("\n");
+		var form = root.content.section("edit").classes("divborder").div().form("POST");
+		boolean canEdit = macro.author != 0L && macro.author == req.selfId() || req.authLevel().isAdmin();
 
-		root.content.h2().string("Content");
-		var tag2 = root.content.section("content").classes("divborder").div().p().string(ContentType.encodeMentions(macro.getContent()));
-		tag2.replace(newlinePattern, (tag1, matcher) -> tag1.br());
+		if (canEdit) {
+			form.label("name", "Name");
+			form.br();
+			form.input("text", "name").attr("required").attr("minlength", "1").attr("maxlength", "50").attr("value", macro.name);
+			form.br();
+
+			form.label("display-name", "Display Name");
+			form.br();
+			form.input("text", "display-name").attr("value", macro.displayName);
+			form.br();
+
+			form.label("emoji", "Emoji");
+			form.br();
+			form.input("text", "emoji").attr("value", Utils.reactionToString(macro.emoji));
+			form.br();
+		}
+
+		form.label("content", "Content");
+		form.br();
+		var textarea = form.paired("textarea").id(form.getPrefix() + "content").attr("name", "content").attr("required").attr("rows", "20").attr("minlength", "1").string(ContentType.encodeMentions(macro.getContent()));
+
+		if (canEdit) {
+			form.br();
+			form.input("submit").attr("value", "Save");
+		} else {
+			textarea.attr("readonly");
+		}
 
 		return root.asResponse();
+	}
+
+	public static HTTPResponse macroEditInfo(AppRequest req) {
+		req.checkMember();
+
+		var macro = req.gc.db.allMacros.get(HexId32.of(req.variable("id")).getAsInt());
+
+		if ((macro.author == 0L || macro.author != req.selfId()) && !req.authLevel().isAdmin()) {
+			throw new ForbiddenError("You can't edit this macro!");
+		}
+
+		var rename = req.formData("name").asString(macro.name);
+
+		if (!rename.equals(macro.name)) {
+			if (rename.isEmpty()) {
+				throw new BadRequestError("Macro can't be empty!");
+			} else if (rename.length() > 50) {
+				throw new BadRequestError("Macro name too long! Max 50 characters.");
+			} else if (macro.gc.macroExists(rename)) {
+				// ConflictError
+				throw new BadRequestError("Macro with that name already exists!");
+			}
+
+			macro.rename(rename);
+		}
+
+		var displayName = req.formData("display-name").asString(macro.displayName);
+
+		if (!displayName.equals(macro.displayName)) {
+			macro.displayName = displayName;
+		}
+
+		var emoji = req.formData("emoji").asString(Utils.reactionToString(macro.emoji));
+
+		if (!emoji.equals(Utils.reactionToString(macro.emoji))) {
+			macro.emoji = Utils.stringToReaction(emoji);
+		}
+
+		macro.setContent(ContentType.decodeMentions(req.formData("content").asString(macro.getContent())));
+		macro.gc.saveMacroMap();
+		return HTTPResponse.redirect(macro.url());
 	}
 
 	public static HTTPResponse memberInfo(AppRequest req) {
@@ -180,10 +249,6 @@ public class GuildHandlers {
 		info.div("spread").strong().string("Username").end().spanstr(user.getUsername());
 		info.div("spread").strong().string("Global Name").end().spanstr(globalName);
 
-		if (member != null && member.getNickname().isPresent()) {
-			info.div("spread").strong().string("Nickname").end().spanstr(member.getNickname().get());
-		}
-
 		if (user.getDiscriminator() != null && !user.getDiscriminator().equals("0")) {
 			info.div("spread").strong().string("Tag").end().spanstr(user.getTag());
 		}
@@ -192,9 +257,9 @@ public class GuildHandlers {
 			info.div("spread").strong().string("Bot").end().spanstr("Yes");
 		}
 
-		info.div("spread").strong().string("Member").end().spanstr(member == null ? "No" : "Yes");
-
 		if (member == null) {
+			info.div("spread").strong().string("Member").end().spanstr("No");
+
 			try {
 				var ban = req.gc.getGuild().getBan(SnowFlake.convert(memberId)).block();
 
@@ -209,7 +274,7 @@ public class GuildHandlers {
 			var dn = member.getDisplayName();
 
 			if (!dn.equals(globalName)) {
-				info.div("spread").strong().string("Server Name").end().spanstr(dn);
+				info.div("spread").strong().string("Nickname").end().spanstr(dn);
 			}
 		}
 
@@ -227,7 +292,7 @@ public class GuildHandlers {
 			var ul = btag.ul();
 
 			for (var macro : macros.stream().sorted().toList()) {
-				GuildAPIHandlers.macro(ul.li(), macro);
+				ul.li().add(macro);
 			}
 		}
 

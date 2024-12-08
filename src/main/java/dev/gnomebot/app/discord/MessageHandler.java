@@ -5,12 +5,12 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.WatchdogThread;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.command.admin.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
 import dev.gnomebot.app.discord.legacycommand.CommandReader;
@@ -26,7 +26,6 @@ import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.net.IPUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
@@ -150,8 +149,6 @@ public class MessageHandler {
 					Log.error("Channel not found: " + guildChannel.getId().asLong());
 				}
 			}
-		} else {
-			BrainEventType.UNKNOWN_MESSAGE.build(event.getGuildId().map(Snowflake::asLong).orElse(0L)).content(m.getContent()).post();
 		}
 	}
 
@@ -418,16 +415,6 @@ public class MessageHandler {
 		var totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalXp();
 		var authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
-		if (user.isBot()) {
-			BrainEventType.MESSAGE_CREATED_BOT.build(gc).post();
-		} else if (authLevel.is(AuthLevel.ADMIN)) {
-			BrainEventType.MESSAGE_CREATED_ADMIN.build(gc).post();
-		} else if (member != null && member.getRoleIds().size() > 0) {
-			BrainEventType.MESSAGE_CREATED_ANY_ROLE.build(gc).post();
-		} else {
-			BrainEventType.MESSAGE_CREATED_NO_ROLE.build(gc).post();
-		}
-
 		if (importing || member == null) {
 			return;
 		}
@@ -682,14 +669,12 @@ public class MessageHandler {
 
 			try {
 				LegacyCommands.run(context, reader, content, false);
-				BrainEventType.COMMAND_SUCCESS.build(context.gc).content(content).post();
 				return true;
 			} catch (GnomeException ex) {
 				if (ex.type == GnomeException.Type.NOT_FOUND) {
 					return false;
 				}
 
-				BrainEventType.COMMAND_FAIL.build(context.gc).content(content).post();
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {
@@ -739,11 +724,12 @@ public class MessageHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					macro.createMessageOrTimeout(context.gc, reader, context.sender.getId().asLong()).thenAccept(context::reply);
+					var ctx = new ComplexMessageRenderContext(context.gc, context.sender.getId().asLong());
+					ctx.reader = reader;
+					macro.createMessageOrTimeout(ctx).thenAccept(context::reply);
 					return true;
 				}
 			} catch (GnomeException ex) {
-				BrainEventType.COMMAND_FAIL.build(context.gc).post();
 				context.message.addReaction(ex.reaction).subscribe();
 
 				if (ex.deleteMessage) {

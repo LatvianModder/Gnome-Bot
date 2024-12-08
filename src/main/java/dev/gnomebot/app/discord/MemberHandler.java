@@ -3,7 +3,6 @@ package dev.gnomebot.app.discord;
 import com.mongodb.BasicDBList;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.DiscordMember;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
@@ -129,9 +128,6 @@ public class MemberHandler {
 			gc.regularRole.role().ifPresent(r -> r.add(member, "Reached Regular"));
 		}
 
-		// App.info(Utils.ANSI_GREEN + member.getTag() + Utils.ANSI_RESET + " has joined the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server!");
-		BrainEventType.MEMBER_JOINED.build(gc.guildId).post();
-
 		var oldMember = gc.members.findFirst(member);
 
 		if (oldMember != null) {
@@ -159,9 +155,6 @@ public class MemberHandler {
 		doc.put("user", event.getUser().getId().asLong());
 		doc.put("member_for", mems);
 		gc.joinLog.insert(doc);
-
-		// App.info(Utils.ANSI_GREEN + event.getUser().getUsername() + Utils.ANSI_RESET + " has left the " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server! (" + Utils.prettyTimeString(mems) + " of membership)");
-		BrainEventType.MEMBER_LEFT.build(gc.guildId).post();
 
 		if (gc.logLeavingChannel.isSet()) {
 			var sb = new StringBuilder();
@@ -209,9 +202,6 @@ public class MemberHandler {
 
 			var responsible = entry == null || entry.getResponsibleUserId().isEmpty() ? null : handler.getUser(entry.getResponsibleUserId().get().asLong());
 			var reason = entry == null ? "Not specified" : entry.getReason().orElse("Not specified");
-
-			// App.info(Utils.ANSI_RED + event.getUser().getUsername() + Utils.ANSI_RESET + " was banned from " + Utils.ANSI_CYAN + gc + Utils.ANSI_RESET + " server by " + (responsible == null ? "Unknown" : responsible.getTag()) + "! Reason: " + reason);
-			BrainEventType.MEMBER_BANNED.build(gc.guildId).post();
 
 			gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.BAN)
 					.user(event.getUser())

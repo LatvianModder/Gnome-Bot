@@ -47,6 +47,10 @@ public class AppRequest extends HTTPRequest {
 		return authLevel;
 	}
 
+	public long selfId() {
+		return token == null ? 0L : token.userId;
+	}
+
 	@Nullable
 	public User self() {
 		return token == null ? null : app.discordHandler.getUser(token.userId);

@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.complex;
 
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.object.component.ActionComponent;
@@ -60,7 +59,7 @@ public class MEButton extends MEButtonBase {
 	}
 
 	@Override
-	public void acceptOption(ComplexMessageContext ctx, String name, SimpleStringReader reader) {
+	public void acceptOption(ComplexMessageParseContext ctx, String name, SimpleStringReader reader) {
 		if (name.equals("color")) {
 			style = readStyle(reader.readString().orElse(""));
 		} else {
@@ -69,17 +68,17 @@ public class MEButton extends MEButtonBase {
 	}
 
 	@Override
-	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
+	public ActionComponent toActionComponent(ComplexMessageRenderContext ctx) {
 		var l = label.isEmpty() ? null : label;
 		var id = target;
 
 		if (type == 1 || type == 2) {
-			var macro = sourceGuild.getMacro(target);
+			var macro = ctx.sourceGuild.getMacro(target);
 
 			if (macro == null) {
 				id = "none/" + UUID.randomUUID();
 			} else {
-				id = (type == 2 ? "edit-macro/" : "macro/") + macro.guild.guildId + "/" + target + "/" + sender;
+				id = (type == 2 ? "edit-macro/" : "macro/") + macro.gc.guildId + "/" + target + "/" + ctx.sender;
 			}
 		}
 

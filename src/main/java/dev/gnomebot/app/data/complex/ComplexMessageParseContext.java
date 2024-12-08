@@ -2,7 +2,7 @@ package dev.gnomebot.app.data.complex;
 
 import dev.gnomebot.app.util.SimpleStringReader;
 
-public class ComplexMessageContext {
+public class ComplexMessageParseContext {
 	public TextHolder textHolder;
 	public PropertyHolder propertyHolder;
 	public OptionHolder optionHolder;
@@ -27,16 +27,16 @@ public class ComplexMessageContext {
 
 	@FunctionalInterface
 	public interface TextHolder {
-		void acceptText(ComplexMessageContext ctx, String text);
+		void acceptText(ComplexMessageParseContext ctx, String text);
 	}
 
 	@FunctionalInterface
 	public interface PropertyHolder {
-		void acceptProperty(ComplexMessageContext ctx, String name, SimpleStringReader reader);
+		void acceptProperty(ComplexMessageParseContext ctx, String name, SimpleStringReader reader);
 	}
 
 	@FunctionalInterface
 	public interface OptionHolder {
-		void acceptOption(ComplexMessageContext ctx, SimpleStringReader reader);
+		void acceptOption(ComplexMessageParseContext ctx, SimpleStringReader reader);
 	}
 }

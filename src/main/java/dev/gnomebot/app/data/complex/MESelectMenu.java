@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.complex;
 
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SelectMenuType;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.Utils;
@@ -11,7 +10,7 @@ import discord4j.core.object.entity.channel.Channel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MESelectMenu extends MEComponent implements ComplexMessageContext.OptionHolder {
+public class MESelectMenu extends MEComponent implements ComplexMessageParseContext.OptionHolder {
 	public String id = "";
 	public SelectMenuType type = SelectMenuType.OPTIONS;
 	public int minValues = -1;
@@ -71,7 +70,7 @@ public class MESelectMenu extends MEComponent implements ComplexMessageContext.O
 	}
 
 	@Override
-	public ActionComponent toActionComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
+	public ActionComponent toActionComponent(ComplexMessageRenderContext ctx) {
 		var menu = switch (type) {
 			case USER -> SelectMenu.ofUser(id);
 			case ROLE -> SelectMenu.ofRole(id);
@@ -100,7 +99,7 @@ public class MESelectMenu extends MEComponent implements ComplexMessageContext.O
 	}
 
 	@Override
-	public void acceptOption(ComplexMessageContext ctx, SimpleStringReader reader) {
+	public void acceptOption(ComplexMessageParseContext ctx, SimpleStringReader reader) {
 		var first = reader.readString().orElse("");
 
 		switch (first) {

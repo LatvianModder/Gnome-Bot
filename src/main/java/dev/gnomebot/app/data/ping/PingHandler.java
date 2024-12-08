@@ -1,7 +1,6 @@
 package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
@@ -119,7 +118,6 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 			}
 
 			userPingInstances = list.toArray(new UserPingInstance[0]);
-			BrainEventType.REFRESHED_PINGS.build(0L).post();
 			Log.info("Loaded " + userPingInstances.length + " ping instances in " + (System.currentTimeMillis() - start) + " ms");
 		}
 

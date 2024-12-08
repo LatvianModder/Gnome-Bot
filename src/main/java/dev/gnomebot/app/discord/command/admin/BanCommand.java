@@ -1,6 +1,5 @@
 package dev.gnomebot.app.discord.command.admin;
 
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.DM;
@@ -52,8 +51,6 @@ public class BanCommand extends ApplicationCommands {
 		if (member != null) {
 			MemberHandler.ignoreNextBan = true;
 		}
-
-		BrainEventType.MEMBER_BANNED.build(event.context.gc).post();
 
 		event.context.gc.getGuild().ban(user.getId(), BanQuerySpec.builder()
 				.reason(reason)

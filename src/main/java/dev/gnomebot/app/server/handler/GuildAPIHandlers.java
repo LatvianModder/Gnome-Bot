@@ -5,7 +5,6 @@ import dev.gnomebot.app.data.DiscordFeedback;
 import dev.gnomebot.app.data.ExportedMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
-import dev.gnomebot.app.data.Macro;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
@@ -44,10 +43,6 @@ public class GuildAPIHandlers {
 
 	public static Tag role(Tag parent, GuildCollections gc, long id) {
 		return parent.a(gc.url() + "/roles/" + Long.toUnsignedString(id)).attr("data-lookup", "r/" + gc.paths.key + "/" + Long.toUnsignedString(id));
-	}
-
-	public static Tag macro(Tag parent, Macro macro) {
-		return parent.a(macro.guild.url() + "/macros/" + macro.id, macro.name);
 	}
 
 	public static HTTPResponse guilds(AppRequest req) throws Exception {

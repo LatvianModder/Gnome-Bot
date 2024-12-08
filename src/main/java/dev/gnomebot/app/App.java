@@ -182,6 +182,7 @@ public class App {
 		webServer.get("/guilds/{guild}/audit-log", LogHandlers::auditLog);
 		webServer.get("/guilds/{guild}/macros", GuildHandlers::macros);
 		webServer.get("/guilds/{guild}/macros/{id}", GuildHandlers::macroInfo);
+		webServer.post("/guilds/{guild}/macros/{id}", GuildHandlers::macroEditInfo);
 		webServer.get("/guilds/{guild}/bans", LogHandlers::bans);
 		webServer.get("/guilds/{guild}/mutes", LogHandlers::mutes);
 		webServer.get("/guilds/{guild}/feedback", GuildHandlers::feedbackList);

@@ -8,14 +8,14 @@ import discord4j.rest.util.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MEEmbed implements ComplexMessageContext.TextHolder, ComplexMessageContext.PropertyHolder {
-	public static class Field implements ComplexMessageContext.TextHolder {
+public class MEEmbed implements ComplexMessageParseContext.TextHolder, ComplexMessageParseContext.PropertyHolder {
+	public static class Field implements ComplexMessageParseContext.TextHolder {
 		public String name = "";
 		public List<String> value = new ArrayList<>();
 		public boolean inline = false;
 
 		@Override
-		public void acceptText(ComplexMessageContext ctx, String s) {
+		public void acceptText(ComplexMessageParseContext ctx, String s) {
 			value.add(s);
 		}
 	}
@@ -29,7 +29,7 @@ public class MEEmbed implements ComplexMessageContext.TextHolder, ComplexMessage
 	public String thumbnail = "";
 
 	@Override
-	public void acceptText(ComplexMessageContext ctx, String s) {
+	public void acceptText(ComplexMessageParseContext ctx, String s) {
 		description.add(s);
 	}
 
@@ -65,7 +65,7 @@ public class MEEmbed implements ComplexMessageContext.TextHolder, ComplexMessage
 	}
 
 	@Override
-	public void acceptProperty(ComplexMessageContext ctx, String name, SimpleStringReader reader) {
+	public void acceptProperty(ComplexMessageParseContext ctx, String name, SimpleStringReader reader) {
 		switch (name) {
 			case "title" -> title = reader.readRemainingString().orElse("");
 			case "url" -> url = reader.readRemainingString().orElse("");

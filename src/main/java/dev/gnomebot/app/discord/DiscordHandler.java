@@ -1,7 +1,6 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.BrainEventType;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.GuildCollections;
@@ -440,7 +439,6 @@ public class DiscordHandler {
 	private void auditLogEntryCreated0(AuditLogEntryCreateEvent event) {
 		var gc = app.db.guild(event.getGuildId());
 		// App.warn(event.toString());
-		BrainEventType.AUDIT_LOG.build(gc.guildId).post();
 		var e = event.getAuditLogEntry();
 
 		var target = e.getTargetId().isEmpty() ? null : app.discordHandler.getUser(e.getTargetId().get().asLong());
@@ -573,10 +571,6 @@ public class DiscordHandler {
 		}
 
 		final var u = user;
-
-		//App.error("Suspicious message by " + u.getUsername() + " detected: " + content.apply(message.getContent()) + " [" + reason + "]" + Ansi.RESET);
-
-		BrainEventType.SUSPICIOUS_MESSAGE.build(gc.guildId).post();
 
 		var sb1 = new StringBuilder("[Suspicious message detected in](");
 		message.appendMessageURL(sb1);

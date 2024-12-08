@@ -97,13 +97,15 @@ public class Utils {
 	}
 
 	public static String reactionToString(ReactionEmoji emoji) {
-		if (emoji.asUnicodeEmoji().isPresent()) {
+		if (emoji == null) {
+			return "";
+		} else if (emoji.asUnicodeEmoji().isPresent()) {
 			return emoji.asUnicodeEmoji().get().getRaw();
 		} else if (emoji.asCustomEmoji().isPresent()) {
 			return emoji.asCustomEmoji().get().asFormat();
+		} else {
+			return "";
 		}
-
-		return "";
 	}
 
 	public static ReactionEmoji stringToReaction(String s) {

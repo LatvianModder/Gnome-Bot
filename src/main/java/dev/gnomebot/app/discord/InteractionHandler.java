@@ -2,6 +2,7 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Vote;
+import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestionEvent;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
@@ -86,7 +87,9 @@ public class InteractionHandler {
 
 				if (macro != null) {
 					macro.addUse();
-					macro.createMessageOrTimeout(gc, reader, w.context.sender.getId().asLong()).thenAccept(m -> event.reply(m.ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe());
+					var ctx = new ComplexMessageRenderContext(gc, w.context.sender.getId().asLong());
+					ctx.reader = reader;
+					macro.createMessageOrTimeout(ctx).thenAccept(m -> event.reply(m.ephemeral(false).toInteractionApplicationCommandCallbackSpec()).subscribe());
 				} else {
 					Log.error("Weird interaction data from " + event.getInteraction().getUser().getUsername() + ": " + event.getInteraction().getData());
 					event.reply("Command not found!").withEphemeral(true).subscribe();
@@ -343,6 +346,7 @@ public class InteractionHandler {
 			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
 			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.getFirst());
 			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.getFirst());
+			case "macro-menu" -> MacroCommands.macroMenuCallback(event, SnowFlake.num(event.path[1]), event.path[2], SnowFlake.num(event.path[3]), values.getFirst());
 			default -> {
 				Log.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);

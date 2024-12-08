@@ -1,6 +1,5 @@
 package dev.gnomebot.app.data.complex;
 
-import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -9,16 +8,16 @@ import discord4j.core.object.component.LayoutComponent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MELayoutComponent implements ComplexMessageContext.PropertyHolder {
+public class MELayoutComponent implements ComplexMessageParseContext.PropertyHolder {
 	public List<MEComponent> components = new ArrayList<>();
 	public int type = 0; // 0 = row
 
-	public LayoutComponent toLayoutComponent(GuildCollections sourceGuild, GuildCollections targetGuild, long sender) {
-		return ActionRow.of(components.stream().map(c -> c.toActionComponent(sourceGuild, targetGuild, sender)).toList());
+	public LayoutComponent toLayoutComponent(ComplexMessageRenderContext ctx) {
+		return ActionRow.of(components.stream().map(c -> c.toActionComponent(ctx)).toList());
 	}
 
 	@Override
-	public void acceptProperty(ComplexMessageContext ctx, String name, SimpleStringReader reader) {
+	public void acceptProperty(ComplexMessageParseContext ctx, String name, SimpleStringReader reader) {
 		switch (name) {
 			case "url" -> {
 				var button = new MEURLButton();
@@ -49,6 +48,11 @@ public class MELayoutComponent implements ComplexMessageContext.PropertyHolder {
 				components.add(menu);
 				menu.id = reader.readString().orElse("");
 				ctx.optionHolder = menu;
+			}
+			case "macro-menu" -> {
+				var menu = new MEMacroMenu();
+				components.add(menu);
+				menu.macroId = reader.readString().orElse("");
 			}
 		}
 	}

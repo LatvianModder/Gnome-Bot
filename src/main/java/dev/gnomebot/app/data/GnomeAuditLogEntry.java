@@ -36,7 +36,8 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, 0, gc -> gc.voiceLog),
 		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, 1, gc -> gc.voiceLog),
 
-		ECHO("echo", "Echo", 1, Flags.CONTENT),
+		ECHO("echo", "Echo", 1, Flags.USER_AUDIT_LOG | Flags.CONTENT),
+		MACRO_EDIT("macro_edit", "Macro Edited", 1, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
 
 		ADMIN_PING("admin_ping", "Admin Ping", 2, 0),
 		DISCORD_INVITE("discord_invite", "Discord Invite", 2, Flags.USER_AUDIT_LOG | Flags.CONTENT | Flags.REVOCABLE),
