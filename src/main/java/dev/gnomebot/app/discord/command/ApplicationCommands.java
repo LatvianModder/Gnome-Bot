@@ -73,7 +73,6 @@ public class ApplicationCommands {
 		add(ChannelCommands.COMMAND);
 		add(CursePointCalculatorCommand.COMMAND);
 		add(DecideCommand.COMMAND);
-		add(DefineCommand.COMMAND);
 		add(FeedbackCommand.COMMAND);
 		add(PollCommand.COMMAND);
 		add(LeaderboardCommand.COMMAND);

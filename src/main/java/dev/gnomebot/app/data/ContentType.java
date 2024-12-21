@@ -29,7 +29,8 @@ public abstract class ContentType {
 	public static final ContentType JS = new ContentType("js") {
 		@Override
 		public MessageBuilder render(ComplexMessageRenderContext ctx) {
-			return MessageBuilder.create(String.valueOf(ctx.cached)).noComponents().noEmbeds();
+			// Not implemented
+			return TEXT.render(ctx);
 		}
 	};
 
@@ -98,20 +99,20 @@ public abstract class ContentType {
 
 		if (inl == -1) {
 			return Pair.of(TEXT, content);
-		} else {
-			var matcher = CONTENT_TYPE_PATTERN.matcher(content.substring(0, inl));
-
-			if (matcher.find()) {
-				return switch (matcher.group(1)) {
-					case "cpx", "complex" -> Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
-					case "js", "javascript" -> Pair.of(JS, content);
-					case "macro-bundle", "bundle" -> Pair.of(MACRO_BUNDLE, MacroBundle.parse(gc, content));
-					case "macro-alias", "alias" -> Pair.of(MACRO_ALIAS, content);
-					default -> Pair.of(TEXT, content);
-				};
-			}
-
-			return Pair.of(TEXT, content);
 		}
+
+		var matcher = CONTENT_TYPE_PATTERN.matcher(content.substring(0, inl));
+
+		if (matcher.find()) {
+			return switch (matcher.group(1)) {
+				case "cpx", "complex" -> Pair.of(COMPLEX, ComplexMessage.parse(gc, content));
+				case "js", "javascript" -> Pair.of(JS, content);
+				case "macro-bundle", "bundle" -> Pair.of(MACRO_BUNDLE, MacroBundle.parse(gc, content));
+				case "macro-alias", "alias" -> Pair.of(MACRO_ALIAS, content);
+				default -> Pair.of(TEXT, content);
+			};
+		}
+
+		return Pair.of(TEXT, content);
 	}
 }

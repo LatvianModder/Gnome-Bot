@@ -282,8 +282,4 @@ public class MacroCommands extends ApplicationCommands {
 			macro.createMessageOrTimeout(ctx).thenAccept(m -> event.respond(m.ephemeral(true)));
 		}
 	}
-
-	public static void macroMenuCallback(ComponentEventWrapper event, long guildId, String name, long senderId, String valueId) {
-		macroButtonCallback(event, guildId, valueId, senderId);
-	}
 }

@@ -234,6 +234,8 @@ public class GuildCollections {
 						macro.author = json.asLong("author");
 						macro.created = json.containsKey("created") ? Instant.parse(json.asString("created")) : null;
 						macro.slashCommand = json.asLong("slash_command");
+						macro.displayName = json.asString("display_name");
+						macro.emoji = Utils.stringToReaction(json.asString("emoji"));
 						macroMap.put(macro.stringId, macro);
 
 						if (json.containsKey("content")) {
@@ -876,6 +878,14 @@ public class GuildCollections {
 
 			if (macro.slashCommand != 0L) {
 				obj.put("slash_command", macro.slashCommand);
+			}
+
+			if (!macro.displayName.isEmpty()) {
+				obj.put("display_name", macro.displayName);
+			}
+
+			if (macro.emoji != null) {
+				obj.put("emoji", Utils.reactionToString(macro.emoji));
 			}
 
 			json.put(macro.id.toString(), obj);

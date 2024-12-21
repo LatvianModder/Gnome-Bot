@@ -119,7 +119,6 @@ public class PasteHandlers {
 	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([ \\t]+at )(?:([\\w./$@-]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 	public static final Pattern MCLOGS_PATTERN = Pattern.compile("https://mclo.gs/(\\w+)");
 
-
 	public static final Pattern WIN_USERNAME_PATTERN = Pattern.compile("\\b(\\w):([\\\\/])Users\\2(\\w+)\\2", Pattern.CASE_INSENSITIVE);
 	public static final Pattern UNIX_USERNAME_PATTERN = Pattern.compile("/home/\\w+/");
 	public static final Pattern MC_UUID_PATTERN = Pattern.compile("--uuid,\\s?(\\w{32})");

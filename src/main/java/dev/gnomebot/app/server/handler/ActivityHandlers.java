@@ -9,7 +9,6 @@ import dev.gnomebot.app.discord.command.LeaderboardCommandEntry;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.LeaderboardEntry;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.json.JSONObject;
@@ -188,7 +187,7 @@ public class ActivityHandlers {
 			final var index = i;
 			var thread = new Thread(() -> {
 				try {
-					avatars[index] = Utils.getAvatar(req.app, list.get(index).id, 42);
+					avatars[index] = InfoHandlers.getUserAvatarImage(req.app, list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
 					Log.error(ex.toString());
@@ -666,7 +665,7 @@ public class ActivityHandlers {
 			final var index = i;
 			var thread = new Thread(() -> {
 				try {
-					avatars[index] = Utils.getAvatar(req.app, list.get(index).id, 42);
+					avatars[index] = InfoHandlers.getUserAvatarImage(req.app, list.get(index).id, 42);
 				} catch (Exception ex) {
 					avatars[index] = new BufferedImage(42, 42, BufferedImage.TYPE_INT_RGB);
 					Log.error(ex.toString());

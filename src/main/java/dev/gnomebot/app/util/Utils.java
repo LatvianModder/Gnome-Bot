@@ -2,9 +2,7 @@ package dev.gnomebot.app.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.AppPaths;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.math.MathUtils;
 import discord4j.common.util.TimestampFormat;
@@ -27,10 +25,7 @@ import discord4j.rest.util.PermissionSet;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.Exceptions;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,38 +57,6 @@ public class Utils {
 	// TODO: Get rid of this eventually
 	public static URLRequest<InputStream> internalRequest(App app, String path) {
 		return URLRequest.of(app.url(path)).addHeader("Authorization", "Bearer " + app.db.selfToken.token);
-	}
-
-	public static JSONObject readInternalJson(App app, String path) {
-		try {
-			return internalRequest(app, path).toJsonObject().block();
-		} catch (Exception ex) {
-			return null;
-		}
-	}
-
-	public static BufferedImage getAvatar(App app, long id, int size) throws Exception {
-		var path = AppPaths.AVATAR_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
-
-		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest(app, "api/info/avatar/" + SnowFlake.str(id) + "/" + size).toImage().block();
-			ImageIO.write(img, "PNG", path.toFile());
-			return img;
-		}
-
-		return ImageIO.read(path.toFile());
-	}
-
-	public static BufferedImage getEmoji(App app, long id, int size) throws Exception {
-		var path = AppPaths.EMOJI_CACHE.resolve(SnowFlake.str(id) + "-" + size + ".png");
-
-		if (Files.notExists(path) || Files.getLastModifiedTime(path).toInstant().isBefore(Instant.now().minusSeconds(259200L))) {
-			var img = internalRequest(app, "api/info/emoji/" + SnowFlake.str(id) + "/" + size).toImage().block();
-			ImageIO.write(img, "PNG", path.toFile());
-			return img;
-		}
-
-		return ImageIO.read(path.toFile());
 	}
 
 	public static String reactionToString(ReactionEmoji emoji) {

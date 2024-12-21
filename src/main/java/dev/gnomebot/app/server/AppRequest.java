@@ -123,6 +123,10 @@ public class AppRequest extends HTTPRequest {
 	public void afterInit() {
 		super.afterInit();
 
+		if (app.db == null) {
+			return;
+		}
+
 		var tokenStr = cookie(COOKIE_TOKEN).asString();
 
 		if (tokenStr.isEmpty()) {
@@ -238,88 +242,6 @@ public class AppRequest extends HTTPRequest {
 		wstr.append(ANSI.darkGray(" " + userAgent));
 		Log.info(wstr);
 	}
-
-	// Multipart body handling //
-
-	/*
-	public Body getMainBody() {
-		return getBodyList().get(0);
-	}
-
-	@Nullable
-	public Body getBody(Predicate<Body> b) {
-		for (var body : getBodyList()) {
-			if (b.test(body)) {
-				return body;
-			}
-		}
-
-		return null;
-	}
-
-	@Nullable
-	public Body getBody(String contentType) {
-		return getBody(b -> b.contentType.startsWith(contentType));
-	}
-
-	@SuppressWarnings("deprecation")
-	public List<Body> getBodyList() {
-		if (bodyList == null) {
-			bodyList = new ArrayList<>();
-
-			var b = context.bodyAsBytes();
-			var t = header("Content-Type", "unknown");
-
-			// An eh implementation of multipart content
-			if (t.startsWith("multipart/form-data;")) {
-				var m = CodingUtils.decodeHeaders(t);
-				var multipartStream = new MultipartStream(new ByteArrayInputStream(b), m.get("boundary").getBytes(StandardCharsets.UTF_8));
-
-				try {
-					var nextPart = multipartStream.skipPreamble();
-
-					while (nextPart) {
-						var body = new Body();
-
-						for (var s : multipartStream.readHeaders().split("\r\n")) {
-							if (s.toLowerCase().startsWith("content-type:")) {
-								body.properties.put("content-type", s.substring(13).trim());
-							} else if (s.toLowerCase().startsWith("content-disposition")) {
-								var matcher = Pattern.compile("([\\w-]+)=\"([^\"]+)\"").matcher(s);
-
-								while (matcher.find()) {
-									body.properties.put(matcher.group(1).toLowerCase(), matcher.group(2));
-								}
-							}
-						}
-
-						body.name = body.getProperty("name", "payload");
-						body.filename = body.getProperty("filename", body.name);
-						body.contentType = body.getProperty("content-type", "text/plain");
-
-						var out = new ByteArrayOutputStream();
-						multipartStream.readBodyData(out);
-						body.bytes = out.toByteArray();
-						bodyList.add(body);
-
-						nextPart = multipartStream.readBoundary();
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-
-			if (bodyList.isEmpty()) {
-				var body = new Body();
-				body.contentType = t;
-				body.bytes = b;
-				bodyList.add(body);
-			}
-		}
-
-		return bodyList;
-	}
-	 */
 
 	public GuildCollections guild(String path) {
 		var gc = app.db.guildOrNull(path);

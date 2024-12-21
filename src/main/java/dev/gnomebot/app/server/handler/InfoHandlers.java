@@ -1,11 +1,12 @@
 package dev.gnomebot.app.server.handler;
 
+import dev.gnomebot.app.App;
+import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
-import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.json.JSONResponse;
 import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
@@ -21,18 +22,33 @@ import discord4j.rest.util.Image;
 import javax.imageio.ImageIO;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.function.Function;
 
-import static discord4j.rest.util.Image.Format.GIF;
 import static discord4j.rest.util.Image.Format.PNG;
 
 public class InfoHandlers {
 	public static final int[] VALID_SIZES = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
+	public static final Duration IMAGE_CACHE_TIME = Duration.ofDays(3L);
+
+	public static int getClosestValidSize(int requestSize) {
+		var size = 4096;
+
+		for (var validSize : VALID_SIZES) {
+			if (validSize >= requestSize && validSize < size) {
+				size = validSize;
+			}
+		}
+
+		return size;
+	}
 
 	public static HTTPResponse ping(AppRequest req) {
 		return HTTPResponse.ok();
@@ -63,40 +79,25 @@ public class InfoHandlers {
 		return JSONResponse.of(json).publicCache(Duration.ofHours(1L));
 	}
 
-	public static HTTPResponse avatar(AppRequest req) throws Exception {
-		var size = req.variable("size").asInt();
-
-		if (size <= 0 || size > 4096) {
-			throw new BadRequestError("Size too large");
-		}
-
-		var id = req.getSnowflake("user");
-		String url;
-
-		var sizeToRetrieve = 4096;
-
-		for (var validSize : VALID_SIZES) {
-			if (validSize >= size && validSize < sizeToRetrieve) {
-				sizeToRetrieve = validSize;
-			}
-		}
-
-		var userData = req.app.discordHandler.getUserData(id);
-		var avatar = userData == null ? null : userData.avatar().orElse(null);
-
-		if (avatar != null && avatar.startsWith("a_")) {
-			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar, GIF) + "?size=" + sizeToRetrieve;
-		} else if (avatar != null) {
-			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar, PNG) + "?size=" + sizeToRetrieve;
-		} else {
-			url = ImageUtil.getUrl("embed/avatars/" + (userData == null ? 0 : (Integer.parseInt(userData.discriminator()) % 5)), PNG) + "?size=" + sizeToRetrieve;
-		}
-
-		BufferedImage img;
+	public static BufferedImage getCachedImage(String url, Path cachePath, int size) {
+		BufferedImage img = null;
 
 		try {
-			img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
-		} catch (Exception ex) {
+			if (Files.exists(cachePath) && Files.getLastModifiedTime(cachePath).toInstant().isAfter(Instant.now().minus(IMAGE_CACHE_TIME))) {
+				try (var in = new BufferedInputStream(Files.newInputStream(cachePath))) {
+					img = ImageIO.read(in);
+				}
+			} else {
+				img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
+
+				try (var out = new BufferedOutputStream(Files.newOutputStream(cachePath))) {
+					ImageIO.write(img, "png", out);
+				}
+			}
+		} catch (Exception ignore) {
+		}
+
+		if (img == null) {
 			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 
 			for (var x = 0; x < size; x++) {
@@ -106,7 +107,51 @@ public class InfoHandlers {
 			}
 		}
 
-		return HTTPResponse.ok().png(img).publicCache(Duration.ofDays(1L));
+		return img;
+	}
+
+	public static BufferedImage getUserAvatarImage(App app, long id, int requestSize) {
+		var size = getClosestValidSize(requestSize);
+		var userData = app.discordHandler.getUserData(id);
+		var avatar = userData == null ? null : userData.avatar().orElse(null);
+
+		String url;
+		Path cachePath;
+
+		if (avatar != null && avatar.startsWith("a_")) {
+			var u = SnowFlake.str(id);
+			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar.substring(2), PNG) + "?size=" + size;
+			cachePath = AppPaths.makeDir(AppPaths.USER_AVATAR_CACHE.resolve(size + "/" + u.substring(0, 2))).resolve(u + ".png");
+		} else if (avatar != null) {
+			var u = SnowFlake.str(id);
+			url = ImageUtil.getUrl("avatars/" + id + "/" + avatar, PNG) + "?size=" + size;
+			cachePath = AppPaths.makeDir(AppPaths.USER_AVATAR_CACHE.resolve(size + "/" + u.substring(0, 2))).resolve(u + ".png");
+		} else {
+			int d = userData == null ? 0 : (Integer.parseInt(userData.discriminator()) % 5);
+			url = ImageUtil.getUrl("embed/avatars/" + d, PNG) + "?size=" + size;
+			cachePath = AppPaths.makeDir(AppPaths.USER_AVATAR_CACHE.resolve(size + "/default")).resolve(d + ".png");
+		}
+
+		return getCachedImage(url, cachePath, size);
+	}
+
+	public static HTTPResponse avatar(AppRequest req) throws Exception {
+		var size = req.variable("size").asInt();
+
+		if (size <= 0 || size > 4096) {
+			throw new BadRequestError("Size too large");
+		}
+
+		var id = req.getSnowflake("user");
+		return HTTPResponse.ok().png(getUserAvatarImage(req.app, id, size)).publicCache(IMAGE_CACHE_TIME);
+	}
+
+	public static BufferedImage getEmojiImage(long id, int requestSize) {
+		var size = getClosestValidSize(requestSize);
+		var url = ImageUtil.getUrl("emojis/" + id, Image.Format.PNG);
+		var cachePath = AppPaths.makeDir(AppPaths.EMOJI_CACHE.resolve(Integer.toString(size))).resolve(id + ".png");
+
+		return getCachedImage(url, cachePath, size);
 	}
 
 	public static HTTPResponse emoji(AppRequest req) throws Exception {
@@ -117,89 +162,7 @@ public class InfoHandlers {
 		}
 
 		var id = req.getSnowflake("emoji");
-		var url = ImageUtil.getUrl("emojis/" + id, Image.Format.PNG);
-
-		var sizeToRetrieve = 4096;
-
-		for (var validSize : VALID_SIZES) {
-			if (validSize >= size && validSize < sizeToRetrieve) {
-				sizeToRetrieve = validSize;
-			}
-		}
-
-		BufferedImage img;
-
-		try {
-			img = ImageUtils.resize(URLRequest.of(url).toImage().block(), size, size);
-		} catch (Exception ex) {
-			img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-
-			for (var x = 0; x < size; x++) {
-				for (var y = 0; y < size; y++) {
-					img.setRGB(x, y, 0xFF000000);
-				}
-			}
-		}
-
-		return HTTPResponse.ok().png(img).publicCache(Duration.ofDays(1L));
-	}
-
-	public static HTTPResponse define(AppRequest req) throws Exception {
-		var word = req.variable("word");
-
-		var json = JSONObject.of();
-		json.put("found", false);
-		json.put("word", word);
-
-		try {
-			var data0 = URLRequest.of("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).toJsonArray().blockEither();
-
-			if (data0.isRight() && data0.right().getMessage().startsWith("Error 404")) {
-				return JSONResponse.of(json);
-			}
-
-			var firstWord = data0.left().asObject(0).asString("word");
-			json.put("word", firstWord);
-			var phonetics = json.addArray("phonetics");
-			var meanings = json.addArray("meanings");
-			var phoneticsSet = new HashSet<String>();
-
-			for (var data1 : data0.left()) {
-				var data = (JSONObject) data1;
-
-				if (data.asString("word").equals(firstWord)) {
-					for (var o0 : data.asArray("phonetics").ofObjects()) {
-						var text = o0.asString("text").trim();
-
-						if (!phoneticsSet.contains(text)) {
-							phoneticsSet.add(text);
-							var o = phonetics.addObject();
-							o.put("text", text);
-							o.put("audio_url", o0.containsKey("audio") ? ("https:" + o0.asString("audio").trim()) : "");
-						}
-					}
-
-					for (var o0 : data.asArray("meanings").ofObjects()) {
-						var type = o0.asString("partOfSpeech").trim();
-
-						for (var o1 : o0.asArray("definitions").ofObjects()) {
-							var o = meanings.addObject();
-							o.put("type", type);
-							o.put("definition", o1.asString("definition").trim());
-							o.put("example", o1.asString("example").trim());
-							o.put("synonyms", o1.containsKey("synonyms") ? o1.get("synonyms") : JSONArray.of());
-							o.put("antonyms", o1.containsKey("antonyms") ? o1.get("antonyms") : JSONArray.of());
-						}
-					}
-				}
-			}
-
-			json.put("found", true);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-
-		return JSONResponse.of(json).publicCache(Duration.ofMinutes(1L));
+		return HTTPResponse.ok().png(getEmojiImage(id, size)).publicCache(IMAGE_CACHE_TIME);
 	}
 
 	public static HTTPResponse videoThumbnail(AppRequest req) throws Exception {

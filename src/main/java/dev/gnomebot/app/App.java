@@ -41,6 +41,7 @@ import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.BanData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.route.Routes;
@@ -115,19 +116,9 @@ public class App {
 		commands.add("echo_cli", List.of("message..."), args -> echoCli(args.get("message")));
 		commands.add("guilds", this::printGuilds);
 		commands.add("create_restart_button", List.of("channel"), args -> createRestartButton(args.get("channel")));
+		commands.add("log-everyone-out", this::logEveryoneOut);
+		commands.add("fix-broken-guild-commands", this::fixBrokenGuildCommands);
 		CLI.start(commands);
-
-		db = new Databases(this);
-
-		Log.info("Loading discord handler...");
-
-		discordHandler = new DiscordHandler(this);
-		discordHandler.load();
-		Log.info("Discord handler loaded");
-
-		db.createSelfToken();
-
-		pingHandler = new PingHandler(db);
 
 		Log.info("Loading web server...");
 		webServer = new HTTPServer<>(this::createAppRequest);
@@ -147,7 +138,6 @@ public class App {
 		webServer.get("/api/info/user/{user}", InfoHandlers::user);
 		webServer.get("/api/info/avatar/{user}/{size}", InfoHandlers::avatar);
 		webServer.get("/api/info/emoji/{emoji}/{size}", InfoHandlers::emoji);
-		webServer.get("/api/info/define/{word}", InfoHandlers::define);
 		webServer.get("/api/info/video-thumbnail/{channel}/{message}/{attachment}", InfoHandlers::videoThumbnail);
 		webServer.get("/api/lookup/<data>", InfoHandlers::lookup);
 
@@ -198,6 +188,20 @@ public class App {
 		webServer.setPort(config.web.port);
 		webServer.setKeepAliveTimeout(Duration.ofMinutes(5L));
 		webServer.start();
+
+		Log.info("Loading databases...");
+
+		db = new Databases(this);
+
+		Log.info("Loading discord handler...");
+
+		discordHandler = new DiscordHandler(this);
+		discordHandler.load();
+		Log.info("Discord handler loaded");
+
+		db.createSelfToken();
+
+		pingHandler = new PingHandler(db);
 
 		ScamHandler.loadDomains();
 		DM.loadDmChannels();
@@ -574,5 +578,33 @@ public class App {
 				.addComponent(ActionRow.of(discord4j.core.object.component.Button.danger("restart-bot/" + config.discord.restart_button_token, Emojis.ALERT, "Restart")))
 				.build()
 		).subscribe();
+	}
+
+	private void logEveryoneOut() {
+		db.invalidateAllTokens();
+		Log.warn("Everyone's Gnome Panel login tokens have been invalidated!");
+	}
+
+	private void fixBrokenGuildCommands() {
+		for (var guild : db.allGuilds()) {
+			var broken = new ArrayList<ApplicationCommandData>();
+
+			for (var command : discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(discordHandler.selfId, guild.guildId).toIterable()) {
+				var macro = guild.getMacro(command.name());
+
+				if (macro == null || macro.slashCommand != command.id().asLong()) {
+					broken.add(command);
+					Log.warn("Found a broken command: " + command.name() + ":" + command.id().asString());
+				}
+			}
+
+			if (!broken.isEmpty()) {
+				Log.warn("Deleting " + broken.size() + " broken commands");
+
+				for (var command : broken) {
+					discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(discordHandler.selfId, command.guildId().get().asLong(), command.id().asLong()).subscribe();
+				}
+			}
+		}
 	}
 }

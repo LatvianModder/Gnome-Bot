@@ -11,19 +11,14 @@ import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.handler.PasteHandlers;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
-import dev.gnomebot.app.util.URLRequest;
-import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
 
-import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -304,56 +299,6 @@ public class DisplayCommands extends ApplicationCommands {
 					.block();
 
 			event.respond(FormattingUtils.format(count) + " / " + (max == 0 ? "?" : FormattingUtils.format(max)) + " members");
-		}
-	}
-
-	public static void userMentionLeaderboard(ChatInputInteractionEventWrapper event) throws Exception {
-		mentionLeaderboard(event, true);
-	}
-
-	public static void roleMentionLeaderboard(ChatInputInteractionEventWrapper event) throws Exception {
-		mentionLeaderboard(event, false);
-	}
-
-	private static void mentionLeaderboard(ChatInputInteractionEventWrapper event, boolean isUser) throws Exception {
-		event.acknowledge();
-		event.context.checkSenderAdmin();
-
-		var mentionId = (isUser ? event.get("mention").asUser().map(User::getId) : event.get("mention").asRole().map(m -> m.id)).orElse(null);
-
-		if (mentionId == null) {
-			throw new GnomeException("Mention not found!");
-		}
-
-		var limit = Math.max(1L, Math.min(event.get("limit").asLong(20L), 10000L));
-
-		var days = event.get("timespan").asDays().orElse(90L);
-		var channelInfo = event.get("channel").asChannelInfo().orElse(null);
-		var role = event.get("role").asRole().orElse(null);
-
-		var url = "api/guilds/" + event.context.gc.guildId + "/activity/" + (isUser ? "user" : "role") + "-mention-leaderboard-image/" + mentionId + "/" + days + "?limit=" + limit;
-
-		if (channelInfo != null) {
-			url += "&channel=" + channelInfo.id;
-		}
-
-		if (role != null) {
-			url += "&role=" + role.id;
-		}
-
-		var req = Utils.internalRequest(event.app, url).timeout(30000).toImage();
-
-		try {
-			var imageData = new ByteArrayOutputStream();
-			ImageIO.write(req.block(), "PNG", imageData);
-			event.respond(MessageBuilder.create().addFile("leaderboard.png", imageData.toByteArray()));
-		} catch (URLRequest.UnsuccesfulRequestException ex) {
-			if (ex.status == HTTPStatus.BAD_REQUEST) {
-				event.respond("This leaderboard has no data!");
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			event.respond(req.getFullUrl());
 		}
 	}
 

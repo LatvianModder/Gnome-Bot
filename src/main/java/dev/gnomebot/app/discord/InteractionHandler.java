@@ -346,7 +346,7 @@ public class InteractionHandler {
 			case "delete" -> deleteMessage(event, SnowFlake.num(event.path[1]));
 			case "punish" -> punishMenu(event, SnowFlake.num(event.path[1]), ComponentEventWrapper.decode(event.path[2]), values.isEmpty() ? "" : values.getFirst());
 			case "report" -> ReportHandler.report(event, SnowFlake.num(event.path[1]), SnowFlake.num(event.path[2]), values.getFirst());
-			case "macro-menu" -> MacroCommands.macroMenuCallback(event, SnowFlake.num(event.path[1]), event.path[2], SnowFlake.num(event.path[3]), values.getFirst());
+			case "macro-menu" -> MacroCommands.macroButtonCallback(event, SnowFlake.num(event.path[1]), values.getFirst(), SnowFlake.num(event.path[2]));
 			default -> {
 				Log.info(event.context.sender.getTag() + " selected " + event.context.gc + "/" + Arrays.asList(event.path) + "/" + values);
 				throw new GnomeException("Unknown select menu ID: " + Arrays.asList(event.path) + "/" + values);

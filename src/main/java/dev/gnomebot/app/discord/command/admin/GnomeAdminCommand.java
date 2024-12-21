@@ -1,17 +1,11 @@
 package dev.gnomebot.app.discord.command.admin;
 
-import dev.gnomebot.app.App;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionBuilder;
-import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.gnomebot.app.discord.command.FeedbackCommand;
-import dev.gnomebot.app.discord.command.ScamsCommands;
 import dev.gnomebot.app.discord.command.VerifyMinecraftCommand;
-import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
-
-import java.util.ArrayList;
 
 public class GnomeAdminCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("gnome-admin")
@@ -28,14 +22,6 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.description("Print a setting value")
 							.add(string("key").required().suggest(SettingsCommands::suggestKey))
 							.run(SettingsCommands::get)
-					)
-					.add(sub("logout-everyone")
-							.description("Log everyone out of the panel (Invalidates everyone's tokens)")
-							.run(GnomeAdminCommand::logoutEveryone)
-					)
-					.add(sub("fix-broken-commands")
-							.description("Fix broken commands")
-							.run(GnomeAdminCommand::fixBrokenCommands)
 					)
 			)
 			.add(sub("echo")
@@ -154,22 +140,6 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.add(role("role"))
 							.run(DisplayCommands::memberCount)
 					)
-					.add(sub("user-mention-leaderboard")
-							.description("User Mention Leaderboard")
-							.add(user("mention").required())
-							.add(time("timespan", true, false))
-							.add(integer("limit"))
-							.add(channel("channel"))
-							.run(DisplayCommands::userMentionLeaderboard)
-					)
-					.add(sub("role-mention-leaderboard")
-							.description("Role Mention Leaderboard")
-							.add(role("mention").required())
-							.add(time("timespan", true, false))
-							.add(integer("limit"))
-							.add(channel("channel"))
-							.run(DisplayCommands::roleMentionLeaderboard)
-					)
 			)
 			.add(subGroup("feedback")
 					.description("Feedback")
@@ -196,6 +166,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 							.run(FeedbackCommand::cleanup)
 					)
 			)
+			/*
 			.add(subGroup("scam-domains")
 					.description("Manage scam URL domains")
 					.add(sub("fetch")
@@ -228,6 +199,7 @@ public class GnomeAdminCommand extends ApplicationCommands {
 					.add(string("text").required())
 					.run(ScamsCommands::test)
 			)
+			 */
 			.add(subGroup("verify")
 					.add(sub("minecraft")
 							.description("Verify Minecraft")
@@ -244,32 +216,4 @@ public class GnomeAdminCommand extends ApplicationCommands {
 			)
 			// END
 			;
-
-	public static void logoutEveryone(ChatInputInteractionEventWrapper event) {
-		event.acknowledgeEphemeral();
-		event.context.checkSenderTrusted();
-		App.instance.db.invalidateAllTokens();
-		event.respond("Everyone's Gnome Panel login tokens have been invalidated!");
-	}
-
-	public static void fixBrokenCommands(ChatInputInteractionEventWrapper event) {
-		event.acknowledgeEphemeral();
-		event.context.checkSenderAdmin();
-
-		var broken = new ArrayList<ApplicationCommandData>();
-
-		for (var command : event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().getGuildApplicationCommands(event.context.gc.db.app.discordHandler.selfId, event.context.gc.guildId).toIterable()) {
-			var macro = event.context.gc.getMacro(command.name());
-
-			if (macro == null || macro.slashCommand != command.id().asLong()) {
-				broken.add(command);
-			}
-		}
-
-		event.respond("Found " + broken.size() + " broken commands: " + broken.stream().map(c -> "</" + c.name() + ":" + c.id().asString() + ">").toList());
-
-		for (var command : broken) {
-			event.context.gc.db.app.discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(event.context.gc.db.app.discordHandler.selfId, event.context.gc.guildId, command.id().asLong()).subscribe();
-		}
-	}
 }
