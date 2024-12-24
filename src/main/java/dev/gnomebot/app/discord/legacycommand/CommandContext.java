@@ -1,7 +1,8 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
+import dev.gnomebot.app.data.channel.TopLevelChannelInfo;
 import dev.gnomebot.app.discord.DiscordHandler;
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.discord.InteractionEventWrapper;
@@ -49,7 +50,7 @@ public class CommandContext {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nChannel info can't be loaded").reaction(Emojis.RAGE).ephemeral();
 		}
 
-		if (!channelInfo.getSelfPermissions().containsAll(PermissionSet.of(perms))) {
+		if (!channelInfo.getSelfPermissions().has(perms)) {
 			throw new GnomeException(GnomeException.Type.NO_PERMISSION, "I don't have permission to do that :cry:\nPermissions required: " + Utils.permsToString(perms)).reaction(Emojis.RAGE).ephemeral();
 		}
 	}
@@ -141,7 +142,7 @@ public class CommandContext {
 	}
 
 	public Optional<Message> findMessage(long id) {
-		return gc.findMessage(id, channelInfo);
+		return gc.findMessage(id, channelInfo instanceof TopLevelChannelInfo t ? t : null);
 	}
 
 	public boolean isTrusted() {

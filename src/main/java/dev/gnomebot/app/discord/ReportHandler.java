@@ -31,7 +31,7 @@ public class ReportHandler {
 			return;
 		}
 
-		var channel = event.context.gc.getOrMakeChannelInfo(channelId);
+		var channel = event.context.gc.channels().getChannelOrThread(channelId);
 		var m = channel.getMessage(messageId);
 
 		if (m == null) {

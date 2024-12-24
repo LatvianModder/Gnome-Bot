@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class GuildAPIHandlers {
 	public static Tag channel(Tag parent, GuildCollections gc, long id) {
-		return parent.a(gc.url() + "/channels/" + Long.toUnsignedString(id), gc.getChannelDisplayName(id));
+		return parent.a(gc.url() + "/channels/" + Long.toUnsignedString(id), gc.channels().displayName(id));
 	}
 
 	public static Tag user(Tag parent, long id) {
@@ -99,8 +99,8 @@ public class GuildAPIHandlers {
 	public static HTTPResponse getSettings(AppRequest req) {
 		req.checkMember();
 
-		var channels = req.gc.getChannelList();
-		var roles = req.gc.getRoleList();
+		var channels = req.gc.channels();
+		var roles = req.gc.roles();
 
 		var bs = JSONArray.of();
 
@@ -313,7 +313,7 @@ public class GuildAPIHandlers {
 
 		var userCache = req.app.discordHandler.createUserCache();
 		var entryQuery = req.gc.auditLog.query();
-		var availableChannels = req.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
+		var availableChannels = req.gc.channels().list.stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			List<Bson> types = new ArrayList<>();
@@ -362,7 +362,7 @@ public class GuildAPIHandlers {
 					continue;
 				}
 
-				o.put("channel", req.gc.getChannelJson(channelId));
+				o.put("channel", req.gc.channels().json(channelId));
 			}
 
 			if (entry.getMessage() != 0L) {

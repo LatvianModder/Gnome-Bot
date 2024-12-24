@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.data.ping.Ping;
 import dev.gnomebot.app.data.ping.PingData;
 import dev.gnomebot.app.data.ping.PingDestination;
@@ -114,7 +114,7 @@ public class WebHookDestination implements PingDestination {
 	public void relayPing(long targetId, PingData pingData, Ping ping, UserPingConfig config) {
 		try {
 			var targetUserName = targetId == 0L ? "Gnome" : pingData.gc().db.app.discordHandler.getUserName(targetId).orElse(SnowFlake.str(targetId));
-			Log.info("Ping for WebHook[" + SnowFlake.str(id) + " of " + targetUserName + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+			// Log.debug("Ping for WebHook[" + SnowFlake.str(id) + " of " + targetUserName + "] from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
 
 			var content = new StringBuilder();
 

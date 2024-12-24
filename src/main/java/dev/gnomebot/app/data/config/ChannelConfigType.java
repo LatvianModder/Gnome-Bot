@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.config;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.TopLevelChannelInfo;
 import dev.gnomebot.app.util.SnowFlake;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,11 +27,11 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 		}
 
 		@Nullable
-		public ChannelInfo getMessageChannel() {
-			return isSet() ? gc.getChannelMap().get(get()) : null;
+		public TopLevelChannelInfo getMessageChannel() {
+			return isSet() ? gc.channels().get(get()) : null;
 		}
 
-		public Optional<ChannelInfo> messageChannel() {
+		public Optional<TopLevelChannelInfo> messageChannel() {
 			return isSet() ? Optional.ofNullable(getMessageChannel()) : Optional.empty();
 		}
 
@@ -52,7 +52,7 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 
 	@Override
 	public String validate(GuildCollections guild, int type, String value) {
-		return !value.isEmpty() && (!value.startsWith("#") && guild.getRoleMap().containsKey(SnowFlake.num(value)) || guild.getUniqueChannelNameMap().containsKey(value.substring(1))) ? "" : "Channel not found!";
+		return !value.isEmpty() && (!value.startsWith("#") && guild.channels().get(SnowFlake.num(value)) != null || guild.channels().uniqueNameMap.containsKey(value.substring(1))) ? "" : "Channel not found!";
 	}
 
 	@Override
@@ -64,7 +64,7 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 	public Collection<EnumValue> getEnumValues(GuildCollections guild) {
 		var list = new ArrayList<EnumValue>();
 
-		for (var entry : guild.getUniqueChannelNameMap().entrySet()) {
+		for (var entry : guild.channels().uniqueNameMap.entrySet()) {
 			list.add(new EnumValue(SnowFlake.str(entry.getValue().id), "#" + entry.getKey()));
 		}
 
@@ -73,7 +73,7 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 
 	@Override
 	public String serialize(GuildCollections guild, int type, Long value) {
-		for (var entry : guild.getUniqueChannelNameMap().entrySet()) {
+		for (var entry : guild.channels().uniqueNameMap.entrySet()) {
 			if (entry.getValue().id == value) {
 				return "#" + entry.getKey();
 			}
@@ -87,7 +87,7 @@ public class ChannelConfigType implements SnowflakeConfigType<ChannelConfigType.
 		if (value.isEmpty()) {
 			return 0L;
 		} else if (value.startsWith("#")) {
-			var channel = guild.getUniqueChannelNameMap().get(value.substring(1));
+			var channel = guild.channels().uniqueNameMap.get(value.substring(1));
 			return channel == null ? 0L : channel.id;
 		} else {
 			return SnowFlake.num(value);

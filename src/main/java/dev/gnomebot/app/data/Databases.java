@@ -8,6 +8,7 @@ import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.GuildPaths;
+import dev.gnomebot.app.data.channel.ChannelSettings;
 import dev.gnomebot.app.data.ping.InteractionDocument;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;

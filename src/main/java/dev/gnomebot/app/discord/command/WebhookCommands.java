@@ -107,7 +107,7 @@ public class WebhookCommands extends ApplicationCommands {
 
 	public static void executeCallback(ModalEventWrapper event, long channelId, long editId) {
 		event.context.checkSenderOwner();
-		var ci = event.context.gc.getOrMakeChannelInfo(channelId);
+		var ci = event.context.gc.channels().getChannelOrThread(channelId);
 		var webHook = ci.getWebHook().orElse(null);
 
 		if (webHook == null) {

@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.AppTaskCancelledException;
@@ -27,7 +27,7 @@ public class ImportMessagesCommand {
 		}
 
 		if (messageChannels.isEmpty()) {
-			for (var channel : context.gc.getChannelList()) {
+			for (var channel : context.gc.channels()) {
 				if (channel.getChannelData() != null) {
 					var lm = channel.getLastMessageId();
 

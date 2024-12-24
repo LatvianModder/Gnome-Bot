@@ -1,9 +1,9 @@
 package dev.gnomebot.app.data.ping;
 
 import dev.gnomebot.app.AppPaths;
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.data.Pair;
@@ -131,7 +131,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 		var bot = user.isBot();
 		var pingData = new PingData(gc, channel, user, userId, username, avatar, bot, match, content, url);
 
-		CompletableFuture.runAsync(() -> {
+		Thread.startVirtualThread(() -> {
 			for (var instance : getPings()) {
 				instance.handle(pingData);
 			}

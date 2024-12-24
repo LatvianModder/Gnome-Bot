@@ -15,7 +15,7 @@ public class DMDestination implements PingDestination {
 		try {
 			var app = pingData.gc().db.app;
 			var dmChannel = DM.openId(app.discordHandler, targetId);
-			Log.info("Ping for DM/" + app.discordHandler.getUserName(targetId).orElse("Unknown") + " from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
+			// Log.info("Ping for DM/" + app.discordHandler.getUserName(targetId).orElse("Unknown") + " from " + pingData.username() + " @ **" + pingData.gc() + "** in " + pingData.channel().getName() + ": " + pingData.content() + " (" + ping.pattern() + ")");
 
 			var content = new StringBuilder();
 

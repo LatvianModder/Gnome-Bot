@@ -5,7 +5,6 @@ import dev.latvian.apps.ansi.log.Log;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 
 public record UserPingInstance(Ping[] pings, long user, PingDestination destination, UserPingConfig config) {
 	public void handle(PingData pingData) {
@@ -16,11 +15,11 @@ public record UserPingInstance(Ping[] pings, long user, PingDestination destinat
 			if (ping != null) {
 				var time = System.nanoTime() - start;
 
-				if (time >= 100_000L) { // 0.100 ms
+				if (time >= 10_000_000L) { // 10 ms
 					Log.warn("Match: " + ((time / 1000L) / 1000F) + " ms " + this);
 				}
 
-				CompletableFuture.runAsync(new RelayPingTask(destination, user, pingData, ping, config));
+				Thread.startVirtualThread(new RelayPingTask(destination, user, pingData, ping, config));
 			}
 		}
 	}

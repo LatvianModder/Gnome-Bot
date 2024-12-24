@@ -159,7 +159,7 @@ public class DisplayCommands extends ApplicationCommands {
 		var channelPattern = Pattern.compile("<#(\\d+)>");
 		Map<Long, String> channelNameMap = new HashMap<>();
 
-		Function<Long, String> computeFunc = event.context.gc::getChannelDisplayName;
+		Function<Long, String> computeFunc = event.context.gc.channels()::displayName;
 		Function<MatchResult, String> channelNameReplacer = matchResult -> channelNameMap.computeIfAbsent(Long.parseUnsignedLong(matchResult.group(1)), computeFunc);
 
 		for (var msg : event.context.gc.messages.query().eq("user", memberId.asLong())) {
@@ -227,7 +227,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 	public static void adminRoles(ChatInputInteractionEventWrapper event) {
 		event.acknowledgeEphemeral();
-		event.respond("Admin roles:\n\n" + event.context.gc.getRoleList().stream().filter(r -> r.adminRole).map(r -> "<@&" + r.id + ">").collect(Collectors.joining("\n")));
+		event.respond("Admin roles:\n\n" + event.context.gc.roles().list.stream().filter(r -> r.adminRole).map(r -> "<@&" + r.id + ">").collect(Collectors.joining("\n")));
 	}
 
 	public static void hourlyActivity(ChatInputInteractionEventWrapper event) throws Exception {

@@ -244,7 +244,7 @@ public class InfoHandlers {
 			}
 			case "r" -> {
 				var gc = gcs.computeIfAbsent(s[1], gcLookup);
-				var role = gc.getRoleMap().get(Long.parseUnsignedLong(s[2]));
+				var role = gc.roles().get(Long.parseUnsignedLong(s[2]));
 
 				if (role == null) {
 					throw new NotFoundError();

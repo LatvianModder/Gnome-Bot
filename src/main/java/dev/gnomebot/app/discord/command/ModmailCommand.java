@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.util.MessageBuilder;
 import discord4j.core.object.component.TextInput;

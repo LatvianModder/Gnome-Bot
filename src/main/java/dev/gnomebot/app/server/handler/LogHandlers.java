@@ -65,7 +65,7 @@ public class LogHandlers {
 		root.content.a(req.gc.url(), "< Back").classes("back");
 
 		var entryQuery = req.gc.auditLog.query();
-		var availableChannels = req.gc.getChannelList().stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
+		var availableChannels = req.gc.channels().list.stream().filter(ci -> ci.canViewChannel(req.member().getId().asLong())).map(ci -> ci.id).collect(Collectors.toSet());
 
 		if (!type.isEmpty()) {
 			var types = new ArrayList<Bson>();

@@ -1,7 +1,7 @@
 package dev.gnomebot.app.data.ping;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import discord4j.core.object.entity.User;
 
 public record PingData(GuildCollections gc,

@@ -1,8 +1,9 @@
-package dev.gnomebot.app.data;
+package dev.gnomebot.app.data.channel;
 
+import dev.gnomebot.app.data.WrappedCollection;
+import dev.gnomebot.app.data.WrappedDocument;
 import dev.gnomebot.app.util.MapWrapper;
 import dev.gnomebot.app.util.SnowFlake;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import org.bson.Document;
 
 public final class ChannelSettings extends WrappedDocument<ChannelSettings> {
@@ -20,12 +21,6 @@ public final class ChannelSettings extends WrappedDocument<ChannelSettings> {
 		threadXp = document.getInt("thread_xp", -1);
 		autoThread = document.getBoolean("auto_thread");
 		autoUpvote = document.getBoolean("auto_upvote");
-	}
-
-	public void updateFrom(TopLevelGuildMessageChannel ch) {
-		if (!name.equals(ch.getName())) {
-			name = ch.getName();
-		}
 	}
 
 	public void save() {

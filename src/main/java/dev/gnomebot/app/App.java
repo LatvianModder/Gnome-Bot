@@ -216,7 +216,6 @@ public class App {
 		pingHandler.getPings();
 
 		Log.success("Server restarted!");
-		new WatchdogThread(this).start();
 
 		try {
 			while (running) {

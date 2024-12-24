@@ -24,7 +24,10 @@ public class RelayPingTask implements Runnable {
 
 			if (targetId == 0L || pingData.channel().canViewChannel(targetId)) {
 				destination.relayPing(targetId, pingData, ping, config);
-			}
+				// Log.debug(targetId + " pinged in " + pingData.channel() + " by " + pingData.username() + " with " + pingData.match() + " (" + ping.pattern() + ")");
+			} /* else {
+				Log.warn(targetId + " doesn't have permission to view channel " + pingData.channel() + " but got ping from " + pingData.username() + ": " + pingData.match() + " (" + ping.pattern() + ")");
+			} */
 
 			var time = System.nanoTime() - start;
 

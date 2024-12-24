@@ -356,7 +356,7 @@ public class ActivityHandlers {
 		Map<Long, MessageInfo> channels = new LinkedHashMap<>();
 
 		try {
-			req.gc.getChannelList()
+			req.gc.channels().list
 					.stream()
 					.filter(c -> c.canViewChannel(req.token.userId))
 					.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
@@ -739,7 +739,7 @@ public class ActivityHandlers {
 
 		var json = JSONArray.of();
 
-		var role = req.gc.getRoleMap().get(req.variable("role").asULong());
+		var role = req.gc.roles().get(req.variable("role").asULong());
 
 		if (role == null) {
 			throw new NotFoundError("Role not found!");
@@ -758,7 +758,7 @@ public class ActivityHandlers {
 
 		map.entrySet().stream().sorted((o1, o2) -> Integer.compare(o2.getValue().value, o1.getValue().value)).forEachOrdered(e -> {
 			var o = json.addObject();
-			o.put("channel", req.gc.getChannelJson(e.getKey()));
+			o.put("channel", req.gc.channels().json(e.getKey()));
 			o.put("mentions", e.getValue().value);
 		});
 

@@ -39,7 +39,7 @@ public class DeleteUserMessagesCommand {
 
 				try {
 					Log.info("Deleting " + SnowFlake.str(m.getUID()));
-					var channel = context.gc.getChannelInfo(m.getChannelID());
+					var channel = context.gc.channels().get(m.getChannelID());
 					channel.getMessage(m.getUID()).delete().block();
 				} catch (Exception ex) {
 					Log.info("Message not found!");

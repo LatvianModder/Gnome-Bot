@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
@@ -24,7 +24,7 @@ public class Hardcoded {
 
 			try {
 				var pattern = Pattern.compile("^\\d+\\.\\s+(.+)$");
-				var content = gc.getChannelInfo(220243899191394304L).getMessage(1183803614834204764L).getContent();
+				var content = gc.channels().get(220243899191394304L).getMessage(1183803614834204764L).getContent();
 
 				for (var line : content.split("\n")) {
 					line = line.trim();

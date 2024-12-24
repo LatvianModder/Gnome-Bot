@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.command;
 
 import com.mongodb.client.model.Updates;
-import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.log.Log;
@@ -93,7 +93,7 @@ public class ChannelCommands extends ApplicationCommands {
 	private static void listXp(ChatInputInteractionEventWrapper event) throws Exception {
 		event.acknowledgeEphemeral();
 
-		var channelsWithXp = event.context.gc.getChannelList().stream().filter(ChannelInfo::isXpSet).toList();
+		var channelsWithXp = event.context.gc.channels().list.stream().filter(ChannelInfo::isXpSet).toList();
 
 		var sb = new StringBuilder();
 		sb.append("Channel XP:");
@@ -179,7 +179,7 @@ public class ChannelCommands extends ApplicationCommands {
 		Map<StatKey, MutableLong> dailyCount = new HashMap<>();
 		Map<StatKey, MutableLong> dailyXp = new HashMap<>();
 
-		for (var channelInfo : event.context.gc.getChannelList()) {
+		for (var channelInfo : event.context.gc.channels()) {
 			event.edit().respond("1/4 Counting messages in " + channelInfo.getMention() + "...");
 			var channelId = channelInfo.id;
 

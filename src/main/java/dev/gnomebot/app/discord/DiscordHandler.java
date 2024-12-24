@@ -22,6 +22,9 @@ import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.PresenceUpdateEvent;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.event.domain.automod.AutoModActionExecutedEvent;
+import discord4j.core.event.domain.channel.ForumChannelCreateEvent;
+import discord4j.core.event.domain.channel.ForumChannelDeleteEvent;
+import discord4j.core.event.domain.channel.ForumChannelUpdateEvent;
 import discord4j.core.event.domain.channel.NewsChannelCreateEvent;
 import discord4j.core.event.domain.channel.NewsChannelDeleteEvent;
 import discord4j.core.event.domain.channel.NewsChannelUpdateEvent;
@@ -62,8 +65,8 @@ import discord4j.core.object.entity.Entity;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.shard.MemberRequestFilter;
@@ -170,6 +173,9 @@ public class DiscordHandler {
 		handle(VoiceChannelCreateEvent.class, this::channelCreated);
 		handle(VoiceChannelDeleteEvent.class, this::channelDeleted);
 		handle(VoiceChannelUpdateEvent.class, this::channelUpdated);
+		handle(ForumChannelCreateEvent.class, this::channelCreated);
+		handle(ForumChannelDeleteEvent.class, this::channelDeleted);
+		handle(ForumChannelUpdateEvent.class, this::channelUpdated);
 		handle(RoleCreateEvent.class, this::roleCreated);
 		handle(RoleDeleteEvent.class, this::roleDeleted);
 		handle(RoleUpdateEvent.class, this::roleUpdated);
@@ -222,21 +228,11 @@ public class DiscordHandler {
 	private void guildCreated(GuildCreateEvent event) {
 		var gc = app.db.guild(event.getGuild().getId());
 		gc.guildUpdated(event.getGuild());
-
-		for (var channel : event.getGuild().getChannels().toIterable()) {
-			if (channel instanceof TopLevelGuildMessageChannel c) {
-				app.db.channelSettings(channel.getId().asLong()).updateFrom(c);
-			}
-		}
-
-		// App.info("Guild created: " + event.getGuild().getName());
 	}
 
 	private void guildUpdated(GuildUpdateEvent event) {
 		var gc = app.db.guild(event.getCurrent().getId());
 		gc.guildUpdated(event.getCurrent());
-
-		// App.info("Guild updated: " + event.getCurrent().getName());
 	}
 
 	private void channelCreated(TextChannelCreateEvent event) {
@@ -248,8 +244,8 @@ public class DiscordHandler {
 	}
 
 	private void channelUpdated(TextChannelUpdateEvent event) {
-		if (event.getCurrent() instanceof TopLevelGuildMessageChannel) {
-			app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), (TopLevelGuildMessageChannel) event.getCurrent(), false);
+		if (event.getCurrent() instanceof CategorizableChannel c) {
+			app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), c, false);
 		}
 	}
 
@@ -262,8 +258,8 @@ public class DiscordHandler {
 	}
 
 	private void channelUpdated(NewsChannelUpdateEvent event) {
-		if (event.getCurrent() instanceof TopLevelGuildMessageChannel) {
-			app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), (TopLevelGuildMessageChannel) event.getCurrent(), false);
+		if (event.getCurrent() instanceof CategorizableChannel c) {
+			app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), c, false);
 		}
 	}
 
@@ -276,6 +272,18 @@ public class DiscordHandler {
 	}
 
 	private void channelUpdated(VoiceChannelUpdateEvent event) {
+		app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), event.getCurrent(), false);
+	}
+
+	private void channelCreated(ForumChannelCreateEvent event) {
+		app.db.guild(event.getChannel().getGuildId()).channelUpdated(null, event.getChannel(), false);
+	}
+
+	private void channelDeleted(ForumChannelDeleteEvent event) {
+		app.db.guild(event.getChannel().getGuildId()).channelUpdated(null, event.getChannel(), true);
+	}
+
+	private void channelUpdated(ForumChannelUpdateEvent event) {
 		app.db.guild(event.getCurrent().getGuildId()).channelUpdated(event.getOld().orElse(null), event.getCurrent(), false);
 	}
 
@@ -542,15 +550,15 @@ public class DiscordHandler {
 					);
 				}
 				case "warn" -> {
-					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Warn not implemented yet :("));
+					messageChannel.accept(MessageBuilder.create(Emojis.WARNING.asFormat() + "AutoMod Warn not implemented yet :("));
 					// Warn
 				}
 				case "mute" -> {
-					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Mute not implemented yet :("));
+					messageChannel.accept(MessageBuilder.create(Emojis.WARNING.asFormat() + "AutoMod Mute not implemented yet :("));
 					// Mute
 				}
 				case "ban" -> {
-					messageChannel.accept(MessageBuilder.create("Gnome AutoMod Ban not implemented yet :("));
+					messageChannel.accept(MessageBuilder.create(Emojis.WARNING.asFormat() + "AutoMod Ban not implemented yet :("));
 					// Ban
 				}
 			}

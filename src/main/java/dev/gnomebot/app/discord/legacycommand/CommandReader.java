@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.legacycommand;
 
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.util.SimpleStringReader;
 import dev.gnomebot.app.util.SnowFlake;
@@ -100,7 +100,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			return Optional.of(gc.getOrMakeChannelInfo(SnowFlake.num(s)));
+			return Optional.of(gc.channels().getChannelOrThread(SnowFlake.num(s)));
 		} catch (Exception ignored) {
 			throw new GnomeException("Channel not found!");
 		}
@@ -122,7 +122,7 @@ public class CommandReader extends SimpleStringReader {
 		}
 
 		try {
-			var ci = gc.getChannelInfo(SnowFlake.num(s[0]));
+			var ci = gc.channels().get(SnowFlake.num(s[0]));
 			var li = ci == null ? 0L : ci.getLastMessageId();
 
 			if (li != 0L) {
@@ -147,6 +147,8 @@ public class CommandReader extends SimpleStringReader {
 			s = s.substring(3, s.length() - 1);
 		}
 
+		var roles = gc.roles();
+
 		try {
 			var snowflake = SnowFlake.num(s);
 
@@ -154,7 +156,7 @@ public class CommandReader extends SimpleStringReader {
 				return Optional.empty();
 			}
 
-			return Optional.of(gc.getRoleMap().get(snowflake));
+			return Optional.of(roles.get(snowflake));
 		} catch (Exception ex) {
 			if (s.startsWith("@")) {
 				s = s.substring(1);
@@ -164,7 +166,7 @@ public class CommandReader extends SimpleStringReader {
 				return Optional.empty();
 			}
 
-			for (var r : gc.getRoleList()) {
+			for (var r : roles) {
 				if (r.name.equals(s)) {
 					return Optional.of(r);
 				}
@@ -172,13 +174,13 @@ public class CommandReader extends SimpleStringReader {
 
 			s = s.replaceAll("\\W", "").toLowerCase();
 
-			for (var r : gc.getRoleList()) {
+			for (var r : roles) {
 				if (r.name.replaceAll("\\W", "").toLowerCase().equals(s)) {
 					return Optional.of(r);
 				}
 			}
 
-			for (var r : gc.getRoleList()) {
+			for (var r : roles) {
 				if (r.name.replaceAll("\\W", "").toLowerCase().contains(s)) {
 					return Optional.of(r);
 				}

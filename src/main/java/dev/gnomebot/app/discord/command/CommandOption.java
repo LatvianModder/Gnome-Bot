@@ -1,6 +1,6 @@
 package dev.gnomebot.app.discord.command;
 
-import dev.gnomebot.app.data.ChannelInfo;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.discord.CachedRole;
 import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;

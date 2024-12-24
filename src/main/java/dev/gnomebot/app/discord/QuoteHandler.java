@@ -2,8 +2,8 @@ package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.util.AttachmentType;
 import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;

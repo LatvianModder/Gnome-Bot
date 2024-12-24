@@ -98,7 +98,7 @@ public class MinecraftHandlers {
 			gc.unmute(user.getId().asLong(), 0L, user.getMention() + " Verified Minecraft");
 
 			if (gc.isMM()) {
-				var role = gc.getRoleMap().get(1119549049717149808L);
+				var role = gc.roles().get(1119549049717149808L);
 
 				if (role != null) {
 					role.add(user, "Verified Minecraft");

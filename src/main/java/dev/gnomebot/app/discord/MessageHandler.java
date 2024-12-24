@@ -5,11 +5,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
 import dev.gnomebot.app.Assets;
-import dev.gnomebot.app.WatchdogThread;
-import dev.gnomebot.app.data.ChannelInfo;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
+import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.command.admin.MuteCommand;
 import dev.gnomebot.app.discord.legacycommand.CommandContext;
@@ -98,7 +97,6 @@ public class MessageHandler {
 	public static final int MM_MEMBER = 300;
 
 	public static void created(DiscordHandler handler, MessageCreateEvent event) {
-		WatchdogThread.update();
 		var m = event.getMessage();
 		var channel = Objects.requireNonNull(m.getChannel().block());
 
@@ -132,7 +130,7 @@ public class MessageHandler {
 				}
 			} else if (member != null && channel instanceof ThreadChannel threadChannel) {
 				var gc = handler.app.db.guild(event.getGuildId().get());
-				var channelInfo = gc.getChannelMap().get(threadChannel.getParentId().get().asLong());
+				var channelInfo = gc.channels().get(threadChannel.getParentId().get().asLong());
 
 				if (channelInfo != null) {
 					messageCreated(handler, threadChannel, channelInfo.thread(threadChannel.getId().asLong(), threadChannel.getName()), m, member, member, false);
@@ -141,7 +139,7 @@ public class MessageHandler {
 				}
 			} else if (member != null && channel instanceof GuildMessageChannel guildChannel) {
 				var gc = handler.app.db.guild(event.getGuildId().get());
-				var channelInfo = gc.getChannelMap().get(guildChannel.getId().asLong());
+				var channelInfo = gc.channels().get(guildChannel.getId().asLong());
 
 				if (channelInfo != null) {
 					messageCreated(handler, guildChannel, channelInfo, m, member, member, false);
@@ -560,13 +558,13 @@ public class MessageHandler {
 			return;
 		}
 
-		if (channelInfo.settings.autoUpvote && channelInfo.threadParent == null) {
+		if (channelInfo.settings.autoUpvote && !channelInfo.isThread()) {
 			message.addReaction(Emojis.VOTEUP).subscribe();
 		}
 
 		var outputMessageChannel = messageChannel;
 
-		if (channelInfo.settings.autoThread && channelInfo.threadParent == null && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
+		if (channelInfo.settings.autoThread && !channelInfo.isThread() && member.getId().asLong() != gc.db.app.discordHandler.selfId) {
 			try {
 				var u = member.getDisplayName();
 				var c = contentNoEmojis.replace('\n', ' ');

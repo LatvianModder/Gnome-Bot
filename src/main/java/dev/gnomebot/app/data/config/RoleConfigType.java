@@ -30,7 +30,7 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 
 		@Nullable
 		public CachedRole getRole() {
-			return isSet() ? gc.getRoleMap().get(get()) : null;
+			return isSet() ? gc.roles().get(get()) : null;
 		}
 
 		public Optional<CachedRole> role() {
@@ -58,7 +58,7 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 
 	@Override
 	public String validate(GuildCollections guild, int type, String value) {
-		return !value.isEmpty() && (!value.startsWith("@") && guild.getRoleMap().containsKey(SnowFlake.num(value)) || guild.getUniqueRoleNameMap().containsKey(value.substring(1))) ? "" : "Role not found!";
+		return !value.isEmpty() && (!value.startsWith("@") && guild.roles().get(SnowFlake.num(value)) != null || guild.roles().uniqueNameMap.containsKey(value.substring(1))) ? "" : "Role not found!";
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 	public Collection<EnumValue> getEnumValues(GuildCollections guild) {
 		var list = new ArrayList<EnumValue>();
 
-		for (var entry : guild.getUniqueRoleNameMap().entrySet()) {
+		for (var entry : guild.roles().uniqueNameMap.entrySet()) {
 			list.add(new EnumValue(SnowFlake.str(entry.getValue().id), "@" + entry.getKey()));
 		}
 
@@ -79,7 +79,7 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 
 	@Override
 	public String serialize(GuildCollections guild, int type, Long value) {
-		for (var entry : guild.getUniqueRoleNameMap().entrySet()) {
+		for (var entry : guild.roles().uniqueNameMap.entrySet()) {
 			if (entry.getValue().id == value) {
 				return "@" + entry.getKey();
 			}
@@ -93,7 +93,7 @@ public class RoleConfigType implements SnowflakeConfigType<RoleConfigType.Holder
 		if (value.isEmpty()) {
 			return 0L;
 		} else if (value.startsWith("@")) {
-			var role = guild.getUniqueRoleNameMap().get(value.substring(1));
+			var role = guild.roles().uniqueNameMap.get(value.substring(1));
 			return role == null ? 0L : role.id;
 		} else {
 			return SnowFlake.num(value);

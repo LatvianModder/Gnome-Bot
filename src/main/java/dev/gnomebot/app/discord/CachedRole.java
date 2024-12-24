@@ -1,6 +1,7 @@
 package dev.gnomebot.app.discord;
 
 import dev.gnomebot.app.data.GuildCollections;
+import dev.gnomebot.app.data.channel.Permissions;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.entity.Member;
@@ -20,7 +21,7 @@ public class CachedRole {
 	public final int index;
 	public final int rawPosition;
 	public final Color color;
-	public final PermissionSet permissions;
+	public final Permissions permissions;
 	public final boolean ownerRole;
 	public boolean adminRole;
 
@@ -31,8 +32,8 @@ public class CachedRole {
 		this.index = index;
 		this.rawPosition = role.getRawPosition();
 		this.color = role.getColor();
-		this.permissions = role.getPermissions().contains(Permission.ADMINISTRATOR) ? PermissionSet.all() : role.getPermissions();
-		this.ownerRole = permissions.contains(Permission.ADMINISTRATOR);
+		this.permissions = Permissions.from(role.getPermissions().contains(Permission.ADMINISTRATOR) ? PermissionSet.all() : role.getPermissions(), id);
+		this.ownerRole = permissions.has(Permission.ADMINISTRATOR);
 	}
 
 	@Override

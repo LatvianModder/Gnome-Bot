@@ -5,13 +5,15 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.GuildPaths;
+import dev.gnomebot.app.data.channel.CachedChannels;
+import dev.gnomebot.app.data.channel.TopLevelChannelInfo;
 import dev.gnomebot.app.data.config.ChannelConfigType;
 import dev.gnomebot.app.data.config.ConfigHolder;
 import dev.gnomebot.app.data.config.ConfigKey;
 import dev.gnomebot.app.data.config.FontConfigType;
 import dev.gnomebot.app.data.config.GuildConfig;
 import dev.gnomebot.app.data.config.RoleConfigType;
-import dev.gnomebot.app.discord.CachedRole;
+import dev.gnomebot.app.discord.CachedRoles;
 import dev.gnomebot.app.discord.EmbedColor;
 import dev.gnomebot.app.discord.MemberCache;
 import dev.gnomebot.app.discord.command.ChatCommandSuggestion;
@@ -35,14 +37,8 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.Role;
 import discord4j.core.object.entity.channel.CategorizableChannel;
-import discord4j.core.object.entity.channel.Channel;
-import discord4j.core.object.entity.channel.ForumChannel;
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.ThreadChannel;
-import discord4j.core.object.entity.channel.TopLevelGuildChannel;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageWithThreadsChannel;
 import discord4j.core.spec.StartThreadWithoutMessageSpec;
 import discord4j.discordjson.json.MemberData;
@@ -57,10 +53,8 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -129,12 +123,8 @@ public class GuildCollections {
 	public final ConfigHolder<Boolean> autoPaste = config(GuildConfig.AUTO_PASTE);
 	public final ConfigHolder<Boolean> autoMuteEmbed = config(GuildConfig.AUTO_MUTE_EMBED);
 
-	private Map<Long, ChannelInfo> channelMap;
-	private List<ChannelInfo> channelList;
-	private Map<String, ChannelInfo> uniqueChannelNameMap;
-	private Map<Long, CachedRole> roleMap;
-	private List<CachedRole> roleList;
-	private Map<String, CachedRole> uniqueRoleNameMap;
+	private CachedChannels channels;
+	private CachedRoles roles;
 	public final List<RecentUser> recentUsers;
 	private List<ChatCommandSuggestion> recentUserSuggestions;
 	private final Map<String, Macro> macroMap;
@@ -403,12 +393,12 @@ public class GuildCollections {
 		return inv.isEmpty() ? name : ("[" + name + "](<" + inv + ">)");
 	}
 
-	public Optional<Message> findMessage(long id, @Nullable ChannelInfo priority) {
+	public Optional<Message> findMessage(long id, @Nullable TopLevelChannelInfo priority) {
 		if (id == 0L) {
 			return Optional.empty();
 		}
 
-		var c = getChannelList();
+		var c = channels().list;
 
 		if (priority != null) {
 			c.remove(priority);
@@ -463,31 +453,6 @@ public class GuildCollections {
 		return new MemberCache(this);
 	}
 
-	public ChannelInfo getChannelInfo(long id) {
-		return Objects.requireNonNull(getChannelMap().get(id));
-	}
-
-	public ChannelInfo getChannelInfo(Channel channel) {
-		return getChannelInfo(channel.getId().asLong());
-	}
-
-	public String getChannelName(long channel) {
-		var c = getChannelMap().get(channel);
-		return c == null ? SnowFlake.str(channel) : c.getName();
-	}
-
-	public String getChannelDisplayName(long channel) {
-		// TODO: Only use # for standard channels
-		return "#" + getChannelName(channel);
-	}
-
-	public JSONObject getChannelJson(long channel) {
-		var json = JSONObject.of();
-		json.put("id", SnowFlake.str(channel));
-		json.put("name", getChannelDisplayName(channel));
-		return json;
-	}
-
 	public AuthLevel getAuthLevel(@Nullable Member member) {
 		if (member == null) {
 			return AuthLevel.NO_AUTH;
@@ -500,7 +465,7 @@ public class GuildCollections {
 		var roleIds = member.getRoleIds();
 
 		for (var id : roleIds) {
-			var r = getRoleMap().get(id.asLong());
+			var r = roles().get(id.asLong());
 
 			if (r != null && r.ownerRole) {
 				return AuthLevel.OWNER;
@@ -508,7 +473,7 @@ public class GuildCollections {
 		}
 
 		for (var id : roleIds) {
-			var r = getRoleMap().get(id.asLong());
+			var r = roles().get(id.asLong());
 
 			if (r != null && r.adminRole) {
 				return AuthLevel.ADMIN;
@@ -536,7 +501,7 @@ public class GuildCollections {
 		var roleIds = data.roles();
 
 		for (var id : roleIds) {
-			var r = getRoleMap().get(id.asLong());
+			var r = roles().get(id.asLong());
 
 			if (r != null && r.ownerRole) {
 				return AuthLevel.OWNER;
@@ -544,7 +509,7 @@ public class GuildCollections {
 		}
 
 		for (var id : roleIds) {
-			var r = getRoleMap().get(id.asLong());
+			var r = roles().get(id.asLong());
 
 			if (r != null && r.adminRole) {
 				return AuthLevel.ADMIN;
@@ -555,10 +520,8 @@ public class GuildCollections {
 	}
 
 	private void refreshCache() {
-		refreshChannelCache();
-		roleMap = null;
-		roleList = null;
-		uniqueRoleNameMap = null;
+		channels = null;
+		roles = null;
 		macroUseMap = null;
 	}
 
@@ -601,12 +564,8 @@ public class GuildCollections {
 		}
 	}
 
-	public void channelUpdated(@Nullable CategorizableChannel old, TopLevelGuildMessageChannel channel, boolean deleted) {
+	public void channelUpdated(@Nullable CategorizableChannel old, CategorizableChannel channel, boolean deleted) {
 		refreshCache();
-
-		if (!deleted) {
-			db.channelSettings(channel.getId().asLong()).updateFrom(channel);
-		}
 	}
 
 	public void roleUpdated(long roleId, boolean deleted) {
@@ -621,126 +580,20 @@ public class GuildCollections {
 		// refreshCache();
 	}
 
-	public synchronized void refreshChannelCache() {
-		channelMap = null;
-		channelList = null;
-		uniqueChannelNameMap = null;
-	}
-
-	public synchronized Map<Long, ChannelInfo> getChannelMap() {
-		if (channelMap == null) {
-			channelMap = new LinkedHashMap<>();
-
-			try {
-				for (var ch : getGuild().getChannels()
-						.filter(c -> c instanceof TopLevelGuildChannel)
-						.cast(TopLevelGuildChannel.class)
-						.sort(Comparator.comparing(TopLevelGuildChannel::getRawPosition).thenComparing(TopLevelGuildChannel::getId))
-						.toIterable()) {
-					if (ch instanceof MessageChannel || ch instanceof ForumChannel) {
-						var c = new ChannelInfo(this, ch.getId().asLong(), db.channelSettings(ch.getId().asLong()));
-						channelMap.put(ch.getId().asLong(), c);
-					}
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+	public CachedChannels channels() {
+		if (channels == null) {
+			channels = new CachedChannels(this);
 		}
 
-		return channelMap;
+		return channels;
 	}
 
-	public List<ChannelInfo> getChannelList() {
-		if (channelList == null) {
-			channelList = new ArrayList<>(getChannelMap().values());
+	public CachedRoles roles() {
+		if (roles == null) {
+			roles = new CachedRoles(this);
 		}
 
-		return channelList;
-	}
-
-	public Map<String, ChannelInfo> getUniqueChannelNameMap() {
-		if (uniqueChannelNameMap == null) {
-			uniqueChannelNameMap = new LinkedHashMap<>();
-
-			for (var c : getChannelMap().values()) {
-				var name = c.getName().toLowerCase().replace(' ', '-');
-				var key = name;
-
-				for (var i = 2; uniqueChannelNameMap.containsKey(key); i++) {
-					key = name + '-' + i;
-				}
-
-				uniqueChannelNameMap.put(key, c);
-			}
-		}
-
-		return uniqueChannelNameMap;
-	}
-
-	public List<CachedRole> getRoleList() {
-		if (roleList == null) {
-			roleList = new ArrayList<>();
-			var adminRoleId = adminRole.get();
-			CachedRole adminRoleW = null;
-
-			try {
-				for (var r : getGuild().getRoles()
-						.filter(r -> !r.isEveryone())
-						.sort(Comparator.comparing(Role::getRawPosition).thenComparing(Role::getId).reversed())
-						.toStream()
-						.toList()) {
-					var role = new CachedRole(this, r, roleList.size());
-
-					if (role.id == adminRoleId) {
-						adminRoleW = role;
-					}
-
-					roleList.add(role);
-				}
-			} catch (Exception ex) {
-			}
-
-			if (adminRoleW != null) {
-				for (var role : roleList) {
-					if (role.index <= adminRoleW.index) {
-						role.adminRole = true;
-					}
-				}
-			}
-		}
-
-		return roleList;
-	}
-
-	public Map<Long, CachedRole> getRoleMap() {
-		if (roleMap == null) {
-			roleMap = new LinkedHashMap<>();
-
-			for (var r : getRoleList()) {
-				roleMap.put(r.id, r);
-			}
-		}
-
-		return roleMap;
-	}
-
-	public Map<String, CachedRole> getUniqueRoleNameMap() {
-		if (uniqueRoleNameMap == null) {
-			uniqueRoleNameMap = new LinkedHashMap<>();
-
-			for (var c : getRoleList()) {
-				var name = c.name.toLowerCase().replace(' ', '-');
-				var key = name;
-
-				for (var i = 2; uniqueRoleNameMap.containsKey(key); i++) {
-					key = name + '-' + i;
-				}
-
-				uniqueRoleNameMap.put(key, c);
-			}
-		}
-
-		return uniqueRoleNameMap;
+		return roles;
 	}
 
 	public void auditLog(GnomeAuditLogEntry.Builder builder) {
@@ -757,22 +610,6 @@ public class GuildCollections {
 
 	public List<Member> getMembers() {
 		return getMemberStream().toList();
-	}
-
-	public ChannelInfo getOrMakeChannelInfo(long id) {
-		var ci = getChannelMap().get(id);
-
-		if (ci == null) {
-			ci = new ChannelInfo(this, id, db.channelSettings(id));
-			var data = ci.getChannelData();
-			var parentId = data == null ? null : data.parentId().toOptional().orElse(Optional.empty()).orElse(null);
-
-			if (parentId != null) {
-				ci = getOrMakeChannelInfo(parentId.asLong()).thread(id, "-");
-			}
-		}
-
-		return ci;
 	}
 
 	public void usernameSuggestions(ChatCommandSuggestionEvent event) {
@@ -1104,14 +941,5 @@ public class GuildCollections {
 		doc.put("command", command);
 		doc.put("full_command", fullCommand);
 		commandLog.insert(doc);
-	}
-
-	public String getRoleName(long id) {
-		var ri = getRoleMap().get(id);
-		return ri == null ? SnowFlake.str(id) : ri.name;
-	}
-
-	public String getRoleDisplayName(long id) {
-		return "@" + getRoleName(id);
 	}
 }
