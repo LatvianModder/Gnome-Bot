@@ -116,7 +116,7 @@ public class PasteHandlers {
 	// 5 - bracket open
 	// 6 - bracket close
 	public static final Pattern JAVA_AND_JS_PATTERN = Pattern.compile("(([\"'`]).*?\\2)|(\\d+(?:\\.\\d+)?)|(\\b(?:" + String.join("|", JAVA_AND_JS_KEYWORDS) + ")\\b)|([;=\\-+*/%&|^~!:?.,])|([{(<\\[])|([})>\\]])");
-	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([ \\t]+at )(?:([\\w./$@-]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
+	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([\\s\\t]+at )(?:([\\w\\-./$@\\s*+]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|<clinit>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 	public static final Pattern MCLOGS_PATTERN = Pattern.compile("https://mclo.gs/(\\w+)");
 
 	public static final Pattern WIN_USERNAME_PATTERN = Pattern.compile("\\b(\\w):([\\\\/])Users\\2(\\w+)\\2", Pattern.CASE_INSENSITIVE);

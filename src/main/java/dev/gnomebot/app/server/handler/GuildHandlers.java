@@ -304,7 +304,7 @@ public class GuildHandlers {
 
 		var list = req.gc.feedback.query()
 				.toStream()
-				.sorted((o1, o2) -> Integer.compare(o2.getNumber(), o1.getNumber()))
+				.sorted((o1, o2) -> Integer.compare(o2.number(), o1.number()))
 				.toList();
 
 		var memberCache = req.gc.createMemberCache();

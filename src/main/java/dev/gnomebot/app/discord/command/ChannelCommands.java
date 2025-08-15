@@ -186,7 +186,7 @@ public class ChannelCommands extends ApplicationCommands {
 			for (var m : event.context.gc.messages.query().eq("channel", channelId).projectionFields("timestamp", "user")) {
 				total++;
 				var key = new StatKey();
-				var date = m.getDate();
+				var date = m.timestamp();
 				key.date = new Date(date.getYear(), date.getMonth(), date.getDate());
 				key.channel = channelId;
 				key.user = m.getUserID();
@@ -234,11 +234,11 @@ public class ChannelCommands extends ApplicationCommands {
 			var c = MutableLong.valueOf(totalCount.get(member.getUID()), 0L);
 			var xp = MutableLong.valueOf(totalXp.get(member.getUID()), 0L);
 
-			if (c != member.getTotalMessages() && xp != member.getTotalXp()) {
+			if (c != member.totalMessages() && xp != member.totalXp()) {
 				member.update(Updates.combine(Updates.set("total_messages", c), Updates.set("total_xp", xp)));
-			} else if (c != member.getTotalMessages()) {
+			} else if (c != member.totalMessages()) {
 				member.update("total_messages", c);
-			} else if (xp != member.getTotalXp()) {
+			} else if (xp != member.totalXp()) {
 				member.update("total_xp", xp);
 			}
 		}

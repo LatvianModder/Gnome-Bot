@@ -2,21 +2,13 @@ package dev.gnomebot.app.data.ping;
 
 import dev.latvian.apps.ansi.log.Log;
 
-public class RelayPingTask implements Runnable {
-	private final PingDestination destination;
-	private final long targetId;
-	private final PingData pingData;
-	private final Ping ping;
-	private final UserPingConfig config;
-
-	public RelayPingTask(PingDestination destination, long targetId, PingData pingData, Ping ping, UserPingConfig config) {
-		this.destination = destination;
-		this.targetId = targetId;
-		this.pingData = pingData;
-		this.ping = ping;
-		this.config = config;
-	}
-
+public record RelayPingTask(
+		PingDestination destination,
+		long targetId,
+		PingData pingData,
+		Ping ping,
+		UserPingConfig config
+) implements Runnable {
 	@Override
 	public void run() {
 		try {

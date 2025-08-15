@@ -102,18 +102,18 @@ public class LogHandlers {
 		int i = 0;
 
 		for (var entry : entryQuery.limit(limit).skip(skip).descending("_id")) {
-			var t = entry.getType();
+			var t = entry.type();
 
 			var cells = table.addRow();
 			i++;
 			int j = i + skip;
 
 			cells.set(0, tag -> tag.string(j));
-			cells.set(1, tag -> tag.string(entry.getDate().toInstant()));
+			cells.set(1, tag -> tag.string(entry.timestamp().toInstant()));
 			cells.set(2, tag -> tag.string(t.displayName));
 
-			if (entry.getChannel() != 0L) {
-				var channelId = entry.getChannel();
+			if (entry.channel() != 0L) {
+				var channelId = entry.channel();
 
 				if (!availableChannels.contains(channelId)) {
 					continue;
@@ -122,20 +122,20 @@ public class LogHandlers {
 				cells.set(3, tag -> GuildAPIHandlers.channel(tag, req.gc, channelId));
 			}
 
-			if (entry.getUser() != 0L) {
-				cells.set(4, tag -> GuildAPIHandlers.member(tag, req.gc, entry.getUser()));
+			if (entry.user() != 0L) {
+				cells.set(4, tag -> GuildAPIHandlers.member(tag, req.gc, entry.user()));
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.CONTENT)) {
 				cells.set(5, tag -> {
-					tag.string(entry.getContent());
+					tag.string(entry.content());
 					tag.replace(USER_PATTERN, (tag1, matcher) -> GuildAPIHandlers.member(tag1, req.gc, SnowFlake.num(matcher.group(1))));
 					tag.replace(ROLE_PATTERN, (tag1, matcher) -> GuildAPIHandlers.role(tag1, req.gc, SnowFlake.num(matcher.group(1))));
 				});
 			}
 
-			if (entry.getSource() != 0L) {
-				cells.set(6, tag -> GuildAPIHandlers.member(tag, req.gc, entry.getSource()));
+			if (entry.source() != 0L) {
+				cells.set(6, tag -> GuildAPIHandlers.member(tag, req.gc, entry.source()));
 			}
 		}
 

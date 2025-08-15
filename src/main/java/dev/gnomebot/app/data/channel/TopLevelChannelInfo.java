@@ -5,6 +5,7 @@ import dev.gnomebot.app.data.LazyOptional;
 import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.webutils.data.Lazy;
 import discord4j.core.object.entity.channel.CategorizableChannel;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
@@ -22,12 +23,12 @@ public class TopLevelChannelInfo extends ChannelInfo {
 	private final LazyOptional<CategorizableChannel> topLevelChannel;
 	private final LazyOptional<WebHookDestination> webHook;
 	private Map<Long, Permissions> permissionOverrides;
-	private Map<Long, Permissions> cachedPermissions;
+	private final Lazy<Map<Long, CachedPermissions>> cachedPermissions;
 
 	public TopLevelChannelInfo(GuildCollections g, long id, String name, ChannelSettings s) {
 		super(g, id, name, s);
 
-		topLevelChannel = LazyOptional.of(() -> {
+		this.topLevelChannel = LazyOptional.of(() -> {
 			// data.type() == Channel.Type.GROUP_DM.getValue()
 
 			try {
@@ -43,7 +44,7 @@ public class TopLevelChannelInfo extends ChannelInfo {
 			}
 		});
 
-		webHook = LazyOptional.of(() -> {
+		this.webHook = LazyOptional.of(() -> {
 			if (getTopLevelChannel() instanceof TopLevelGuildMessageChannel tlcMsg) {
 				// App.info("Unknown webhook for " + getName() + "/" + id);
 
@@ -63,12 +64,18 @@ public class TopLevelChannelInfo extends ChannelInfo {
 
 			return null;
 		});
+
+		this.cachedPermissions = Lazy.of(HashMap::new);
 	}
 
 	@Override
 	@Nullable
 	public CategorizableChannel getTopLevelChannel() {
 		return topLevelChannel.get();
+	}
+
+	public void refreshPermissions() {
+		cachedPermissions.invalidate();
 	}
 
 	@Override
@@ -78,7 +85,7 @@ public class TopLevelChannelInfo extends ChannelInfo {
 
 			try {
 				for (var o : getChannelData().permissionOverwrites().toOptional().orElse(List.of())) {
-					var pmap = new EnumMap<>(Permissions.DEFAULT.map());
+					var pmap = new EnumMap<>(Permissions.NONE.map());
 
 					for (var p : PermissionSet.of(o.allow())) {
 						pmap.put(p, Boolean.TRUE);
@@ -102,16 +109,13 @@ public class TopLevelChannelInfo extends ChannelInfo {
 	}
 
 	@Override
-	public Permissions getPermissions(long member) {
-		if (cachedPermissions == null) {
-			cachedPermissions = new HashMap<>();
-		}
-
-		var set = cachedPermissions.get(member);
+	public CachedPermissions getPermissions(long member) {
+		var c = cachedPermissions.getNonnull();
+		var set = c.get(member);
 
 		if (set == null) {
-			set = Permissions.compute(gc, this, member);
-			cachedPermissions.put(member, set);
+			set = new CachedPermissions(Permissions.compute(gc, this, member).asSet().getRawValue());
+			c.put(member, set);
 		}
 
 		return set;

@@ -7,7 +7,6 @@ import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +67,7 @@ public class Hardcoded {
 			}
 
 			if (GREET_REGEX.matcher(content).find()) {
-				message.addReaction(ReactionEmoji.unicode("👋")).subscribe();
+				message.addReaction(Emojis.WAVE).subscribe();
 				return false;
 			}
 		}

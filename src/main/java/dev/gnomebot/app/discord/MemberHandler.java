@@ -131,7 +131,7 @@ public class MemberHandler {
 		var oldMember = gc.members.findFirst(member);
 
 		if (oldMember != null) {
-			for (var l : oldMember.getRoles()) {
+			for (var l : oldMember.roles()) {
 				try {
 					member.addRole(SnowFlake.convert(l)).block();
 				} catch (Exception ex) {

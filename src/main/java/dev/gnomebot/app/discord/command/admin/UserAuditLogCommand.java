@@ -29,29 +29,29 @@ public class UserAuditLogCommand extends ApplicationCommands {
 		for (var entry : event.context.gc.auditLog.query().eq("user", user.getId().asLong()).filter(Filters.in("type", GnomeAuditLogEntry.Type.USER_AUDIT_LOG_TYPES)).descending("_id").limit(20)) {
 			var sb = new StringBuilder();
 			sb.append("- ");
-			sb.append(Utils.formatRelativeDate(entry.getDate().toInstant()));
+			sb.append(Utils.formatRelativeDate(entry.timestamp().toInstant()));
 			sb.append(' ');
 
-			if (entry.getMessage() == 0L || entry.getChannel() == 0L) {
+			if (entry.message() == 0L || entry.channel() == 0L) {
 				sb.append('`');
-				sb.append(entry.getType().displayName);
+				sb.append(entry.type().displayName);
 				sb.append('`');
 			} else {
 				sb.append('[');
-				sb.append(entry.getType().displayName);
+				sb.append(entry.type().displayName);
 				sb.append("](<");
-				QuoteHandler.getMessageURL(sb, event.context.gc.guildId, entry.getChannel(), entry.getMessage());
+				QuoteHandler.getMessageURL(sb, event.context.gc.guildId, entry.channel(), entry.message());
 				sb.append(">)");
 			}
 
-			if (!entry.getContent().isEmpty()) {
+			if (!entry.content().isEmpty()) {
 				sb.append(' ');
-				sb.append(FormattingUtils.trim(entry.getContent(), 100).replace("`", "\\`"));
+				sb.append(FormattingUtils.trim(entry.content(), 100).replace("`", "\\`"));
 			}
 
-			if (entry.getSource() != 0L) {
+			if (entry.source() != 0L) {
 				sb.append(" - <@");
-				sb.append(entry.getSource());
+				sb.append(entry.source());
 				sb.append('>');
 			}
 

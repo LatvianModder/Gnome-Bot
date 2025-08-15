@@ -409,8 +409,8 @@ public class MessageHandler {
 		}
 
 		var wrappedDiscordMember = importing ? null : gc.members.findFirst(user);
-		var totalMessages = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalMessages();
-		var totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.getTotalXp();
+		var totalMessages = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.totalMessages();
+		var totalXp = wrappedDiscordMember == null ? 0L : wrappedDiscordMember.totalXp();
 		var authLevel = member == null ? AuthLevel.LOGGED_IN : gc.getAuthLevel(member);
 
 		if (importing || member == null) {

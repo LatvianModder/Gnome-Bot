@@ -1,7 +1,7 @@
 package dev.gnomebot.app.discord.legacycommand;
 
 import dev.gnomebot.app.discord.Emojis;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.rest.http.client.ClientException;
 
 public class GnomeException extends RuntimeException {
@@ -15,7 +15,7 @@ public class GnomeException extends RuntimeException {
 	public boolean ephemeral;
 	public boolean deleteMessage;
 	public int position;
-	public ReactionEmoji reaction;
+	public Emoji reaction;
 	public ClientException clientException;
 
 	public GnomeException(Type t, String s) {
@@ -46,7 +46,7 @@ public class GnomeException extends RuntimeException {
 		return this;
 	}
 
-	public GnomeException reaction(ReactionEmoji r) {
+	public GnomeException reaction(Emoji r) {
 		reaction = r;
 		return this;
 	}

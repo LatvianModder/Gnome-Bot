@@ -22,7 +22,7 @@ public class DiscordMessageXP extends WrappedDocument<DiscordMessageXP> {
 	}
 
 	@Override
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getDate("date");
 	}
 }

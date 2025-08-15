@@ -88,7 +88,7 @@ public class WebhookCommands extends ApplicationCommands {
 		List<String> list = new ArrayList<>();
 
 		for (var webhook : event.context.gc.db.userWebhooksDB.query().eq("user", event.context.sender.getId().asLong())) {
-			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHookDestination.getUrl(webhook.getWebhookID(), webhook.getWebhookToken()) + ">)||");
+			list.add("- " + webhook.getName() + " - ||[URL](<" + WebHookDestination.getUrl(webhook.webhookId(), webhook.webhookToken()) + ">)||");
 		}
 
 		event.respond(list.isEmpty() ? "None" : String.join("\n", list));

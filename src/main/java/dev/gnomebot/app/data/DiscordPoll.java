@@ -21,7 +21,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 	}
 
 	@Override
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getDate("timestamp");
 	}
 
@@ -91,7 +91,7 @@ public class DiscordPoll extends WrappedDocument<DiscordPoll> {
 
 		builder.color(EmbedColor.GRAY);
 		builder.footer(footer);
-		builder.timestamp(getDate().toInstant());
+		builder.timestamp(timestamp().toInstant());
 
 		return builder.build();
 	}

@@ -1,12 +1,12 @@
 package dev.gnomebot.app.data.complex;
 
 import dev.gnomebot.app.util.SimpleStringReader;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 
 public abstract class MEButtonBase extends MEComponent implements ComplexMessageParseContext.OptionHolder {
 	public String target = "";
 	public String label = "";
-	public ReactionEmoji emoji = null;
+	public Emoji emoji = null;
 
 	@Override
 	public void acceptOption(ComplexMessageParseContext ctx, SimpleStringReader reader) {

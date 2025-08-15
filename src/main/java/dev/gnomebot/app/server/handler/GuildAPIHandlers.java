@@ -147,8 +147,7 @@ public class GuildAPIHandlers {
 			var o = r.addObject();
 			o.put("id", SnowFlake.str(role.id));
 			o.put("name", role.name);
-			var col = role.color.getRGB();
-			o.put("color", String.format("#%06X", col == 0 ? 0xFFFFFF : col));
+			o.put("color", String.format("#%06X", role.getRGB()));
 		}
 
 		if (req.authLevel().isAdmin()) {
@@ -222,7 +221,7 @@ public class GuildAPIHandlers {
 
 		var list = req.gc.feedback.query()
 				.toStream()
-				.sorted((o1, o2) -> Integer.compare(o2.getNumber(), o1.getNumber()))
+				.sorted((o1, o2) -> Integer.compare(o2.number(), o1.number()))
 				.toList();
 
 		var memberCache = req.gc.createMemberCache();
@@ -346,17 +345,17 @@ public class GuildAPIHandlers {
 		}
 
 		for (var entry : entryQuery.limit(limit).skip(skip).descending("timestamp")) {
-			var t = entry.getType();
+			var t = entry.type();
 
 			var o = array.addObject();
 			o.put("id", entry.document.getObjectId("_id").toString());
 			o.put("type", t.name);
-			o.put("flags", entry.getFlags());
-			o.put("timestamp", entry.getDate().toInstant().toString());
+			o.put("flags", entry.flags());
+			o.put("timestamp", entry.timestamp().toInstant().toString());
 			o.put("revocable", t.has(GnomeAuditLogEntry.Flags.REVOCABLE));
 
-			if (entry.getChannel() != 0L) {
-				var channelId = entry.getChannel();
+			if (entry.channel() != 0L) {
+				var channelId = entry.channel();
 
 				if (!availableChannels.contains(channelId)) {
 					continue;
@@ -365,24 +364,24 @@ public class GuildAPIHandlers {
 				o.put("channel", req.gc.channels().json(channelId));
 			}
 
-			if (entry.getMessage() != 0L) {
-				o.put("message", SnowFlake.str(entry.getMessage()));
+			if (entry.message() != 0L) {
+				o.put("message", SnowFlake.str(entry.message()));
 			}
 
-			if (entry.getUser() != 0L) {
-				o.put("user", userCache.getJson(entry.getUser()));
+			if (entry.user() != 0L) {
+				o.put("user", userCache.getJson(entry.user()));
 			}
 
-			if (entry.getSource() != 0L) {
-				o.put("source", userCache.getJson(entry.getSource()));
+			if (entry.source() != 0L) {
+				o.put("source", userCache.getJson(entry.source()));
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.CONTENT)) {
-				o.put("content", entry.getContent());
+				o.put("content", entry.content());
 			}
 
 			if (t.has(GnomeAuditLogEntry.Flags.EXTRA)) {
-				var mw = entry.getExtra();
+				var mw = entry.extra();
 
 				if (!mw.map.isEmpty()) {
 					o.put("extra", mw.toJSON());
@@ -401,7 +400,7 @@ public class GuildAPIHandlers {
 
 		for (var m : req.gc.messages.query().eq("user", id)) {
 			var message = new ExportedMessage();
-			message.timestamp = m.getDate().getTime();
+			message.timestamp = m.timestamp().getTime();
 			message.channel = m.getChannelID();
 			message.flags = m.flags;
 			message.content = m.getContent();

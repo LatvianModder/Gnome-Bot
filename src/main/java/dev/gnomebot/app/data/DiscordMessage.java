@@ -57,7 +57,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 	}
 
 	@Override
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getDate("timestamp");
 	}
 
@@ -96,7 +96,7 @@ public class DiscordMessage extends WrappedDocument<DiscordMessage> {
 		updates.add(Updates.set("channel", getChannelID()));
 		updates.add(Updates.set("user", getUserID()));
 		updates.add(Updates.set("flags", flags1));
-		updates.add(Updates.set("timestamp", getDate()));
+		updates.add(Updates.set("timestamp", timestamp()));
 		updates.add(Updates.set("old_content", getContent()));
 		updates.add(Updates.set("new_content", newContent));
 		updates.add(Updates.set("deleted", deleted));

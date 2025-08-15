@@ -9,7 +9,7 @@ public class InteractionDocument extends WrappedDocument<InteractionDocument> {
 		super(c, d);
 	}
 
-	public String getType() {
+	public String type() {
 		return document.getString("type");
 	}
 }

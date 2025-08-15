@@ -91,6 +91,7 @@ public class GuildCollections {
 	public final WrappedCollection<GnomeAuditLogEntry> reactionLog;
 	public final WrappedCollection<CommandLogEntry> commandLog;
 	public final WrappedCollection<ThreadLocation> memberLogThreads;
+	public final WrappedCollection<EchoLogEntry> echoLog;
 
 	public final Map<ConfigKey<?, ?>, ConfigHolder<?>> configHolders = new IdentityHashMap<>();
 	public final ConfigHolder<Integer> globalXp = config(GuildConfig.GLOBAL_XP);
@@ -178,6 +179,7 @@ public class GuildCollections {
 		reactionLog = create("reaction_log", GnomeAuditLogEntry::new).expiresAfterMonth("expires", "expires", Filters.exists("expires"));
 		commandLog = create("command_log", CommandLogEntry::new);
 		memberLogThreads = create("member_log_threads", ThreadLocation::new);
+		echoLog = create("echo_log", EchoLogEntry::new);
 
 		if (Files.exists(paths.config)) {
 			try {
@@ -572,12 +574,23 @@ public class GuildCollections {
 		refreshCache();
 	}
 
+	public void refreshPermissions() {
+		var c = channels;
+
+		if (c != null) {
+			for (var ch : c) {
+				ch.refreshPermissions();
+			}
+		}
+	}
+
 	// 0 update | 1 join | 2 leave
 	public void memberUpdated(long userId, int type) {
 		if (type == 0) {
 			// App.LOGGER.refreshedMemberCache();
 		}
-		// refreshCache();
+
+		refreshPermissions();
 	}
 
 	public CachedChannels channels() {
@@ -823,7 +836,7 @@ public class GuildCollections {
 					var doc = memberLogThreads.query(user.id().asLong()).eq("type", type).eq("channel", ci.id).projectionFields("thread").first();
 
 					if (doc != null) {
-						var thread = db.app.discordHandler.client.getChannelById(SnowFlake.convert(doc.thread)).cast(ThreadChannel.class).block();
+						var thread = db.app.discordHandler.client.getChannelById(SnowFlake.convert(doc.thread())).cast(ThreadChannel.class).block();
 
 						if (thread != null) {
 							id = thread.getId().asLong();

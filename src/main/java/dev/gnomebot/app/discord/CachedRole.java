@@ -1,5 +1,7 @@
 package dev.gnomebot.app.discord;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.data.channel.Permissions;
 import dev.gnomebot.app.util.SnowFlake;
@@ -34,6 +36,11 @@ public class CachedRole {
 		this.color = role.getColor();
 		this.permissions = Permissions.from(role.getPermissions().contains(Permission.ADMINISTRATOR) ? PermissionSet.all() : role.getPermissions(), id);
 		this.ownerRole = permissions.has(Permission.ADMINISTRATOR);
+	}
+
+	public int getRGB() {
+		int c = color.getRGB();
+		return c == Role.DEFAULT_COLOR.getRGB() ? 0xFFFFFF : c;
 	}
 
 	@Override
@@ -100,6 +107,7 @@ public class CachedRole {
 	public boolean remove(long member, @Nullable String reason) {
 		if (member != 0L) {
 			try {
+				gc.members.getCollection().updateOne(Filters.eq("_id", member), Updates.pull("roles", id));
 				gc.getClient().getRestClient().getGuildService().removeGuildMemberRole(gc.guildId, member, id, reason).block();
 				return true;
 			} catch (Exception ex) {

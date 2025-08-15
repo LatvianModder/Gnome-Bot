@@ -143,9 +143,9 @@ public abstract class ChannelInfo {
 		return "<#" + SnowFlake.str(id) + ">";
 	}
 
-	public abstract Permissions getPermissions(long member);
+	public abstract CachedPermissions getPermissions(long member);
 
-	public Permissions getSelfPermissions() {
+	public CachedPermissions getSelfPermissions() {
 		return getPermissions(gc.db.app.discordHandler.selfId);
 	}
 

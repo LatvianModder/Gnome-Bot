@@ -33,7 +33,7 @@ public abstract class WrappedDocument<T extends WrappedDocument<T>> {
 		return document.getString("_id");
 	}
 
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getObjectId("_id").getDate();
 	}
 

@@ -253,7 +253,7 @@ public class InfoHandlers {
 				result.put("id", SnowFlake.str(role.id));
 				result.put("name", role.name);
 				result.put("display_name", "@" + role.name);
-				result.put("color", "%06X".formatted(role.color.getRGB()));
+				result.put("color", "%06X".formatted(role.getRGB()));
 			}
 		}
 

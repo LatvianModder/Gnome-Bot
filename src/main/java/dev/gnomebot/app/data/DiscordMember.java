@@ -39,44 +39,45 @@ public class DiscordMember extends WrappedDocument<DiscordMember> {
 		return false;
 	}
 
-	public long getTotalMessages() {
+	public long totalMessages() {
 		return document.getLong("total_messages");
 	}
 
-	public long getTotalXp() {
+	public long totalXp() {
 		return document.getLong("total_xp");
 	}
 
-	public String getNickname() {
+	public String nickname() {
 		return document.getString("nickname");
 	}
 
-	public String getDisplayName() {
-		return document.getString("nickname", getName());
-	}
-
-	public String getAvatar() {
+	public String avatar() {
 		return document.getString("avatar");
 	}
 
-	public String getDiscriminator() {
+	public String discriminator() {
 		return document.getString("discriminator");
 	}
 
-	public List<Long> getRoles() {
+	public List<Long> roles() {
 		return document.getList("roles");
 	}
 
 	@Nullable
-	public Date getMuted() {
+	public Date muted() {
 		return document.getDate("muted");
 	}
 
-	public String getTag() {
-		return getName() + "#" + getDiscriminator();
+	public List<String> pings() {
+		return document.getList("pings");
 	}
 
-	public List<String> getPings() {
-		return document.getList("pings");
+	public String getTag() {
+		return getName() + "#" + discriminator();
+	}
+
+	public String displayName() {
+		var n = nickname();
+		return n.isEmpty() ? getName() : n;
 	}
 }

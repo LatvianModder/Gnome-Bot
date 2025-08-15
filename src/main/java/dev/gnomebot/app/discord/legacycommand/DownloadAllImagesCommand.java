@@ -9,8 +9,8 @@ import dev.gnomebot.app.server.AuthLevel;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.ansi.log.Log;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -79,7 +79,7 @@ public class DownloadAllImagesCommand {
 				var userId = m.getUserID();
 				var u = userCache.get(userId).orElse(null);
 				image.author = u == null ? SnowFlake.str(userId) : u.getTag();
-				image.timestamp = m.getDate().toInstant();
+				image.timestamp = m.timestamp().toInstant();
 
 				linkMap.put(image.filename, image);
 			}
@@ -88,7 +88,7 @@ public class DownloadAllImagesCommand {
 		context.message.addReaction(Emojis.VOTENONE).block();
 		ReactionHandler.addListener(new ReactionHandler.Callback(context.gc, context.message) {
 			@Override
-			public boolean onReaction(Member member, ReactionEmoji emoji) throws Exception {
+			public boolean onReaction(Member member, Emoji emoji) throws Exception {
 				if (member.getId().equals(context.sender.getId())) {
 					task.cancelled = true;
 					ReactionHandler.removeListener(message.getId().asLong());

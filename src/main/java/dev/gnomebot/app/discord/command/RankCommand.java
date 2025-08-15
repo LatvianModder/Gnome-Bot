@@ -43,7 +43,7 @@ public class RankCommand extends ApplicationCommands {
 						embed.inlineField("XP", FormattingUtils.format(o.asLong("xp")));
 
 						if (event.context.gc.isMM() && event.context.gc.regularMessages.get() > 0 && !event.context.gc.regularRole.is(m)) {
-							var totalMessages = event.context.gc.members.findFirst(m).getTotalMessages();
+							var totalMessages = event.context.gc.members.findFirst(m).totalMessages();
 
 							if (totalMessages < event.context.gc.regularMessages.get()) {
 								if (totalMessages < MessageHandler.MM_MEMBER) {

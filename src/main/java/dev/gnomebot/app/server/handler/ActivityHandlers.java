@@ -391,7 +391,7 @@ public class ActivityHandlers {
 		}
 
 		for (var mc : req.gc.messageCount.query().filter(Filters.or(filter))) {
-			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
+			var week = (weeks - 1) - (int) ((now - mc.timestamp().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
 				var mi = channels.get(mc.getChannel());
@@ -503,7 +503,7 @@ public class ActivityHandlers {
 		}
 
 		for (var mc : req.gc.messageCount.query()) {
-			var week = (weeks - 1) - (int) ((now - mc.getDate().getTime()) / MS_IN_DAY / 7L);
+			var week = (weeks - 1) - (int) ((now - mc.timestamp().getTime()) / MS_IN_DAY / 7L);
 
 			if (week >= 0 && week < weeks) {
 				var mi = members.get(mc.getUser());

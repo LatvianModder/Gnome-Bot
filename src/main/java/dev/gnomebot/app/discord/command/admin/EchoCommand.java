@@ -1,10 +1,10 @@
 package dev.gnomebot.app.discord.command.admin;
 
-import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.discord.command.ChatInputInteractionEventWrapper;
 import dev.latvian.apps.ansi.log.Log;
 import discord4j.rest.util.Permission;
+import org.bson.Document;
 
 public class EchoCommand extends ApplicationCommands {
 	public static void run(ChatInputInteractionEventWrapper event) {
@@ -16,12 +16,12 @@ public class EchoCommand extends ApplicationCommands {
 			throw error("Empty content!");
 		}
 
-		event.context.reply(message);
+		var msg = event.context.reply(message);
 
-		event.context.gc.auditLog(GnomeAuditLogEntry.builder(GnomeAuditLogEntry.Type.ECHO)
-				.channel(event.context.channelInfo.id)
-				.user(event.context.sender)
-				.content(message)
+		event.context.gc.echoLog.insert(new Document("_id", msg.getId().asLong())
+				.append("channel", event.context.channelInfo.id)
+				.append("author", event.context.sender.getId().asLong())
+				.append("content", message)
 		);
 
 		Log.info(event.context.sender.getUsername() + " echoed: " + message);

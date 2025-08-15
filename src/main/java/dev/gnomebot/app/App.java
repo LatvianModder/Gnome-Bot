@@ -1,7 +1,9 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
+import dev.gnomebot.app.data.EchoLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
+import dev.gnomebot.app.data.channel.Permissions;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
 import dev.gnomebot.app.discord.DiscordHandler;
@@ -26,28 +28,25 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.ANSITable;
+import dev.latvian.apps.ansi.JavaANSI;
 import dev.latvian.apps.ansi.command.CLI;
 import dev.latvian.apps.ansi.command.CommandManager;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.ansi.terminal.Terminal;
+import dev.latvian.apps.codec.BSONOps;
 import dev.latvian.apps.json.JSON;
 import dev.latvian.apps.tinyserver.HTTPServer;
 import dev.latvian.apps.tinyserver.OptionalString;
 import dev.latvian.apps.tinyserver.http.file.FileResponseHandler;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.TimeUtils;
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandData;
-import discord4j.discordjson.json.BanData;
-import discord4j.discordjson.json.UserData;
-import discord4j.rest.route.Routes;
-import discord4j.rest.util.PaginationUtil;
+import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
-import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -58,6 +57,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -110,14 +110,15 @@ public class App {
 		commands.add("stats", this::stats);
 		commands.add("debug", this::debug);
 		commands.add("token", () -> Log.info(Utils.createToken()));
-		commands.add("short_token", () -> Log.info(Utils.createShortToken()));
-		commands.add("leave_guild", List.of("guild"), args -> leaveGuild(args.get("guild")));
-		commands.add("remove_modifiers", List.of("text"), args -> Log.info(CharMap.MODIFIER_PATTERN.matcher(args.get("text")).replaceAll("")));
-		commands.add("echo_cli", List.of("message..."), args -> echoCli(args.get("message")));
+		commands.add("short-token", () -> Log.info(Utils.createShortToken()));
+		commands.add("leave-guild", List.of("guild"), args -> leaveGuild(args.get("guild")));
+		commands.add("remove-modifiers", List.of("text"), args -> Log.info(CharMap.MODIFIER_PATTERN.matcher(args.get("text")).replaceAll("")));
+		commands.add("echo-cli", List.of("message..."), args -> echoCli(args.get("message")));
 		commands.add("guilds", this::printGuilds);
-		commands.add("create_restart_button", List.of("channel"), args -> createRestartButton(args.get("channel")));
+		commands.add("create-restart-button", List.of("channel"), args -> createRestartButton(args.get("channel")));
 		commands.add("log-everyone-out", this::logEveryoneOut);
 		commands.add("fix-broken-guild-commands", this::fixBrokenGuildCommands);
+		commands.add("permission-printout", List.of("guild", "channel", "member"), args -> permissionPrintout(args.get("guild"), args.get("channel"), args.get("member")));
 		CLI.start(commands);
 
 		Log.info("Loading web server...");
@@ -367,7 +368,7 @@ public class App {
 		var done = new AtomicBoolean(false);
 		long start = System.currentTimeMillis();
 
-		var countThread = new Thread(() -> {
+		Thread.startVirtualThread(() -> {
 			try {
 				while (!done.get()) {
 					Thread.sleep(5000L);
@@ -383,10 +384,7 @@ public class App {
 			}
 		});
 
-		countThread.setDaemon(true);
-		countThread.start();
-
-		var thread = new Thread(() -> {
+		Thread.startVirtualThread(() -> {
 			try {
 				var args1 = new LinkedHashMap<String, OptionalString>();
 
@@ -401,14 +399,22 @@ public class App {
 
 			done.set(true);
 		});
-
-		thread.setDaemon(true);
-		thread.start();
 	}
 
 	public static final HashSet<Long> IGNORED_BANS = new HashSet<>();
 
 	private void port(Map<String, OptionalString> args, long start, AtomicLong count, AtomicLong max) throws Throwable {
+		var document = new Document();
+		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
+		document.append("_id", 5L);
+		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
+		document.append("content", "hi");
+		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
+		document.append("channel", "5");
+		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
+
+		/*
+		// BANS
 		var guild = db.guild(Snowflake.of(166630061217153024L)).getGuild();
 		var toBan = new ArrayList<UserData>();
 
@@ -443,6 +449,7 @@ public class App {
 			Log.warn("Unbanning " + u.username());
 			guild.unban(SnowFlake.convert(u.id().asLong())).block();
 		}
+		*/
 
 		/*
 		// DELETE
@@ -462,73 +469,51 @@ public class App {
 		for (var gc : db.allGuilds()) {
 			Log.info("Porting " + gc);
 
-			var q = gc.auditLog.query().filter(Filters.or(Filters.eq("type", "command")));
+			var q = gc.auditLog.query().filter(Filters.or(Filters.eq("type", "echo")));
 			max.set(q.count());
 			count.set(0L);
 
 			var docs = new ArrayList<Document>();
 
+			label:
 			for (var doc0 : q.findIterable()) {
-				long user = doc0.getLong("user");
+				var channel = doc0.getLong("channel");
+				var content = doc0.get("content");
+				var timestamp = doc0.getDate("timestamp");
 
-				var doc = new Document();
-				doc.put("_id", doc0.get("_id"));
-				doc.put("user", user);
-				doc.put("channel", doc0.get("channel"));
-				doc.put("message", doc0.get("message"));
-				doc.put("command", doc0.get("old_content", doc0.get("content")));
-				doc.put("full_command", doc0.get("content"));
-				docs.add(doc);
-				count.addAndGet(1L);
-			}
-
-			gc.commandLog.drop();
-			gc.commandLog.insertMany(docs);
-		}
-		 */
-
-		/*
-		var toDelete = new ArrayList<Webhook>();
-
-		for (var gc : app.db.allGuilds()) {
-			Log.warn("Done %,d".formatted(count));
-			Log.info("Porting " + gc);
-
-			for (var channel : gc.getGuild().getChannels().toIterable()) {
-				if (channel instanceof TopLevelGuildMessageChannel tlc) {
-					try {
-						for (var w : tlc.getWebhooks().toIterable()) {
-							boolean success = false;
-
-							if (w.getToken().isPresent() && w.getCreator().map(u -> u.getId().asLong() == gc.db.app.discordHandler.selfId).orElse(false)) {
-								count++;
-								success = true;
-								toDelete.add(w);
-							}
-
-							Log.success("- " + w.getName().orElse("Unnamed") + " by " + w.getCreator().map(User::getUsername).orElse("Unknown") + " " + w.getId().asString(), success);
-						}
-					} catch (Exception ex) {
-						Log.warn(ex);
-					}
+				if (timestamp == null) {
+					continue;
 				}
-			}
-		}
 
-		for (var w : toDelete) {
-			try {
-				w.delete().block();
-				Log.success("Deleted " + w.getId().asString());
-			} catch (Exception ex) {
-				Log.warn(ex);
+				try {
+					for (var msg : gc.channels().getChannelOrThread(channel).getMessagesBefore(Snowflake.of(timestamp.toInstant()).asLong()).take(50L).toIterable()) {
+						if (msg.getContent().equals(content) && msg.getAuthor().map(user -> user.getId().asLong() == 966766915697672252L || user.getId().asLong() == 712800443566260316L).orElse(false)) {
+							var doc = new Document();
+							doc.put("_id", msg.getId().asLong());
+							doc.put("author", doc0.get("user"));
+							doc.put("channel", channel);
+							doc.put("content", content);
+							docs.add(doc);
+							count.addAndGet(1L);
+							continue label;
+						}
+					}
+				} catch (Exception ex) {
+					Log.error(ex);
+				}
+
+				Log.warn("Couldn't find echo message '" + content + "' from " + timestamp + " in " + channel);
 			}
+
+			gc.echoLog.drop();
+			gc.echoLog.insertMany(docs);
+			Log.info("Ported " + docs.size() + " documents");
 		}
 		 */
 	}
 
 	private void stats() {
 		Log.info("***");
-
 		Log.info("DB Stats:");
 
 		/*
@@ -604,6 +589,66 @@ public class App {
 					discordHandler.client.getRestClient().getApplicationService().deleteGuildApplicationCommand(discordHandler.selfId, command.guildId().get().asLong(), command.id().asLong()).subscribe();
 				}
 			}
+		}
+	}
+
+	private void permissionPrintout(String guildId, String channelId, String memberId) {
+		var guild = Objects.requireNonNull(db.guildOrNull(guildId), "Guild '" + guildId + "' not found");
+		var roles = guild.roles();
+		var defaultPerms = roles.everyone.permissions;
+
+		{
+			Log.info(ANSI.empty().append("Role ").append(ANSI.yellow("@everyone")).append(":"));
+			var perms = ANSI.of("- Permissions: ");
+			boolean first = true;
+
+			for (var perm : Permissions.VALUES) {
+				if (!first) {
+					perms.append(", ");
+				}
+
+				perms.append(defaultPerms.has(perm) ? ANSI.lime(perm.name()) : ANSI.red(perm.name()));
+				first = false;
+			}
+
+			Log.info(perms);
+		}
+
+		for (var role : roles) {
+			Log.info(ANSI.empty().append("Role ").append(ANSI.yellow(roles.displayName(role.id))).append(":"));
+			var perms = ANSI.of("- Permissions: ");
+			boolean first = true;
+
+			var rolePerms = role.permissions.asSet();
+
+			if (rolePerms.equals(Permissions.NONE.asSet())) {
+				perms.append(ANSI.red("NONE"));
+			} else if (rolePerms.equals(Permissions.ALL.asSet())) {
+				perms.append(ANSI.lime("ALL"));
+			} else {
+				for (var perm : Permissions.VALUES) {
+					if (rolePerms.contains(perm)) {
+						if (!first) {
+							perms.append(", ");
+						}
+
+						perms.append(ANSI.lime(perm.name()));
+						first = false;
+					}
+				}
+			}
+
+			Log.info(perms);
+		}
+
+		var channels = guild.channels();
+
+		for (var channel : channels) {
+			Log.info(ANSI.empty().append("Channel ").append(ANSI.yellow(channels.displayName(channel.id))).append(":"));
+
+			var perms = ANSI.of("- Permissions: ");
+
+			var rolePerms = roles.everyone.permissions.asSet();
 		}
 	}
 }

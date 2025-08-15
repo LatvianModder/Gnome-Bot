@@ -7,23 +7,23 @@ public class CommandLogEntry extends WrappedDocument<CommandLogEntry> {
 		super(c, d);
 	}
 
-	public long getUser() {
+	public long user() {
 		return document.getLong("user");
 	}
 
-	public long getChannel() {
+	public long channel() {
 		return document.getLong("channel");
 	}
 
-	public long getMessage() {
+	public long message() {
 		return document.getLong("message");
 	}
 
-	public String getCommand() {
+	public String command() {
 		return document.getString("command");
 	}
 
-	public String getFullCommand() {
+	public String fullCommand() {
 		return document.getString("full_command");
 	}
 }

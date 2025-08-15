@@ -2,7 +2,7 @@ package dev.gnomebot.app.data;
 
 import dev.gnomebot.app.discord.Emojis;
 import dev.gnomebot.app.util.Utils;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -15,9 +15,9 @@ public enum Vote {
 	public static final Vote[] VALUES = values();
 
 	public final Boolean value;
-	public final ReactionEmoji reaction;
+	public final Emoji reaction;
 
-	Vote(@Nullable Boolean v, ReactionEmoji r) {
+	Vote(@Nullable Boolean v, Emoji r) {
 		value = v;
 		reaction = r;
 	}
@@ -31,7 +31,7 @@ public enum Vote {
 		return b == null ? NONE : b ? UP : DOWN;
 	}
 
-	public static Optional<Vote> fromEmojiOptional(ReactionEmoji e) {
+	public static Optional<Vote> fromEmojiOptional(Emoji e) {
 		for (var v : VALUES) {
 			if (v.reaction.equals(e)) {
 				return Optional.of(v);
@@ -41,7 +41,7 @@ public enum Vote {
 		return Optional.empty();
 	}
 
-	public static Vote fromEmoji(ReactionEmoji e) {
+	public static Vote fromEmoji(Emoji e) {
 		return fromEmojiOptional(e).orElse(NONE);
 	}
 }

@@ -6,6 +6,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import dev.gnomebot.app.util.MapWrapper;
+import dev.latvian.apps.ansi.log.Log;
 import discord4j.common.util.Snowflake;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -58,16 +59,25 @@ public class WrappedCollection<T extends WrappedDocument<T>> {
 		if (collection == null) {
 			//App.info("Initialized collection " + id);
 
+			boolean newCollection = true;
+
+			for (var name : database.listCollectionNames()) {
+				if (name.equals(id)) {
+					newCollection = false;
+					break;
+				}
+			}
+
 			collection = database.getCollection(id);
 
-			if (indexes != null) {
+			if (newCollection && indexes != null) {
 				for (var iw : indexes) {
 					try {
-						collection.dropIndex(iw.indexId);
+						// collection.dropIndex(iw.indexId);
+						collection.createIndex(iw.keys, iw.indexOptions);
 					} catch (Exception ex) {
+						Log.error(ex);
 					}
-
-					collection.createIndex(iw.keys, iw.indexOptions);
 				}
 			}
 		}

@@ -34,7 +34,7 @@ public interface CustomInteractionTypes {
 				var doc = db.interactionsDB.query().eq("idm", id.getMostSignificantBits()).eq("idl", id.getLeastSignificantBits()).first();
 
 				if (doc != null) {
-					var t = MAP.get(doc.getType());
+					var t = MAP.get(doc.type());
 
 					if (t != null) {
 						return t.callback.create(doc.document);

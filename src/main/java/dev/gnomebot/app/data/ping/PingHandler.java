@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -63,7 +64,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 				list.add(new UserPingInstance(new Ping[]{new Ping(Pattern.compile("gnom|" + db.app.discordHandler.selfId, Pattern.CASE_INSENSITIVE), true)}, 0L, gnomePingsWebHook, UserPingConfig.DEFAULT));
 			}
 
-			try {
+			try (var service = Executors.newVirtualThreadPerTaskExecutor()) {
 				var pattern = Pattern.compile("^\\d+\\.txt$");
 				var pingFiles = Files.list(AppPaths.PINGS).filter(Files::isRegularFile).filter(f -> pattern.matcher(f.getFileName().toString()).find()).toList();
 
@@ -72,6 +73,10 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 				for (var path : pingFiles) {
 					futures.add(CompletableFuture.supplyAsync(() -> {
 						var userId = SnowFlake.num(path.getFileName().toString().replace(".txt", ""));
+
+						if (userId != 873185409604157460L && userId != 143142144469762048L) {
+							return Pair.of(userId, List.of());
+						}
 
 						try {
 							return Pair.of(userId, PingBuilder.compile(db, userId, Files.readString(path).trim(), false));
@@ -84,7 +89,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 							return Pair.of(userId, List.of());
 						}
-					}));
+					}, service));
 				}
 
 				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
@@ -126,7 +131,7 @@ public class PingHandler implements Function<PingHandler.TargetDestinationKey, P
 
 	public void handle(GuildCollections gc, ChannelInfo channel, User user, String match, String content, String url) {
 		var userId = user.getId().asLong();
-		var username = user.getUsername();
+		var username = user.getGlobalName().orElse(user.getUsername());
 		var avatar = user.getAvatarUrl();
 		var bot = user.isBot();
 		var pingData = new PingData(gc, channel, user, userId, username, avatar, bot, match, content, url);

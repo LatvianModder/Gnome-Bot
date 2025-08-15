@@ -48,7 +48,7 @@ public class MemberCache {
 		var member = gc.members.findFirst(id);
 
 		if (member != null) {
-			return member.getDisplayName();
+			return member.displayName();
 		}
 
 		return get(id).map(Member::getDisplayName).orElse("Deleted User");

@@ -589,7 +589,7 @@ public class DiscordHandler {
 
 		gc.adminLogChannelEmbed(u.getUserData(), channelConfig, spec -> {
 			spec.description(sb1.toString());
-			spec.timestamp(message.getDate().toInstant());
+			spec.timestamp(message.timestamp().toInstant());
 			spec.author(u.getTag(), u.getAvatarUrl());
 			spec.footer(reason, null);
 		});

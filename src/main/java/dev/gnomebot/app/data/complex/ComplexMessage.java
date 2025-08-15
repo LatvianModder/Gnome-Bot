@@ -7,6 +7,7 @@ import dev.gnomebot.app.util.SimpleStringReader;
 import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.entity.Message;
 
 import java.util.ArrayList;
@@ -143,35 +144,37 @@ public class ComplexMessage implements ComplexMessageParseContext.TextHolder {
 				lc.type = 1;
 			}
 
-			for (var component : layoutComponent.getChildren()) {
-				if (component instanceof Button b) {
-					if (b.getStyle() == Button.Style.LINK) {
-						var button = new MEURLButton();
-						lc.components.add(button);
-						button.target = b.getUrl().orElse("");
-						button.label = b.getLabel().orElse("");
-						button.emoji = b.getEmoji().orElse(null);
-					} else {
-						var button = new MEButton();
-						lc.components.add(button);
-						button.target = b.getCustomId().orElse("");
-						button.label = b.getLabel().orElse("");
-						button.emoji = b.getEmoji().orElse(null);
-						button.style = b.getStyle();
+			if (layoutComponent instanceof LayoutComponent lc2) {
+				for (var component : lc2.getChildren()) {
+					if (component instanceof Button b) {
+						if (b.getStyle() == Button.Style.LINK) {
+							var button = new MEURLButton();
+							lc.components.add(button);
+							button.target = b.getUrl().orElse("");
+							button.label = b.getLabel().orElse("");
+							button.emoji = b.getEmoji().orElse(null);
+						} else {
+							var button = new MEButton();
+							lc.components.add(button);
+							button.target = b.getCustomId();
+							button.label = b.getLabel().orElse("");
+							button.emoji = b.getEmoji().orElse(null);
+							button.style = b.getStyle();
 
-						if (button.target.startsWith("macro/")) {
-							button.type = 1;
-							button.target = button.target.split("/")[2];
-						} else if (button.target.startsWith("edit-macro/") || button.target.startsWith("edit_macro/")) {
-							button.type = 2;
-							button.target = button.target.split("/")[2];
+							if (button.target.startsWith("macro/")) {
+								button.type = 1;
+								button.target = button.target.split("/")[2];
+							} else if (button.target.startsWith("edit-macro/") || button.target.startsWith("edit_macro/")) {
+								button.type = 2;
+								button.target = button.target.split("/")[2];
+							}
 						}
 					}
 				}
-			}
 
-			if (!lc.components.isEmpty()) {
-				complex.components.add(lc);
+				if (!lc.components.isEmpty()) {
+					complex.components.add(lc);
+				}
 			}
 		}
 

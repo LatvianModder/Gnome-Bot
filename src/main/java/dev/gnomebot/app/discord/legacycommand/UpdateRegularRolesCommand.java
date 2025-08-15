@@ -34,7 +34,7 @@ public class UpdateRegularRolesCommand {
 				var m = context.gc.members.findFirst(member);
 
 				if (m != null) {
-					var totalMessages = m.getTotalMessages();
+					var totalMessages = m.totalMessages();
 
 					var n = ANSI.of(member.getTag());
 

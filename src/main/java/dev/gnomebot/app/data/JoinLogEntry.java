@@ -7,11 +7,11 @@ public class JoinLogEntry extends WrappedDocument<JoinLogEntry> {
 		super(c, d);
 	}
 
-	public long getUser() {
+	public long user() {
 		return document.getLong("user");
 	}
 
-	public long getMemberFor() {
+	public long memberFor() {
 		return document.getLong("member_for");
 	}
 }

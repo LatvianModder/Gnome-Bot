@@ -51,39 +51,47 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		super(c, d);
 	}
 
-	public long getAuthor() {
+	public long author() {
 		return document.getLong("author");
 	}
 
 	@Override
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getDate("timestamp");
 	}
 
-	public int getNumber() {
+	public int number() {
 		return document.getInt("number");
 	}
 
-	public String getContent() {
+	public String content() {
 		return document.getString("content");
 	}
 
-	public Status getStatus() {
+	public Status status() {
 		return Status.VALUES[document.getInt("status")];
 	}
 
-	public String getReason() {
+	public String reason() {
 		return document.getString("reason");
 	}
 
-	public long getReasonAuthor() {
+	public long reasonAuthor() {
 		return document.getLong("reason_author");
+	}
+
+	public MapWrapper votes() {
+		return document.getMap("votes");
+	}
+
+	public boolean deleted() {
+		return document.getBoolean("deleted");
 	}
 
 	public int[] countVotes() {
 		var v = new int[2];
 
-		for (var o : getVotes().map.values()) {
+		for (var o : votes().map.values()) {
 			if (Boolean.TRUE.equals(o)) {
 				v[0]++;
 			} else {
@@ -94,12 +102,8 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		return v;
 	}
 
-	public MapWrapper getVotes() {
-		return document.getMap("votes");
-	}
-
 	public Vote getVote(String key) {
-		return Vote.fromBoolean(getVotes().getNullableBoolean(key));
+		return Vote.fromBoolean(votes().getNullableBoolean(key));
 	}
 
 	public boolean setVote(String key, Vote vote) {
@@ -107,10 +111,10 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 
 		if (!Objects.equals(vote, v)) {
 			if (vote == Vote.NONE) {
-				getVotes().map.remove(key);
+				votes().map.remove(key);
 				update(Updates.unset("votes." + key));
 			} else {
-				getVotes().map.put(key, vote.value);
+				votes().map.put(key, vote.value);
 				update("votes." + key, vote.value);
 			}
 
@@ -120,36 +124,32 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		return false;
 	}
 
-	public boolean isDeleted() {
-		return document.getBoolean("deleted");
-	}
-
 	public EmbedBuilder edit(GuildCollections gc, @Nullable EmbedCreateFields.Footer footer) {
 		var builder = EmbedBuilder.create();
 
-		var status = getStatus();
+		var status = status();
 		var v = countVotes();
 
 		if (status == Status.NONE) {
-			builder.title("Suggestion #" + getNumber());
+			builder.title("Suggestion #" + number());
 		} else {
-			builder.title("Suggestion #" + getNumber() + " - " + status.titleSuffix);
+			builder.title("Suggestion #" + number() + " - " + status.titleSuffix);
 		}
 
-		builder.url(gc.db.app.url("guild/feedback/" + gc.guildId + "/" + getNumber()));
-		builder.description(getContent());
+		builder.url(gc.db.app.url("guild/feedback/" + gc.guildId + "/" + number()));
+		builder.description(content());
 		builder.field(Emojis.VOTEUP.asFormat() + " Upvotes", "**" + v[0] + "** [" + (v[0] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.field(Emojis.VOTEDOWN.asFormat() + " Downvotes", "**" + v[1] + "** [" + (v[1] * 100 / Math.max(1, v[0] + v[1])) + "%]", true);
 		builder.color(status.color);
 		builder.footer(footer);
 
-		builder.timestamp(getDate().toInstant());
+		builder.timestamp(timestamp().toInstant());
 
 		if (status != Status.NONE) {
 			if (gc.anonymousFeedback.get()) {
-				builder.field("Reason", getReason(), false);
+				builder.field("Reason", reason(), false);
 			} else {
-				builder.field("Reason", getReason() + " - <@" + getReasonAuthor() + ">", false);
+				builder.field("Reason", reason() + " - <@" + reasonAuthor() + ">", false);
 			}
 		}
 
@@ -161,7 +161,7 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 	}
 
 	public void toJson(JSONObject json, MemberCache memberCache, boolean canSee, boolean owner) {
-		var voteMap = getVotes();
+		var voteMap = votes();
 		var v = new int[2];
 
 		for (var o : voteMap.map.values()) {
@@ -173,22 +173,22 @@ public class DiscordFeedback extends WrappedDocument<DiscordFeedback> {
 		}
 
 		json.put("id", SnowFlake.str(getUID()));
-		json.put("number", getNumber());
-		json.put("content", getContent());
-		json.put("author", canSee ? SnowFlake.str(getAuthor()) : "0");
-		json.put("author_name", canSee ? memberCache.getDisplayName(getAuthor()) : "Anonymous");
-		json.put("status", getStatus().name.toLowerCase());
+		json.put("number", number());
+		json.put("content", content());
+		json.put("author", canSee ? SnowFlake.str(author()) : "0");
+		json.put("author_name", canSee ? memberCache.getDisplayName(author()) : "Anonymous");
+		json.put("status", status().name.toLowerCase());
 
-		if (getReasonAuthor() != 0L) {
-			json.put("reason", getReason());
-			json.put("reason_author", canSee ? SnowFlake.str(getReasonAuthor()) : "0");
-			json.put("reason_author_name", canSee ? memberCache.getDisplayName(getReasonAuthor()) : "Anonymous");
+		if (reasonAuthor() != 0L) {
+			json.put("reason", reason());
+			json.put("reason_author", canSee ? SnowFlake.str(reasonAuthor()) : "0");
+			json.put("reason_author_name", canSee ? memberCache.getDisplayName(reasonAuthor()) : "Anonymous");
 		}
 
-		json.put("created", getDate().toInstant().toString());
+		json.put("created", timestamp().toInstant().toString());
 		json.put("upvotes", v[0]);
 		json.put("downvotes", v[1]);
-		json.put("deleted", isDeleted());
+		json.put("deleted", deleted());
 
 		if (owner) {
 			var upTags = json.addArray("upvoters");

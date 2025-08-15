@@ -108,6 +108,10 @@ public class Databases {
 
 	@Nullable
 	public GuildCollections guildOrNull(String path) {
+		if (path == null || path.isEmpty()) {
+			return null;
+		}
+
 		for (var gc : allGuilds()) {
 			if (gc.paths.key.equals(path)) {
 				return gc;
@@ -148,7 +152,7 @@ public class Databases {
 	}
 
 	public <T extends WrappedDocument<T>> WrappedCollection<T> create(MongoDatabase database, String ci, BiFunction<WrappedCollection<T>, MapWrapper, T> w) {
-		var collection = new WrappedCollection<T>(this, database, ci, w);
+		var collection = new WrappedCollection<>(this, database, ci, w);
 		collections.put(ci, collection);
 		return collection;
 	}

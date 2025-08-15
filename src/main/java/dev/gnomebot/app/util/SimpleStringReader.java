@@ -1,7 +1,7 @@
 package dev.gnomebot.app.util;
 
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -91,7 +91,7 @@ public class SimpleStringReader {
 		return s.isEmpty() ? Optional.empty() : Optional.of(s);
 	}
 
-	public Optional<ReactionEmoji> readEmoji() {
+	public Optional<Emoji> readEmoji() {
 		return readString().map(Utils::stringToReaction);
 	}
 

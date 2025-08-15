@@ -9,11 +9,11 @@ import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.SelectMenu;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildChannel;
-import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.json.PartialMemberData;
@@ -59,7 +59,7 @@ public class Utils {
 		return URLRequest.of(app.url(path)).addHeader("Authorization", "Bearer " + app.db.selfToken.token);
 	}
 
-	public static String reactionToString(ReactionEmoji emoji) {
+	public static String reactionToString(Emoji emoji) {
 		if (emoji == null) {
 			return "";
 		} else if (emoji.asUnicodeEmoji().isPresent()) {
@@ -71,16 +71,16 @@ public class Utils {
 		}
 	}
 
-	public static ReactionEmoji stringToReaction(String s) {
+	public static Emoji stringToReaction(String s) {
 		s = s.trim();
 
 		if (s.isEmpty() || s.equals("-")) {
 			return null;
 		} else if (s.indexOf('<') == 0 && s.indexOf('>') == s.length() - 1) {
 			var s1 = s.substring(1, s.length() - 1).split(":", 3);
-			return ReactionEmoji.custom(SnowFlake.convert(s1[2]), s1[1], s1[0].equals("a"));
+			return Emoji.custom(SnowFlake.convert(s1[2]), s1[1], s1[0].equals("a"));
 		} else {
-			return ReactionEmoji.unicode(s);
+			return Emoji.unicode(s);
 		}
 	}
 

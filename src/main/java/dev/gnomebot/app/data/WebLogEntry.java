@@ -34,7 +34,7 @@ public class WebLogEntry extends WrappedDocument<WebLogEntry> {
 	}
 
 	@Override
-	public Date getDate() {
+	public Date timestamp() {
 		return document.getDate("timestamp");
 	}
 }

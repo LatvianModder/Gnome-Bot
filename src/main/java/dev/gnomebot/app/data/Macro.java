@@ -11,7 +11,7 @@ import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.html.Tag;
 import dev.latvian.apps.webutils.html.TagFunction;
 import discord4j.core.object.command.ApplicationCommandOption;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +34,7 @@ public class Macro implements Comparable<Macro>, Callable<String>, TagFunction {
 	public long slashCommand = 0L;
 	private String description;
 	public String displayName = "";
-	public ReactionEmoji emoji = null;
+	public Emoji emoji = null;
 
 	private ChatCommandSuggestion chatCommandSuggestion;
 	private Pair<ContentType, Object> cachedContent;

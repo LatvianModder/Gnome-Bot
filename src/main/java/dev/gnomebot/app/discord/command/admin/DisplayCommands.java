@@ -130,7 +130,7 @@ public class DisplayCommands extends ApplicationCommands {
 				.getMembers()
 				.filter(m -> {
 					var dm = event.context.gc.members.findFirst(m);
-					return dm != null && dm.getTotalMessages() <= 0;
+					return dm != null && dm.totalMessages() <= 0;
 				})
 				.count()
 				.subscribe(count -> event.respond(count + " / " + total + " quiet people [" + (int) (count * 100D / (double) total) + "%]"));
@@ -164,7 +164,7 @@ public class DisplayCommands extends ApplicationCommands {
 
 		for (var msg : event.context.gc.messages.query().eq("user", memberId.asLong())) {
 			var emessage = new ExportedMessage();
-			emessage.timestamp = msg.getDate().getTime();
+			emessage.timestamp = msg.timestamp().getTime();
 			emessage.channel = msg.getChannelID();
 			emessage.channelName = channelNameMap.computeIfAbsent(emessage.channel, computeFunc);
 			emessage.flags = msg.flags;
@@ -246,7 +246,7 @@ public class DisplayCommands extends ApplicationCommands {
 		Log.info("Starting... " + member.getTag());
 
 		for (var m : event.context.gc.messages.query().eq("user", member.getId().asLong()).filter(ms == 0L ? null : Filters.gt("timestamp", new Date(System.currentTimeMillis() - ms)))) {
-			activity[m.getDate().toInstant().atZone(zoneId).getHour()]++;
+			activity[m.timestamp().toInstant().atZone(zoneId).getHour()]++;
 			total++;
 		}
 

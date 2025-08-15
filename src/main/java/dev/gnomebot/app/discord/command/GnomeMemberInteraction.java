@@ -7,8 +7,8 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.ansi.log.Log;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.reaction.ReactionEmoji;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class GnomeMemberInteraction extends ApplicationCommands {
 		void memberInteraction(Member member, ComponentEventWrapper event) throws Exception;
 	}
 
-	public record Action(String id, String name, Callback callback, AuthLevel auth, Predicate<Member> predicate, @Nullable ReactionEmoji emoji) {
+	public record Action(String id, String name, Callback callback, AuthLevel auth, Predicate<Member> predicate, @Nullable Emoji emoji) {
 		public Action(String id, String name, Callback callback) {
 			this(id, name, callback, AuthLevel.MEMBER, member -> true, null);
 		}
@@ -45,12 +45,12 @@ public class GnomeMemberInteraction extends ApplicationCommands {
 			return new Action(id, name, callback, auth, predicate, emoji);
 		}
 
-		public Action emoji(ReactionEmoji emoji) {
+		public Action emoji(Emoji emoji) {
 			return new Action(id, name, callback, auth, predicate, emoji);
 		}
 
 		public Action emoji(String emoji) {
-			return emoji(ReactionEmoji.unicode(emoji));
+			return emoji(Emoji.unicode(emoji));
 		}
 	}
 

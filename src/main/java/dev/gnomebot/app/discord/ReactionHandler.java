@@ -5,9 +5,9 @@ import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.util.Utils;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.util.HashMap;
 
@@ -21,7 +21,7 @@ public class ReactionHandler {
 			message = m;
 		}
 
-		public abstract boolean onReaction(Member member, ReactionEmoji emoji) throws Exception;
+		public abstract boolean onReaction(Member member, Emoji emoji) throws Exception;
 
 		public void onShutdown() {
 		}

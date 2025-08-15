@@ -2,6 +2,7 @@ package dev.gnomebot.app.data.channel;
 
 import dev.gnomebot.app.discord.WebHookDestination;
 import discord4j.core.object.entity.channel.CategorizableChannel;
+import discord4j.rest.util.Permission;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -42,8 +43,28 @@ public class ThreadChannelInfo extends ChannelInfo {
 	}
 
 	@Override
-	public Permissions getPermissions(long member) {
+	public CachedPermissions getPermissions(long member) {
 		return parent.getPermissions(member);
+	}
+
+	@Override
+	public CachedPermissions getSelfPermissions() {
+		return parent.getSelfPermissions();
+	}
+
+	@Override
+	public boolean checkPermissions(long memberId, Permission... permissions) {
+		return parent.checkPermissions(memberId, permissions);
+	}
+
+	@Override
+	public boolean checkPermissions(long memberId, Permission permission) {
+		return parent.checkPermissions(memberId, permission);
+	}
+
+	@Override
+	public boolean canViewChannel(long memberId) {
+		return parent.canViewChannel(memberId);
 	}
 
 	@Override

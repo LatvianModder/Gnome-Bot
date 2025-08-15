@@ -5,8 +5,8 @@ import dev.gnomebot.app.discord.ReactionHandler;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.json.JSONObject;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.reaction.ReactionEmoji;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -61,7 +61,7 @@ public class EmojifulCommand {
 
 		ReactionHandler.addListener(new ReactionHandler.Callback(context.gc, message) {
 			@Override
-			public boolean onReaction(Member member, ReactionEmoji emoji) throws Exception {
+			public boolean onReaction(Member member, Emoji emoji) throws Exception {
 				if (member.getId().equals(context.sender.getId())) {
 					var custom = emoji.asCustomEmoji().orElse(null);
 					if (custom != null) {

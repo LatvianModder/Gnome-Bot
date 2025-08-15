@@ -36,7 +36,6 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		JOIN_VOICE("join_voice", "Joined Voice", 0, Flags.EXPIRES, 0, gc -> gc.voiceLog),
 		LEAVE_VOICE("leave_voice", "Left Voice", 0, Flags.EXPIRES, 1, gc -> gc.voiceLog),
 
-		ECHO("echo", "Echo", 1, Flags.USER_AUDIT_LOG | Flags.CONTENT),
 		MACRO_EDIT("macro_edit", "Macro Edited", 1, Flags.USER_AUDIT_LOG | Flags.REVOCABLE),
 
 		ADMIN_PING("admin_ping", "Admin Ping", 2, 0),
@@ -225,44 +224,44 @@ public class GnomeAuditLogEntry extends WrappedDocument<GnomeAuditLogEntry> {
 		super(c, d);
 	}
 
-	public Type getType() {
+	public Type type() {
 		return Type.NAME_MAP.getOrDefault(document.getString("type"), Type.CUSTOM);
 	}
 
-	public int getFlags() {
+	public int flags() {
 		return document.getInt("flags");
 	}
 
 	@Nullable
-	public Date getExpires() {
+	public Date expires() {
 		return document.getDate("expires");
 	}
 
-	public long getChannel() {
+	public long channel() {
 		return document.getLong("channel");
 	}
 
-	public long getMessage() {
+	public long message() {
 		return document.getLong("message");
 	}
 
-	public long getUser() {
+	public long user() {
 		return document.getLong("user");
 	}
 
-	public long getSource() {
+	public long source() {
 		return document.getLong("source");
 	}
 
-	public String getOldContent() {
+	public String oldContent() {
 		return document.getString("old_content");
 	}
 
-	public String getContent() {
+	public String content() {
 		return document.getString("content");
 	}
 
-	public MapWrapper getExtra() {
+	public MapWrapper extra() {
 		return document.getMap("extra");
 	}
 }

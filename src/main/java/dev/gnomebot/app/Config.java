@@ -9,7 +9,7 @@ public class Config {
 	}
 
 	public static class DB {
-		public String uri = "mongodb://localhost:27017";
+		public String uri = "mongodb://localhost:27017/?authSource=admin&retryWrites=true&w=majority";
 	}
 
 	public static class Discord {

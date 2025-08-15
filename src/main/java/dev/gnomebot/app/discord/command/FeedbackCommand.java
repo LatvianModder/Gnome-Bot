@@ -170,7 +170,7 @@ public class FeedbackCommand extends ApplicationCommands {
 
 				for (var feedback : event.context.gc.feedback.query().neq("deleted", true).neq("status", 0)) {
 					feedback.update(Updates.set("deleted", true));
-					Log.info("Deleting #" + feedback.getNumber() + " - " + feedback.getStatus() + ": " + feedback.getReason());
+					Log.info("Deleting #" + feedback.number() + " - " + feedback.status() + ": " + feedback.reason());
 
 					try {
 						feedbackChannel.getMessage(feedback.getUID()).delete().block();
@@ -195,7 +195,7 @@ public class FeedbackCommand extends ApplicationCommands {
 
 		var m = event.context.channelInfo.getMessage(feedback.getUID());
 
-		if (!feedback.getStatus().canEdit()) {
+		if (!feedback.status().canEdit()) {
 			throw new GnomeException("You can't vote for this suggestion, it's already decided on!");
 		}
 
