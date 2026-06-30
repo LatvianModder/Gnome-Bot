@@ -6,7 +6,7 @@ import dev.gnomebot.app.data.ScheduledTask;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
 import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.html.HTMLTable;
 import discord4j.discordjson.json.BanData;

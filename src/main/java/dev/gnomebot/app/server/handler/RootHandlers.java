@@ -4,10 +4,10 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.AppPaths;
 import dev.gnomebot.app.server.AppRequest;
 import dev.gnomebot.app.server.AuthLevel;
-import dev.latvian.apps.tinyserver.http.response.CookieResponse;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
-import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
+import dev.latvian.apps.tinyhttp.http.response.CookieResponse;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyhttp.http.response.error.client.NotFoundError;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

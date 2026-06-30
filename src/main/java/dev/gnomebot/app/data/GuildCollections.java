@@ -123,6 +123,9 @@ public class GuildCollections {
 	public final ConfigHolder<Integer> autoMuteUrlShortener = config(GuildConfig.AUTO_MUTE_URL_SHORTENER);
 	public final ConfigHolder<Boolean> autoPaste = config(GuildConfig.AUTO_PASTE);
 	public final ConfigHolder<Boolean> autoMuteEmbed = config(GuildConfig.AUTO_MUTE_EMBED);
+	public final ConfigHolder<Boolean> ai = config(GuildConfig.AI);
+	public final ConfigHolder<String> aiPersonality = config(GuildConfig.AI_PERSONALITY);
+	public final ConfigHolder<Boolean> aiCode = config(GuildConfig.AI_CODE);
 
 	private CachedChannels channels;
 	private CachedRoles roles;

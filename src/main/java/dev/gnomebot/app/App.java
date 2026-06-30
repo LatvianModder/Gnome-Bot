@@ -1,8 +1,8 @@
 package dev.gnomebot.app;
 
 import dev.gnomebot.app.data.Databases;
-import dev.gnomebot.app.data.EchoLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
+import dev.gnomebot.app.data.ai.AIConversation;
 import dev.gnomebot.app.data.channel.Permissions;
 import dev.gnomebot.app.data.ping.PingHandler;
 import dev.gnomebot.app.discord.DM;
@@ -13,6 +13,7 @@ import dev.gnomebot.app.discord.ScamHandler;
 import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.discord.command.ApplicationCommands;
 import dev.gnomebot.app.server.AppRequest;
+import dev.gnomebot.app.server.AppRootTag;
 import dev.gnomebot.app.server.handler.ActivityHandlers;
 import dev.gnomebot.app.server.handler.GuildAPIHandlers;
 import dev.gnomebot.app.server.handler.GuildHandlers;
@@ -33,11 +34,10 @@ import dev.latvian.apps.ansi.command.CLI;
 import dev.latvian.apps.ansi.command.CommandManager;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.ansi.terminal.Terminal;
-import dev.latvian.apps.codec.BSONOps;
 import dev.latvian.apps.json.JSON;
-import dev.latvian.apps.tinyserver.HTTPServer;
-import dev.latvian.apps.tinyserver.OptionalString;
-import dev.latvian.apps.tinyserver.http.file.FileResponseHandler;
+import dev.latvian.apps.tinyhttp.HTTPServer;
+import dev.latvian.apps.tinyhttp.OptionalString;
+import dev.latvian.apps.tinyhttp.http.file.FileResponseHandler;
 import dev.latvian.apps.webutils.FormattingUtils;
 import dev.latvian.apps.webutils.TimeUtils;
 import discord4j.core.object.component.ActionRow;
@@ -45,10 +45,10 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandData;
-import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,6 +68,11 @@ public class App {
 	public static final Instant START_INSTANT = Instant.now();
 	public static boolean debug = false;
 	public static App instance;
+
+	public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+			.connectTimeout(Duration.ofSeconds(5L))
+			.followRedirects(HttpClient.Redirect.NORMAL)
+			.build();
 
 	public static void main(String[] args) throws IOException {
 		new App();
@@ -99,8 +105,7 @@ public class App {
 		JSON.DEFAULT.registerAdapter(WebHookDestination.class, (json, o, type) -> o == null ? null : new WebHookDestination(o.toString()));
 		this.config = JSON.DEFAULT.read(AppPaths.CONFIG_FILE).adapt(Config.class);
 
-		Log.info("Loading char map...");
-		CharMap.load();
+		reload();
 
 		var commands = new CommandManager();
 		commands.add("restart", this::restart);
@@ -119,6 +124,9 @@ public class App {
 		commands.add("log-everyone-out", this::logEveryoneOut);
 		commands.add("fix-broken-guild-commands", this::fixBrokenGuildCommands);
 		commands.add("permission-printout", List.of("guild", "channel", "member"), args -> permissionPrintout(args.get("guild"), args.get("channel"), args.get("member")));
+		commands.add("ai", List.of("text..."), args -> ai(args.getOrDefault("text", "")));
+		commands.add("ai-p", List.of("text..."), args -> aiPersonality(args.getOrDefault("text", "")));
+		commands.add("ai-c", this::aiClear);
 		CLI.start(commands);
 
 		Log.info("Loading web server...");
@@ -347,6 +355,7 @@ public class App {
 		CharMap.load();
 		GuildPaths.CUSTOM_NAMES.invalidate();
 		GuildPaths.INVERTED_CUSTOM_NAMES.invalidate();
+		AppRootTag.RESOURCE_REFRESH = "?%08x".formatted(UUID.randomUUID().hashCode());
 	}
 
 	public void schedule(Duration timer, String type, long guild, long channel, long user, String content) {
@@ -404,15 +413,6 @@ public class App {
 	public static final HashSet<Long> IGNORED_BANS = new HashSet<>();
 
 	private void port(Map<String, OptionalString> args, long start, AtomicLong count, AtomicLong max) throws Throwable {
-		var document = new Document();
-		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
-		document.append("_id", 5L);
-		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
-		document.append("content", "hi");
-		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
-		document.append("channel", "5");
-		Log.info(JavaANSI.of(BSONOps.INSTANCE.decode(EchoLogEntry.Data.CODEC, document)));
-
 		/*
 		// BANS
 		var guild = db.guild(Snowflake.of(166630061217153024L)).getGuild();
@@ -647,8 +647,33 @@ public class App {
 			Log.info(ANSI.empty().append("Channel ").append(ANSI.yellow(channels.displayName(channel.id))).append(":"));
 
 			var perms = ANSI.of("- Permissions: ");
-
 			var rolePerms = roles.everyone.permissions.asSet();
 		}
+	}
+
+	private void ai(String text) throws Exception {
+		var response = AIConversation.CONSOLE.query(this, 143142144469762048L, "lat", "Lat", "#test", text, List.of(), "");
+
+		Log.info(ANSI.of("Input:").black().whiteBG());
+		Log.info(text);
+		Log.info(ANSI.of("Response:").black().whiteBG());
+
+		for (var part : response.response().parts) {
+			if (part.text != null) {
+				Log.info(part.text);
+			} else {
+				Log.info(JavaANSI.of(part.json));
+			}
+		}
+
+		response.save();
+	}
+
+	private void aiPersonality(String text) {
+		config.google.personality = text;
+	}
+
+	private void aiClear() {
+		AIConversation.CONSOLE.messages.clear();
 	}
 }

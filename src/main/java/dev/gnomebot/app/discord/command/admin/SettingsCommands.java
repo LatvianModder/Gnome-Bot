@@ -35,7 +35,20 @@ public class SettingsCommands extends ApplicationCommands {
 		var holder = event.context.gc.getConfigHolder(event.get("key").asString(""));
 
 		if (holder != null) {
-			event.respond(holder.serialize(0));
+			event.respond("Current value: `" + holder.serialize(0) + "`");
+		} else {
+			throw new GnomeException("Config key not found!");
+		}
+	}
+
+	public static void edit(ChatInputInteractionEventWrapper event) throws Exception {
+		event.acknowledgeEphemeral();
+		event.context.checkSenderAdmin();
+
+		var holder = event.context.gc.getConfigHolder(event.get("key").asString(""));
+
+		if (holder != null) {
+			event.respond("Current value: `" + holder.serialize(0) + "`");
 		} else {
 			throw new GnomeException("Config key not found!");
 		}

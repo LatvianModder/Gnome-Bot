@@ -62,6 +62,7 @@ public class CharMap {
 	}
 
 	public static void load() {
+		Log.info("Loading char map...");
 		MAP.clear();
 		SUBSTITUTES.clear();
 

@@ -1,5 +1,6 @@
 package dev.gnomebot.app.server.handler;
 
+import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.GuildCollections;
 import dev.gnomebot.app.discord.ComponentEventWrapper;
 import dev.gnomebot.app.discord.EmbedColor;
@@ -10,19 +11,17 @@ import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.json.JSON;
 import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.json.JSONObject;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.error.client.BadRequestError;
 import dev.latvian.apps.webutils.CodingUtils;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +29,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class MinecraftHandlers {
-	public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-			.connectTimeout(Duration.ofSeconds(5L))
-			.followRedirects(HttpClient.Redirect.NORMAL)
-			.build();
-
 	public static final class VerifyData implements Runnable {
 		private final GuildCollections gc;
 		private final String token;
@@ -91,7 +85,7 @@ public class MinecraftHandlers {
 					EmbedBuilder.create("Verify Minecraft", "Success! Verified as [" + name + "](https://mcuuid.net/?q=" + uuid + ")")
 							.color(EmbedColor.GREEN)
 							.field("User", user.getMention())
-							.thumbnail("https://crafatar.com/renders/head/" + uuid + "?overlay=true")
+							.thumbnail("https://mc-heads.net/head/" + uuid)
 							.toEmbedCreateSpec()
 			)).subscribe();
 
@@ -150,6 +144,7 @@ public class MinecraftHandlers {
 		return null;
 	}
 
+	public static final URI AUTHORIZE_URI = URI.create("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize");
 	public static final URI TOKEN_URI = URI.create("https://login.microsoftonline.com/consumers/oauth2/v2.0/token");
 	public static final URI XBOX_AUTH_URI = URI.create("https://user.auth.xboxlive.com/user/authenticate");
 	public static final URI XSTS_AUTH_URI = URI.create("https://xsts.auth.xboxlive.com/xsts/authorize");
@@ -181,7 +176,7 @@ public class MinecraftHandlers {
 
 	public static HTTPResponse verify(AppRequest req) {
 		if (req.app.config.microsoft.client_id.isEmpty() || req.app.config.microsoft.client_secret.isEmpty()) {
-			throw new BadRequestError("This bot does not have microsoft web app set up");
+			throw new BadRequestError("This bot does not have Microsoft web app set up");
 		}
 
 		var stateStr = req.query("state").asString();
@@ -212,7 +207,7 @@ public class MinecraftHandlers {
 			}
 		} else {
 			data.started();
-			return HTTPResponse.redirect("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?client_id=" + req.app.config.microsoft.client_id + "&scope=XboxLive.signin&response_type=code&redirect_uri=https%3A%2F%2Fgnomebot.dev%2Fminecraft%2Fverify&prompt=select_account&state=" + data.token);
+			return HTTPResponse.redirect(AUTHORIZE_URI + "?client_id=" + req.app.config.microsoft.client_id + "&scope=XboxLive.signin&response_type=code&redirect_uri=https%3A%2F%2Fgnomebot.dev%2Fminecraft%2Fverify&prompt=select_account&state=" + data.token);
 		}
 	}
 
@@ -225,19 +220,23 @@ public class MinecraftHandlers {
 	}
 
 	private static BaseMinecraftProfile verify1(AppRequest req, String code) throws Exception {
+		var formData = CodingUtils.encodeURL(Map.of(
+				"client_id", req.app.config.microsoft.client_id,
+				"client_secret", req.app.config.microsoft.client_secret,
+				"code", code,
+				"grant_type", "authorization_code",
+				"redirect_uri", "https://gnomebot.dev/minecraft/verify",
+				"scope", "XboxLive.signin"
+		));
+
+		Log.info(formData);
+
 		var request = HttpRequest.newBuilder(TOKEN_URI)
 				.header("Content-Type", "application/x-www-form-urlencoded")
 				.header("Accept", "application/x-www-form-urlencoded")
-				.POST(HttpRequest.BodyPublishers.ofString(CodingUtils.formData(Map.of(
-						"client_id", req.app.config.microsoft.client_id,
-						"client_secret", req.app.config.microsoft.client_secret,
-						"code", code,
-						"grant_type", "authorization_code",
-						"redirect_uri", "https://gnomebot.dev/minecraft/verify",
-						"scope", "xboxlive.signin"
-				)))).build();
+				.POST(HttpRequest.BodyPublishers.ofString(formData)).build();
 
-		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+		var resp = App.HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("A0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
@@ -271,7 +270,7 @@ public class MinecraftHandlers {
 				.header("x-xbl-contract-version", "1")
 				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
-		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+		var resp = App.HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("B0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
@@ -302,7 +301,7 @@ public class MinecraftHandlers {
 				.header("Accept", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
-		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+		var resp = App.HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("C0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
@@ -357,7 +356,7 @@ public class MinecraftHandlers {
 				.header("Accept", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
 
-		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+		var resp = App.HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("D0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {
@@ -381,7 +380,7 @@ public class MinecraftHandlers {
 				.header("Authorization", "Bearer " + mcAccessToken)
 				.GET().build();
 
-		var resp = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+		var resp = App.HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 		var json = parseJson("E0", resp);
 
 		if (resp.statusCode() >= 200 && resp.statusCode() < 400) {

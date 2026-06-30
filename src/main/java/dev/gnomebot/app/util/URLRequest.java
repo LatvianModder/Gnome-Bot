@@ -4,7 +4,7 @@ import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.json.JSON;
 import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.json.JSONObject;
-import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
+import dev.latvian.apps.tinyhttp.http.response.HTTPStatus;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.data.Either;
 import org.jetbrains.annotations.Nullable;
@@ -305,7 +305,7 @@ public class URLRequest<T> {
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36");
 
 		if (!cookies.isEmpty()) {
-			connection.setRequestProperty("Cookie", CodingUtils.encodeURL(cookies, "; "));
+			connection.setRequestProperty("Cookie", CodingUtils.encodeURL("; ", cookies));
 		}
 
 		for (var cookie : setCookies) {
@@ -332,7 +332,7 @@ public class URLRequest<T> {
 				map.put("HttpOnly", "");
 			}
 
-			connection.addRequestProperty("Set-Cookie", CodingUtils.encodeURL(map, "; "));
+			connection.addRequestProperty("Set-Cookie", CodingUtils.encodeURL("; ", map));
 		}
 
 		connectionProcessor.accept(connection);

@@ -48,10 +48,16 @@ public class Config {
 		public String client_secret = "";
 	}
 
+	public static class Google {
+		public String gemini_key = "";
+		public String personality = "";
+	}
+
 	public Web web = new Web();
 	public DB db = new DB();
 	public Discord discord = new Discord();
 	public String wolfram_alpha_token = "";
 	public CloudFlare cloudflare = new CloudFlare();
 	public Microsoft microsoft = new Microsoft();
+	public Google google = new Google();
 }

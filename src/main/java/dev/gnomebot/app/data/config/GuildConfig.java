@@ -48,6 +48,9 @@ public interface GuildConfig {
 	ConfigKey<Integer, ConfigHolder<Integer>> AUTO_MUTE_URL_SHORTENER = key(new IntConfigType(0, 43800), "auto_mute_url_shortener", "Auto-mute URL Shortener");
 	ConfigKey<Boolean, ConfigHolder<Boolean>> AUTO_PASTE = key(BooleanConfigType.DEFAULT, "auto_paste", "Auto-paste", true);
 	ConfigKey<Boolean, ConfigHolder<Boolean>> AUTO_MUTE_EMBED = key(BooleanConfigType.DEFAULT, "auto_mute_embed", "Auto-mute Embed", true);
+	ConfigKey<Boolean, ConfigHolder<Boolean>> AI = key(BooleanConfigType.DEFAULT, "ai", "AI", false);
+	ConfigKey<String, ConfigHolder<String>> AI_PERSONALITY = key(StringConfigType.DEFAULT, "ai_personality", "AI Personality");
+	ConfigKey<Boolean, ConfigHolder<Boolean>> AI_CODE = key(BooleanConfigType.DEFAULT, "ai_code", "Allow AI Code", true);
 
 	@Nullable
 	static ConfigKey<?, ?> get(String id) {

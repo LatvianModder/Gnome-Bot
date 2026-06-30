@@ -41,7 +41,7 @@ public class QuoteHandler {
 			return 0;
 		}
 
-		var quoteMatcher = MessageHandler.MESSAGE_URL_PATTERN.matcher(message.getContent());
+		var quoteMatcher = MessageHandler.QUOTE_MESSAGE_URL_PATTERN.matcher(message.getContent());
 		var quotes = 0;
 
 		var init = true;
@@ -79,7 +79,7 @@ public class QuoteHandler {
 				init = false;
 			}
 
-			if (!mentionsAdmin && url.startsWith("<") && url.endsWith(">")) {
+			if (!mentionsAdmin && (!url.startsWith("> ") || url.startsWith("<") && url.endsWith(">"))) {
 				quoteMatcher.appendReplacement(remaining, ".");
 				continue;
 			}

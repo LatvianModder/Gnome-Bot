@@ -9,10 +9,10 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.json.JSONResponse;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
-import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
-import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyhttp.http.response.error.client.ForbiddenError;
+import dev.latvian.apps.tinyhttp.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.data.HexId32;
 
 import java.util.ArrayList;
@@ -152,7 +152,7 @@ public class GuildHandlers {
 			table.tr().td().string("Slash Command ID").end().td().string(Long.toUnsignedString(macro.slashCommand));
 		}
 
-		var form = root.content.section("edit").classes("divborder").div().form("POST");
+		var form = root.content.section("edit").classes("divborder").div().form("", "POST");
 		boolean canEdit = macro.author != 0L && macro.author == req.selfId() || req.authLevel().isAdmin();
 
 		if (canEdit) {
@@ -186,7 +186,7 @@ public class GuildHandlers {
 		return root.asResponse();
 	}
 
-	public static HTTPResponse macroEditInfo(AppRequest req) {
+	public static HTTPResponse macroEditInfo(AppRequest req) throws Exception {
 		req.checkMember();
 
 		var macro = req.gc.db.allMacros.get(HexId32.of(req.variable("id")).getAsInt());

@@ -12,9 +12,9 @@ import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.json.JSONArray;
 import dev.latvian.apps.json.JSONObject;
 import dev.latvian.apps.json.JSONResponse;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.tinyserver.http.response.error.client.BadRequestError;
-import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.error.client.BadRequestError;
+import dev.latvian.apps.tinyhttp.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.ImageUtils;
 import dev.latvian.apps.webutils.html.Tag;
 import org.bson.conversions.Bson;
@@ -166,7 +166,7 @@ public class GuildAPIHandlers {
 			throw new NotFoundError("Setting ID not found!");
 		}
 
-		var body = req.mainBody().text().trim();
+		var body = req.body().text().trim();
 		var error = holder.validate(1, body);
 
 		if (!error.isEmpty()) {

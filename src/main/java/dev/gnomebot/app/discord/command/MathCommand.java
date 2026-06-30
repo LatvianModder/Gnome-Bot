@@ -2,7 +2,7 @@ package dev.gnomebot.app.discord.command;
 
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.URLRequest;
-import dev.latvian.apps.tinyserver.http.response.HTTPStatus;
+import dev.latvian.apps.tinyhttp.http.response.HTTPStatus;
 
 import java.nio.charset.StandardCharsets;
 

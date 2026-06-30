@@ -1,24 +1,40 @@
 plugins {
+	id 'base'
 	id 'java'
+	id 'idea'
 	id 'application'
-	id 'com.github.johnrengelman.shadow' version "7.1.2"
+	id 'com.gradleup.shadow' version "9.1.0"
 }
 
 group 'dev.gnomebot'
 version '1.0.0'
-archivesBaseName = 'gnome-bot'
-mainClassName = 'dev.gnomebot.app.App'
 
-compileJava.options.encoding = 'UTF-8'
-
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+base {
+	archivesName = 'gnome-bot'
 }
 
-allprojects {
-	configurations.all {
-		resolutionStrategy.cacheChangingModulesFor 60, 'seconds'
-	}
+application {
+	mainClass = 'dev.gnomebot.app.App'
+}
+
+compileJava {
+	options.encoding = "UTF-8"
+	options.release.set(25)
+	options.compilerArgs << '-parameters' << '-Xmaxerrs' << '1000'
+}
+
+java {
+	sourceCompatibility = targetCompatibility = '25'
+	// withSourcesJar()
+	// withJavadocJar()
+}
+
+configurations {
+	runtimeClasspath.extendsFrom localRuntime
+}
+
+tasks.withType(Javadoc) {
+	options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 repositories {
@@ -31,29 +47,27 @@ repositories {
 			includeGroup "dev.latvian.apps"
 		}
 	}
-
-	maven {
-		url 'https://oss.sonatype.org/content/repositories/snapshots'
-	}
 }
 
 dependencies {
-	implementation('dev.latvian.apps:tiny-java-server:1.0.0-build.25')
-	implementation('dev.latvian.apps:ansi:1.0.0-build.11')
-	implementation('dev.latvian.apps:json:1.0.0-build.4')
-	// implementation('net.dv8tion:JDA:5.2.1')
-	implementation('dev.latvian.apps:webutils:1.1.0-build.66')
-	implementation('com.discord4j:discord4j-core:3.3.0-SNAPSHOT') { changing = true }
-	implementation('org.mongodb:mongodb-driver-sync:5.6.0-alpha0')
-	implementation('org.slf4j:slf4j-simple:2.0.7')
-	implementation('com.google.guava:guava:31.1-jre') { exclude group: "com.google.code.findbugs" }
-	implementation('com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1')
-	compileOnly('org.jetbrains:annotations:24.0.1')
+	shadow('dev.latvian.apps:tiny-http:1.0.0-build.55')
+	shadow('dev.latvian.apps:ansi:1.0.0-build.13')
+	shadow('dev.latvian.apps:json:1.0.1-build.9')
+	shadow('dev.latvian.apps:webutils:1.1.0-build.83')
+	// shadow('net.dv8tion:JDA:6.4.1')
+	shadow('org.mongodb:mongodb-driver-sync:5.7.0-beta1')
+	shadow('com.discord4j:discord4j-core:3.3.2')
+	shadow('org.slf4j:slf4j-simple:2.1.0-alpha1')
+	shadow('it.unimi.dsi:fastutil:8.5.18')
+	shadow('com.google.guava:guava:31.1-jre') { exclude group: "com.google.code.findbugs" }
+	shadow('com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1')
+
+	compileOnly('org.jetbrains:annotations:26.0.2')
 }
 
 jar {
 	manifest {
-		attributes 'Implementation-Version': archiveVersion, 'Main-Class': mainClassName
+		attributes 'Implementation-Version': archiveVersion, 'Main-Class': application.mainClass
 	}
 }
 
@@ -65,4 +79,16 @@ processResources {
 	}
 }
 
-tasks.shadowJar.dependsOn tasks.processResources
+idea {
+	module {
+		downloadSources = true
+		downloadJavadoc = true
+	}
+}
+
+shadowJar {
+	configurations = [project.configurations.shadow]
+	exclude("LICENSE")
+	exclude("LICENSE.txt")
+	dependsOn(processResources)
+}

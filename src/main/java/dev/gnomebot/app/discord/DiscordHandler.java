@@ -125,7 +125,7 @@ public class DiscordHandler {
 				.setDefaultAllowedMentions(AllowedMentions.builder().build())
 				.build()
 				.gateway()
-				.setInitialPresence(shardInfo -> ClientPresence.online(ClientActivity.watching("all of you")))
+				.setInitialPresence(shardInfo -> ClientPresence.online(ClientActivity.custom("Watching all of you")))
 				.setEnabledIntents(IntentSet.of(
 						Intent.GUILDS,
 						Intent.GUILD_MEMBERS,

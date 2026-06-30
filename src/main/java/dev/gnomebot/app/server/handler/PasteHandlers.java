@@ -4,16 +4,16 @@ import dev.gnomebot.app.App;
 import dev.gnomebot.app.data.Databases;
 import dev.gnomebot.app.discord.MessageHandler;
 import dev.gnomebot.app.server.AppRequest;
+import dev.gnomebot.app.server.AppRootTag;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
-import dev.gnomebot.app.util.Utils;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.tinyserver.content.MimeType;
-import dev.latvian.apps.tinyserver.http.response.HTTPResponse;
-import dev.latvian.apps.tinyserver.http.response.error.client.ForbiddenError;
-import dev.latvian.apps.tinyserver.http.response.error.client.NotFoundError;
+import dev.latvian.apps.tinyhttp.content.MimeType;
+import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
+import dev.latvian.apps.tinyhttp.http.response.error.client.ForbiddenError;
+import dev.latvian.apps.tinyhttp.http.response.error.client.NotFoundError;
 import dev.latvian.apps.webutils.CodingUtils;
 import dev.latvian.apps.webutils.data.Pair;
 import discord4j.core.object.component.ActionRow;
@@ -21,7 +21,6 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.discordjson.Id;
 import discord4j.discordjson.json.AttachmentData;
 import discord4j.discordjson.json.MessageData;
 
@@ -34,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,70 +44,7 @@ import java.util.zip.ZipInputStream;
 public class PasteHandlers {
 	public static final int MAX_LINES = 50_000;
 
-	public static final String[] JAVA_AND_JS_KEYWORDS = new String[]{
-			// Common //
-			"throw",
-			"try",
-			"catch",
-			"return",
-			"break",
-			"continue",
-			"if",
-			"while",
-			"for",
-			"do",
-			"else",
-			"switch",
-			"case",
-			"true",
-			"false",
-			"new",
-			"var",
-			"this",
-			// Java //
-			"public",
-			"private",
-			"protected",
-			"abstract",
-			"static",
-			"final",
-			"transient",
-			"volatile",
-			"throws",
-			"class",
-			"interface",
-			"@interface",
-			"record",
-			"enum",
-			"extends",
-			"implements",
-			"super",
-			"import",
-			"package",
-			"void",
-			"byte",
-			"short",
-			"int",
-			"long",
-			"float",
-			"double",
-			"char",
-			"String",
-			"Number",
-			// JS //
-			"let",
-			"const",
-			"console",
-			"function",
-			"number",
-			// TS //
-			"module",
-			"export",
-			"readonly",
-			"constructor",
-			"type",
-			"any",
-	};
+	public static final String[] JAVA_AND_JS_KEYWORDS = new String[]{/* Common */"throw", "try", "catch", "return", "break", "continue", "if", "while", "for", "do", "else", "switch", "case", "true", "false", "new", "var", "this",/* Java */"public", "private", "protected", "abstract", "static", "final", "transient", "volatile", "throws", "class", "interface", "@interface", "record", "enum", "extends", "implements", "super", "import", "package", "void", "byte", "short", "int", "long", "float", "double", "char", "String", "Number",/* JS */"let", "const", "console", "function", "number",/* TS */"module", "export", "readonly", "constructor", "type", "any",};
 
 	// 1 - strings
 	// 2 - numbers
@@ -119,8 +56,6 @@ public class PasteHandlers {
 	public static final Pattern STACK_AT_PATTERN = Pattern.compile("([\\s\\t]+at )(?:([\\w\\-./$@\\s*+]+)/)?([\\w.$@]+)\\.([\\w/$]+)\\.(<init>|<clinit>|[\\w$]+)\\((Unknown Source|\\.dynamic|Native Method|[\\w.$]+:\\d+)\\)(?: ~?\\[.*:.*])?(?: \\{.*})?");
 	public static final Pattern MCLOGS_PATTERN = Pattern.compile("https://mclo.gs/(\\w+)");
 
-	public static final Pattern WIN_USERNAME_PATTERN = Pattern.compile("\\b(\\w):([\\\\/])Users\\2(\\w+)\\2", Pattern.CASE_INSENSITIVE);
-	public static final Pattern UNIX_USERNAME_PATTERN = Pattern.compile("/home/\\w+/");
 	public static final Pattern MC_UUID_PATTERN = Pattern.compile("--uuid,\\s?(\\w{32})");
 	public static final Pattern MC_USERNAME_PATTERN = Pattern.compile("--username,\\s?(\\w+)");
 
@@ -156,58 +91,7 @@ public class PasteHandlers {
 			throw new NotFoundError("File not found!");
 		}
 
-		var filename = attachment.filename();
-
-		byte[] contents;
-
-		try {
-			contents = URLRequest.of(attachment.url()).toBytes().block();
-		} catch (Exception ex) {
-			throw new NotFoundError("File not found!");
-		}
-
-		if (contents == null || contents.length == 0) {
-			throw new NotFoundError("File is empty!");
-		}
-
-		var type = MimeType.TEXT;
-		var download = false;
-
-		if (filename.endsWith(".pdf")) {
-			type = MimeType.PDF;
-		} else if (filename.endsWith(".zip")) {
-			type = MimeType.ZIP;
-			download = true;
-		} else if (filename.endsWith(".jar")) {
-			type = MimeType.JAR;
-			download = true;
-		} else {
-			var lines = new String(contents, StandardCharsets.UTF_8).split("\r?\n");
-
-			for (int i = 0; i < lines.length; i++) {
-				var s = lines[i];
-				s = WIN_USERNAME_PATTERN.matcher(s).replaceAll("$1:$2Users$2<User>$2");
-				s = UNIX_USERNAME_PATTERN.matcher(s).replaceAll("/home/<User>/");
-				lines[i] = s;
-			}
-
-			contents = String.join("\n", lines).getBytes(StandardCharsets.UTF_8);
-		}
-
-		var response = HTTPResponse.ok().content(contents, type)
-				.header("Gnome-Paste-Bytes", String.valueOf(contents.length))
-				.header("Gnome-Paste-Filename", filename)
-				.header("Gnome-Paste-Guild", message.guildId().toOptional().map(Id::asString).orElse(""))
-				.header("Gnome-Paste-Channel", SnowFlake.str(channelId))
-				.header("Gnome-Paste-Message", SnowFlake.str(messageId))
-				.header("Gnome-Paste-UserID", message.author().id().asString())
-				.header("Gnome-Paste-UserName", message.author().globalName().orElse(message.author().username()));
-
-		if (download) {
-			response = response.header("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-		}
-
-		return response.publicCache(Duration.ofMinutes(5L));
+		return HTTPResponse.redirect(attachment.url());
 	}
 
 	public static HTTPResponse paste(AppRequest req) throws Exception {
@@ -215,20 +99,41 @@ public class PasteHandlers {
 			throw new ForbiddenError("Access Denied");
 		}
 
-		var channel = req.getSnowflake("channel");
+		var channelId = req.getSnowflake("channel");
 		var messageId = req.getSnowflake("message");
 		var id0 = req.variable("id").asString().split("!", 2);
-		var id = id0[0];
+		var id = SnowFlake.num(id0[0]);
 		var subfile = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
-		byte[] contents;
-		String filename;
-		String user;
+
+		MessageData message;
 
 		try {
-			var req1 = Utils.internalRequest(req.app, "paste/" + channel + "/" + messageId + "/" + id + "/raw").toBytes();
-			contents = req1.block();
-			filename = req1.getHeader("Gnome-Paste-Filename");
-			user = req1.getHeader("Gnome-Paste-UserName");
+			message = Objects.requireNonNull(req.app.discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
+		} catch (Exception ex) {
+			Log.error("Message " + messageId + " not found!");
+			throw new NotFoundError("Message " + messageId + " not found! " + ex.getMessage());
+		}
+
+		AttachmentData attachment = null;
+
+		for (var att : message.attachments()) {
+			if (att.id().asLong() == id) {
+				attachment = att;
+				break;
+			}
+		}
+
+		if (attachment == null) {
+			Log.error("Message " + messageId + " attachments: " + message.attachments().stream().map(a -> a.id().asString() + "/" + a.filename()).collect(Collectors.joining(", ")));
+			throw new NotFoundError("File not found!");
+		}
+
+		String filename = attachment.filename();
+		String user = message.author().username();
+		byte[] contents;
+
+		try {
+			contents = URLRequest.of(attachment.url()).toBytes().block();
 		} catch (Exception ex) {
 			throw new NotFoundError("File not found!");
 		}
@@ -260,8 +165,8 @@ public class PasteHandlers {
 			throw new NotFoundError("File not found!");
 		}
 
-		var url = "/paste/" + channel + "/" + messageId + "/" + id;
-		var rawUrl = url + "/raw";
+		var url = "/paste/" + channelId + "/" + messageId + "/" + id + "/" + filename;
+		var rawUrl = attachment.url();
 		return paste0(req, filename, contents, user, url, rawUrl, archive, subfile).publicCache(Duration.ofMinutes(5L));
 	}
 
@@ -288,9 +193,8 @@ public class PasteHandlers {
 		}
 
 		var root = req.createRoot(filename);
-		root.head.deferScript("/assets/paste.js");
 
-		var titleTag = root.content.h3().string(filename + " by " + user).a(rawUrl).string(archive ? " [Download]" : " [Raw]");
+		var titleTag = root.content.h3().string(filename + " by " + user).a(rawUrl, " [Download]");
 		root.content.br();
 		root.content.classes("paste");
 
@@ -360,10 +264,10 @@ public class PasteHandlers {
 			var mcUsername = "";
 
 			for (var i = 0; i < lines.size(); i++) {
-				var s = lines.get(i);
+				var line = lines.get(i);
 
 				if (mcUUID.isEmpty()) {
-					var matcher = MC_UUID_PATTERN.matcher(s);
+					var matcher = MC_UUID_PATTERN.matcher(line);
 
 					if (matcher.find()) {
 						mcUUID = matcher.group(1);
@@ -371,7 +275,7 @@ public class PasteHandlers {
 				}
 
 				if (mcUsername.isEmpty()) {
-					var matcher = MC_USERNAME_PATTERN.matcher(s);
+					var matcher = MC_USERNAME_PATTERN.matcher(line);
 
 					if (matcher.find()) {
 						mcUsername = matcher.group(1);
@@ -379,38 +283,38 @@ public class PasteHandlers {
 				}
 
 				var lineId = "L" + (i + 1);
-				var line = pasteText.span();
-				line.id(lineId);
+				var lineTag = pasteText.span();
+				lineTag.id(lineId);
 
 				if (i < MAX_LINES && fileType == TYPE_NONE) {
-					if (s.contains("ERR")) {
-						line.classes("c-e");
-					} else if (s.contains("WARN")) {
-						line.classes("c-w");
-					} else if (s.contains("DEBUG") || s.contains("TRACE")) {
-						line.classes("c-d");
-					} else if (s.contains("Error:") || s.contains("Exception:") || s.contains("Caused by:") || s.contains("Stacktrace:")) {
-						line.classes("c-e");
+					if (line.contains("ERR")) {
+						lineTag.classes("c-e");
+					} else if (line.contains("WARN")) {
+						lineTag.classes("c-w");
+					} else if (line.contains("DEBUG") || line.contains("TRACE")) {
+						lineTag.classes("c-d");
+					} else if (line.contains("Error:") || line.contains("Exception:") || line.contains("Caused by:") || line.contains("Stacktrace:")) {
+						lineTag.classes("c-e");
 					}
 				}
 
-				line.a("#" + lineId).string(String.format(lineFormat, i + 1));
-				line.a("").string("    ");
+				lineTag.a("#" + lineId).string(String.format(lineFormat, i + 1));
+				lineTag.a("").string("    ");
 
 				if (i >= MAX_LINES) {
-					line.string(s);
+					lineTag.string(line);
 					continue;
 				}
 
 				Matcher matcher;
 
 				if (fileType == TYPE_LANGUAGE) {
-					matcher = JAVA_AND_JS_PATTERN.matcher(s);
+					matcher = JAVA_AND_JS_PATTERN.matcher(line);
 
 					while (matcher.find()) {
 						sb.setLength(0);
 						matcher.appendReplacement(sb, "");
-						line.string(sb.toString());
+						lineTag.string(sb.toString());
 
 						var string = matcher.group(1);
 						var number = matcher.group(3);
@@ -420,26 +324,26 @@ public class PasteHandlers {
 						var bracketClose = matcher.group(7);
 
 						if (string != null) {
-							line.span("f-g").string(string);
+							lineTag.span("f-g").string(string);
 						} else if (number != null) {
-							line.span("f-o").string(number);
+							lineTag.span("f-o").string(number);
 						} else if (keyword != null) {
-							line.span("f-m").string(keyword);
+							lineTag.span("f-m").string(keyword);
 						} else if (symbol != null) {
-							line.span("f-b").string(symbol);
+							lineTag.span("f-b").string(symbol);
 						} else if (bracketOpen != null) {
-							line.span("f-b").string(bracketOpen);
+							lineTag.span("f-b").string(bracketOpen);
 						} else if (bracketClose != null) {
-							line.span("f-b").string(bracketClose);
+							lineTag.span("f-b").string(bracketClose);
 						}
 					}
 				} else {
-					matcher = STACK_AT_PATTERN.matcher(s);
+					matcher = STACK_AT_PATTERN.matcher(line);
 
 					while (matcher.find()) {
 						sb.setLength(0);
 						matcher.appendReplacement(sb, "");
-						line.string(sb.toString());
+						lineTag.string(sb.toString());
 
 						var at = matcher.group(1);
 						var moduleName = matcher.group(2);
@@ -448,25 +352,25 @@ public class PasteHandlers {
 						var methodName = matcher.group(5);
 						var source = matcher.group(6);
 
-						line.string(at);
+						lineTag.string(at);
 
-						var pspan = line.span("f-o").string(packagePath);
+						var pspan = lineTag.span("f-o").string(packagePath);
 
 						if (moduleName != null) {
 							pspan.title(moduleName);
 						}
 
-						line.string(".");
-						line.span("f-y").string(className);
-						line.string(".");
-						line.span("f-b").string(methodName);
-						line.string(":");
+						lineTag.string(".");
+						lineTag.span("f-y").string(className);
+						lineTag.string(".");
+						lineTag.span("f-b").string(methodName);
+						lineTag.string(":");
 
 						var sourceSet = Arrays.stream(className.split("\\$")).collect(Collectors.toSet());
 
 						var sourceS = source.split(":", 2);
 
-						var lineSpan = line.span("f-p");
+						var lineSpan = lineTag.span("f-p");
 
 						if (sourceS[0].equals("Native Method")) {
 							lineSpan.string("native");
@@ -482,13 +386,13 @@ public class PasteHandlers {
 							lineSpan.string(source.replace(".java", ""));
 						}
 
-						lineSpan.title(s);
+						lineSpan.title(line);
 					}
 				}
 
 				sb.setLength(0);
 				matcher.appendTail(sb);
-				line.string(sb.toString());
+				lineTag.string(sb.toString());
 			}
 
 			if (!mcUUID.isEmpty() || !mcUsername.isEmpty()) {
@@ -504,24 +408,55 @@ public class PasteHandlers {
 		return root.asResponse();
 	}
 
-	public static HTTPResponse newPaste(AppRequest req) throws Exception {
-		var channel = req.getSnowflake("channel");
+	public static HTTPResponse newPaste(AppRequest req) {
+		var channelId = req.getSnowflake("channel");
 		var messageId = req.getSnowflake("message");
 		var id0 = req.variable("id").asString().split("!", 2);
-		var id = id0[0];
+		var id = SnowFlake.num(id0[0]);
+		var zipPath = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 
-		var root = req.createRoot("/new-paste/" + channel + "/" + messageId + "/" + id, id + " - Paste");
-		root.head.deferScript("/assets/paste.js");
+		MessageData message;
 
-		var rawTag = root.content.h3().span("", "Loading...").id("paste-title").end().space().a("/paste/" + channel + "/" + messageId + "/" + id + "/raw").id("paste-data").string(" [Raw]");
-
-		if (id0.length == 2) {
-			rawTag.attr("data-zippath", id0[1]);
+		try {
+			message = Objects.requireNonNull(req.app.discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
+		} catch (Exception ex) {
+			Log.error("Message " + messageId + " not found!");
+			throw new NotFoundError("Message " + messageId + " not found! " + ex.getMessage());
 		}
 
+		AttachmentData attachment = null;
+
+		for (var att : message.attachments()) {
+			if (att.id().asLong() == id) {
+				attachment = att;
+				break;
+			}
+		}
+
+		if (attachment == null) {
+			Log.error("Message " + messageId + " attachments: " + message.attachments().stream().map(a -> a.id().asString() + "/" + a.filename()).collect(Collectors.joining(", ")));
+			throw new NotFoundError("File not found!");
+		}
+
+		var root = req.createRoot(attachment.filename());
+		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH + "_%08x".formatted(UUID.randomUUID().hashCode()));
+
+		root.content.h3().id("paste-title").string(attachment.filename() + " by " + message.author().username()).a(attachment.url(), " [Download]");
 		root.content.br();
 		root.content.classes("paste");
-		root.content.div().id("paste-text").classes("pastetext");
+
+		var contentType = attachment.contentType().toOptional().orElse("");
+
+		root.content.div()
+				.id("paste-text")
+				.classes("pastetext")
+				.attr("data-paste-filename", attachment.filename())
+				.attr("data-paste-url", attachment.url())
+				.attr("data-paste-content-type", contentType.isEmpty() ? MimeType.TEXT : contentType)
+				.attr("data-zip-path", zipPath)
+				.h3().spanstr("Loading...");
+
+
 		return root.asResponse();
 	}
 

@@ -4,10 +4,10 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 import dev.gnomebot.app.App;
-import dev.gnomebot.app.Assets;
 import dev.gnomebot.app.data.DiscordMessage;
 import dev.gnomebot.app.data.GnomeAuditLogEntry;
 import dev.gnomebot.app.data.ScheduledTask;
+import dev.gnomebot.app.data.ai.AIConversation;
 import dev.gnomebot.app.data.channel.ChannelInfo;
 import dev.gnomebot.app.data.complex.ComplexMessageRenderContext;
 import dev.gnomebot.app.discord.command.admin.MuteCommand;
@@ -24,6 +24,7 @@ import dev.gnomebot.app.util.MessageId;
 import dev.latvian.apps.ansi.ANSI;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
+import dev.latvian.apps.webutils.data.Pair;
 import dev.latvian.apps.webutils.net.IPUtils;
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -43,6 +44,9 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -55,7 +59,8 @@ import java.util.regex.Pattern;
 
 public class MessageHandler {
 	public static final Pattern MESSAGE_URL_PATTERN = Pattern.compile("<?https?://(?:(?:canary|ptb)\\.)?(?:discordapp|discord)\\.(?:com|net)/channels/(\\d+)/(\\d+)/(\\d+)>?", Pattern.MULTILINE);
-	public static final Pattern INVITE_PATTERN = Pattern.compile("(?:discord\\.com/invite|discord\\.gg)/(\\w+)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+	public static final Pattern QUOTE_MESSAGE_URL_PATTERN = Pattern.compile(">\\s+" + MESSAGE_URL_PATTERN.pattern(), Pattern.MULTILINE);
+	public static final Pattern INVITE_PATTERN = Pattern.compile("(?:discord\\.com/invite|discordapp\\.com/invite|discord\\.gg)/([\\w-]+)", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern IP_PATTERN = Pattern.compile("\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b(.*\\.jar)?", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern REMOVE_FORMATTING_PATTERN = Pattern.compile("(\\*\\*|\\*|__|_|`)(.+?)\\1");
 	public static final Pattern URL_PATTERN = Pattern.compile("(?:https?://)?((?:www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{2,64})\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
@@ -67,6 +72,7 @@ public class MessageHandler {
 	public static final Pattern OK_PATTERN = Pattern.compile("\\b(?:ok|alright|fine)\\b", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern SORRY_PATTERN = Pattern.compile("\\bsorry\\b", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final Pattern THANK_GNOME_PATTERN = Pattern.compile("th[ae]nk.*gnom", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+	public static final Pattern AI_CODE_PATTERN = Pattern.compile("```(?:js|javascript)\\b", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	public static final HashSet<Integer> VALID_MESSAGE_TYPES = new HashSet<>();
 
 	static {
@@ -627,20 +633,90 @@ public class MessageHandler {
 			} else if (handleMacro(context, content, macroPrefix)) {
 				//App.info("Custom command: " + content);
 			} else if (thankGnome || (flags & DiscordMessage.FLAG_MENTIONS_BOT) != 0L) {
-				if (thankGnome) {
+				if (context.gc.ai.get()) {
+					var noPingContent = contentNoEmojis;
+					var mention = "<@" + Long.toUnsignedString(handler.selfId) + ">";
+
+					if (noPingContent.startsWith(mention)) {
+						noPingContent = noPingContent.substring(mention.length()).trim();
+					}
+
+					if (noPingContent.endsWith(mention)) {
+						noPingContent = noPingContent.substring(0, noPingContent.length() - mention.length()).trim();
+					}
+
+					var aiResponseChannel = outputMessageChannel;
+					var aiContent = noPingContent;
+
+					Thread.startVirtualThread(() -> {
+						aiResponseChannel.type().subscribe();
+
+						try {
+							var aiFiles = new ArrayList<Pair<String, byte[]>>();
+
+							for (var attachment : message.getAttachments()) {
+								if (attachment.getContentType().isPresent() && attachment.getContentType().get().startsWith("image/")) {
+									try {
+										aiFiles.add(Pair.of(attachment.getContentType().get(), App.HTTP_CLIENT.send(
+												HttpRequest.newBuilder(URI.create(attachment.getProxyUrl()))
+														.GET()
+														.header("User-Agent", "GnomeBot/1.0 (https://gnomebot.dev/)")
+														.build(),
+												HttpResponse.BodyHandlers.ofByteArray()).body())
+										);
+									} catch (Exception ex) {
+									}
+								}
+							}
+
+							var extraPersonality = gc.aiPersonality.get().trim();
+							var conversation = AIConversation.GUILDS.computeIfAbsent(gc.guildId, AIConversation::new);
+							var response = conversation.query(gc.db.app, member.getId().asLong(), member.getUsername(), member.getDisplayName(), "#" + channelInfo.getName(), aiContent, aiFiles, extraPersonality);
+
+							var msgBuilder = MessageBuilder.create();
+							// msgBuilder.messageReference(message.getId().asLong());
+							var list = new ArrayList<String>();
+
+							for (var part : response.response().parts) {
+								if (part.text != null) {
+									list.add(part.text);
+								}
+							}
+
+							if (list.isEmpty()) {
+								list.add("That's weird… I couldn't come up with an answer…");
+							}
+
+							// list.set(0, member.getMention() + ": " + list.getFirst());
+							msgBuilder.content(list);
+
+							if (msgBuilder.content.endsWith(".") && !msgBuilder.content.endsWith("...")) {
+								msgBuilder.content = msgBuilder.content.substring(0, msgBuilder.content.length() - 1);
+							}
+
+							if (!context.gc.aiCode.get() && isCode(msgBuilder.content)) {
+								aiResponseChannel.createMessage("Gnome didn't study his programming course and can't help with code :(").subscribe();
+							} else if (response.code() == 429) {
+								aiResponseChannel.createMessage("Gnome is tired and wants to rest from talking...").subscribe();
+							} else {
+								response.save();
+								aiResponseChannel.createMessage(msgBuilder.toMessageCreateSpec()).subscribe();
+							}
+						} catch (Exception ex) {
+							ex.printStackTrace();
+							aiResponseChannel.createMessage("Gnome got a brain freeze").subscribe();
+						}
+					});
+				} else if (thankGnome) {
 					message.addReaction(Emojis.GNOME_HAHA_YES).subscribe();
 				} else if (NO_U_PATTERN.matcher(contentNoEmojis).find()) {
 					outputMessageChannel.createMessage("no u").subscribe();
-				} else if (contentNoEmojis.contains("help")) {
-					outputMessageChannel.createMessage("Try `" + gc.legacyPrefix.get() + "help`").subscribe();
-				} else if (contentNoEmojis.contains("prefix")) {
-					outputMessageChannel.createMessage("Current command prefix is `" + gc.legacyPrefix.get() + "`").subscribe();
 				} else if (HI_PATTERN.matcher(contentNoEmojis).find()) {
 					outputMessageChannel.createMessage("Hi").subscribe();
 				} else if (OK_PATTERN.matcher(contentNoEmojis).find()) {
 					outputMessageChannel.createMessage("ok").subscribe();
 				} else if (referenceMessage != null && referenceMessage.getAuthor().isPresent() && referenceMessage.getAuthor().get().getId().asLong() == gc.db.app.discordHandler.selfId) {
-					outputMessageChannel.createMessage(Assets.REPLY_PING.getPath(handler.app)).subscribe();
+					// outputMessageChannel.createMessage(Assets.REPLY_PING.getPath(handler.app)).subscribe();
 				} else {
 					outputMessageChannel.createMessage(Emojis.GNOME_PING.asFormat()).subscribe();
 				}
@@ -657,6 +733,10 @@ public class MessageHandler {
 		}
 
 		Hardcoded.afterMessage(gc, message, member, totalMessages, totalXp, contentNoEmojis);
+	}
+
+	private static boolean isCode(String c) {
+		return c.contains("=>") || AI_CODE_PATTERN.matcher(c).find();
 	}
 
 	private static boolean handleLegacyCommand(CommandContext context, String content) {
