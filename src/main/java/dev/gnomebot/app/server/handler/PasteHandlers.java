@@ -10,6 +10,7 @@ import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.ansi.log.Log;
+import dev.latvian.apps.json.JSON;
 import dev.latvian.apps.tinyhttp.content.MimeType;
 import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
 import dev.latvian.apps.tinyhttp.http.response.error.client.ForbiddenError;
@@ -27,13 +28,13 @@ import discord4j.discordjson.json.MessageData;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,14 +60,12 @@ public class PasteHandlers {
 	public static final Pattern MC_UUID_PATTERN = Pattern.compile("--uuid,\\s?(\\w{32})");
 	public static final Pattern MC_USERNAME_PATTERN = Pattern.compile("--username,\\s?(\\w+)");
 
-	public static final int TYPE_NONE = 0;
-	public static final int TYPE_LANGUAGE = 1;
-
-	public static HTTPResponse pasteRaw(AppRequest req) {
+	public static HTTPResponse paste(AppRequest req) {
 		var channelId = req.getSnowflake("channel");
 		var messageId = req.getSnowflake("message");
 		var id0 = req.variable("id").asString().split("!", 2);
 		var id = SnowFlake.num(id0[0]);
+		var zipPath = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
 
 		MessageData message;
 
@@ -91,10 +90,29 @@ public class PasteHandlers {
 			throw new NotFoundError("File not found!");
 		}
 
-		return HTTPResponse.redirect(attachment.url());
+		var root = req.createRoot(attachment.filename());
+		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH); // + "_%08x".formatted(UUID.randomUUID().hashCode()));
+
+		root.content.h3().id("paste-title").string(attachment.filename() + " by " + message.author().username()).a(attachment.url(), " [Download]");
+		root.content.br();
+		root.content.classes("paste");
+
+		var contentType = attachment.contentType().toOptional().orElse("");
+
+		root.content.div()
+				.id("paste-text")
+				.classes("pastetext")
+				.attr("data-paste-filename", attachment.filename())
+				.attr("data-paste-url", attachment.url())
+				.attr("data-paste-content-type", contentType.isEmpty() ? MimeType.TEXT : contentType)
+				.attr("data-zip-path", zipPath)
+				.h3().spanstr("Loading...");
+
+
+		return root.asResponse().publicCache(Duration.ofMinutes(5L));
 	}
 
-	public static HTTPResponse paste(AppRequest req) throws Exception {
+	public static HTTPResponse oldPaste(AppRequest req) throws Exception {
 		if (req.userAgent().contains("PetalBot")) {
 			throw new ForbiddenError("Access Denied");
 		}
@@ -165,7 +183,7 @@ public class PasteHandlers {
 			throw new NotFoundError("File not found!");
 		}
 
-		var url = "/paste/" + channelId + "/" + messageId + "/" + id + "/" + filename;
+		var url = "/paste/" + channelId + "/" + messageId + "/" + id;
 		var rawUrl = attachment.url();
 		return paste0(req, filename, contents, user, url, rawUrl, archive, subfile).publicCache(Duration.ofMinutes(5L));
 	}
@@ -173,18 +191,38 @@ public class PasteHandlers {
 	public static HTTPResponse pasteMclogs(AppRequest req) {
 		var id = req.variable("id").asString();
 
-		try {
-			var reqInfo = URLRequest.of("https://api.mclo.gs/1/insights/" + id).toJsonObject();
+		String filename = "unknown.log";
 
-			try {
-				var req1 = URLRequest.of("https://api.mclo.gs/1/raw/" + id).toBytes();
-				return paste0(req, reqInfo.block().asString("title") + ".log", req1.block(), "Unknown", "/paste/mclogs/" + id, "https://api.mclo.gs/1/raw/" + id, false, "").publicCache(Duration.ofMinutes(5L));
-			} catch (Exception ex) {
+		try {
+			var request = App.HTTP_CLIENT.send(App.request("https://api.mclo.gs/1/insights/" + id).timeout(Duration.ofSeconds(3L)).build(), HttpResponse.BodyHandlers.ofString());
+
+			if (request.statusCode() / 100 == 2) {
+				var json = JSON.DEFAULT.read(request.body()).readObject();
+				filename = json.asString("title") + ".log";
+			} else {
 				throw new NotFoundError("File not found!");
 			}
-		} catch (Exception ex) {
-			throw new NotFoundError("File not found!");
+		} catch (Exception _) {
 		}
+
+		var root = req.createRoot(filename);
+		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH); // + "_%08x".formatted(UUID.randomUUID().hashCode()));
+
+		root.content.h3().id("paste-title").string(filename).a("https://api.mclo.gs/1/raw/" + id, " [Download]");
+		root.content.br();
+		root.content.classes("paste");
+
+		root.content.div()
+				.id("paste-text")
+				.classes("pastetext")
+				.attr("data-paste-filename", filename)
+				.attr("data-paste-url", "https://api.mclo.gs/1/raw/" + id)
+				.attr("data-paste-content-type", MimeType.TEXT)
+				.attr("data-zip-path", "")
+				.h3().spanstr("Loading...");
+
+
+		return root.asResponse().publicCache(Duration.ofMinutes(5L));
 	}
 
 	private static HTTPResponse paste0(AppRequest req, String filename, byte[] contents, String user, String url, String rawUrl, boolean archive, String subfile) throws Exception {
@@ -252,13 +290,7 @@ public class PasteHandlers {
 			var lineFormat = "%0" + String.valueOf(lines.size()).length() + "d";
 			var sb = new StringBuilder();
 
-			int fileType;
-
-			if (filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".ts") || filename.endsWith(".zs") || filename.endsWith(".json")) {
-				fileType = TYPE_LANGUAGE;
-			} else {
-				fileType = TYPE_NONE;
-			}
+			boolean isLanguage = filename.endsWith(".java") || filename.endsWith(".js") || filename.endsWith(".ts") || filename.endsWith(".zs") || filename.endsWith(".json");
 
 			var mcUUID = "";
 			var mcUsername = "";
@@ -286,7 +318,7 @@ public class PasteHandlers {
 				var lineTag = pasteText.span();
 				lineTag.id(lineId);
 
-				if (i < MAX_LINES && fileType == TYPE_NONE) {
+				if (i < MAX_LINES && !isLanguage) {
 					if (line.contains("ERR")) {
 						lineTag.classes("c-e");
 					} else if (line.contains("WARN")) {
@@ -308,7 +340,7 @@ public class PasteHandlers {
 
 				Matcher matcher;
 
-				if (fileType == TYPE_LANGUAGE) {
+				if (isLanguage) {
 					matcher = JAVA_AND_JS_PATTERN.matcher(line);
 
 					while (matcher.find()) {
@@ -404,58 +436,6 @@ public class PasteHandlers {
 				a.string("[Minecraft Profile]");
 			}
 		}
-
-		return root.asResponse();
-	}
-
-	public static HTTPResponse newPaste(AppRequest req) {
-		var channelId = req.getSnowflake("channel");
-		var messageId = req.getSnowflake("message");
-		var id0 = req.variable("id").asString().split("!", 2);
-		var id = SnowFlake.num(id0[0]);
-		var zipPath = id0.length == 2 ? CodingUtils.decodeURL(id0[1]) : "";
-
-		MessageData message;
-
-		try {
-			message = Objects.requireNonNull(req.app.discordHandler.client.getRestClient().getChannelService().getMessage(channelId, messageId).block());
-		} catch (Exception ex) {
-			Log.error("Message " + messageId + " not found!");
-			throw new NotFoundError("Message " + messageId + " not found! " + ex.getMessage());
-		}
-
-		AttachmentData attachment = null;
-
-		for (var att : message.attachments()) {
-			if (att.id().asLong() == id) {
-				attachment = att;
-				break;
-			}
-		}
-
-		if (attachment == null) {
-			Log.error("Message " + messageId + " attachments: " + message.attachments().stream().map(a -> a.id().asString() + "/" + a.filename()).collect(Collectors.joining(", ")));
-			throw new NotFoundError("File not found!");
-		}
-
-		var root = req.createRoot(attachment.filename());
-		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH + "_%08x".formatted(UUID.randomUUID().hashCode()));
-
-		root.content.h3().id("paste-title").string(attachment.filename() + " by " + message.author().username()).a(attachment.url(), " [Download]");
-		root.content.br();
-		root.content.classes("paste");
-
-		var contentType = attachment.contentType().toOptional().orElse("");
-
-		root.content.div()
-				.id("paste-text")
-				.classes("pastetext")
-				.attr("data-paste-filename", attachment.filename())
-				.attr("data-paste-url", attachment.url())
-				.attr("data-paste-content-type", contentType.isEmpty() ? MimeType.TEXT : contentType)
-				.attr("data-zip-path", zipPath)
-				.h3().spanstr("Loading...");
-
 
 		return root.asResponse();
 	}

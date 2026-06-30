@@ -48,7 +48,9 @@ import discord4j.discordjson.json.ApplicationCommandData;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -70,9 +72,17 @@ public class App {
 	public static App instance;
 
 	public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-			.connectTimeout(Duration.ofSeconds(5L))
+			.connectTimeout(Duration.ofSeconds(15L))
 			.followRedirects(HttpClient.Redirect.NORMAL)
 			.build();
+
+	public static HttpRequest.Builder request(URI uri) {
+		return HttpRequest.newBuilder().uri(uri).header("User-Agent", "GnomeBot/1.0 (https://gnomebot.dev/)");
+	}
+
+	public static HttpRequest.Builder request(String uri) {
+		return request(URI.create(uri));
+	}
 
 	public static void main(String[] args) throws IOException {
 		new App();
@@ -139,9 +149,8 @@ public class App {
 		webServer.get("/public/{file}", RootHandlers::publicfile);
 
 		webServer.get("/paste/mclogs/{id}", PasteHandlers::pasteMclogs);
-		webServer.get("/paste/{channel}/{message}/{id}/raw", PasteHandlers::pasteRaw);
 		webServer.get("/paste/{channel}/{message}/{id}", PasteHandlers::paste);
-		webServer.get("/new-paste/{channel}/{message}/{id}", PasteHandlers::newPaste);
+		webServer.get("/old-paste/{channel}/{message}/{id}", PasteHandlers::oldPaste);
 
 		webServer.get("/api/info/ping", InfoHandlers::ping);
 		webServer.get("/api/info/user/{user}", InfoHandlers::user);

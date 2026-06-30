@@ -90,11 +90,10 @@ public class AIConversation {
 		response.timestamp = now.toEpochMilli();
 		response.channelName = channelName;
 
-		var res = App.HTTP_CLIENT.send(HttpRequest.newBuilder(GOOGLE_GEMINI_API)
+		var res = App.HTTP_CLIENT.send(App.request(GOOGLE_GEMINI_API)
 						.POST(HttpRequest.BodyPublishers.ofString(json.toString()))
 						.header("Content-Type", "application/json")
 						.header("x-goog-api-key", app.config.google.gemini_key)
-						.header("User-Agent", "GnomeBot/1.0 (https://gnomebot.dev/)")
 						.timeout(Duration.ofMinutes(2L))
 						.build(),
 				HttpResponse.BodyHandlers.ofString()

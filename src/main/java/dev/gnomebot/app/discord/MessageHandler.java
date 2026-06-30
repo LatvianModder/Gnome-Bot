@@ -44,8 +44,6 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -658,9 +656,8 @@ public class MessageHandler {
 								if (attachment.getContentType().isPresent() && attachment.getContentType().get().startsWith("image/")) {
 									try {
 										aiFiles.add(Pair.of(attachment.getContentType().get(), App.HTTP_CLIENT.send(
-												HttpRequest.newBuilder(URI.create(attachment.getProxyUrl()))
+												App.request(attachment.getProxyUrl())
 														.GET()
-														.header("User-Agent", "GnomeBot/1.0 (https://gnomebot.dev/)")
 														.build(),
 												HttpResponse.BodyHandlers.ofByteArray()).body())
 										);

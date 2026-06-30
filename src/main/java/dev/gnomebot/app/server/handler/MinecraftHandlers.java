@@ -231,7 +231,7 @@ public class MinecraftHandlers {
 
 		Log.info(formData);
 
-		var request = HttpRequest.newBuilder(TOKEN_URI)
+		var request = App.request(TOKEN_URI)
 				.header("Content-Type", "application/x-www-form-urlencoded")
 				.header("Accept", "application/x-www-form-urlencoded")
 				.POST(HttpRequest.BodyPublishers.ofString(formData)).build();
@@ -264,7 +264,7 @@ public class MinecraftHandlers {
 		data.put("RelyingParty", "http://auth.xboxlive.com");
 		data.put("TokenType", "JWT");
 
-		var request = HttpRequest.newBuilder(XBOX_AUTH_URI)
+		var request = App.request(XBOX_AUTH_URI)
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
 				.header("x-xbl-contract-version", "1")
@@ -296,7 +296,7 @@ public class MinecraftHandlers {
 		data.put("RelyingParty", "rp://api.minecraftservices.com/");
 		data.put("TokenType", "JWT");
 
-		var request = HttpRequest.newBuilder(XSTS_AUTH_URI)
+		var request = App.request(XSTS_AUTH_URI)
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
@@ -351,7 +351,7 @@ public class MinecraftHandlers {
 		var data = JSONObject.of();
 		data.put("identityToken", "XBL3.0 x=" + xblUhs + ";" + xblXsts);
 
-		var request = HttpRequest.newBuilder(MC_XBOX_AUTH_URI)
+		var request = App.request(MC_XBOX_AUTH_URI)
 				.header("Content-Type", "application/json")
 				.header("Accept", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();
@@ -376,7 +376,7 @@ public class MinecraftHandlers {
 	}
 
 	private static BaseMinecraftProfile checkMcProfile(String mcAccessToken) throws Exception {
-		var request = HttpRequest.newBuilder(MC_PROFILE_URI)
+		var request = App.request(MC_PROFILE_URI)
 				.header("Authorization", "Bearer " + mcAccessToken)
 				.GET().build();
 
