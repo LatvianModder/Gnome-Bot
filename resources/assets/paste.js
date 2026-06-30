@@ -1,6 +1,6 @@
 const pasteTitleTag = document.getElementById('paste-title');
 const pasteTextTag = document.getElementById('paste-text');
-const pasteFilename = pasteTextTag.dataset.pasteFilename;
+let pasteFilename = pasteTextTag.dataset.pasteFilename;
 const pasteUrl = pasteTextTag.dataset.pasteUrl;
 const pasteContentType = pasteTextTag.dataset.pasteContentType;
 const pasteZipPath = pasteTextTag.dataset.zipPath;
@@ -62,6 +62,31 @@ function readPasteLines(text) {
 	return lines;
 }
 
+function updatePasteFilename(filename) {
+	if (filename.length === 0) {
+		return;
+	}
+
+	pasteFilename = filename;
+	pasteTextTag.dataset.pasteFilename = filename;
+
+	if (pasteTitleTag.firstChild !== null && pasteTitleTag.firstChild.nodeType === Node.TEXT_NODE) {
+		pasteTitleTag.firstChild.textContent = filename;
+	}
+}
+
+function scrollToLocationHash() {
+	if (location.hash.length > 1) {
+		const hash = location.hash;
+		const tag = document.getElementById(location.hash.substring(1));
+
+		if (tag !== null) {
+			history.replaceState(null, "", location.pathname + location.search);
+			location.hash = hash;
+		}
+	}
+}
+
 if (pasteContentType.startsWith("image/")) {
 	const img = document.createElement("img");
 	img.src = pasteUrl;
@@ -71,7 +96,21 @@ if (pasteContentType.startsWith("image/")) {
 	video.src = pasteUrl;
 	pasteTextTag.appendChild(video);
 } else {
-	fetch(pasteUrl).then(response => response.text()).then(text => {
+	const pasteText = !pasteUrl.startsWith("https://api.mclo.gs/1/log/") ? fetch(pasteUrl).then(response => response.text()) : fetch(pasteUrl).then(response => response.json()).then(json => {
+		if (json.success === false) {
+			return json.error ?? "";
+		}
+
+		const insights = json.content?.insights;
+
+		if (insights?.title !== undefined) {
+			updatePasteFilename(insights.title + ".log");
+		}
+
+		return json.content?.raw ?? "";
+	});
+
+	pasteText.then(text => {
 		pasteTextTag.innerHTML = ""
 		// console.log("Received " + text + " (" + text.length + ")")
 
@@ -213,5 +252,7 @@ if (pasteContentType.startsWith("image/")) {
 			appendText(link, " [Minecraft Profile]");
 			pasteTitleTag.appendChild(link);
 		}
+
+		scrollToLocationHash();
 	})
 }

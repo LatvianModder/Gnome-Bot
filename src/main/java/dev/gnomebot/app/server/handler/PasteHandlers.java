@@ -10,7 +10,6 @@ import dev.gnomebot.app.util.MessageId;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.URLRequest;
 import dev.latvian.apps.ansi.log.Log;
-import dev.latvian.apps.json.JSON;
 import dev.latvian.apps.tinyhttp.content.MimeType;
 import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
 import dev.latvian.apps.tinyhttp.http.response.error.client.ForbiddenError;
@@ -28,7 +27,6 @@ import discord4j.discordjson.json.MessageData;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -190,20 +188,7 @@ public class PasteHandlers {
 
 	public static HTTPResponse pasteMclogs(AppRequest req) {
 		var id = req.variable("id").asString();
-
-		String filename = "unknown.log";
-
-		try {
-			var request = App.HTTP_CLIENT.send(App.request("https://api.mclo.gs/1/insights/" + id).timeout(Duration.ofSeconds(3L)).build(), HttpResponse.BodyHandlers.ofString());
-
-			if (request.statusCode() / 100 == 2) {
-				var json = JSON.DEFAULT.read(request.body()).readObject();
-				filename = json.asString("title") + ".log";
-			} else {
-				throw new NotFoundError("File not found!");
-			}
-		} catch (Exception _) {
-		}
+		var filename = "mclo.gs/" + id;
 
 		var root = req.createRoot(filename);
 		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH); // + "_%08x".formatted(UUID.randomUUID().hashCode()));
@@ -216,7 +201,7 @@ public class PasteHandlers {
 				.id("paste-text")
 				.classes("pastetext")
 				.attr("data-paste-filename", filename)
-				.attr("data-paste-url", "https://api.mclo.gs/1/raw/" + id)
+				.attr("data-paste-url", "https://api.mclo.gs/1/log/" + id + "?raw&insights")
 				.attr("data-paste-content-type", MimeType.TEXT)
 				.attr("data-zip-path", "")
 				.h3().spanstr("Loading...");
