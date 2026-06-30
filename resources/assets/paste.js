@@ -1,5 +1,6 @@
 const pasteTitleTag = document.getElementById('paste-title');
 const pasteTextTag = document.getElementById('paste-text');
+const pasteHeaderTag = document.querySelector("div.content > h1");
 let pasteFilename = pasteTextTag.dataset.pasteFilename;
 const pasteUrl = pasteTextTag.dataset.pasteUrl;
 const pasteContentType = pasteTextTag.dataset.pasteContentType;
@@ -70,8 +71,16 @@ function updatePasteFilename(filename) {
 	pasteFilename = filename;
 	pasteTextTag.dataset.pasteFilename = filename;
 
-	if (pasteTitleTag.firstChild !== null && pasteTitleTag.firstChild.nodeType === Node.TEXT_NODE) {
+	if (pasteHeaderTag !== null) {
+		pasteHeaderTag.textContent = filename;
+	}
+
+	if (pasteTitleTag.firstChild === null) {
+		pasteTitleTag.appendChild(document.createTextNode(filename));
+	} else if (pasteTitleTag.firstChild.nodeType === Node.TEXT_NODE) {
 		pasteTitleTag.firstChild.textContent = filename;
+	} else {
+		pasteTitleTag.insertBefore(document.createTextNode(filename), pasteTitleTag.firstChild);
 	}
 }
 
@@ -87,6 +96,16 @@ function scrollToLocationHash() {
 	}
 }
 
+function readMclogsRawError(status) {
+	updatePasteFilename("Error " + status);
+	return fetch(pasteUrl.replace("/1/log/", "/1/raw/").split("?", 1)[0]).then(response => {
+		return response.text();
+	}).catch(error => {
+		updatePasteFilename("Error");
+		return error.toString();
+	});
+}
+
 if (pasteContentType.startsWith("image/")) {
 	const img = document.createElement("img");
 	img.src = pasteUrl;
@@ -96,18 +115,27 @@ if (pasteContentType.startsWith("image/")) {
 	video.src = pasteUrl;
 	pasteTextTag.appendChild(video);
 } else {
-	const pasteText = !pasteUrl.startsWith("https://api.mclo.gs/1/log/") ? fetch(pasteUrl).then(response => response.text()) : fetch(pasteUrl).then(response => response.json()).then(json => {
-		if (json.success === false) {
-			return json.error ?? "";
+	const pasteText = !pasteUrl.startsWith("https://api.mclo.gs/1/log/") ? fetch(pasteUrl).then(response => response.text()) : fetch(pasteUrl).then(response => {
+		if (!response.ok) {
+			return readMclogsRawError(response.status);
 		}
 
-		const insights = json.content?.insights;
+		return response.json().then(json => {
+			if (json.success === false) {
+				return readMclogsRawError(response.status);
+			}
 
-		if (insights?.title !== undefined) {
-			updatePasteFilename(insights.title + ".log");
-		}
+			const insights = json.content?.insights;
 
-		return json.content?.raw ?? "";
+			if (insights?.title !== undefined) {
+				updatePasteFilename(insights.title + ".log");
+			}
+
+			return json.content?.raw ?? "";
+		});
+	}).catch(error => {
+		updatePasteFilename("Error");
+		return error.toString();
 	});
 
 	pasteText.then(text => {

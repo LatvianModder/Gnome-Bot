@@ -188,7 +188,7 @@ public class PasteHandlers {
 
 	public static HTTPResponse pasteMclogs(AppRequest req) {
 		var id = req.variable("id").asString();
-		var filename = "mclo.gs/" + id;
+		var filename = "Loading...";
 
 		var root = req.createRoot(filename);
 		root.head.deferScript("/assets/paste.js" + AppRootTag.RESOURCE_REFRESH); // + "_%08x".formatted(UUID.randomUUID().hashCode()));
