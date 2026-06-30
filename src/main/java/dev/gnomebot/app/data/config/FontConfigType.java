@@ -111,7 +111,7 @@ public class FontConfigType implements ConfigType<Font, FontConfigType.Holder> {
 
 	@Override
 	public String serialize(GuildCollections guild, int type, Font value) {
-		return write(value);
+	    return value != null ? write(value) : "";
 	}
 
 	@Override
