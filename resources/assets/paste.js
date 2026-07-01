@@ -1,6 +1,7 @@
 const pasteTitleTag = document.getElementById('paste-title');
 const pasteTextTag = document.getElementById('paste-text');
-const pasteFilename = pasteTextTag.dataset.pasteFilename;
+const pasteHeaderTag = document.querySelector("div.content > h1");
+let pasteFilename = pasteTextTag.dataset.pasteFilename;
 const pasteUrl = pasteTextTag.dataset.pasteUrl;
 const pasteContentType = pasteTextTag.dataset.pasteContentType;
 const pasteZipPath = pasteTextTag.dataset.zipPath;
@@ -62,6 +63,49 @@ function readPasteLines(text) {
 	return lines;
 }
 
+function updatePasteFilename(filename) {
+	if (filename.length === 0) {
+		return;
+	}
+
+	pasteFilename = filename;
+	pasteTextTag.dataset.pasteFilename = filename;
+
+	if (pasteHeaderTag !== null) {
+		pasteHeaderTag.textContent = filename;
+	}
+
+	if (pasteTitleTag.firstChild === null) {
+		pasteTitleTag.appendChild(document.createTextNode(filename));
+	} else if (pasteTitleTag.firstChild.nodeType === Node.TEXT_NODE) {
+		pasteTitleTag.firstChild.textContent = filename;
+	} else {
+		pasteTitleTag.insertBefore(document.createTextNode(filename), pasteTitleTag.firstChild);
+	}
+}
+
+function scrollToLocationHash() {
+	if (location.hash.length > 1) {
+		const hash = location.hash;
+		const tag = document.getElementById(location.hash.substring(1));
+
+		if (tag !== null) {
+			history.replaceState(null, "", location.pathname + location.search);
+			location.hash = hash;
+		}
+	}
+}
+
+function readMclogsRawError(status) {
+	updatePasteFilename("Error " + status);
+	return fetch(pasteUrl.replace("/1/log/", "/1/raw/").split("?", 1)[0]).then(response => {
+		return response.text();
+	}).catch(error => {
+		updatePasteFilename("Error");
+		return error.toString();
+	});
+}
+
 if (pasteContentType.startsWith("image/")) {
 	const img = document.createElement("img");
 	img.src = pasteUrl;
@@ -71,7 +115,30 @@ if (pasteContentType.startsWith("image/")) {
 	video.src = pasteUrl;
 	pasteTextTag.appendChild(video);
 } else {
-	fetch(pasteUrl).then(response => response.text()).then(text => {
+	const pasteText = !pasteUrl.startsWith("https://api.mclo.gs/1/log/") ? fetch(pasteUrl).then(response => response.text()) : fetch(pasteUrl).then(response => {
+		if (!response.ok) {
+			return readMclogsRawError(response.status);
+		}
+
+		return response.json().then(json => {
+			if (json.success === false) {
+				return readMclogsRawError(response.status);
+			}
+
+			const insights = json.content?.insights;
+
+			if (insights?.title !== undefined) {
+				updatePasteFilename(insights.title + ".log");
+			}
+
+			return json.content?.raw ?? "";
+		});
+	}).catch(error => {
+		updatePasteFilename("Error");
+		return error.toString();
+	});
+
+	pasteText.then(text => {
 		pasteTextTag.innerHTML = ""
 		// console.log("Received " + text + " (" + text.length + ")")
 
@@ -213,5 +280,7 @@ if (pasteContentType.startsWith("image/")) {
 			appendText(link, " [Minecraft Profile]");
 			pasteTitleTag.appendChild(link);
 		}
+
+		scrollToLocationHash();
 	})
 }
