@@ -50,17 +50,18 @@ repositories {
 }
 
 dependencies {
-	shadow('dev.latvian.apps:tiny-http:1.0.0-build.55')
+	shadow('dev.latvian.apps:tiny-http:1.0.0-build.66')
 	shadow('dev.latvian.apps:ansi:1.0.0-build.13')
 	shadow('dev.latvian.apps:json:1.0.1-build.9')
 	shadow('dev.latvian.apps:webutils:1.1.0-build.83')
 	// shadow('net.dv8tion:JDA:6.4.1')
 	shadow('org.mongodb:mongodb-driver-sync:5.7.0-beta1')
-	shadow('com.discord4j:discord4j-core:3.3.2')
+	shadow('com.discord4j:discord4j-core:3.3.3') // https://central.sonatype.com/artifact/com.discord4j/discord4j-core/versions
 	shadow('org.slf4j:slf4j-simple:2.1.0-alpha1')
 	shadow('it.unimi.dsi:fastutil:8.5.18')
 	shadow('com.google.guava:guava:31.1-jre') { exclude group: "com.google.code.findbugs" }
 	shadow('com.liferay:org.apache.commons.fileupload:1.2.2.LIFERAY-PATCHED-1')
+	shadow('com.github.luben:zstd-jni:1.5.7-7')
 
 	compileOnly('org.jetbrains:annotations:26.0.2')
 }

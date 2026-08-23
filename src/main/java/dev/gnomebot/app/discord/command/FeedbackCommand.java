@@ -41,7 +41,7 @@ public class FeedbackCommand extends ApplicationCommands {
 			throw new GnomeException("To submit feedback you need " + event.context.gc.feedbackSuggestRole + " role!");
 		}
 
-		event.respondModal("feedback", "Submit Feedback", TextInput.paragraph("feedback", "Feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
+		event.respondModal("feedback", "Submit Feedback", "Feedback", TextInput.paragraph("feedback", 15, 1500).placeholder("Write your feedback here! Please, don't send joke messages."));
 	}
 
 	public static void submitCallback(ModalEventWrapper event) {

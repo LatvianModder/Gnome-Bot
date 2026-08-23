@@ -8,6 +8,7 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.WebHookDestination;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.util.SnowFlake;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Message;
 import org.bson.Document;
@@ -98,11 +99,11 @@ public class WebhookCommands extends ApplicationCommands {
 		event.context.checkSenderOwner();
 		var ci = event.get("channel").asChannelInfoOrCurrent();
 
-		event.respondModal("webhook/" + ci.id + "/0", "Execute Webhook",
-			TextInput.paragraph("content", "Content", 0, 2000).required(false),
-			TextInput.small("username", "Username", 0, 100).required(false).placeholder("Override username"),
-			TextInput.small("avatar_url", "Avatar URL").required(false).placeholder("Override avatar")
-		);
+		event.respondModal("webhook/" + ci.id + "/0", "Execute Webhook", List.of(
+			Label.of("Content", TextInput.paragraph("content", 0, 2000).required(false)),
+			Label.of("Username", TextInput.small("username", 0, 100).required(false).placeholder("Override username")),
+			Label.of("Avatar URL", TextInput.small("avatar_url").required(false).placeholder("Override avatar"))
+		));
 	}
 
 	public static void executeCallback(ModalEventWrapper event, long channelId, long editId) {
@@ -146,11 +147,13 @@ public class WebhookCommands extends ApplicationCommands {
 			var lines = ComplexMessage.of(event.context.gc, message).getLines();
 
 			event.respondModal("webhook/" + event.context.channelInfo.id + "/" + message.getId().asString(), "Edit Webhook Message",
-				TextInput.paragraph("content", "Content").required(true).prefilled(String.join("\n", lines)).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
+				"Content",
+				TextInput.paragraph("content").required(true).prefilled(String.join("\n", lines)).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
 			);
 		} else {
 			event.respondModal("webhook/" + event.context.channelInfo.id + "/" + message.getId().asString(), "Edit Webhook Message",
-				TextInput.paragraph("content", "Content").required(true).prefilled(message.getContent()).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
+				"Content",
+				TextInput.paragraph("content").required(true).prefilled(message.getContent()).placeholder(MacroCommands.COMPLEX_PLACEHOLDER)
 			);
 		}
 	}

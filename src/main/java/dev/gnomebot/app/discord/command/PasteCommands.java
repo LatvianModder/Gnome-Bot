@@ -9,10 +9,12 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TextInput;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -32,10 +34,10 @@ public class PasteCommands extends ApplicationCommands {
 		);
 
 	private static void create(ChatInputInteractionEventWrapper event) {
-		event.respondModal("create-paste", "Create Paste",
-			TextInput.paragraph("content", "Content").required(true),
-			TextInput.small("filename", "File name").required(true).prefilled("file.txt")
-		);
+		event.respondModal("create-paste", "Create Paste", List.of(
+			Label.of("Content", TextInput.paragraph("content").required(true)),
+			Label.of("File name", TextInput.small("filename").required(true).prefilled("file.txt"))
+		));
 	}
 
 	public static void createCallback(ModalEventWrapper event) {

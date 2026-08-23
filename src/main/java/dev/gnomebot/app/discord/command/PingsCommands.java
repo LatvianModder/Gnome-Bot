@@ -133,7 +133,7 @@ public class PingsCommands extends ApplicationCommands {
 	public static void edit(DeferrableInteractionEventWrapper<?> event) throws Exception {
 		var path = AppPaths.PINGS.resolve(event.context.sender.getId().asString() + ".txt");
 
-		event.respondModal("pings", "Manage Pings", TextInput.paragraph("config", "Config")
+		event.respondModal("pings", "Manage Pings", "Config", TextInput.paragraph("config")
 			.placeholder(FormattingUtils.trim("@ mentions\n+ /" + event.context.sender.getUsername() + "/i\n\nRun `/about pings` for info on how to set up pings", 100))
 			.required(false)
 			.prefilled(Files.exists(path) ? Files.readString(path) : "")
@@ -219,7 +219,7 @@ public class PingsCommands extends ApplicationCommands {
 		var from = event.get("from").asUser().map(u -> u.getId().asLong()).orElse(0L);
 
 		if (s.isEmpty()) {
-			event.respondModal("ping-test/" + from, "Test Pings", TextInput.paragraph("text", "Text to Test", 1, 2000).placeholder("Write your test text here. Each line will be treated as its own check."));
+			event.respondModal("ping-test/" + from, "Test Pings", "Text to Test", TextInput.paragraph("text", 1, 2000).placeholder("Write your test text here. Each line will be treated as its own check."));
 		} else {
 			event.acknowledgeEphemeral();
 			event.respond(testResponse(event.context, from, s.split("\n")));

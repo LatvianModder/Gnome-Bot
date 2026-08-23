@@ -9,6 +9,7 @@ import dev.latvian.apps.tinyhttp.http.response.HTTPResponse;
 import dev.latvian.apps.tinyhttp.http.response.error.client.BadRequestError;
 import dev.latvian.apps.tinyhttp.http.response.error.client.NotFoundError;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -55,7 +56,7 @@ public class RootHandlers {
 		return HTTPResponse.redirect("/");
 	}
 
-	public static HTTPResponse publicfile(AppRequest req) {
+	public static HTTPResponse publicfile(AppRequest req) throws IOException {
 		req.log = false;
 
 		var filename = req.variable("file").asString();

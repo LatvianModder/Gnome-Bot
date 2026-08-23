@@ -10,10 +10,12 @@ import dev.gnomebot.app.util.EmbedBuilder;
 import dev.gnomebot.app.util.MessageBuilder;
 import dev.gnomebot.app.util.SnowFlake;
 import dev.gnomebot.app.util.Utils;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TextInput;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -111,7 +113,8 @@ public class MacroCommands extends ApplicationCommands {
 		}
 
 		event.respondModal("add-macro/" + name, "Adding macro '" + name + "'",
-			TextInput.paragraph("content", "Content")
+			"Content",
+			TextInput.paragraph("content")
 		);
 	}
 
@@ -152,10 +155,10 @@ public class MacroCommands extends ApplicationCommands {
 	private static void edit(ChatInputInteractionEventWrapper event) {
 		var macro = event.context.gc.getMacroFromCommand(event.get("name").asString());
 
-		event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'",
-			TextInput.small("rename", "Rename", 1, 50).required(false).prefilled(macro.name),
-			TextInput.paragraph("content", "Content").prefilled(ContentType.encodeMentions(macro.getContent()))
-		);
+		event.respondModal("edit-macro/" + macro.stringId, "Editing macro '" + macro.name + "'", List.of(
+			Label.of("Rename", TextInput.small("rename", 1, 50).required(false).prefilled(macro.name)),
+			Label.of("Content", TextInput.paragraph("content").prefilled(ContentType.encodeMentions(macro.getContent())))
+		));
 	}
 
 	public static void editMacroCallback(ModalEventWrapper event, String name) {

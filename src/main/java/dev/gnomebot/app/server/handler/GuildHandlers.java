@@ -119,7 +119,7 @@ public class GuildHandlers {
 			throw new NotFoundError("Macro '" + req.variable("id") + "' not found!");
 		}
 
-		if (req.query().containsKey("slash")) {
+		if (req.hasQuery("slash")) {
 			if (!req.authLevel().isAdmin()) {
 				throw new ForbiddenError("You must be an admin to toggle slash commands");
 			}

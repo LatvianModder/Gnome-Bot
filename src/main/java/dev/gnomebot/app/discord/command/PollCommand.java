@@ -12,6 +12,7 @@ import dev.gnomebot.app.util.SnowFlake;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TextInput;
 import org.bson.Document;
 
@@ -29,10 +30,10 @@ public class PollCommand extends ApplicationCommands {
 	private static final List<String> NO_YES = List.of("No", "Yes");
 
 	private static void submit(ChatInputInteractionEventWrapper event) {
-		event.respondModal("poll", "Create a Poll",
-			TextInput.paragraph("question", "Question").required(true).placeholder("Is today a good day?"),
-			TextInput.paragraph("options", "Options").required(false).placeholder("No\nYes")
-		);
+		event.respondModal("poll", "Create a Poll", List.of(
+			Label.of("Question", TextInput.paragraph("question").required(true).placeholder("Is today a good day?")),
+			Label.of("Options", TextInput.paragraph("options").required(false).placeholder("No\nYes"))
+		));
 	}
 
 	public static void submitCallback(ModalEventWrapper event) {

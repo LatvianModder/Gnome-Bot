@@ -9,19 +9,17 @@ import dev.gnomebot.app.util.MessageBuilder;
 import dev.latvian.apps.ansi.log.Log;
 import dev.latvian.apps.webutils.FormattingUtils;
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent;
-import discord4j.core.object.component.ActionComponent;
-import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.ICanBeUsedInLabelComponent;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TopLevelModalComponent;
 import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.interaction.InteractionResponse;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInteractionEvent> extends InteractionEventWrapper<T> {
 	public boolean acknowledged;
@@ -135,8 +133,8 @@ public abstract class DeferrableInteractionEventWrapper<T extends DeferrableInte
 		).block();
 	}
 
-	public void respondModal(String customId, String title, ActionComponent... textInputs) {
-		respondModal(customId, title, Arrays.stream(textInputs).map(ActionRow::of).collect(Collectors.toList()));
+	public void respondModal(String customId, String title, String label, ICanBeUsedInLabelComponent textInput) {
+		respondModal(customId, title, List.of(Label.of(label, textInput)));
 	}
 
 	public boolean requiresTextResponse() {

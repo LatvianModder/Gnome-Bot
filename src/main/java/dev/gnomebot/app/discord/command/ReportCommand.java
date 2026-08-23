@@ -5,9 +5,12 @@ import dev.gnomebot.app.discord.ModalEventWrapper;
 import dev.gnomebot.app.discord.QuoteHandler;
 import dev.gnomebot.app.discord.legacycommand.GnomeException;
 import dev.gnomebot.app.server.AuthLevel;
+import discord4j.core.object.component.Label;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Member;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class ReportCommand extends ApplicationCommands {
 	public static final ChatInputInteractionBuilder COMMAND = chatInputInteraction("report")
@@ -60,11 +63,11 @@ public class ReportCommand extends ApplicationCommands {
 		options.add(SelectMenu.Option.of("Other", "Other"));
 		 */
 
-		event.respondModal("report/" + member.getId().asString() + "/" + message, "Report " + member.getDisplayName(),
-			// SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason..."),
-			TextInput.small("reason", "Reason", "spam/hacks/DMs/etc.").required(true),
-			TextInput.paragraph("additional_info", "Additional Info", "You can write additional info here").required(false)
-		);
+		event.respondModal("report/" + member.getId().asString() + "/" + message, "Report " + member.getDisplayName(), List.of(
+			// Label.of("Reason", SelectMenu.of("reason", options).withMinValues(1).withPlaceholder("Select Reason...")),
+			Label.of("Reason", TextInput.small("reason").placeholder("spam/hacks/DMs/etc.").required(true)),
+			Label.of("Additional Info", TextInput.paragraph("additional_info").placeholder("You can write additional info here").required(false))
+		));
 	}
 
 	public static void reportCallback(ModalEventWrapper event, long userId, long messageId) {

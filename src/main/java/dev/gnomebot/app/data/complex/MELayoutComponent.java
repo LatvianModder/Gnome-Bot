@@ -3,7 +3,7 @@ package dev.gnomebot.app.data.complex;
 import dev.gnomebot.app.util.SimpleStringReader;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ public class MELayoutComponent implements ComplexMessageParseContext.PropertyHol
 	public List<MEComponent> components = new ArrayList<>();
 	public int type = 0; // 0 = row
 
-	public LayoutComponent toLayoutComponent(ComplexMessageRenderContext ctx) {
+	public TopLevelMessageComponent toLayoutComponent(ComplexMessageRenderContext ctx) {
 		return ActionRow.of(components.stream().map(c -> c.toActionComponent(ctx)).toList());
 	}
 
